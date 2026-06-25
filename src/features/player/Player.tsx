@@ -1,0 +1,406 @@
+import { Feather } from '@expo/vector-icons';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+
+import { AppText, ProgressRing, Screen } from '@/components';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { useProfile } from '@/features/profile/ProfileProvider';
+import { audioSources } from '@/content/audio';
+import { covers } from '@/content/covers';
+import { TRACKS } from '@/content/library';
+import { track as logEvent } from '@/lib/analytics';
+import { markCalmNightToday } from '@/lib/calmNights';
+import { isFavorite, toggleFavorite } from '@/lib/favorites';
+import { markProgramStepDone } from '@/lib/programs';
+import { pushRecent } from '@/lib/recents';
+import { logSession } from '@/lib/sessions';
+import { getJSON, setJSON } from '@/lib/store';
+import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
+
+// Sleep / auto-stop timer options (minutes; 0 = off). Soundscapes otherwise loop
+// all night with no way to stop short of force-closing the app.
+const SLEEP_OPTIONS = [0, 15, 30, 45, 60] as const;
+
+function haptic() {
+  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+}
+
+// Sensation-honest cues, rotated through the session (build plan: honest device
+// cues + a breathing visual guide the user while they hold the device).
+const CUES = [
+  'Rest your Glow Orb in your palm',
+  'Set it to a level that feels good',
+  'Notice the gentle pulse in your palm',
+  'Let your breath follow the circle',
+];
+
+function PlayPause({ paused, onPress }: { paused: boolean; onPress: () => void }) {
+  const { c } = useTheme();
+  const scale = useSharedValue(1);
+  const p = useSharedValue(paused ? 1 : 0);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    p.value = reduced ? (paused ? 1 : 0) : withTiming(paused ? 1 : 0, { duration: dur.press, easing: ease.out });
+  }, [paused, reduced, p]);
+  const btn = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const playS = useAnimatedStyle(() => ({ opacity: p.value }));
+  const pauseS = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => {
+        scale.value = withTiming(PRESS_SCALE, { duration: dur.press, easing: ease.out });
+        haptic();
+      }}
+      onPressOut={() => (scale.value = withTiming(1, { duration: dur.press, easing: ease.out }))}
+      accessibilityRole="button"
+      accessibilityLabel={paused ? 'Play' : 'Pause'}
+      hitSlop={8}>
+      <Animated.View
+        style={[
+          {
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: c.ctaBg,
+          },
+          btn,
+        ]}>
+        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, pauseS]}>
+          <Feather name="pause" size={26} color={c.ctaText} />
+        </Animated.View>
+        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, playS]}>
+          <Feather name="play" size={26} color={c.ctaText} style={{ marginLeft: 3 }} />
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+export function Player() {
+  const router = useRouter();
+  const { token, isPremium } = useAuth();
+  const { mode } = useProfile();
+  const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
+  const track = (id && TRACKS[id]) || TRACKS['slow-tide'];
+  // premium tracks can't be played by a free user even via deep link (kids are exempt — never paywalled)
+  const blocked = !!track.locked && !isPremium && mode !== 'kids';
+
+  // server-side the signed-url endpoint also enforces this; here we keep free users out of the player
+  useEffect(() => {
+    if (blocked) router.replace(`/unlock?id=${track.id}` as Href);
+  }, [blocked, track.id, router]);
+
+  const player = useAudioPlayer(audioSources[track.audio]);
+  const status = useAudioPlayerStatus(player);
+  const progress = useSharedValue(0);
+  const loggedRef = useRef(false);
+
+  // allow playback in silent mode + keep playing with the screen off / app backgrounded
+  // (sleep apps must run all night — build plan §12)
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
+  }, []);
+
+  // Loop ONLY ambient soundscapes. Guided sessions, sleep tales and breathing
+  // exercises must play once and end gently (§6 "gentle end") — never restart.
+  useEffect(() => {
+    player.loop = track.category === 'soundscape';
+    player.volume = 1;
+    let cancelled = false;
+    getJSON('cc.autoplay', true).then((auto) => {
+      if (!cancelled && auto && !blocked) player.play();
+    });
+    return () => {
+      cancelled = true;
+      try {
+        player.pause();
+      } catch {
+        /* player already released */
+      }
+    };
+  }, [player]);
+
+  // drive the ring from the real playback position
+  useEffect(() => {
+    if (status.duration > 0) {
+      progress.value = withTiming(Math.min(status.currentTime / status.duration, 1), {
+        duration: 240,
+        easing: ease.out,
+      });
+    }
+  }, [status.currentTime, status.duration, progress]);
+
+  // record the listen once it's underway (local always; backend if signed in).
+  // Any real session earns today's "calm night" (once/day) — adults and kids alike —
+  // and pushes the track to "recently played" so it's easy to pick up again.
+  useEffect(() => {
+    if (!loggedRef.current && status.playing) {
+      loggedRef.current = true;
+      logSession(token, { contentId: track.id });
+      logEvent('session_start', { contentId: track.id, category: track.category });
+      markCalmNightToday().catch(() => {});
+      pushRecent(track.id).catch(() => {});
+      // mark this program night complete once it's actually playing (real progress)
+      if (program && day) markProgramStepDone(program, Number(day)).catch(() => {});
+    }
+  }, [status.playing, token, track.id, mode, program, day]);
+
+  // saved / favourite state for this track
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    isFavorite(track.id).then((v) => alive && setSaved(v));
+    return () => {
+      alive = false;
+    };
+  }, [track.id]);
+  const onToggleSave = () => {
+    haptic();
+    toggleFavorite(track.id).then(setSaved).catch(() => {});
+  };
+
+  // breathing pacer (4s in / 6s out) + rotating honest cues — the guided-session feel
+  const reduced = useReducedMotion();
+  const breath = useSharedValue(0);
+  const [phase, setPhase] = useState<'in' | 'out'>('in');
+  const [cueIdx, setCueIdx] = useState(0);
+
+  useEffect(() => {
+    if (reduced) {
+      breath.value = 0.45;
+      return;
+    }
+    breath.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 6000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+    return () => cancelAnimation(breath);
+  }, [reduced, breath]);
+
+  useEffect(() => {
+    if (reduced) return;
+    let alive = true;
+    let t1: ReturnType<typeof setTimeout>;
+    let t2: ReturnType<typeof setTimeout>;
+    const cycle = () => {
+      setPhase('in');
+      t1 = setTimeout(() => {
+        if (!alive) return;
+        setPhase('out');
+        t2 = setTimeout(() => {
+          if (alive) cycle();
+        }, 6000);
+      }, 4000);
+    };
+    cycle();
+    return () => {
+      alive = false;
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [reduced]);
+
+  useEffect(() => {
+    const id = setInterval(() => setCueIdx((i) => (i + 1) % CUES.length), 13000);
+    return () => clearInterval(id);
+  }, []);
+
+  const haloStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + breath.value * 0.32 }],
+    opacity: 0.16 + breath.value * 0.22,
+  }));
+
+  const paused = !status.playing;
+  const toggle = () => {
+    if (status.playing) player.pause();
+    else player.play();
+  };
+
+  const close = () => {
+    if (fadeRef.current) clearTimeout(fadeRef.current);
+    try {
+      player.pause();
+    } catch {
+      /* ignore */
+    }
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  };
+
+  // End the session GENTLY (build plan §6): ramp volume to silence over ~1.4s,
+  // pause, then land on the peak-end check-in instead of a frozen, silent frame.
+  // Used by both didJustFinish (guided sessions/tales/breathing) and the sleep timer.
+  const fadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endingRef = useRef(false);
+  const endSession = useCallback(() => {
+    if (endingRef.current) return;
+    endingRef.current = true;
+    let v = 1;
+    const step = () => {
+      v -= 0.1;
+      try {
+        player.volume = Math.max(v, 0);
+      } catch {
+        /* player released */
+      }
+      if (v > 0) {
+        fadeRef.current = setTimeout(step, 130);
+      } else {
+        try {
+          player.pause();
+        } catch {
+          /* ignore */
+        }
+        router.replace('/check-in' as Href);
+      }
+    };
+    step();
+  }, [player, router]);
+
+  // Guided sessions, sleep tales and breathing must play once and END — not freeze
+  // on a silent 100% ring. Soundscapes (which loop) are excluded.
+  useEffect(() => {
+    if (status.didJustFinish && track.category !== 'soundscape') endSession();
+  }, [status.didJustFinish, track.category, endSession]);
+
+  // Sleep / auto-stop timer
+  const [sleepMin, setSleepMin] = useState(0);
+  useEffect(() => {
+    getJSON<number>('cc.sleepTimerMin', 0).then((v) => setSleepMin((SLEEP_OPTIONS as readonly number[]).includes(v) ? v : 0));
+  }, []);
+  useEffect(() => {
+    if (sleepMin <= 0) return;
+    const id = setTimeout(() => endSession(), sleepMin * 60_000);
+    return () => clearTimeout(id);
+  }, [sleepMin, endSession]);
+  useEffect(() => () => { if (fadeRef.current) clearTimeout(fadeRef.current); }, []);
+  const cycleSleep = () => {
+    const i = (SLEEP_OPTIONS as readonly number[]).indexOf(sleepMin);
+    const next = SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
+    setSleepMin(next);
+    setJSON('cc.sleepTimerMin', next);
+    haptic();
+  };
+
+  // don't paint a locked premium track for a frame before the redirect effect fires
+  if (blocked)
+    return (
+      <Screen mode="night">
+        <View style={{ flex: 1 }} />
+      </Screen>
+    );
+
+  return (
+    <Screen mode="night">
+      <View style={{ flex: 1 }}>
+        {/* top bar */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
+          <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close player">
+            <Feather name="chevron-down" size={28} color="#9DB7B1" />
+          </Pressable>
+          {/* sleep / auto-stop timer — taps cycle Off → 15 → 30 → 45 → 60 min */}
+          <Pressable
+            onPress={cycleSleep}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={sleepMin ? `Sleep timer set to ${sleepMin} minutes. Tap to change.` : 'Set a sleep timer'}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              paddingVertical: 7,
+              paddingHorizontal: 13,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: sleepMin ? 'rgba(143,201,190,0.55)' : 'rgba(157,183,177,0.28)',
+              backgroundColor: sleepMin ? 'rgba(143,201,190,0.12)' : 'transparent',
+            }}>
+            <Feather name="moon" size={14} color={sleepMin ? '#8FC9BE' : '#9DB7B1'} />
+            <AppText variant="label" style={{ color: sleepMin ? '#8FC9BE' : '#9DB7B1' }}>
+              {sleepMin ? `${sleepMin} min` : 'Sleep timer'}
+            </AppText>
+          </Pressable>
+        </View>
+
+        {/* centerpiece — breathing guide + cover inside the playback ring */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 300, height: 300, alignItems: 'center', justifyContent: 'center' }}>
+            <ProgressRing progress={progress} size={300} strokeWidth={3} fill style={{ position: 'absolute' }} />
+            {/* breathing halo — expands on the in-breath, settles on the out */}
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                { position: 'absolute', width: 232, height: 232, borderRadius: 116, backgroundColor: '#8FC9BE' },
+                haloStyle,
+              ]}
+            />
+            {/* cover inside the ring */}
+            <View style={{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(143,201,190,0.30)' }}>
+              <Image source={covers[track.cover]} style={{ width: 200, height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
+            </View>
+          </View>
+
+          {/* breath pacer */}
+          <View style={{ height: 22, marginTop: 28, justifyContent: 'center' }}>
+            {!reduced ? (
+              <AppText variant="caption" tone="accent" style={{ letterSpacing: 2.5 }}>
+                {phase === 'in' ? 'BREATHE IN' : 'BREATHE OUT'}
+              </AppText>
+            ) : null}
+          </View>
+
+          <AppText variant="display" tone="title" style={{ marginTop: 6, textAlign: 'center' }}>
+            {track.title}
+          </AppText>
+          <AppText variant="body" tone="muted" style={{ marginTop: 4, textAlign: 'center' }}>
+            {track.subtitle}
+          </AppText>
+
+          {/* rotating, sensation-honest device cue */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
+            <Feather name="circle" size={10} color="#8FC9BE" />
+            <AppText variant="caption" tone="dim">
+              {CUES[cueIdx]}
+            </AppText>
+          </View>
+        </View>
+
+        {/* controls — heart (save) · play/pause · matching spacer keeps play centered */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: 28 }}>
+          <Pressable
+            onPress={onToggleSave}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
+            accessibilityState={{ selected: saved }}
+            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Feather name="heart" size={24} color={saved ? '#8FC9BE' : '#9DB7B1'} style={saved ? undefined : { opacity: 0.9 }} />
+          </Pressable>
+          <PlayPause paused={paused} onPress={toggle} />
+          <View style={{ width: 44, height: 44 }} />
+        </View>
+      </View>
+    </Screen>
+  );
+}

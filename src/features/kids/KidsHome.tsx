@@ -1,0 +1,180 @@
+import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { useRouter, type Href } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Pressable, View } from 'react-native';
+
+import { AppText, BearMascot, Reveal, Screen } from '@/components';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { covers } from '@/content/covers';
+import { TRACKS } from '@/content/library';
+import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
+import { useTheme } from '@/theme';
+// Big, friendly, calm sounds a child can pick on their own.
+const KID_SOUNDS = ['forest', 'rainfall', 'slow-tide'];
+
+/** Parent-gate lock — discreet so a child won't wander out, findable for a grown-up. */
+function ParentLock({ onPress }: { onPress: () => void }) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel="For grown-ups"
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: c.surface,
+        borderWidth: 1,
+        borderColor: c.line,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      <Feather name="lock" size={17} color={c.accent} />
+    </Pressable>
+  );
+}
+
+function Stars({ count }: { count: number }) {
+  const { c } = useTheme();
+  return (
+    <View
+      style={{ flexDirection: 'row', gap: 6 }}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={`${count} of ${CALM_NIGHTS_GOAL} calm nights`}>
+      {Array.from({ length: CALM_NIGHTS_GOAL }).map((_, i) => (
+        <Feather key={i} name="star" size={20} color={i < count ? c.accent : c.line} />
+      ))}
+    </View>
+  );
+}
+
+export function KidsHome() {
+  const router = useRouter();
+  const { c } = useTheme();
+  const { user } = useAuth();
+  const [nights, setNights] = useState(0);
+  const firstName = (user?.name ?? '').split(' ')[0] || 'friend';
+
+  // real count — earned by actually doing calm sessions (see markCalmNightToday)
+  useEffect(() => {
+    getCalmNights().then(setNights);
+  }, []);
+
+  const story = TRACKS['penguin'] ?? TRACKS['slow-tide'];
+
+  return (
+    <Screen mode="light" scroll tabBarSpacing>
+      {/* greeting + grown-up lock */}
+      <Reveal index={0}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="caption" tone="accent">
+              Bedtime
+            </AppText>
+            <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 34, color: c.textAccent, marginTop: 4 }}>
+              Hi {firstName}!
+            </AppText>
+          </View>
+          <ParentLock onPress={() => router.push('/parent-gate?intent=exitKids' as Href)} />
+        </View>
+      </Reveal>
+
+      {/* bear companion */}
+      <Reveal index={1} style={{ alignItems: 'center', marginTop: 8 }}>
+        <BearMascot size={150} />
+        <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center' }}>
+          Bramble’s getting sleepy too. Ready to wind down?
+        </AppText>
+      </Reveal>
+
+      {/* gentle, non-failable stars */}
+      <Reveal index={2} style={{ marginTop: 22 }}>
+        <View
+          style={{
+            padding: 18,
+            borderRadius: 22,
+            backgroundColor: c.panel,
+            borderWidth: 1,
+            borderColor: c.lineSage,
+            alignItems: 'center',
+            gap: 10,
+          }}>
+          <AppText variant="bodyMedium" tone="title">
+            Your calm nights
+          </AppText>
+          <Stars count={nights} />
+          <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+            Every calm night earns a star. No wrong nights ✨
+          </AppText>
+        </View>
+      </Reveal>
+
+      {/* BIG story hero */}
+      <Reveal index={3} style={{ marginTop: 22 }}>
+        <Pressable onPress={() => router.push(`/player?id=${story.id}`)} accessibilityRole="button" accessibilityLabel={`Start the story, ${story.title}`}>
+          <View style={{ borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
+            <Image source={covers[story.cover]} style={{ width: '100%', height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
+            <View style={{ padding: 20, backgroundColor: c.surface }}>
+              <AppText variant="caption" tone="accent">
+                Tonight’s story
+              </AppText>
+              <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 26, color: c.textAccent, marginTop: 4 }}>
+                {story.title}
+              </AppText>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  marginTop: 16,
+                  height: 60,
+                  borderRadius: 18,
+                  backgroundColor: c.ctaBg,
+                }}>
+                <Feather name="play" size={22} color={c.ctaText} />
+                <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 18, color: c.ctaText }}>
+                  Start the story
+                </AppText>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+      </Reveal>
+
+      {/* big calm-sound buttons */}
+      <Reveal index={4} style={{ marginTop: 28 }}>
+        <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 22, color: c.textAccent, marginBottom: 14 }}>
+          Pick a calm sound
+        </AppText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 }}>
+          {KID_SOUNDS.map((id) => {
+            const t = TRACKS[id];
+            if (!t) return null;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => router.push(`/player?id=${id}`)}
+                accessibilityRole="button"
+                accessibilityLabel={t.title}
+                style={{ width: '31%' }}>
+                <View style={{ aspectRatio: 1, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
+                  <Image source={covers[t.cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
+                  <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.55)', justifyContent: 'flex-end', padding: 10 }}>
+                    <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 13, color: '#FFFFFF' }}>
+                      {t.title.split(' ')[0]}
+                    </AppText>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Reveal>
+    </Screen>
+  );
+}

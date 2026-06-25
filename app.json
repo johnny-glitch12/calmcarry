@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "CalmCarry",
+    "slug": "calmcarry",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "calmcarry",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "co.theglowcompany.calmcarry",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "co.theglowcompany.calmcarry",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#D3EDEA",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#D3EDEA",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 130,
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 130
+          }
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true
+        }
+      ],
+      "expo-secure-store",
+      "expo-notifications",
+      "react-native-iap",
+      "expo-web-browser",
+      "expo-video",
+      "@sentry/react-native"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

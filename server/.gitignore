@@ -1,0 +1,19 @@
+# dependencies
+node_modules
+
+# build output
+dist
+
+# local SQLite database
+data/*.sqlite
+data/*.sqlite-journal
+data/*.sqlite-wal
+data/*.sqlite-shm
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+.env

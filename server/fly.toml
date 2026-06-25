@@ -1,0 +1,23 @@
+# Fly.io deploy config for the CalmCarry API. `fly launch --no-deploy` then `fly deploy`.
+# Set secrets first (see DEPLOY.md):
+#   fly secrets set JWT_SECRET=... CMS_ADMIN_KEY=... DATABASE_URL=... \
+#                   CDN_BASE_URL=... CDN_SIGNING_KEY=... CORS_ORIGINS=...
+app = "calmcarry-api"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "4000"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

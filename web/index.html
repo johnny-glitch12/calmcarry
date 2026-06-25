@@ -3,96 +3,90 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CalmCarry — preview</title>
   <meta name="robots" content="noindex" />
+  <title>CalmCarry — preview</title>
   <style>
-    :root {
-      --bg0: #16302b; --bg1: #0e1817; --mint: #8fc9be; --sage: #9db7b1;
-      --ink: #ecf3f1; --muted: #9db7b1; --line: rgba(143,201,190,0.22);
+    :root{ --bg0:#16302b; --bg1:#0b1413; --mint:#8fc9be; --ink:#ecf3f1; --muted:#9db7b1; --line:rgba(143,201,190,.22); }
+    *{box-sizing:border-box;} html,body{height:100%;margin:0;}
+    body{
+      font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;color:var(--ink);
+      background:radial-gradient(1100px 650px at 50% -8%,#1e302d 0%,var(--bg0) 40%,var(--bg1) 100%);
+      min-height:100%;display:flex;flex-direction:column;align-items:center;overflow:hidden;
     }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
-    body {
-      font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
-      color: var(--ink);
-      background: radial-gradient(1200px 700px at 50% -10%, #1e302d 0%, var(--bg0) 38%, var(--bg1) 100%);
-      min-height: 100%;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 30px 16px 56px;
-    }
-    .brand { display: flex; align-items: center; gap: 10px; }
-    .orb {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #d7efe9, var(--mint) 60%, #5e9c92);
-      box-shadow: 0 0 22px rgba(143,201,190,0.5);
-    }
-    h1 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-    p.sub { color: var(--muted); font-size: 13.5px; margin: 8px 0 22px; text-align: center; max-width: 440px; line-height: 1.5; }
-    .bar { display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 26px; }
-    .bar select, .bar button {
-      background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--ink);
-      border-radius: 10px; padding: 9px 12px; font-size: 13px; cursor: pointer; outline: none;
-    }
-    .bar button { background: var(--mint); color: #0e1817; border: 0; font-weight: 600; }
+    header.top{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 16px 8px;}
+    .brand{display:flex;align-items:center;gap:9px;}
+    .orb{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d7efe9,var(--mint) 60%,#5e9c92);box-shadow:0 0 20px rgba(143,201,190,.5);}
+    h1{font-size:20px;font-weight:700;margin:0;}
+    .tag{color:var(--muted);font-size:12.5px;margin:0;}
+    .bar{display:flex;gap:8px;align-items:center;}
+    .bar select,.bar button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer;outline:none;}
+    .bar button{background:var(--mint);color:#0e1817;border:0;font-weight:600;}
 
-    .device {
-      position: relative; width: var(--w); height: var(--h);
-      background: #0b1413; border-radius: 56px; padding: 14px;
-      box-shadow: 0 0 0 2px #2a3a37, 0 30px 80px rgba(0,0,0,0.55), 0 6px 20px rgba(0,0,0,0.4);
-      transition: width .25s ease, height .25s ease;
+    .stage{flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0;}
+    .phone{
+      position:relative;width:var(--w);height:var(--h);flex:0 0 auto;transform-origin:center center;
+      border-radius:62px;padding:12px;
+      background:linear-gradient(145deg,#43484b 0%,#191c1e 26%,#202325 50%,#191c1e 74%,#43484b 100%);
+      box-shadow:
+        inset 0 0 0 2px rgba(255,255,255,.05), inset 0 1px 1px rgba(255,255,255,.18),
+        0 0 0 1px #050607, 0 45px 90px rgba(0,0,0,.6), 0 12px 34px rgba(0,0,0,.5);
     }
-    .device .screen { width: 100%; height: 100%; border-radius: 44px; overflow: hidden; background: var(--bg1); position: relative; }
-    .device .screen iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--bg1); }
-    .island { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 116px; height: 33px; background: #000; border-radius: 20px; z-index: 5; pointer-events: none; }
-    .btn-side { position: absolute; background: #1d2b29; border-radius: 3px; }
-    .b-power { right: -3px; top: 168px; width: 3px; height: 78px; }
-    .b-vol1 { left: -3px; top: 132px; width: 3px; height: 52px; }
-    .b-vol2 { left: -3px; top: 196px; width: 3px; height: 52px; }
-    .hint { color: var(--muted); font-size: 12px; margin-top: 22px; text-align: center; max-width: 520px; line-height: 1.5; }
+    .screen{position:relative;width:100%;height:100%;border-radius:50px;overflow:hidden;background:var(--bg1);box-shadow:inset 0 0 0 2px #000;}
+    .screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:var(--bg1);}
+    .island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:108px;height:30px;background:#000;border-radius:18px;z-index:6;box-shadow:0 1px 2px rgba(0,0,0,.6);}
+    .glare{position:absolute;inset:0;border-radius:50px;pointer-events:none;z-index:5;background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,0) 24%);}
+    .btn{position:absolute;background:linear-gradient(90deg,#2a2e30,#3c4143);border-radius:2px;}
+    .b-power{right:-4px;top:190px;width:4px;height:92px;}
+    .b-v1{left:-4px;top:150px;width:4px;height:58px;}
+    .b-v2{left:-4px;top:224px;width:4px;height:58px;}
+    footer.hint{padding:8px 16px 16px;color:var(--muted);font-size:12px;text-align:center;}
   </style>
 </head>
 <body>
-  <div class="brand"><span class="orb"></span><h1>CalmCarry</h1></div>
-  <p class="sub">A calm bedtime companion for the Glow Orb — live preview, framed as it appears on a phone.</p>
+  <header class="top">
+    <div class="brand"><span class="orb"></span><h1>CalmCarry</h1></div>
+    <p class="tag">A calm bedtime companion for the Glow Orb — live preview.</p>
+    <div class="bar">
+      <select id="device">
+        <option value="390x844">iPhone 15 / 14</option>
+        <option value="375x812">iPhone 13 mini / X</option>
+        <option value="430x932">iPhone 15 Pro Max</option>
+        <option value="375x667">iPhone SE</option>
+        <option value="412x915">Pixel 7</option>
+      </select>
+      <button id="reload">Reload</button>
+    </div>
+  </header>
 
-  <div class="bar">
-    <select id="device">
-      <option value="390x844">iPhone 15 / 14</option>
-      <option value="375x812">iPhone 13 mini / X</option>
-      <option value="430x932">iPhone 15 Pro Max</option>
-      <option value="375x667">iPhone SE</option>
-      <option value="412x915">Pixel 7</option>
-    </select>
-    <button id="reload">Reload</button>
-  </div>
-
-  <div class="device" id="deviceEl" style="--w:418px; --h:872px;">
-    <div class="btn-side b-vol1"></div>
-    <div class="btn-side b-vol2"></div>
-    <div class="btn-side b-power"></div>
-    <div class="screen">
-      <div class="island"></div>
-      <iframe id="frame" title="CalmCarry preview" src="/app/"
-        allow="autoplay; encrypted-media; clipboard-read; clipboard-write"></iframe>
+  <div class="stage">
+    <div class="phone" id="phone" style="--w:390px;--h:844px;">
+      <div class="btn b-v1"></div><div class="btn b-v2"></div><div class="btn b-power"></div>
+      <div class="screen">
+        <iframe id="frame" title="CalmCarry preview" src="/app/"
+          allow="autoplay; encrypted-media; clipboard-read; clipboard-write"></iframe>
+        <div class="island"></div>
+        <div class="glare"></div>
+      </div>
     </div>
   </div>
 
-  <p class="hint">Interactive — tap around inside the frame. Use the dropdown to switch device sizes.</p>
+  <footer class="hint">Interactive — tap inside the phone. Switch device sizes from the dropdown.</footer>
 
   <script>
-    var frame = document.getElementById('frame');
-    var deviceSel = document.getElementById('device');
-    var deviceEl = document.getElementById('deviceEl');
-    var bezel = 28;
-    function applyDevice() {
-      var p = deviceSel.value.split('x');
-      deviceEl.style.setProperty('--w', (parseInt(p[0], 10) + bezel) + 'px');
-      deviceEl.style.setProperty('--h', (parseInt(p[1], 10) + bezel) + 'px');
+    var phone=document.getElementById('phone'), frame=document.getElementById('frame'),
+        deviceSel=document.getElementById('device'), stage=document.querySelector('.stage');
+    var APP_URL='/app/';
+    function setSize(){var p=deviceSel.value.split('x');phone.style.setProperty('--w',p[0]+'px');phone.style.setProperty('--h',p[1]+'px');fit();}
+    function fit(){
+      var p=deviceSel.value.split('x'), w=parseInt(p[0])+24, h=parseInt(p[1])+24;
+      var availW=stage.clientWidth-24, availH=stage.clientHeight-24;
+      phone.style.transform='scale('+Math.min(availW/w, availH/h, 1)+')';
     }
-    function reload() { frame.src = 'about:blank'; setTimeout(function () { frame.src = '/app/'; }, 40); }
-    document.getElementById('reload').addEventListener('click', reload);
-    deviceSel.addEventListener('change', applyDevice);
-    applyDevice();
+    function reload(){frame.src='about:blank';setTimeout(function(){frame.src=APP_URL;},40);}
+    document.getElementById('reload').addEventListener('click',reload);
+    deviceSel.addEventListener('change',setSize);
+    window.addEventListener('resize',fit);
+    setSize();
   </script>
 </body>
 </html>

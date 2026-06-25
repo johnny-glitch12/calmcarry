@@ -111,7 +111,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
 export function TonightScreen() {
   const router = useRouter();
   const { user, isPremium, token } = useAuth();
-  const { mode, intent, recommendedTrackId, needsCheckIn, dismissCheckIn, profiles } = useProfile();
+  const { mode, intent, recommendedTrackId, recommendedTrackIds, needsCheckIn, dismissCheckIn, profiles } = useProfile();
   const { c } = useTheme();
 
   // real ownership badge — only shown if the purchase email matches a Glow order.
@@ -172,7 +172,8 @@ export function TonightScreen() {
   if (kids) return <KidsHome />;
 
   const heroKicker = intent ? INTENT_REASON[intent] : "Tonight's ritual";
-  const moreIds = ['rainfall', 'box-breathing', 'forest'];
+  // the next-best matches after the hero pick — ranked to the check-in answer
+  const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
 
   return (
     <Screen mode="light" scroll tabBarSpacing>
@@ -308,7 +309,7 @@ export function TonightScreen() {
       <Reveal index={6}>
         <View style={{ marginTop: 32 }}>
           <SectionHeader
-            kicker={kids ? 'More for bedtime' : 'More for tonight'}
+            kicker={kids ? 'More for bedtime' : intent ? 'Picked for how you’re arriving' : 'More for tonight'}
             title={kids ? 'Stories & calm sounds' : 'Sounds & sessions'}
             actionLabel="See all"
             onAction={() => router.push('/sounds')}

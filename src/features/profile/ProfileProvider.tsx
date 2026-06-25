@@ -11,6 +11,7 @@ import {
 
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
 
 export type AppMode = 'adult' | 'kids';
@@ -45,13 +46,6 @@ function sanitizeProfiles(raw: unknown): Profile[] {
       ((p as Profile).type === 'adult' || (p as Profile).type === 'kids'),
   );
 }
-
-const INTENT_TRACK: Record<Intent, string> = {
-  sleep: 'deep-rest',
-  reset: 'box-breathing',
-  sounds: 'slow-tide', // free taste; full soundscapes are premium
-  suggest: 'slow-tide',
-};
 
 /**
  * How someone is "arriving" tonight — the gentle feeling step of the check-in.
@@ -89,6 +83,8 @@ type ProfileValue = {
   needsCheckIn: boolean;
   dismissCheckIn: () => void;
   recommendedTrackId: string;
+  /** ranked picks matching the check-in answer (top = recommendedTrackId) */
+  recommendedTrackIds: string[];
 };
 
 const fallback: Profile = DEFAULT_PROFILES[0];
@@ -108,6 +104,7 @@ const ProfileContext = createContext<ProfileValue>({
   needsCheckIn: false,
   dismissCheckIn: () => {},
   recommendedTrackId: 'slow-tide',
+  recommendedTrackIds: ['slow-tide'],
 });
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
@@ -264,12 +261,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   );
   const mode = activeProfile.type;
 
-  const recommendedTrackId = useMemo(() => {
-    if (mode === 'kids') return 'penguin';
-    // a chosen feeling tailors the pick most precisely; else fall back to intent
-    if (feeling) return FEELING_MAP[feeling].track;
-    return intent ? INTENT_TRACK[intent] : 'slow-tide';
-  }, [mode, intent, feeling]);
+  // RANKED recommendations matching the check-in answer (feeling × intent ×
+  // time-of-day × mode). recommendedTrackId is the top pick; recommendedTrackIds
+  // powers a "tailored tonight" set. See lib/recommend.
+  const recommendedTrackIds = useMemo(
+    () => recommendTracks({ feeling, intent, mode, hour: new Date().getHours() }),
+    [mode, intent, feeling]
+  );
+  const recommendedTrackId = recommendedTrackIds[0];
 
   const value = useMemo<ProfileValue>(
     () => ({
@@ -287,8 +286,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       needsCheckIn,
       dismissCheckIn,
       recommendedTrackId,
+      recommendedTrackIds,
     }),
-    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId]
+    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds]
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

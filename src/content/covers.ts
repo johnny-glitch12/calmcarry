@@ -16,6 +16,10 @@ export const covers = {
   gymnopedie: require('../../assets/covers/gymnopedie.webp'),
   shoreline: require('../../assets/covers/shoreline.webp'),
   fireside: require('../../assets/covers/fireside.webp'),
+  dawnWoods: require('../../assets/covers/dawn-woods.webp'),
+  brownNoise: require('../../assets/covers/brown-noise.webp'),
+  pinkNoise: require('../../assets/covers/pink-noise.webp'),
+  whiteNoise: require('../../assets/covers/white-noise.webp'),
 } as const;
 
 export type CoverKey = keyof typeof covers;

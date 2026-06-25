@@ -19,7 +19,8 @@ type Rail = { kicker: string; title: string; ids: string[] };
 const ADULT_RAILS: Rail[] = [
   { kicker: 'For right now', title: 'Quick calm', ids: ['box-breathing'] },
   { kicker: 'Tonight', title: 'Wind down & sleep', ids: ['deep-rest', 'letting-go', 'penguin', 'slow-tide'] },
-  { kicker: 'Soundscapes', title: 'Music & sounds', ids: ['spa', 'gymnopedie', 'shoreline', 'fireside', 'rainfall', 'forest'] },
+  { kicker: 'Soundscapes', title: 'Music & sounds', ids: ['spa', 'gymnopedie', 'dawn-chorus', 'shoreline', 'fireside', 'rainfall', 'forest'] },
+  { kicker: 'Block out the world', title: 'Noise & masking', ids: ['brown-noise', 'pink-noise', 'white-noise'] },
 ];
 
 const KIDS_RAILS: Rail[] = [

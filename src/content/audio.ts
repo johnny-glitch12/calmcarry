@@ -6,7 +6,9 @@ import { type AudioSource } from 'expo-audio';
  * Bundled rather than streamed so playback is reliable offline and on web (no
  * CORS). Production swaps these for Glowco's licensed library via the CMS/CDN.
  */
-export type AudioKey = 'ocean' | 'rain' | 'forest' | 'drone' | 'piano' | 'gymnopedie' | 'fire' | 'waves';
+export type AudioKey =
+  | 'ocean' | 'rain' | 'forest' | 'drone' | 'piano' | 'gymnopedie' | 'fire' | 'waves'
+  | 'birdsong' | 'brown' | 'pink' | 'white';
 
 export const audioSources: Record<AudioKey, AudioSource> = {
   ocean: require('../../assets/audio/ocean.mp3'),
@@ -17,8 +19,12 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   gymnopedie: require('../../assets/audio/gymnopedie.mp3'),
   fire: require('../../assets/audio/fire.mp3'),
   waves: require('../../assets/audio/waves.mp3'),
+  birdsong: require('../../assets/audio/birdsong.mp3'),
+  brown: require('../../assets/audio/brown-noise.mp3'),
+  pink: require('../../assets/audio/pink-noise.mp3'),
+  white: require('../../assets/audio/white-noise.mp3'),
 };
 
 /** Required attribution for the CC BY tracks (shown in Account). */
 export const AUDIO_CREDITS =
-  'Attribution (CC BY 3.0): “Prelude in C” — Kevin MacLeod (incompetech.com); “Campfire” — Glaneur de sons; “Water on Rocks” — Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie) and the rain / ocean / forest / drone ambiences are CC0 / public domain.';
+  'Attribution (CC BY 3.0): “Prelude in C” — Kevin MacLeod (incompetech.com); “Campfire” — Glaneur de sons; “Water on Rocks” — Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white noise beds are generated in-house (royalty-free).';

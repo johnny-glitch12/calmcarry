@@ -28,6 +28,10 @@ export const TRACKS: Record<string, Track> = {
   gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'soundscape', audio: 'gymnopedie' },
   shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'waves' },
   fireside: { id: 'fireside', title: 'Fireside', subtitle: 'A slow, crackling campfire', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'fire', locked: true },
+  'dawn-chorus': { id: 'dawn-chorus', title: 'Dawn Chorus', subtitle: 'Birdsong · open woodland', cover: 'dawnWoods', duration: 'loops', category: 'soundscape', audio: 'birdsong' },
+  'brown-noise': { id: 'brown-noise', title: 'Brown Noise', subtitle: 'Deep, even masking', cover: 'brownNoise', duration: 'loops', category: 'soundscape', audio: 'brown' },
+  'pink-noise': { id: 'pink-noise', title: 'Pink Noise', subtitle: 'Soft, balanced hush', cover: 'pinkNoise', duration: 'loops', category: 'soundscape', audio: 'pink' },
+  'white-noise': { id: 'white-noise', title: 'White Noise', subtitle: 'Bright, steady cover', cover: 'whiteNoise', duration: 'loops', category: 'soundscape', audio: 'white' },
 };
 
 export type Program = {

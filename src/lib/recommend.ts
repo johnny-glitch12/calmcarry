@@ -36,6 +36,10 @@ export const TRACK_TAGS: Record<string, Tags> = {
   gymnopedie: { moods: ['heavy-day', 'quiet', 'wired-tired'], intents: ['sounds', 'reset'], parts: ['evening', 'night'] },
   shoreline: { moods: ['wired-tired', 'quiet', 'cant-switch-off'], intents: ['sleep', 'sounds'], parts: ['evening', 'night'], kidSafe: true },
   fireside: { moods: ['heavy-day', 'quiet', 'wound-up'], intents: ['sleep', 'sounds'], parts: ['evening', 'night'] },
+  'dawn-chorus': { moods: ['heavy-day', 'quiet'], intents: ['reset', 'sounds'], parts: ['morning', 'afternoon'], kidSafe: true },
+  'brown-noise': { moods: ['racing', 'cant-switch-off', 'wired-tired'], intents: ['sleep', 'sounds'], parts: ['evening', 'night'], kidSafe: true },
+  'pink-noise': { moods: ['racing', 'cant-switch-off'], intents: ['sleep', 'sounds'], parts: ['evening', 'night'], kidSafe: true },
+  'white-noise': { moods: ['racing', 'wound-up'], intents: ['sounds', 'sleep'], parts: ['night'], kidSafe: true },
 };
 
 // which content category each intent leans toward (a soft affinity, not a filter)

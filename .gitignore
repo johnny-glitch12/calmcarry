@@ -55,3 +55,6 @@ example
 
 # claude code (local only)
 .claude/settings.local.json
+
+# Vercel preview build output
+calmcarry-preview/

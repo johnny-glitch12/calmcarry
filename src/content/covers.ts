@@ -13,6 +13,9 @@ export const covers = {
   forestStream: require('../../assets/covers/forest-stream.webp'),
   penguinVoyage: require('../../assets/covers/penguin-voyage.webp'),
   spaMusic: require('../../assets/covers/spa-music.webp'),
+  gymnopedie: require('../../assets/covers/gymnopedie.webp'),
+  shoreline: require('../../assets/covers/shoreline.webp'),
+  fireside: require('../../assets/covers/fireside.webp'),
 } as const;
 
 export type CoverKey = keyof typeof covers;

@@ -67,7 +67,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
-    "build:site": "rm -rf calmcarry-preview && EXPO_WEB_BASE_URL=/app expo export --platform web --output-dir calmcarry-preview/app && cp web/index.html web/vercel.json calmcarry-preview/",
+    "build:site": "rm -rf calmcarry-preview && EXPO_WEB_BASE_URL=/app expo export --platform web --output-dir calmcarry-preview/app && cp web/index.html web/vercel.json web/middleware.js calmcarry-preview/",
     "deploy:site": "npm run build:site && vercel deploy calmcarry-preview --prod"
   },
   "private": true

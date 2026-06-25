@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { config } from '../config';
 
 export type SocialProvider = 'apple' | 'google';
 export interface SocialIdentity {
@@ -10,52 +17,60 @@ export interface SocialIdentity {
 }
 
 /**
- * Flip to true ONLY once verify() cryptographically validates the identity token
- * against the provider's JWKS and checks aud/iss/exp/nonce. Until then we cannot
- * trust the token, so production fails closed (no unverified-token logins ever).
+ * Resolves a Sign in with Apple / Google identity token to a trusted identity by
+ * VERIFYING it against the provider's published JWKS (RS256 signature) and checking
+ * issuer + audience + expiry. Without that, the token's email/sub claims are
+ * attacker-controllable (account takeover) — so this is the real gate, not a decode.
+ *
+ * Fails CLOSED when the provider's client id isn't configured (we can't bind the
+ * token's `aud` without it), so an unconfigured environment refuses social sign-in
+ * rather than trusting an unaudienced token.
  */
-const SIGNATURE_VERIFICATION_IMPLEMENTED = false;
+const PROVIDERS: Record<
+  SocialProvider,
+  { jwks: ReturnType<typeof createRemoteJWKSet>; issuer: string | string[]; audience: () => string }
+> = {
+  apple: {
+    jwks: createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys')),
+    issuer: 'https://appleid.apple.com',
+    audience: () => config.apple.signInClientId, // native: the app's bundle id
+  },
+  google: {
+    jwks: createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs')),
+    issuer: ['https://accounts.google.com', 'accounts.google.com'],
+    audience: () => config.google.signInClientId, // the OAuth web client id
+  },
+};
 
-/**
- * Resolves a Sign in with Apple / Google identity token to {email, name, sub}.
- *
- * CRITICAL: a social identity token is only trustworthy AFTER its signature is
- * verified against the provider's JWKS (and aud === your client id). That is NOT
- * implemented yet — merely having a client-id env var does NOT mean the token was
- * verified. So this service decodes the token for DEV ONLY and REFUSES in prod.
- *
- * PLACEHOLDER: implement JWKS verification (e.g. `jose` / google-auth-library),
- * then set SIGNATURE_VERIFICATION_IMPLEMENTED = true.
- */
 @Injectable()
 export class SocialAuthService {
   async verify(provider: SocialProvider, idToken: string): Promise<SocialIdentity> {
-    if (!SIGNATURE_VERIFICATION_IMPLEMENTED) {
-      // The token's signature is NOT verified, so its email/sub claims are
-      // unauthenticated — trusting them would be account takeover. FAIL CLOSED in
-      // EVERY environment (not just prod): a missing/unset NODE_ENV must never open
-      // this. Social sign-in stays unavailable until JWKS verification ships below.
+    const p = PROVIDERS[provider];
+    if (!p) throw new BadRequestException('Unknown provider');
+
+    const audience = p.audience();
+    if (!audience) {
       throw new ServiceUnavailableException(
-        'Social sign-in is unavailable (token signature verification not configured).',
+        `${provider} sign-in is not configured (missing client id).`,
       );
     }
 
-    // --- reached only once SIGNATURE_VERIFICATION_IMPLEMENTED is true ---
-    const payload = this.decode(idToken);
-    if (!payload?.sub) throw new BadRequestException('Malformed identity token');
-    const emailVerified =
-      payload.email_verified === true || payload.email_verified === 'true';
-    const email = payload.email ?? `${provider}-${payload.sub}@users.calmcarry`;
-    const name = payload.name ?? (payload.email ? String(payload.email).split('@')[0] : 'Sleeper');
-    return { email, name, sub: String(payload.sub), emailVerified, provider };
-  }
-
-  private decode(jwt: string): any {
+    let payload: JWTPayload;
     try {
-      const part = jwt.split('.')[1];
-      return JSON.parse(Buffer.from(part, 'base64').toString('utf8'));
+      ({ payload } = await jwtVerify(idToken, p.jwks, { issuer: p.issuer, audience }));
     } catch {
-      throw new BadRequestException('Invalid identity token');
+      // bad signature / wrong aud or iss / expired → never trust it
+      throw new UnauthorizedException('Identity token failed verification.');
     }
+    if (!payload.sub) throw new UnauthorizedException('Identity token missing subject.');
+
+    const ev = (payload as { email_verified?: unknown }).email_verified;
+    const emailVerified = ev === true || ev === 'true';
+    const rawEmail = (payload as { email?: unknown }).email;
+    const email =
+      typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : `${provider}-${payload.sub}@users.calmcarry`;
+    const rawName = (payload as { name?: unknown }).name;
+    const name = typeof rawName === 'string' && rawName ? rawName : email.split('@')[0];
+    return { email, name, sub: String(payload.sub), emailVerified, provider };
   }
 }

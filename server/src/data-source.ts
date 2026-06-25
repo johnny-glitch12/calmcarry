@@ -1,0 +1,57 @@
+import './load-env'; // populate process.env before config reads it (CLI runs too)
+import 'reflect-metadata';
+import { DataSource, type DataSourceOptions } from 'typeorm';
+import { config } from './config';
+import {
+  AnalyticsEvent,
+  CaregiverInvite,
+  CaregiverLink,
+  CommunityPost,
+  ContentItem,
+  Device,
+  Entitlement,
+  Owner,
+  Profile,
+  Program,
+  PushToken,
+  SavedMix,
+  SessionLog,
+  WarrantyClaim,
+} from './entities';
+
+// Single source of truth for the entity set — shared by the Nest app (app.module)
+// and the TypeORM CLI (this file), so generated migrations always match runtime.
+export const ENTITIES = [
+  Owner,
+  Entitlement,
+  Device,
+  WarrantyClaim,
+  ContentItem,
+  Program,
+  SessionLog,
+  Profile,
+  SavedMix,
+  CommunityPost,
+  PushToken,
+  AnalyticsEvent,
+  CaregiverLink,
+  CaregiverInvite,
+];
+
+// Used ONLY by the TypeORM CLI (migration:generate / run / revert). The runtime
+// connection is configured in app.module. synchronize is OFF here — the CLI never
+// mutates schema implicitly.
+export const dataSourceOptions: DataSourceOptions = {
+  ...(config.databaseUrl
+    ? {
+        type: 'postgres' as const,
+        url: config.databaseUrl,
+        ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
+      }
+    : { type: 'better-sqlite3' as const, database: config.dbPath }),
+  entities: ENTITIES,
+  migrations: ['src/migrations/*.ts'],
+  synchronize: false,
+};
+
+export default new DataSource(dataSourceOptions);

@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Owner } from './owner.entity';
+import { TIMESTAMP_TYPE } from './column-types';
 
 export type EntitlementTier = 'free' | 'calm_plan'; // calm_plan = premium
 export type EntitlementStatus = 'active' | 'revoked' | 'expired';
@@ -52,7 +53,7 @@ export class Entitlement {
   @Column({ type: 'text', nullable: true })
   transactionRef: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP_TYPE, nullable: true })
   expiresAt: Date | null;
 
   @CreateDateColumn()

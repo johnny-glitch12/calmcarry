@@ -29,6 +29,9 @@ export const config = {
     iapSharedSecret: process.env.APPLE_IAP_SHARED_SECRET ?? '', // PLACEHOLDER
     verifyUrl: 'https://buy.itunes.apple.com/verifyReceipt',
     verifyUrlSandbox: 'https://sandbox.itunes.apple.com/verifyReceipt',
+    // App Store Server Notifications V2 verification (webhooks):
+    appAppleId: parseInt(process.env.APPLE_APP_APPLE_ID ?? '0', 10), // numeric app id (prod online checks)
+    rootCertsDir: process.env.APPLE_ROOT_CERTS_DIR ?? '', // dir of Apple Root CA .cer/.pem files
   },
 
   // ---- Google: Sign in with Google + Play Billing validation ----
@@ -36,6 +39,9 @@ export const config = {
     playPackage: process.env.GOOGLE_PLAY_PACKAGE ?? 'co.theglowcompany.calmcarry',
     signInClientId: process.env.GOOGLE_SIGNIN_CLIENT_ID ?? '', // PLACEHOLDER
     playServiceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON ?? '', // PLACEHOLDER
+    // Play RTDN (Pub/Sub push) OIDC verification (webhooks):
+    pubsubAudience: process.env.GOOGLE_PUBSUB_AUDIENCE ?? '', // expected `aud` of the push OIDC token
+    pubsubServiceAccountEmail: process.env.GOOGLE_PUBSUB_SA_EMAIL ?? '', // expected `email` claim
   },
 
   // ---- Shopify: ownership match (purchase email) + order webhooks ----

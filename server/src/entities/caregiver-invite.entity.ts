@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { TIMESTAMP_TYPE } from './column-types';
 
 /**
  * A one-time, expiring code a primary owner shares so a caregiver can join their
@@ -16,7 +17,7 @@ export class CaregiverInvite {
   @Column()
   householdOwnerId: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP_TYPE, nullable: true })
   expiresAt: Date | null;
 
   @Column({ type: 'text', nullable: true })

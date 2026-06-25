@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { WebhooksService } from './webhooks.service';
 
@@ -20,7 +20,7 @@ export class WebhooksController {
 
   @Post('google')
   @HttpCode(200)
-  google(@Body() body: { message?: { data?: string } }) {
-    return this.webhooks.handleGoogle(body);
+  google(@Body() body: { message?: { data?: string } }, @Headers('authorization') auth?: string) {
+    return this.webhooks.handleGoogle(body, auth);
   }
 }

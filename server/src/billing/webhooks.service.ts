@@ -1,107 +1,141 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Environment, NotificationTypeV2, SignedDataVerifier } from '@apple/app-store-server-library';
+import { OAuth2Client } from 'google-auth-library';
+import { readdirSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { config, isProd } from '../config';
 import { UsersService } from '../users/users.service';
 
 /**
  * Store subscription LIFECYCLE handler — App Store Server Notifications V2 and
- * Google Play Real-Time Developer Notifications (RTDN).
+ * Google Play Real-Time Developer Notifications (RTDN). Without these, an entitlement
+ * only changes when the CLIENT posts a receipt, so a cancel/refund/expiry that happens
+ * store-side is invisible until the app re-validates (a refunded user keeps premium).
  *
- * Without this, an entitlement only ever changes when the CLIENT posts a receipt
- * to /billing/validate, so a renewal, cancellation, refund or expiry that happens
- * store-side is invisible until the app happens to re-validate — a refunded user
- * could keep premium for a full billing period. These webhooks let the store push
- * those state changes to us, keyed on the renewal ref (Apple originalTransactionId
- * / Google purchaseToken) we already store on the entitlement.
- *
- * AUTHENTICITY: a webhook that grants/revokes premium MUST be authenticated, or
- * anyone could forge one. Apple V2 payloads are JWS-signed (verify the x5c chain to
- * the Apple Root CA); Play RTDN arrives via Pub/Sub push (verify the OIDC token
- * audience). That verification material isn't wired yet, so — exactly like
- * receipt-validation — we FAIL CLOSED in production and only decode-without-verify
- * in development. Implement verifyApple()/verifyGoogle() before enabling in prod.
+ * AUTHENTICITY is enforced before any state change:
+ *  - Apple: the official SignedDataVerifier validates the JWS x5c chain to the Apple
+ *    Root CA (operator supplies the root certs via APPLE_ROOT_CERTS_DIR).
+ *  - Google: the Pub/Sub push request's OIDC bearer token is verified (signature +
+ *    audience + service-account email) before the message is trusted.
+ * If verification material is absent, we FAIL CLOSED (503) — never process unverified.
  */
 @Injectable()
 export class WebhooksService {
   private readonly logger = new Logger('StoreWebhooks');
+  private appleVerifier: SignedDataVerifier | null = null;
+  private readonly googleClient = new OAuth2Client();
 
   constructor(private readonly users: UsersService) {}
 
-  private assertAuthentic(source: 'apple' | 'google'): void {
-    // Verification (Apple JWS x5c chain to the Apple Root CA / Play Pub/Sub OIDC
-    // token) is NOT implemented, so a notification's contents are unauthenticated
-    // and forgeable. FAIL CLOSED in EVERY environment — never log-and-continue, and
-    // never gate this on NODE_ENV (an unset/typo'd env must not open it). When
-    // verification ships, run it here and only then allow the event through.
-    throw new ServiceUnavailableException(`${source} webhook verification not configured`);
-  }
-
-  /** Decode a JWS compact serialization's payload segment (no verification). */
-  private decodeJws<T>(jws: string): T | null {
+  // ---------- Apple ----------
+  private loadAppleRootCerts(): Buffer[] {
+    const dir = config.apple.rootCertsDir;
+    if (!dir) return [];
     try {
-      const payload = jws.split('.')[1];
-      return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as T;
+      return readdirSync(dir)
+        .filter((f) => /\.(cer|pem|der|crt)$/i.test(f))
+        .map((f) => readFileSync(join(dir, f)));
     } catch {
-      return null;
+      return [];
     }
   }
 
-  /** App Store Server Notifications V2 — body: { signedPayload }. */
-  async handleApple(body: { signedPayload?: string }): Promise<{ ok: boolean; applied: boolean }> {
-    this.assertAuthentic('apple');
-    if (!body?.signedPayload) return { ok: false, applied: false };
-    const payload = this.decodeJws<{
-      notificationType?: string;
-      subtype?: string;
-      data?: { signedTransactionInfo?: string };
-    }>(body.signedPayload);
-    const tx = payload?.data?.signedTransactionInfo
-      ? this.decodeJws<{ originalTransactionId?: string; expiresDate?: number }>(payload.data.signedTransactionInfo)
-      : null;
-    const ref = tx?.originalTransactionId;
-    if (!payload?.notificationType || !ref) return { ok: true, applied: false };
+  private getAppleVerifier(): SignedDataVerifier {
+    if (this.appleVerifier) return this.appleVerifier;
+    const certs = this.loadAppleRootCerts();
+    if (!certs.length) {
+      throw new ServiceUnavailableException('Apple webhook verification not configured (root certs missing).');
+    }
+    this.appleVerifier = new SignedDataVerifier(
+      certs,
+      true, // enable online (OCSP) checks
+      isProd ? Environment.PRODUCTION : Environment.SANDBOX,
+      config.apple.bundleId,
+      config.apple.appAppleId || undefined,
+    );
+    return this.appleVerifier;
+  }
 
-    const expiresAt = tx?.expiresDate ? new Date(tx.expiresDate) : undefined;
+  async handleApple(body: { signedPayload?: string }): Promise<{ ok: boolean; applied: boolean }> {
+    if (!body?.signedPayload) throw new BadRequestException('Missing signedPayload');
+    const verifier = this.getAppleVerifier(); // 503 if not configured
+    let notificationType: string | undefined;
+    let ref: string | undefined;
+    let expiresAt: Date | undefined;
+    try {
+      const notification = await verifier.verifyAndDecodeNotification(body.signedPayload);
+      notificationType = notification.notificationType;
+      const signedTx = notification.data?.signedTransactionInfo;
+      if (signedTx) {
+        const tx = await verifier.verifyAndDecodeTransaction(signedTx);
+        ref = tx.originalTransactionId;
+        expiresAt = tx.expiresDate ? new Date(tx.expiresDate) : undefined;
+      }
+    } catch {
+      throw new BadRequestException('Apple notification failed verification');
+    }
+    if (!ref || !notificationType) return { ok: true, applied: false };
+
     let applied = false;
-    switch (payload.notificationType) {
-      case 'SUBSCRIBED':
-      case 'DID_RENEW':
-      case 'OFFER_REDEEMED':
-      case 'DID_CHANGE_RENEWAL_PREF':
+    switch (notificationType) {
+      case NotificationTypeV2.SUBSCRIBED:
+      case NotificationTypeV2.DID_RENEW:
+      case NotificationTypeV2.OFFER_REDEEMED:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'active', expiresAt });
         break;
-      case 'EXPIRED':
-      case 'GRACE_PERIOD_EXPIRED':
+      case NotificationTypeV2.EXPIRED:
+      case NotificationTypeV2.GRACE_PERIOD_EXPIRED:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' });
         break;
-      case 'REFUND':
-      case 'REVOKE':
+      case NotificationTypeV2.REFUND:
+      case NotificationTypeV2.REVOKE:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
         break;
-      // DID_CHANGE_RENEWAL_STATUS (auto-renew toggled) leaves the current term intact.
       default:
-        break;
+        break; // DID_CHANGE_RENEWAL_STATUS etc. leave the current term intact
     }
-    this.logger.log(`apple ${payload.notificationType}/${payload.subtype ?? '-'} ref=${ref} applied=${applied}`);
+    this.logger.log(`apple ${notificationType} ref=${ref} applied=${applied}`);
     return { ok: true, applied };
   }
 
-  /** Google Play RTDN (Pub/Sub push) — body: { message: { data: base64 } }. */
-  async handleGoogle(body: { message?: { data?: string } }): Promise<{ ok: boolean; applied: boolean }> {
-    this.assertAuthentic('google');
+  // ---------- Google ----------
+  private async verifyPubSubToken(authHeader?: string): Promise<void> {
+    const aud = config.google.pubsubAudience;
+    if (!aud) {
+      throw new ServiceUnavailableException('Google webhook verification not configured (pubsub audience missing).');
+    }
+    const token = (authHeader ?? '').replace(/^Bearer\s+/i, '').trim();
+    if (!token) throw new BadRequestException('Missing Pub/Sub OIDC token');
+    try {
+      const ticket = await this.googleClient.verifyIdToken({ idToken: token, audience: aud });
+      const payload = ticket.getPayload();
+      const expectedEmail = config.google.pubsubServiceAccountEmail;
+      if (!payload || (expectedEmail && payload.email !== expectedEmail) || payload.email_verified === false) {
+        throw new Error('bad claims');
+      }
+    } catch {
+      throw new BadRequestException('Pub/Sub OIDC verification failed');
+    }
+  }
+
+  async handleGoogle(
+    body: { message?: { data?: string } },
+    authHeader?: string,
+  ): Promise<{ ok: boolean; applied: boolean }> {
+    await this.verifyPubSubToken(authHeader); // 503 if not configured, 400 if invalid
     const data = body?.message?.data;
     if (!data) return { ok: true, applied: false };
     let notif: { subscriptionNotification?: { notificationType?: number; purchaseToken?: string } } | null = null;
     try {
       notif = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
     } catch {
-      return { ok: false, applied: false };
+      throw new BadRequestException('Malformed Pub/Sub message');
     }
     const sub = notif?.subscriptionNotification;
     const ref = sub?.purchaseToken;
     if (!sub?.notificationType || !ref) return { ok: true, applied: false };
 
-    // Play notificationType: 2 RENEWED, 3 CANCELED, 4 PURCHASED, 7 RESTARTED,
-    // 12 REVOKED, 13 EXPIRED. (Expiry timestamp requires a Play API lookup — left
-    // to the receipt-validation path; here we move status.)
+    // Play type: 2 RENEWED, 4 PURCHASED, 7 RESTARTED, 12 REVOKED, 13 EXPIRED
     let applied = false;
     switch (sub.notificationType) {
       case 2:
@@ -115,9 +149,8 @@ export class WebhooksService {
       case 12:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
         break;
-      // 3 CANCELED / 5 ON_HOLD / 6 IN_GRACE leave the current term active until it lapses.
       default:
-        break;
+        break; // 3 CANCELED / 5 ON_HOLD / 6 IN_GRACE leave the term active until it lapses
     }
     this.logger.log(`google type=${sub.notificationType} ref=${ref} applied=${applied}`);
     return { ok: true, applied };

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CalmCarry — live preview</title>
+  <style>
+    :root {
+      --bg0: #16302b; --bg1: #0e1817; --mint: #8fc9be; --sage: #9db7b1;
+      --ink: #ecf3f1; --muted: #9db7b1; --line: rgba(143,201,190,0.22);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 700px at 50% -10%, #1e302d 0%, var(--bg0) 38%, var(--bg1) 100%);
+      min-height: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 16px 56px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .orb {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #d7efe9, var(--mint) 60%, #5e9c92);
+      box-shadow: 0 0 22px rgba(143,201,190,0.5);
+    }
+    h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+    p.sub { color: var(--muted); font-size: 13.5px; margin: 6px 0 22px; text-align: center; }
+
+    .bar {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center;
+      margin-bottom: 26px; max-width: 640px;
+    }
+    .bar input {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--ink);
+      border-radius: 10px; padding: 9px 12px; font-size: 13px; width: 260px; outline: none;
+    }
+    .bar button {
+      background: var(--mint); color: #0e1817; border: 0; border-radius: 10px;
+      padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .bar select {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--ink);
+      border-radius: 10px; padding: 9px 10px; font-size: 13px;
+    }
+
+    /* ----- iPhone frame ----- */
+    .device {
+      position: relative;
+      width: var(--w); height: var(--h);
+      background: #0b1413;
+      border-radius: 56px;
+      padding: 14px;
+      box-shadow:
+        0 0 0 2px #2a3a37,
+        0 30px 80px rgba(0,0,0,0.55),
+        0 6px 20px rgba(0,0,0,0.4);
+      transition: width .25s ease, height .25s ease;
+    }
+    .device .screen {
+      width: 100%; height: 100%;
+      border-radius: 44px; overflow: hidden;
+      background: var(--bg1);
+      position: relative;
+    }
+    .device .screen iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--bg1); }
+    /* dynamic island */
+    .island {
+      position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+      width: 116px; height: 33px; background: #000; border-radius: 20px; z-index: 5;
+      pointer-events: none;
+    }
+    /* side buttons */
+    .btn-side { position: absolute; background: #1d2b29; border-radius: 3px; }
+    .b-power { right: -3px; top: 168px; width: 3px; height: 78px; }
+    .b-vol1 { left: -3px; top: 132px; width: 3px; height: 52px; }
+    .b-vol2 { left: -3px; top: 196px; width: 3px; height: 52px; }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 22px; text-align: center; max-width: 520px; line-height: 1.5; }
+    code { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="brand"><span class="orb"></span><h1>CalmCarry</h1></div>
+  <p class="sub">Live preview in a phone frame — point it at your running Expo web server.</p>
+
+  <div class="bar">
+    <input id="url" value="http://localhost:8081" spellcheck="false" />
+    <select id="device">
+      <option value="390x844">iPhone 15 / 14</option>
+      <option value="375x812">iPhone 13 mini / X</option>
+      <option value="430x932">iPhone 15 Pro Max</option>
+      <option value="375x667">iPhone SE</option>
+      <option value="412x915">Pixel 7</option>
+    </select>
+    <button id="go">Load / Reload</button>
+  </div>
+
+  <div class="device" id="device" style="--w:418px; --h:872px;">
+    <div class="btn-side b-vol1"></div>
+    <div class="btn-side b-vol2"></div>
+    <div class="btn-side b-power"></div>
+    <div class="screen">
+      <div class="island"></div>
+      <iframe id="frame" title="CalmCarry preview" src="http://localhost:8081"
+        allow="autoplay; encrypted-media; clipboard-read; clipboard-write"></iframe>
+    </div>
+  </div>
+
+  <p class="hint">
+    First run the app's web server: <code>npm run web</code> (or <code>npx expo start --web</code>),
+    then click <b>Load / Reload</b>. The frame embeds <code>localhost:8081</code> by default —
+    change the URL to preview a deployed build.
+  </p>
+
+  <script>
+    var frame = document.getElementById('frame');
+    var urlInput = document.getElementById('url');
+    var deviceSel = document.getElementById('device');
+    var deviceEl = document.getElementById('device');
+    var bezel = 28; // 14px padding each side
+
+    function applyDevice() {
+      var parts = deviceSel.value.split('x');
+      deviceEl.style.setProperty('--w', (parseInt(parts[0], 10) + bezel) + 'px');
+      deviceEl.style.setProperty('--h', (parseInt(parts[1], 10) + bezel) + 'px');
+    }
+    function load() {
+      // reassign src to force a reload even if the URL is unchanged
+      frame.src = 'about:blank';
+      setTimeout(function () { frame.src = urlInput.value; }, 40);
+    }
+    document.getElementById('go').addEventListener('click', load);
+    urlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') load(); });
+    deviceSel.addEventListener('change', applyDevice);
+    applyDevice();
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config, isProd } from './config';
+import { ENTITIES } from './data-source';
 import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { CommunityModule } from './community/community.module';
@@ -12,22 +13,6 @@ import { CaregiversModule } from './caregivers/caregivers.module';
 import { DevicesModule } from './devices/devices.module';
 import { EventsModule } from './events/events.module';
 import { HouseholdModule } from './household/household.module';
-import {
-  AnalyticsEvent,
-  CaregiverInvite,
-  CaregiverLink,
-  CommunityPost,
-  ContentItem,
-  Device,
-  Entitlement,
-  Owner,
-  Profile,
-  Program,
-  PushToken,
-  SavedMix,
-  SessionLog,
-  WarrantyClaim,
-} from './entities';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { LogsModule } from './logs/logs.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -47,25 +32,14 @@ import { UsersModule } from './users/users.module';
             ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
           }
         : { type: 'better-sqlite3' as const, database: config.dbPath }),
-      entities: [
-        Owner,
-        Entitlement,
-        Device,
-        WarrantyClaim,
-        ContentItem,
-        Program,
-        SessionLog,
-        Profile,
-        SavedMix,
-        CommunityPost,
-        PushToken,
-        AnalyticsEvent,
-        CaregiverLink,
-        CaregiverInvite,
-      ],
-      // auto-create schema in dev; in prod it's OFF (use migrations) unless DB_SYNC=true
-      // is set for a one-time bootstrap of a fresh database.
-      synchronize: !isProd || config.dbSync,
+      entities: ENTITIES,
+      // Committed migrations live in src/migrations (compiled to dist/migrations).
+      migrations: [__dirname + '/migrations/*.js'],
+      // Local SQLite dev auto-creates the schema. ANY Postgres connection (dev or
+      // prod) NEVER synchronizes (that can silently ALTER/DROP a populated DB) and
+      // instead applies committed migrations on boot.
+      synchronize: !config.databaseUrl && !isProd,
+      migrationsRun: !!config.databaseUrl,
     }),
     // Global DoS backstop: 300 requests / 10s / IP — generous enough for a normal
     // app-open burst + shared (NAT) networks, still caps sustained abuse. Auth

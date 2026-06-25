@@ -58,3 +58,6 @@ example
 
 # Vercel preview build output
 calmcarry-preview/
+
+# Vercel local link
+.vercel

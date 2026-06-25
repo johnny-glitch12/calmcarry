@@ -1,3 +1,4 @@
+import '../load-env'; // MUST be first — load .env (DATABASE_URL) before config/AppModule
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { AppModule } from '../app.module';

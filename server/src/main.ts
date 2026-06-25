@@ -61,7 +61,7 @@ async function bootstrap() {
   app.enableCors(
     isProd
       ? { origin: config.corsOrigins, credentials: false }
-      : { origin: ['http://localhost:8081', 'http://localhost:3000'], credentials: true },
+      : { origin: ['http://localhost:8081', 'http://localhost:3000', ...config.corsOrigins], credentials: true },
   );
 
   // Validate, strip unknown props, and REJECT bodies with unexpected fields

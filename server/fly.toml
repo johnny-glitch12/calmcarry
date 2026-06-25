@@ -9,7 +9,10 @@ primary_region = "iad"
 
 [env]
   PORT = "4000"
-  NODE_ENV = "production"
+  # DEMO posture: dev mode so the showcase backend boots without the (not-yet-real)
+  # CDN/social/IAP secrets the prod boot-guard requires, and so it seeds demo data.
+  # For the real launch, set this to "production" and provide all prod secrets.
+  NODE_ENV = "development"
 
 [http_service]
   internal_port = 4000

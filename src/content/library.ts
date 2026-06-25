@@ -25,6 +25,9 @@ export const TRACKS: Record<string, Track> = {
   'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '13 min', category: 'meditation', audio: 'drone', locked: true },
   penguin: { id: 'penguin', title: "A Penguin's Voyage", subtitle: 'Sleep tale · ages 4+', cover: 'penguinVoyage', duration: '27 min', category: 'story', audio: 'ocean' },
   spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'soundscape', audio: 'piano' },
+  gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'spaMusic', duration: '3 min', category: 'soundscape', audio: 'gymnopedie' },
+  shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'slowTide', duration: 'loops', category: 'soundscape', audio: 'waves' },
+  fireside: { id: 'fireside', title: 'Fireside', subtitle: 'A slow, crackling campfire', cover: 'deepRest', duration: 'loops', category: 'soundscape', audio: 'fire', locked: true },
 };
 
 export type Program = {

@@ -6,7 +6,7 @@ import { type AudioSource } from 'expo-audio';
  * Bundled rather than streamed so playback is reliable offline and on web (no
  * CORS). Production swaps these for Glowco's licensed library via the CMS/CDN.
  */
-export type AudioKey = 'ocean' | 'rain' | 'forest' | 'drone' | 'piano';
+export type AudioKey = 'ocean' | 'rain' | 'forest' | 'drone' | 'piano' | 'gymnopedie' | 'fire' | 'waves';
 
 export const audioSources: Record<AudioKey, AudioSource> = {
   ocean: require('../../assets/audio/ocean.mp3'),
@@ -14,8 +14,11 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   forest: require('../../assets/audio/forest.mp3'),
   drone: require('../../assets/audio/drone.ogg'),
   piano: require('../../assets/audio/piano.mp3'),
+  gymnopedie: require('../../assets/audio/gymnopedie.mp3'),
+  fire: require('../../assets/audio/fire.mp3'),
+  waves: require('../../assets/audio/waves.mp3'),
 };
 
-/** Required attribution for the CC BY piano track (shown in Account). */
+/** Required attribution for the CC BY tracks (shown in Account). */
 export const AUDIO_CREDITS =
-  'Piano: “Prelude in C” by Kevin MacLeod (incompetech.com), CC BY 3.0. Other sounds are CC0 / public domain.';
+  'Attribution (CC BY 3.0): “Prelude in C” — Kevin MacLeod (incompetech.com); “Campfire” — Glaneur de sons; “Water on Rocks” — Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie) and the rain / ocean / forest / drone ambiences are CC0 / public domain.';

@@ -27,7 +27,7 @@ import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { getJSON, setJSON } from '@/lib/store';
 import { brand, useTheme } from '@/theme';
 
-const NEW_THIS_MONTH = ['spa', 'letting-go', 'deep-rest'];
+const NEW_THIS_MONTH = ['gymnopedie', 'shoreline', 'spa'];
 
 function greeting(hour: number) {
   if (hour < 5) return 'Rest easy';

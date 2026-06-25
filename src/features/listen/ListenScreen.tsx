@@ -17,7 +17,7 @@ import { useTheme } from '@/theme';
 
 // Lyric-free instrumental music (build plan §6/§7 — Listen = Music + Sound machine).
 // CMS-extensible; the sound machine below handles ambient sounds.
-const MUSIC_IDS = ['spa'];
+const MUSIC_IDS = ['spa', 'gymnopedie'];
 
 type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'forest' | 'drone'>;
 type Levels = Record<SoundKey, number>; // 0 = off, 1 = low, 2 = med, 3 = full

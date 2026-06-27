@@ -4,7 +4,6 @@ import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
-  interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -40,26 +39,31 @@ const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap 
 };
 
 /**
- * A single tab. Active/inactive is a COLOR/OPACITY crossfade (no position
- * animation — §4 forbids a sliding indicator). The active (teal) icon fades in
- * over the muted base; the label color interpolates. ease.out over dur.press.
+ * A single tab in the floating-pill bar. The ACTIVE tab is a solid sage-filled
+ * pill with its icon + label inline (white); INACTIVE tabs are a muted icon
+ * only. Focus is an OPACITY crossfade IN PLACE — the fill, the white icon
+ * overlay and the label all fade in over dur.press; nothing translates (§4: no
+ * sliding indicator). The active slot grows (flexGrow) and inactive slots are a
+ * compact fixed width, so the wide active pill never overflows or reflows mid
+ * fade. Soft fade-in on focus; instant clear on blur (avoids a shrinking-slot
+ * remnant). Honors reduced motion (instant state, no fade).
  */
 function TabItem({
   focused,
   icon,
   label,
   onPress,
-  active,
   inactive,
-  pill,
+  pillBg,
+  pillContent,
 }: {
   focused: boolean;
   icon: keyof typeof Feather.glyphMap;
   label: string;
   onPress: () => void;
-  active: string;
   inactive: string;
-  pill: string;
+  pillBg: string;
+  pillContent: string;
 }) {
   const reduced = useReducedMotion();
   const t = useSharedValue(focused ? 1 : 0);
@@ -69,45 +73,70 @@ function TabItem({
       ? focused
         ? 1
         : 0
-      : withTiming(focused ? 1 : 0, { duration: dur.press, easing: ease.out });
+      : focused
+        ? withTiming(1, { duration: dur.press, easing: ease.out })
+        : 0; // instant clear on blur — no fade-out remnant in the shrunk slot
   }, [focused, reduced, t]);
 
+  const fillStyle = useAnimatedStyle(() => ({ opacity: t.value }));
   const activeIconStyle = useAnimatedStyle(() => ({ opacity: t.value }));
-  const pillStyle = useAnimatedStyle(() => ({ opacity: t.value }));
-  const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(t.value, [0, 1], [inactive, active]),
-  }));
+  const labelStyle = useAnimatedStyle(() => ({ opacity: t.value }));
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected: focused }}
-      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }}>
-      {/* teal pill behind the active tab (opacity-only fade — no sliding) */}
-      <Animated.View
-        pointerEvents="none"
-        style={[{ position: 'absolute', top: 0, bottom: 0, left: 8, right: 8, borderRadius: 16, backgroundColor: pill }, pillStyle]}
-      />
-      <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
-        <Feather name={icon} size={22} color={inactive} />
+      style={
+        focused
+          ? { flexGrow: 1, flexShrink: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
+          : { width: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
+      }>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 36,
+          borderRadius: 18,
+          paddingHorizontal: focused ? 14 : 0,
+          gap: 8,
+        }}>
+        {/* sage pill fill — opacity crossfade only (no position/size animation) */}
         <Animated.View
-          style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, activeIconStyle]}>
-          <Feather name={icon} size={22} color={active} />
-        </Animated.View>
+          pointerEvents="none"
+          style={[{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: 18, backgroundColor: pillBg }, fillStyle]}
+        />
+        {/* icon — muted base with a white overlay that fades in on focus */}
+        <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+          <Feather name={icon} size={22} color={inactive} />
+          <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, activeIconStyle]}>
+            <Feather name={icon} size={22} color={pillContent} />
+          </Animated.View>
+        </View>
+        {focused ? (
+          <Animated.Text
+            numberOfLines={1}
+            style={[
+              { fontFamily: fonts.medium, fontSize: 13, letterSpacing: 0.2, lineHeight: 16, color: pillContent },
+              labelStyle,
+            ]}>
+            {label}
+          </Animated.Text>
+        ) : null}
       </View>
-      <Animated.Text
-        style={[{ fontFamily: fonts.medium, fontSize: 11, letterSpacing: 0.2, marginTop: 4 }, labelStyle]}>
-        {label}
-      </Animated.Text>
     </Pressable>
   );
 }
 
 /**
- * TabBar — frosted (BlurView intensity 20) floating bar, 4 tabs. Tab switches
- * crossfade color/opacity only — no position animation (DESIGN_SYSTEM §4).
- * Selecting a new tab fires a light haptic. Light app chrome.
+ * TabBar — frosted floating bar. The active tab is a solid sage pill (icon +
+ * label), inactive tabs are muted icons. Crossfade only — no sliding indicator
+ * (DESIGN_SYSTEM §4). Selecting a new tab fires a light haptic. Web gets a
+ * near-opaque fallback fill since BlurView is a no-op on web.
  */
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
@@ -116,9 +145,13 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const kids = mode === 'kids';
   const dark = effective === 'night';
   const t = themes[effective];
-  const active = t.textAccent;
   const inactive = t.muted;
-  const pill = dark ? 'rgba(143,201,190,0.22)' : t.panelStrong;
+  const pillBg = t.ctaBg;
+  const pillContent = t.ctaText;
+  // BlurView renders transparent on web → use a near-opaque fallback there so the
+  // floating bar stays legible over scrolling content.
+  const web = Platform.OS === 'web';
+  const barBg = dark ? (web ? 'rgba(21,35,31,0.96)' : 'rgba(21,35,31,0.72)') : web ? 'rgba(244,243,237,0.96)' : 'rgba(244,243,237,0.72)';
 
   return (
     <View
@@ -138,9 +171,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
         tint={dark ? 'dark' : 'light'}
         style={{
           flexDirection: 'row',
+          alignItems: 'center',
           paddingVertical: 10,
           paddingHorizontal: 8,
-          backgroundColor: dark ? 'rgba(21,35,31,0.72)' : 'rgba(244,243,237,0.72)',
+          backgroundColor: barBg,
         }}>
         {state.routes
           .filter((route) => TABS[route.name] && (!kids || KID_TABS.includes(route.name)))
@@ -169,9 +203,9 @@ export function TabBar({ state, navigation }: TabBarProps) {
                 focused={focused}
                 icon={meta.icon}
                 label={meta.label}
-                active={active}
                 inactive={inactive}
-                pill={pill}
+                pillBg={pillBg}
+                pillContent={pillContent}
                 onPress={onPress}
               />
             );

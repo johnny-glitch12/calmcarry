@@ -103,17 +103,22 @@ export const api = {
   deleteProfile: (token: string, id: string) =>
     req<unknown>(`/profiles/${id}`, { method: 'DELETE' }, token),
 
-  // ---- community wins wall ----
+  // ---- community wins wall (+ optional anonymous shared sound-machine mix) ----
   communityPosts: (token: string) =>
-    req<{ presence: number; posts: { id: string; handle: string; text: string; createdAt: string }[] }>(
-      '/community/posts',
-      {},
-      token,
-    ),
-  createPost: (token: string, text: string) =>
+    req<{
+      presence: number;
+      posts: {
+        id: string;
+        handle: string;
+        text: string;
+        mix?: { name: string; levels: Record<string, number> } | null;
+        createdAt: string;
+      }[];
+    }>('/community/posts', {}, token),
+  createPost: (token: string, text: string, mix?: { name: string; levels: Record<string, number> }) =>
     req<{ id: string; handle: string; text: string; status: string }>(
       '/community/posts',
-      { method: 'POST', body: JSON.stringify({ text }) },
+      { method: 'POST', body: JSON.stringify({ text, mix }) },
       token,
     ),
 

@@ -1,11 +1,12 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import { AppText, FormField, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { setPendingMix } from '@/lib/mixShare';
 import { useTheme } from '@/theme';
 
 function ago(iso: string): string {
@@ -19,10 +20,12 @@ function ago(iso: string): string {
 // moderated, walled off from kids. You appear as "a CalmCarry parent". No open
 // chat (that comes later) — just gentle, one-way wins. The wall shows ONLY real
 // posts from the backend (plus your own optimistic share) — no fabricated seed.
-type Win = { key: string; handle: string; text: string; when: string; pending?: boolean };
+type SharedMix = { name: string; levels: Record<string, number> };
+type Win = { key: string; handle: string; text: string; when: string; pending?: boolean; mix?: SharedMix | null };
 
-function WinCard({ win }: { win: Win }) {
+function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
   const { c } = useTheme();
+  const soundCount = win.mix ? Object.keys(win.mix.levels).length : 0;
   return (
     <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow, opacity: win.pending ? 0.6 : 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -39,18 +42,43 @@ function WinCard({ win }: { win: Win }) {
       <AppText variant="body" tone="text">
         {win.text}
       </AppText>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
-        <Feather name={win.pending ? 'clock' : 'heart'} size={14} color={c.accent} />
-        <AppText variant="label" tone="muted">
-          {win.pending ? 'Pending review' : 'You’re not the only one'}
-        </AppText>
-      </View>
+      {/* a shared mix renders a tappable card that loads it into the sound machine */}
+      {win.mix ? (
+        <Pressable
+          onPress={onLoadMix}
+          accessibilityRole="button"
+          accessibilityLabel={`Load mix ${win.mix.name} into the sound machine`}
+          style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="sliders" size={15} color={c.textAccent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+                {win.mix.name}
+              </AppText>
+              <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+                {soundCount} {soundCount === 1 ? 'sound' : 'sounds'} · tap to play
+              </AppText>
+            </View>
+            <Feather name="play" size={16} color={c.accent} />
+          </View>
+        </Pressable>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+          <Feather name={win.pending ? 'clock' : 'heart'} size={14} color={c.accent} />
+          <AppText variant="label" tone="muted">
+            {win.pending ? 'Pending review' : 'You’re not the only one'}
+          </AppText>
+        </View>
+      )}
     </View>
   );
 }
 
 export function CommunityScreen() {
   const { c } = useTheme();
+  const router = useRouter();
   const { token } = useAuth();
   const [wins, setWins] = useState<Win[]>([]);
   const [presence, setPresence] = useState<number | null>(null);
@@ -73,7 +101,7 @@ export function CommunityScreen() {
         .communityPosts(token)
         .then((d) => {
           if (!alive) return;
-          setWins((d.posts ?? []).map((p) => ({ key: p.id, handle: p.handle, text: p.text, when: ago(p.createdAt) })));
+          setWins((d.posts ?? []).map((p) => ({ key: p.id, handle: p.handle, text: p.text, when: ago(p.createdAt), mix: p.mix ?? null })));
           setPresence(typeof d.presence === 'number' ? d.presence : null);
         })
         .catch(() => {
@@ -88,6 +116,13 @@ export function CommunityScreen() {
       };
     }, [token])
   );
+
+  // Load a shared mix into the sound machine: hand it off in-memory, then jump to
+  // the Listen tab, which consumes it once on focus.
+  const loadSharedMix = (levels: Record<string, number>) => {
+    setPendingMix(levels);
+    router.push('/listen' as Href);
+  };
 
   // Optimistic share, reconciled with the server: show the card immediately, then
   // adopt the saved post (and its moderation status) on success, or roll it back
@@ -177,7 +212,9 @@ export function CommunityScreen() {
               <ActivityIndicator color={c.accent} />
             </View>
           ) : wins.length > 0 ? (
-            wins.map((w) => <WinCard key={w.key} win={w} />)
+            wins.map((w) => (
+              <WinCard key={w.key} win={w} onLoadMix={w.mix ? () => loadSharedMix(w.mix!.levels) : undefined} />
+            ))
           ) : error ? (
             <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, alignItems: 'center', gap: 4 }}>
               <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>

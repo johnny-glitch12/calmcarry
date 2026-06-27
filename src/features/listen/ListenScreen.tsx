@@ -2,8 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { useRouter, type Href } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Reveal, Screen, SectionHeader } from '@/components';
@@ -12,6 +12,8 @@ import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources, type AudioKey } from '@/content/audio';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
+import { api } from '@/lib/api';
+import { takePendingMix } from '@/lib/mixShare';
 import { getJSON, remove, setJSON } from '@/lib/store';
 import { useTheme } from '@/theme';
 
@@ -108,12 +110,13 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
 export function ListenScreen() {
   const { c } = useTheme();
   const router = useRouter();
-  const { isPremium } = useAuth();
+  const { isPremium, token } = useAuth();
   const { mode } = useProfile();
   const kids = mode === 'kids';
   const [levels, setLevels] = useState<Levels>(ZERO);
   const [timer, setTimer] = useState<number>(0);
   const [mixes, setMixes] = useState<SavedMix[]>([]);
+  const [shareNote, setShareNote] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // latest levels in a ref so the fade closure reads current values without re-arming
@@ -246,6 +249,50 @@ export function ListenScreen() {
     setLevels({ ...ZERO, ...m.levels });
   };
 
+  // Apply a mix arriving from a shared community card — once, on focus. Only known
+  // keys are honoured, levels are clamped, and any premium sound a free user can't
+  // access is zeroed (a shared mix can never unlock paid sounds).
+  const applyExternalLevels = useCallback(
+    (incoming: Record<string, number>) => {
+      const next: Levels = { ...ZERO };
+      for (const s of SOUNDS) {
+        const v = incoming[s.key];
+        if (typeof v !== 'number' || v <= 0) continue;
+        const lockedSound = !!s.premium && !isPremium && !kids;
+        next[s.key] = lockedSound ? 0 : Math.max(1, Math.min(3, Math.round(v)));
+      }
+      setLevels(next);
+    },
+    [isPremium, kids]
+  );
+  useFocusEffect(
+    useCallback(() => {
+      const pending = takePendingMix();
+      if (pending) {
+        applyExternalLevels(pending);
+        haptic();
+      }
+    }, [applyExternalLevels])
+  );
+
+  // Share the CURRENT live mix to the community wall — anonymous, adults + signed-in
+  // only (kids never post). The name is built from the active sound labels.
+  const shareMix = async () => {
+    if (!anyOn || kids || !token || token === 'local') return;
+    haptic();
+    setShareNote(null);
+    const active = SOUNDS.filter((s) => levels[s.key] > 0);
+    const name = active.slice(0, 3).map((s) => s.label).join(' · ') || 'A shared mix';
+    const levelsOut: Record<string, number> = {};
+    active.forEach((s) => (levelsOut[s.key] = levels[s.key]));
+    try {
+      await api.createPost(token, 'Shared a mix to drift to.', { name, levels: levelsOut });
+      setShareNote('Shared anonymously to the community.');
+    } catch {
+      setShareNote('Couldn’t share that just now. Please try again.');
+    }
+  };
+
   return (
     <Screen mode="night" scroll tabBarSpacing contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24 }}>
@@ -350,6 +397,23 @@ export function ListenScreen() {
             </View>
           </Pressable>
         </View>
+        {anyOn && !kids && !!token && token !== 'local' ? (
+          <Pressable
+            onPress={shareMix}
+            accessibilityRole="button"
+            accessibilityLabel="Share this mix anonymously to the community"
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
+            <Feather name="share-2" size={15} color={c.textAccent} />
+            <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+              Share this mix anonymously
+            </AppText>
+          </Pressable>
+        ) : null}
+        {shareNote ? (
+          <AppText variant="label" tone="muted" style={{ textAlign: 'center', marginTop: 8, textTransform: 'none', letterSpacing: 0 }}>
+            {shareNote}
+          </AppText>
+        ) : null}
         {anyOn ? (
           <Pressable onPress={stopAll} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 16 }}>
             <AppText variant="label" tone="muted">

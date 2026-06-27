@@ -176,7 +176,7 @@ export function Onboarding() {
               accessibilityIgnoresInvertColors
             />
           ) : (
-            <GlowOrb size={150} reserveGlow aura />
+            <GlowOrb size={150} reserveGlow />
           )}
         </Animated.View>
         <Animated.View key={`txt-${i}`} entering={FadeIn.duration(320)} style={{ alignItems: 'center' }}>

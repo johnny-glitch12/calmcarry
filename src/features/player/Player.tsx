@@ -239,13 +239,15 @@ export function Player() {
   }, [reduced]);
 
   useEffect(() => {
+    if (reduced) return; // honor reduced motion — no auto-rotating cue text
     const id = setInterval(() => setCueIdx((i) => (i + 1) % CUES.length), 13000);
     return () => clearInterval(id);
-  }, []);
+  }, [reduced]);
 
+  // gentle amplitude — a subtle breath, not a 32%/2× pulse you stare at all night
   const haloStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + breath.value * 0.32 }],
-    opacity: 0.16 + breath.value * 0.22,
+    transform: [{ scale: 1 + breath.value * 0.12 }],
+    opacity: 0.12 + breath.value * 0.1,
   }));
 
   const paused = !status.playing;

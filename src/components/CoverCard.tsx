@@ -79,9 +79,10 @@ export function CoverCard({
     }
     return () => cancelAnimation(ripple);
   }, [animateArt, reduced, image, ripple]);
+  // transform-only breath — the endless opacity throb (0.9↔0.6) on every card in a
+  // scrollable list was the eye-tiring part; the gentle scale alone reads as "alive"
   const rippleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ripple.value }],
-    opacity: interpolate(ripple.value, [1, 1.04], [0.9, 0.6]),
   }));
 
   const motif: [string, string] = art ?? (isNight ? ['#2C4742', '#16302B'] : ['#A9D3CC', '#74A5A2']);
@@ -143,6 +144,7 @@ export function CoverCard({
                   borderColor: 'rgba(255,255,255,0.45)',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  opacity: 0.8, // constant depth cue (replaces the old animated throb)
                 },
                 rippleStyle,
               ]}>

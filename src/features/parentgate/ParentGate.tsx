@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import { AppText, GlowOrb, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
@@ -59,6 +59,7 @@ export function ParentGate() {
   const [first, setFirst] = useState('');
   const [error, setError] = useState(false);
   const shake = useSharedValue(0);
+  const reduced = useReducedMotion();
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
 
   const [hadPin, setHadPin] = useState(false);
@@ -135,12 +136,17 @@ export function ParentGate() {
   const fail = () => {
     setError(true);
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    shake.value = withSequence(
-      withTiming(-8, { duration: 50 }),
-      withTiming(8, { duration: 50 }),
-      withTiming(-6, { duration: 50 }),
-      withTiming(0, { duration: 50, easing: ease.out })
-    );
+    // a single soft, eased settle — not a fast 10Hz jitter. Reduced motion skips it
+    // entirely (haptic + coral dots already signal the error).
+    if (reduced) {
+      shake.value = 0;
+    } else {
+      shake.value = withSequence(
+        withTiming(-5, { duration: 60, easing: ease.inOut }),
+        withTiming(5, { duration: 60, easing: ease.inOut }),
+        withTiming(0, { duration: 80, easing: ease.out })
+      );
+    }
     setTimeout(() => {
       setEntry('');
       setError(false);

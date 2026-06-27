@@ -85,9 +85,10 @@ function Mote({ leftPct, top, size, dur, delay }: { leftPct: number; top: number
     return () => cancelAnimation(m);
   }, [reduced, m, dur, delay]);
   const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: -m.value * 90 }],
-    // triangle fade: in over first half, out over second
-    opacity: (m.value < 0.5 ? m.value * 2 : (1 - m.value) * 2) * 0.5,
+    transform: [{ translateY: -m.value * 60 }],
+    // triangle fade: in over first half, out over second — kept low so the brightest
+    // mote stays sub-perceptual on the night base (no high-contrast moving dot)
+    opacity: (m.value < 0.5 ? m.value * 2 : (1 - m.value) * 2) * 0.32,
   }));
   return (
     <Animated.View
@@ -100,10 +101,10 @@ function Mote({ leftPct, top, size, dur, delay }: { leftPct: number; top: number
   );
 }
 
+// Four slow motes (was six) — thins the always-moving field on the sleep screen by a
+// third with no loss of the "living atmosphere"; the slowest durations dominate.
 const MOTES = [
-  { leftPct: 12, top: 180, size: 3, dur: 15000, delay: 0 },
   { leftPct: 28, top: 420, size: 2, dur: 18000, delay: 4000 },
-  { leftPct: 46, top: 300, size: 3, dur: 16000, delay: 8000 },
   { leftPct: 63, top: 540, size: 2, dur: 19000, delay: 2000 },
   { leftPct: 78, top: 240, size: 3, dur: 17000, delay: 6000 },
   { leftPct: 88, top: 460, size: 2, dur: 20000, delay: 10000 },

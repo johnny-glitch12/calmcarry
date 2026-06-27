@@ -9,7 +9,7 @@ import { Easing } from 'react-native-reanimated';
 
 export const ease = {
   out: Easing.bezier(0.16, 1, 0.3, 1), // enter / standard
-  inOut: Easing.bezier(0.77, 0, 0.175, 1), // symmetric
+  inOut: Easing.bezier(0.45, 0, 0.55, 1), // symmetric — gentle sine-like, low peak velocity (no mid "snap")
   sine: Easing.inOut(Easing.sin), // breathing
 } as const;
 
@@ -27,7 +27,7 @@ export const dur = {
   // long, deliberate "signature" durations (documented exceptions to the <300ms UI cap):
   draw: 600, // a stroke/check drawing on (authenticity)
   reveal: 900, // a gauge/score filling on its own (sleep summary)
-  aura: 4800, // one slow GlowOrb aura ripple emanating outward
+  aura: 4800, // one slow GlowOrb aura ripple. One-shot on appear; if looped it MUST be reduced-motion-guarded + low-amplitude (opacity ≤ ~0.18, scale travel ≤ ~0.35), transform/opacity only.
 } as const;
 
 /** Press feedback scale (DESIGN_SYSTEM §4). */

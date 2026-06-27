@@ -322,7 +322,7 @@ export default function WindDownScreen() {
                 strokeWidth={3}
                 style={{ position: 'absolute' }}
               />
-              <GlowOrb size={216} reserveGlow breathing={!paused} aura={!paused} />
+              <GlowOrb size={216} reserveGlow breathing={!paused} />
             </View>
 
             <AppText variant="display" tone="title" style={{ marginTop: 40 }}>

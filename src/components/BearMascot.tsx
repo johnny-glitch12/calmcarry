@@ -10,6 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
+import { dur, ease } from '@/theme';
+
 /**
  * Bramble — the sleepy CalmCarry bear. The kid-facing companion (and a nod to the
  * "kids mini bear" device). Soft sage + cream, closed sleepy eyes, rosy cheeks.
@@ -20,7 +22,8 @@ export function BearMascot({ size = 140, style, breathing = true }: { size?: num
   const t = useSharedValue(0);
   useEffect(() => {
     if (reduced || !breathing) return;
-    t.value = withRepeat(withTiming(1, { duration: 3200 }), -1, true);
+    // sine in/out so the breath decelerates smoothly into each turn-around (no snap)
+    t.value = withRepeat(withTiming(1, { duration: dur.breath, easing: ease.sine }), -1, true);
     return () => cancelAnimation(t);
   }, [reduced, breathing, t]);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + t.value * 0.035 }] }));

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LayoutChangeEvent, Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -9,19 +9,58 @@ import Animated, {
 
 import { dur, ease, fonts, useTheme } from '@/theme';
 
-import { AppText } from './AppText';
-
 type Props = {
   options: string[];
   value: number;
   onChange: (index: number) => void;
 };
 
+const LABEL = { fontFamily: fonts.semibold, fontSize: 13, letterSpacing: 0.2 } as const;
+
 /**
- * Segmented — pill segmented control (Summary / Sleep Phases / Recordings).
- * The active thumb slides under dur.sheet ease.out; labels crossfade color.
- * Theme-aware. (This is a local control, not the bottom tab bar, so a contained
- * thumb slide is on-spec.)
+ * One segment. The active label color CROSSFADES (two stacked Text layers, opacity)
+ * over the same dur.sheet as the thumb slide — no single-frame color hard-cut, no
+ * font-weight swap (which would re-measure and jitter the label under the moving
+ * thumb). Reduced motion jumps instantly. Transform/opacity only.
+ */
+function Segment({
+  label,
+  active,
+  onPress,
+  activeColor,
+  mutedColor,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  activeColor: string;
+  mutedColor: string;
+}) {
+  const reduced = useReducedMotion();
+  const p = useSharedValue(active ? 1 : 0);
+  useEffect(() => {
+    p.value = reduced ? (active ? 1 : 0) : withTiming(active ? 1 : 0, { duration: dur.sheet, easing: ease.out });
+  }, [active, reduced, p]);
+  const activeStyle = useAnimatedStyle(() => ({ opacity: p.value }));
+  const mutedStyle = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Animated.Text style={[LABEL, { color: mutedColor }, mutedStyle]}>{label}</Animated.Text>
+        <Animated.Text style={[LABEL, { color: activeColor, position: 'absolute' }, activeStyle]}>{label}</Animated.Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/**
+ * Segmented — pill segmented control. The active thumb slides under dur.sheet
+ * ease.out; labels crossfade color (not a hard swap). Theme-aware. (Local
+ * control, not the bottom tab bar, so a contained thumb slide is on-spec.)
  */
 export function Segmented({ options, value, onChange }: Props) {
   const { c, isNight } = useTheme();
@@ -74,29 +113,19 @@ export function Segmented({ options, value, onChange }: Props) {
           ]}
         />
       ) : null}
-      {options.map((opt, i) => {
-        const active = i === value;
-        return (
-          <Pressable
-            key={opt}
-            onPress={() => {
-              onChange(i);
-              moveTo(i);
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <AppText
-              style={{
-                fontFamily: active ? fonts.semibold : fonts.medium,
-                fontSize: 13,
-                color: active ? c.ctaText : c.muted,
-              }}>
-              {opt}
-            </AppText>
-          </Pressable>
-        );
-      })}
+      {options.map((opt, i) => (
+        <Segment
+          key={opt}
+          label={opt}
+          active={i === value}
+          activeColor={c.ctaText}
+          mutedColor={c.muted}
+          onPress={() => {
+            onChange(i);
+            moveTo(i);
+          }}
+        />
+      ))}
     </View>
   );
 }

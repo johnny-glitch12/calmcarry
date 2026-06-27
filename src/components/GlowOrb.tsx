@@ -93,7 +93,8 @@ export function GlowOrb({
   // emanating aura ripples (two staggered rings expanding + fading out)
   useEffect(() => {
     if (aura && !reduced) {
-      auraV.value = withRepeat(withTiming(1, { duration: dur.aura, easing: ease.out }), -1, false);
+      // reverse (true) so it breathes in-and-out rather than snapping back each cycle
+      auraV.value = withRepeat(withTiming(1, { duration: dur.aura, easing: ease.out }), -1, true);
     } else {
       auraV.value = 0;
     }
@@ -102,13 +103,15 @@ export function GlowOrb({
 
   const sphereStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const haloStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+  // low-amplitude (≤0.35 scale travel, ≤0.18 opacity) so it reads as a faint settling
+  // halo, not an attention-grabbing sonar pulse
   const ring1Style = useAnimatedStyle(() => ({
-    transform: [{ scale: 0.92 + auraV.value * 0.85 }],
-    opacity: (1 - auraV.value) * 0.32,
+    transform: [{ scale: 0.92 + auraV.value * 0.35 }],
+    opacity: (1 - auraV.value) * 0.18,
   }));
   const ring2Style = useAnimatedStyle(() => {
     const p = (auraV.value + 0.5) % 1;
-    return { transform: [{ scale: 0.92 + p * 0.85 }], opacity: (1 - p) * 0.32 };
+    return { transform: [{ scale: 0.92 + p * 0.35 }], opacity: (1 - p) * 0.18 };
   });
 
   // Sphere sheen: lighter top-left → accent bottom-right gives a lit-from-above sphere.

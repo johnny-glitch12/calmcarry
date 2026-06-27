@@ -31,7 +31,8 @@ function DrawOnCheck({ size, draw }: { size: number; draw: SharedValue<number> }
     strokeDashoffset: CHECK_LEN * (1 - draw.value),
   }));
   const containerStyle = useAnimatedStyle(() => ({
-    opacity: draw.value > 0 ? 1 : 0,
+    // eased fade tied to the stroke (full by ~25%) — no 1-frame pop-on, hidden at rest
+    opacity: Math.min(1, draw.value * 4),
     transform: [{ scale: 0.95 + 0.05 * draw.value }],
   }));
   return (
@@ -119,7 +120,7 @@ export function AuthenticityCheck() {
 
       {/* orb + check overlay — reserveGlow keeps the halo from bleeding onto the text */}
       <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
-        <GlowOrb size={150} reserveGlow aura breathing={checking} burst={authentic} />
+        <GlowOrb size={150} reserveGlow aura={checking} breathing={checking} burst={authentic} />
         <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
           <DrawOnCheck size={74} draw={draw} />
         </View>

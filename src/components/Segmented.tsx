@@ -47,9 +47,16 @@ function Segment({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      {/* the two stacked label layers are decorative (crossfade only) — the Pressable's
+          accessibilityLabel is the single authoritative name, so hide them from AT to
+          avoid a double-announce ("Adult Adult") */}
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ alignItems: 'center', justifyContent: 'center' }}>
         <Animated.Text style={[LABEL, { color: mutedColor }, mutedStyle]}>{label}</Animated.Text>
         <Animated.Text style={[LABEL, { color: activeColor, position: 'absolute' }, activeStyle]}>{label}</Animated.Text>
       </View>

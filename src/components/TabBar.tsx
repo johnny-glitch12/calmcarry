@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useProfile } from '@/features/profile/ProfileProvider';
-import { dur, ease, fonts, themes, useColorSchemePref } from '@/theme';
+import { brand, dur, ease, fonts, night, themes, useColorSchemePref } from '@/theme';
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.
@@ -91,7 +91,7 @@ function TabItem({
       style={
         focused
           ? { flexGrow: 1, flexShrink: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
-          : { width: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
+          : { width: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
       }>
       <View
         style={{
@@ -100,8 +100,8 @@ function TabItem({
           justifyContent: 'center',
           height: 36,
           borderRadius: 18,
-          paddingHorizontal: focused ? 14 : 0,
-          gap: 8,
+          paddingHorizontal: focused ? 12 : 0,
+          gap: 6,
         }}>
         {/* sage pill fill — opacity crossfade only (no position/size animation) */}
         <Animated.View
@@ -146,8 +146,11 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const dark = effective === 'night';
   const t = themes[effective];
   const inactive = t.muted;
-  const pillBg = t.ctaBg;
-  const pillContent = t.ctaText;
+  // active pill = brand SAGE in BOTH themes (matching the reference), with dark
+  // eucalyptus content so the label clears WCAG AA — white-on-sage is only 2.75:1,
+  // whereas #15302B on sage is ~5.5:1. (Night already shipped a light-sage pill.)
+  const pillBg = dark ? t.ctaBg : brand.sage;
+  const pillContent = dark ? t.ctaText : night.ctaText;
   // BlurView renders transparent on web → use a near-opaque fallback there so the
   // floating bar stays legible over scrolling content.
   const web = Platform.OS === 'web';

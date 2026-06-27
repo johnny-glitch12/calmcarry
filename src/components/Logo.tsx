@@ -1,6 +1,6 @@
 import { Text, View, type ViewStyle } from 'react-native';
 
-import { brand, fonts, useTheme } from '@/theme';
+import { brand, fonts, night, useTheme } from '@/theme';
 
 type Size = 'sm' | 'md' | 'lg';
 
@@ -35,8 +35,8 @@ export function Logo({
 }) {
   const { isNight } = useTheme();
   const s = S[size];
-  // text-safe accent (WCAG AA): deep teal by day, luminous glow by night
-  const ink = isNight ? '#8FC9BE' : brand.teal;
+  // text-safe accent (WCAG AA): deep teal by day, luminous glow by night (tokens)
+  const ink = isNight ? night.glow : brand.teal;
 
   return (
     <View accessible accessibilityRole="image" accessibilityLabel="CalmCarry" style={[{ alignItems: 'center' }, style]}>

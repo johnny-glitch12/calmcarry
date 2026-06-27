@@ -47,6 +47,26 @@ export type Program = {
 };
 
 export const PROGRAMS: Record<string, Program> = {
+  // The free starter arc — leads the rail and is composed ENTIRELY of free tracks
+  // so a free-tier newcomer can finish all 7 nights without ever hitting the paywall
+  // (the honest "earn trust first" answer to BetterSleep gating its onboarding).
+  'first-week': {
+    id: 'first-week',
+    title: 'Your first 7 nights',
+    subtitle: 'A gentle, free place to start',
+    cover: 'slowTide',
+    weeks: 1,
+    avatar: 'newcomers',
+    steps: [
+      { day: 1, title: 'Meet your wind-down', trackId: 'slow-tide' },
+      { day: 2, title: 'Slow the spin', trackId: 'box-breathing' },
+      { day: 3, title: 'A soft, even hush', trackId: 'brown-noise' },
+      { day: 4, title: 'A little tale to drift', trackId: 'penguin' },
+      { day: 5, title: 'Something quietly beautiful', trackId: 'gymnopedie' },
+      { day: 6, title: 'Steady cover for a busy mind', trackId: 'white-noise' },
+      { day: 7, title: 'Make it your ritual', trackId: 'slow-tide' },
+    ],
+  },
   'night-reset': {
     id: 'night-reset',
     title: 'The 3 a.m. Reset',

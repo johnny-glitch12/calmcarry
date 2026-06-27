@@ -18,7 +18,7 @@ import {
 } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { KidsHome } from '@/features/kids/KidsHome';
-import { useProfile, type Intent } from '@/features/profile/ProfileProvider';
+import { FEELING_MAP, useProfile, type Feeling, type Intent } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
@@ -28,6 +28,21 @@ import { getJSON, setJSON } from '@/lib/store';
 import { brand, useTheme } from '@/theme';
 
 const NEW_THIS_MONTH = ['gymnopedie', 'shoreline', 'spa'];
+
+// The always-free one-tap rescue track (never locked) — the honest 3 a.m. answer:
+// no sign-in, no paywall, no quiz, just a gentle drift back to sleep.
+const FREE_RESCUE = 'slow-tide';
+
+// A short, warm "how you're arriving" label for the hero — reflects ONLY this
+// session's check-in answer (never persisted, never a stored mood log; §3/§14).
+const ARRIVAL_PERSONA: Record<Feeling, string> = {
+  racing: 'Busy mind',
+  'cant-switch-off': 'Still switched on',
+  'wired-tired': 'Wired but tired',
+  'wound-up': 'Wound up',
+  'heavy-day': 'Heavy day',
+  quiet: 'Seeking quiet',
+};
 
 function greeting(hour: number) {
   if (hour < 5) return 'Rest easy';
@@ -111,7 +126,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
 export function TonightScreen() {
   const router = useRouter();
   const { user, isPremium, token } = useAuth();
-  const { mode, intent, recommendedTrackId, recommendedTrackIds, needsCheckIn, dismissCheckIn, profiles } = useProfile();
+  const { mode, intent, feeling, recommendedTrackId, recommendedTrackIds, needsCheckIn, dismissCheckIn, profiles } = useProfile();
   const { c } = useTheme();
 
   // real ownership badge — only shown if the purchase email matches a Glow order.
@@ -189,9 +204,14 @@ export function TonightScreen() {
   // kids get their own big, playful, picture-led home a child can run alone
   if (kids) return <KidsHome />;
 
-  const heroKicker = intent ? INTENT_REASON[intent] : "Tonight's ritual";
+  // Warmer kicker when we know how they're arriving (this session only), else the
+  // intent reason, else a neutral default.
+  const heroKicker = feeling ? FEELING_MAP[feeling].line : intent ? INTENT_REASON[intent] : "Tonight's ritual";
   // the next-best matches after the hero pick — ranked to the check-in answer
   const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
+  // free 3 a.m. rescue — copy adapts to the hour but always lands on a free track
+  const lateNight = hour < 5 || hour >= 23;
+  const rescueLabel = lateNight ? 'Awake at 3 a.m.?' : 'Can’t switch off right now?';
 
   return (
     <Screen mode="light" scroll tabBarSpacing>
@@ -208,7 +228,8 @@ export function TonightScreen() {
 
       {/* status — device congruency + entitlement */}
       <Reveal index={1}>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+          {feeling ? <StatusChip label={ARRIVAL_PERSONA[feeling]} icon="user" /> : null}
           {verifiedOwner ? <StatusChip label="Verified owner" icon="shield" /> : null}
           <StatusChip label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'lock'} />
         </View>
@@ -265,6 +286,66 @@ export function TonightScreen() {
           />
         </View>
       </Reveal>
+
+      {/* Always-free rescue — the honest answer to a 3 a.m. wake-up: one tap into a
+          free drift, no sign-in, no paywall, no quiz. Hidden in kids mode. */}
+      {!kids ? (
+        <Reveal index={5}>
+          <Pressable
+            onPress={() => router.push(`/player?id=${FREE_RESCUE}` as Href)}
+            accessibilityRole="button"
+            accessibilityLabel={`${rescueLabel} Play a free calming session now.`}
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              padding: 16,
+              borderRadius: 18,
+              backgroundColor: c.panel,
+              borderWidth: 1,
+              borderColor: c.lineSage,
+            }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="moon" size={18} color={c.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodyMedium" tone="title">
+                {rescueLabel}
+              </AppText>
+              <AppText variant="label" tone="muted" style={{ marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
+                Tap once for a free drift back to sleep — no sign-in needed.
+              </AppText>
+            </View>
+            <Feather name="play" size={16} color={c.accent} />
+          </Pressable>
+        </Reveal>
+      ) : null}
+
+      {/* First-7-nights free starter arc — only for newcomers (0 calm nights), so it's
+          an invitation, not clutter once the ritual is established. */}
+      {nights === 0 ? (
+        <Reveal index={6}>
+          <Pressable
+            onPress={() => router.push('/program?id=first-week' as Href)}
+            accessibilityRole="button"
+            accessibilityLabel="Your first 7 nights — a free starter program"
+            style={{ marginTop: 16, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <AppText variant="caption" tone="accent">
+                Free starter
+              </AppText>
+              <Feather name="arrow-right" size={16} color={c.accent} />
+            </View>
+            <AppText variant="bodyMedium" tone="title" style={{ marginTop: 6 }}>
+              Your first 7 nights
+            </AppText>
+            <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
+              A gentle, free week to find your wind-down — one short session a night.
+            </AppText>
+          </Pressable>
+        </Reveal>
+      ) : null}
 
       {/* gentle calm-nights progress — only once at least one night is earned, so
           it's an encouragement, never an empty "0/7" guilt-meter */}

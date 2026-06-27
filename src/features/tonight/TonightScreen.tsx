@@ -210,8 +210,10 @@ export function TonightScreen() {
   // the next-best matches after the hero pick — ranked to the check-in answer
   const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
   // free 3 a.m. rescue — copy adapts to the hour but always lands on a free track
+  // only claim "3 a.m." in the actual small hours — otherwise it reads as a lie at 11pm
+  const deepNight = hour >= 1 && hour < 5;
   const lateNight = hour < 5 || hour >= 23;
-  const rescueLabel = lateNight ? 'Awake at 3 a.m.?' : 'Can’t switch off right now?';
+  const rescueLabel = deepNight ? 'Awake at 3 a.m.?' : lateNight ? 'Can’t sleep?' : 'Can’t switch off right now?';
 
   return (
     <Screen mode="light" scroll tabBarSpacing>

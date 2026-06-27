@@ -102,6 +102,7 @@ export function Search() {
                   subtitle={r.subtitle}
                   meta={isLocked ? `${r.meta} · Calm Plan` : r.meta}
                   image={covers[r.cover]}
+                  locked={isLocked}
                   onPress={() => router.push((isLocked ? `/unlock?id=${r.id}` : r.playHref) as Href)}
                 />
               </Reveal>

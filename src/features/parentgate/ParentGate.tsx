@@ -62,13 +62,11 @@ export function ParentGate() {
   const reduced = useReducedMotion();
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
 
-  const [hadPin, setHadPin] = useState(false);
   const [lockSeconds, setLockSeconds] = useState(0);
   const [bioAvailable, setBioAvailable] = useState(false);
   const bioTried = useRef(false);
   useEffect(() => {
     hasParentPin().then(async (has) => {
-      setHadPin(has);
       setPhase(has ? 'enter' : 'create');
       if (has) {
         setLockSeconds(await parentPinLockSeconds());
@@ -95,9 +93,11 @@ export function ParentGate() {
 
   const succeed = () => {
     if (intent === 'exitKids') {
-      // exiting Kids requires ENTERING an existing PIN — creating a fresh one must NOT
-      // grant the exit (that would be the bypass). If no PIN existed, just close back to Kids.
-      if (hadPin) setMode('adult');
+      // Reaching succeed() means either the existing PIN was entered (the gate showed
+      // 'enter' and required it) OR no PIN existed (gate showed 'create'). Either way
+      // release to adult — a parent must never get stuck in Kids mode. When a PIN
+      // exists the gate already enforced entering it, so this is not a bypass.
+      setMode('adult');
       close();
     } else if (intent === 'enterKids') {
       // PIN was just created in the adult context → now safe to enter kids

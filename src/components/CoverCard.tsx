@@ -30,6 +30,8 @@ type Props = {
   image?: ImageSourcePropType;
   /** large hero variant uses the serif display title */
   featured?: boolean;
+  /** show a lock affordance instead of play (premium/locked content) */
+  locked?: boolean;
   /** subtle breathing on the cover ripple. Disable for long lists (perf). */
   animateArt?: boolean;
 };
@@ -49,6 +51,7 @@ export function CoverCard({
   image,
   featured = false,
   animateArt = true,
+  locked = false,
 }: Props) {
   const { c, isNight } = useTheme();
   const reduced = useReducedMotion();
@@ -199,7 +202,7 @@ export function CoverCard({
             },
             playStyle,
           ]}>
-          <Feather name="play" size={18} color={c.accent} style={{ marginLeft: 2 }} />
+          <Feather name={locked ? 'lock' : 'play'} size={18} color={c.accent} style={{ marginLeft: locked ? 0 : 2 }} />
         </Animated.View>
       </Animated.View>
     </Pressable>

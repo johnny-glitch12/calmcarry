@@ -50,7 +50,7 @@ export function FormField({
   autoComplete,
   secureTextEntry,
 }: Props) {
-  const { c } = useTheme();
+  const { c, isNight } = useTheme();
   const reduced = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const f = useSharedValue(0);
@@ -119,7 +119,9 @@ export function FormField({
         />
       </Animated.View>
       {error ? (
-        <AppText variant="caption" style={{ color: brand.coral, marginTop: 6, textTransform: 'none' }}>
+        // coral (#EF626C) is only ~2.77:1 on the cream surface (fails AA) — use a
+        // darker red by day, the brighter coral by night where it clears contrast.
+        <AppText variant="caption" style={{ color: isNight ? brand.coral : '#B5303A', marginTop: 6, textTransform: 'none' }}>
           {error}
         </AppText>
       ) : null}

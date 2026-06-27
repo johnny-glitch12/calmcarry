@@ -170,10 +170,15 @@ export function Player() {
     if (!loggedRef.current && status.playing) {
       loggedRef.current = true;
       startedAtRef.current = Date.now();
-      logSession(token, { contentId: track.id });
+      // COPPA: never send a child's listening to the backend, and keep their plays
+      // out of the (adult) recents/recommender. The local calm-night star count is
+      // device-only and stays on for kids.
+      if (mode !== 'kids') {
+        logSession(token, { contentId: track.id });
+        pushRecent(track.id).catch(() => {});
+      }
       logEvent('session_start', { contentId: track.id, category: track.category });
       markCalmNightToday().catch(() => {});
-      pushRecent(track.id).catch(() => {});
       // mark this program night complete once it's actually playing (real progress)
       if (program && day) markProgramStepDone(program, Number(day)).catch(() => {});
     }
@@ -348,35 +353,45 @@ export function Player() {
   });
   useEffect(() => () => fireCompleteRef.current(false), []);
 
-  // Free preview: a locked track plays for 60s, then gently fades to the paywall —
-  // "you've felt it, now keep it" instead of a closed door. Never logs a completion.
-  useEffect(() => {
-    if (!isPreview) return;
-    const id = setTimeout(() => {
-      completedRef.current = true; // a preview is not a completed session
-      if (fadeRef.current) clearTimeout(fadeRef.current);
-      let v = 1;
-      const step = () => {
-        v -= 0.12;
+  // Free preview: gently fade to the paywall after 60s — "you've felt it, now keep it"
+  // instead of a closed door. Never logs a completion.
+  const runPreviewFade = useCallback(() => {
+    completedRef.current = true; // a preview is not a completed session
+    if (fadeRef.current) clearTimeout(fadeRef.current);
+    let v = 1;
+    const step = () => {
+      v -= 0.12;
+      try {
+        player.volume = Math.max(v, 0);
+      } catch {
+        /* released */
+      }
+      if (v > 0) fadeRef.current = setTimeout(step, 110);
+      else {
         try {
-          player.volume = Math.max(v, 0);
+          player.pause();
         } catch {
-          /* released */
+          /* ignore */
         }
-        if (v > 0) fadeRef.current = setTimeout(step, 110);
-        else {
-          try {
-            player.pause();
-          } catch {
-            /* ignore */
-          }
-          router.replace(`/unlock?id=${track.id}` as Href);
-        }
-      };
-      step();
-    }, PREVIEW_MS);
-    return () => clearTimeout(id);
-  }, [isPreview, player, router, track.id, PREVIEW_MS]);
+        router.replace(`/unlock?id=${track.id}` as Href);
+      }
+    };
+    step();
+  }, [player, router, track.id]);
+
+  // Count 60s of ACTUAL playback, not wall-clock: a preview that is paused or still
+  // buffering must not burn the clock, so a user who heard little/nothing is never
+  // paywalled. The countdown only runs while status.playing, and banks the remainder.
+  const previewLeftRef = useRef(PREVIEW_MS);
+  useEffect(() => {
+    if (!isPreview || !status.playing) return;
+    const startedAt = Date.now();
+    const id = setTimeout(runPreviewFade, previewLeftRef.current);
+    return () => {
+      clearTimeout(id);
+      previewLeftRef.current = Math.max(0, previewLeftRef.current - (Date.now() - startedAt));
+    };
+  }, [isPreview, status.playing, runPreviewFade]);
 
   const cycleSleep = () => {
     const i = (SLEEP_OPTIONS as readonly number[]).indexOf(sleepMin);

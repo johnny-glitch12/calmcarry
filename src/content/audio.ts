@@ -15,7 +15,7 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   ocean: require('../../assets/audio/ocean.mp3'),
   rain: require('../../assets/audio/rain.mp3'),
   forest: require('../../assets/audio/forest.mp3'),
-  drone: require('../../assets/audio/drone.ogg'),
+  drone: require('../../assets/audio/drone.mp3'), // mp3, not ogg — iOS won't decode .ogg
   piano: require('../../assets/audio/piano.mp3'),
   gymnopedie: require('../../assets/audio/gymnopedie.mp3'),
   fire: require('../../assets/audio/fire.mp3'),

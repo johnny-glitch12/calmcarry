@@ -23,7 +23,9 @@ export const TRACKS: Record<string, Track> = {
   'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'guidedBox' },
   'deep-rest': { id: 'deep-rest', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', cover: 'deepRest', duration: '4 min', category: 'meditation', audio: 'guidedRest', locked: true },
   'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '4 min', category: 'meditation', audio: 'guidedLetGo', locked: true },
-  penguin: { id: 'penguin', title: "A Penguin's Voyage", subtitle: 'Sleep tale · ages 4+', cover: 'penguinVoyage', duration: '27 min', category: 'story', audio: 'ocean' },
+  // Honest until Glowco supplies real narration: this is a calm OCEAN soundscape for
+  // little ones (it plays the ocean bed), NOT a 27-min narrated tale. Loops gently.
+  penguin: { id: 'penguin', title: "A Penguin's Ocean", subtitle: 'Calm ocean · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean' },
   spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'soundscape', audio: 'piano', locked: true },
   gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'soundscape', audio: 'gymnopedie' },
   shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'waves', locked: true },
@@ -61,9 +63,9 @@ export const PROGRAMS: Record<string, Program> = {
       { day: 1, title: 'Meet your wind-down', trackId: 'slow-tide' },
       { day: 2, title: 'Slow the spin', trackId: 'box-breathing' },
       { day: 3, title: 'A soft, even hush', trackId: 'brown-noise' },
-      { day: 4, title: 'A little tale to drift', trackId: 'penguin' },
+      { day: 4, title: 'A gentle ocean to drift', trackId: 'penguin' },
       { day: 5, title: 'Something quietly beautiful', trackId: 'gymnopedie' },
-      { day: 6, title: 'Steady cover for a busy mind', trackId: 'white-noise' },
+      { day: 6, title: 'Steady cover for a busy mind', trackId: 'brown-noise' },
       { day: 7, title: 'Make it your ritual', trackId: 'slow-tide' },
     ],
   },
@@ -94,7 +96,7 @@ export const PROGRAMS: Record<string, Program> = {
     steps: [
       { day: 1, title: 'Shake off the day', trackId: 'forest' },
       { day: 2, title: 'Breathing with the pulse', trackId: 'box-breathing' },
-      { day: 3, title: 'A short sleep tale', trackId: 'penguin' },
+      { day: 3, title: 'A gentle ocean wind-down', trackId: 'penguin' },
     ],
   },
   'evening-ritual': {

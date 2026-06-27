@@ -24,7 +24,7 @@ const ADULT_RAILS: Rail[] = [
 ];
 
 const KIDS_RAILS: Rail[] = [
-  { kicker: 'Bedtime', title: 'Sleep tales', ids: ['penguin'] },
+  { kicker: 'Bedtime', title: 'Calm for little ones', ids: ['penguin'] },
   { kicker: 'Calm sounds', title: 'Drift off', ids: ['forest', 'rainfall', 'slow-tide'] },
   { kicker: 'Wind down', title: 'Calm breathing', ids: ['box-breathing'] },
 ];

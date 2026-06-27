@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { AppState, Platform, Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Reveal, Screen, SectionHeader } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -237,6 +237,25 @@ export function ListenScreen() {
     }
   };
 
+  // The setTimeout above is SUSPENDED while the app is backgrounded (but audio keeps
+  // playing). On return to foreground, re-check the saved end time: fade now if it
+  // already elapsed, else re-arm the remainder. (A true stop-while-asleep needs a
+  // native/background timer — tracked for Glowco.)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active') return;
+      getJSON<TimerState | null>('cc.sleepTimer', null).then((saved) => {
+        if (!saved || typeof saved.endAt !== 'number') return;
+        if (timerRef.current) clearTimeout(timerRef.current);
+        const remaining = saved.endAt - Date.now();
+        if (remaining <= 0) fadeAndStop();
+        else timerRef.current = setTimeout(fadeAndStop, remaining);
+      });
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const saveMix = () => {
     if (!anyOn) return;
     haptic();
@@ -246,7 +265,9 @@ export function ListenScreen() {
   };
   const loadMix = (m: SavedMix) => {
     haptic();
-    setLevels({ ...ZERO, ...m.levels });
+    // re-gate through the same helper as community mixes so a saved mix can never
+    // resurrect a premium sound for a now-free user
+    applyExternalLevels(m.levels);
   };
 
   // Apply a mix arriving from a shared community card — once, on focus. Only known
@@ -271,7 +292,29 @@ export function ListenScreen() {
       if (pending) {
         applyExternalLevels(pending);
         haptic();
+      } else {
+        // resume the current mix (it was paused on the last blur)
+        (Object.keys(players) as SoundKey[]).forEach((k) => {
+          const lvl = levelsRef.current[k];
+          try {
+            players[k].volume = lvl / 3;
+            if (lvl > 0) players[k].play();
+          } catch {
+            /* released */
+          }
+        });
       }
+      // pause everything on blur so the mixer never plays UNDER the Player / wind-down
+      return () => {
+        (Object.values(players) as ReturnType<typeof useAudioPlayer>[]).forEach((p) => {
+          try {
+            p.pause();
+          } catch {
+            /* released */
+          }
+        });
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [applyExternalLevels])
   );
 

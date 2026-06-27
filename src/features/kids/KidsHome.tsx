@@ -115,12 +115,12 @@ export function KidsHome() {
 
       {/* BIG story hero */}
       <Reveal index={3} style={{ marginTop: 22 }}>
-        <Pressable onPress={() => router.push(`/player?id=${story.id}`)} accessibilityRole="button" accessibilityLabel={`Start the story, ${story.title}`}>
+        <Pressable onPress={() => router.push(`/player?id=${story.id}`)} accessibilityRole="button" accessibilityLabel={`Play ${story.title}`}>
           <View style={{ borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image source={covers[story.cover]} style={{ width: '100%', height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
             <View style={{ padding: 20, backgroundColor: c.surface }}>
               <AppText variant="caption" tone="accent">
-                Tonight’s story
+                Tonight’s calm
               </AppText>
               <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 26, color: c.textAccent, marginTop: 4 }}>
                 {story.title}
@@ -138,7 +138,7 @@ export function KidsHome() {
                 }}>
                 <Feather name="play" size={22} color={c.ctaText} />
                 <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 18, color: c.ctaText }}>
-                  Start the story
+                  Start
                 </AppText>
               </View>
             </View>

@@ -3,7 +3,7 @@ import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   Extrapolation,
@@ -16,6 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText, GlowOrb, ProgressRing, Screen } from '@/components';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { TRACKS } from '@/content/library';
 import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
@@ -138,9 +140,15 @@ export default function WindDownScreen() {
   const reduced = useReducedMotion();
   const [paused, setPaused] = useState(false);
 
+  const { isPremium } = useAuth();
+  const { mode } = useProfile();
   // the wind-down plays the track the home screen recommended (falls back to Slow Tide)
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const track = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
+  const requested = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
+  // Never stream a locked premium track in the free wind-down ritual: fall back to a
+  // free bed. The ritual is about winding down, not a specific paid track — so a free
+  // user is neither handed paid content nor bounced to a paywall mid-calm.
+  const track = requested.locked && !isPremium && mode !== 'kids' ? TRACKS['slow-tide'] : requested;
 
   // ambient bed: the recommended track, looping, plays through the wind-down ritual
   const audio = useAudioPlayer(audioSources[track.audio]);
@@ -164,7 +172,7 @@ export default function WindDownScreen() {
   }, [paused, audio]);
 
   // session progress 0→1; the ring depletes and the scrim deepens off this value
-  const progress = useSharedValue(reduced ? 0.12 : 0);
+  const progress = useSharedValue(0);
   // controls auto-fade to "just the orb + pause" when the player is left idle
   const controls = useSharedValue(1);
   // centerpiece spring-in on mount
@@ -179,6 +187,7 @@ export default function WindDownScreen() {
   const fadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remainingRef = useRef(SESSION_MS);
   const lastStartRef = useRef<number | null>(null);
+  const endAtRef = useRef<number | null>(null); // absolute end time while running (for bg recompute)
   const endingRef = useRef(false);
 
   const endSession = useCallback(() => {
@@ -208,6 +217,7 @@ export default function WindDownScreen() {
 
   const beginCountdown = useCallback(() => {
     lastStartRef.current = Date.now();
+    endAtRef.current = Date.now() + Math.max(remainingRef.current, 0);
     if (endTimer.current) clearTimeout(endTimer.current);
     endTimer.current = setTimeout(endSession, Math.max(remainingRef.current, 0));
   }, [endSession]);
@@ -217,6 +227,7 @@ export default function WindDownScreen() {
       remainingRef.current = Math.max(remainingRef.current - (Date.now() - lastStartRef.current), 0);
       lastStartRef.current = null;
     }
+    endAtRef.current = null;
     if (endTimer.current) clearTimeout(endTimer.current);
   }, []);
 
@@ -255,6 +266,44 @@ export default function WindDownScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The end-timer setTimeout is suspended while backgrounded (audio keeps looping),
+  // so on return to foreground recompute against the absolute end time: fade NOW if
+  // 20:00 already passed, else re-arm the remainder and resync the ring. Guarded on
+  // !paused so a paused session never force-ends.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active' || paused || endingRef.current || endAtRef.current == null) return;
+      const remaining = endAtRef.current - Date.now();
+      if (endTimer.current) clearTimeout(endTimer.current);
+      if (remaining <= 0) {
+        endSession();
+        return;
+      }
+      remainingRef.current = remaining;
+      lastStartRef.current = Date.now();
+      endTimer.current = setTimeout(endSession, remaining);
+      if (!reduced) {
+        cancelAnimation(progress);
+        progress.value = Math.min(1, 1 - remaining / SESSION_MS);
+        progress.value = withTiming(1, { duration: remaining, easing: Easing.linear });
+      }
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paused, endSession, reduced]);
+
+  // Reduced motion: no continuous ring animation — advance the ring + scrim in calm
+  // 1s discrete steps off the real countdown, so time-left is still reflected.
+  useEffect(() => {
+    if (!reduced) return;
+    const tick = setInterval(() => {
+      if (paused) return;
+      const remaining = endAtRef.current != null ? endAtRef.current - Date.now() : remainingRef.current;
+      progress.value = Math.min(1, Math.max(0, 1 - remaining / SESSION_MS));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [reduced, paused, progress]);
 
   const togglePause = () => {
     const next = !paused;

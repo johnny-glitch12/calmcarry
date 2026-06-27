@@ -4,7 +4,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT, type JWTPayload } from 'jose';
 import { config } from '../config';
 
 export type SocialProvider = 'apple' | 'google';
@@ -72,5 +72,73 @@ export class SocialAuthService {
     const rawName = (payload as { name?: unknown }).name;
     const name = typeof rawName === 'string' && rawName ? rawName : email.split('@')[0];
     return { email, name, sub: String(payload.sub), emailVerified, provider };
+  }
+
+  // ---------- Sign in with Apple revoke (account-deletion requirement) ----------
+  /** True once the Services-ID + team id + key id + .p8 are configured. */
+  appleRevokeConfigured(): boolean {
+    return !!(
+      config.apple.signInClientId &&
+      config.apple.signInTeamId &&
+      config.apple.signInKeyId &&
+      config.apple.signInKeyP8
+    );
+  }
+
+  /** The short-lived ES256 client_secret JWT Apple requires for token/revoke calls. */
+  private async appleClientSecret(): Promise<string> {
+    const key = await importPKCS8(config.apple.signInKeyP8, 'ES256');
+    return new SignJWT({})
+      .setProtectedHeader({ alg: 'ES256', kid: config.apple.signInKeyId })
+      .setIssuer(config.apple.signInTeamId)
+      .setSubject(config.apple.signInClientId)
+      .setAudience('https://appleid.apple.com')
+      .setIssuedAt()
+      .setExpirationTime('5m')
+      .sign(key);
+  }
+
+  /** Exchange an authorization code for a refresh token (stored to revoke on deletion).
+   *  Returns null when unconfigured or on any failure — never throws. */
+  async appleExchangeCode(code: string): Promise<string | null> {
+    if (!this.appleRevokeConfigured() || !code) return null;
+    try {
+      const secret = await this.appleClientSecret();
+      const res = await fetch('https://appleid.apple.com/auth/token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: config.apple.signInClientId,
+          client_secret: secret,
+          grant_type: 'authorization_code',
+          code,
+        }),
+      });
+      if (!res.ok) return null;
+      const json = (await res.json()) as { refresh_token?: string };
+      return json.refresh_token ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Revoke the user's Apple tokens (best-effort; required on account deletion). */
+  async appleRevoke(refreshToken: string): Promise<void> {
+    if (!this.appleRevokeConfigured() || !refreshToken) return;
+    try {
+      const secret = await this.appleClientSecret();
+      await fetch('https://appleid.apple.com/auth/revoke', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: config.apple.signInClientId,
+          client_secret: secret,
+          token: refreshToken,
+          token_type_hint: 'refresh_token',
+        }),
+      });
+    } catch {
+      /* best-effort — never block deletion on a revoke failure */
+    }
   }
 }

@@ -59,10 +59,10 @@ export const api = {
       body: JSON.stringify({ email, password, name }),
     }),
   // Sign in with Apple / Google — backend verifies the identity token (§6/§8)
-  social: (provider: 'apple' | 'google', idToken: string) =>
+  social: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) =>
     req<{ token: string; user: ApiUser }>('/auth/social', {
       method: 'POST',
-      body: JSON.stringify({ provider, idToken }),
+      body: JSON.stringify({ provider, idToken, authorizationCode }),
     }),
   me: (token: string) => req<{ user: ApiUser; entitlement: ApiEntitlement }>('/me', {}, token),
   // permanent account + data deletion (Apple 5.1.1(v) / COPPA / GDPR)

@@ -100,13 +100,10 @@ export function Player() {
   const { mode } = useProfile();
   const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
   const track = (id && TRACKS[id]) || TRACKS['slow-tide'];
-  // premium tracks can't be played by a free user even via deep link (kids are exempt — never paywalled)
-  const blocked = !!track.locked && !isPremium && mode !== 'kids';
-
-  // server-side the signed-url endpoint also enforces this; here we keep free users out of the player
-  useEffect(() => {
-    if (blocked) router.replace(`/unlock?id=${track.id}` as Href);
-  }, [blocked, track.id, router]);
+  // Locked premium tracks give a free user a short PREVIEW, then route to the paywall
+  // (kids are exempt — never paywalled). The server signed-url still gates full audio.
+  const isPreview = !!track.locked && !isPremium && mode !== 'kids';
+  const PREVIEW_MS = 60_000;
 
   const player = useAudioPlayer(audioSources[track.audio]);
   const status = useAudioPlayerStatus(player);
@@ -143,7 +140,7 @@ export function Player() {
         /* stay on the bundled asset */
       }
       const auto = await getJSON('cc.autoplay', true);
-      if (!cancelled && auto && !blocked) player.play();
+      if (!cancelled && auto) player.play();
     })();
     return () => {
       cancelled = true;
@@ -348,6 +345,37 @@ export function Player() {
     fireCompleteRef.current = fireComplete;
   });
   useEffect(() => () => fireCompleteRef.current(false), []);
+
+  // Free preview: a locked track plays for 60s, then gently fades to the paywall —
+  // "you've felt it, now keep it" instead of a closed door. Never logs a completion.
+  useEffect(() => {
+    if (!isPreview) return;
+    const id = setTimeout(() => {
+      completedRef.current = true; // a preview is not a completed session
+      if (fadeRef.current) clearTimeout(fadeRef.current);
+      let v = 1;
+      const step = () => {
+        v -= 0.12;
+        try {
+          player.volume = Math.max(v, 0);
+        } catch {
+          /* released */
+        }
+        if (v > 0) fadeRef.current = setTimeout(step, 110);
+        else {
+          try {
+            player.pause();
+          } catch {
+            /* ignore */
+          }
+          router.replace(`/unlock?id=${track.id}` as Href);
+        }
+      };
+      step();
+    }, PREVIEW_MS);
+    return () => clearTimeout(id);
+  }, [isPreview, player, router, track.id, PREVIEW_MS]);
+
   const cycleSleep = () => {
     const i = (SLEEP_OPTIONS as readonly number[]).indexOf(sleepMin);
     const next = SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
@@ -355,14 +383,6 @@ export function Player() {
     setJSON('cc.sleepTimerMin', next);
     haptic();
   };
-
-  // don't paint a locked premium track for a frame before the redirect effect fires
-  if (blocked)
-    return (
-      <Screen mode="night">
-        <View style={{ flex: 1 }} />
-      </Screen>
-    );
 
   return (
     <Screen mode="night">
@@ -395,6 +415,28 @@ export function Player() {
             </AppText>
           </Pressable>
         </View>
+
+        {isPreview ? (
+          <View style={{ alignItems: 'center', marginTop: 8 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(143,201,190,0.45)',
+                backgroundColor: 'rgba(143,201,190,0.12)',
+              }}>
+              <Feather name="lock" size={12} color="#8FC9BE" />
+              <AppText variant="label" style={{ color: '#8FC9BE' }}>
+                Free preview
+              </AppText>
+            </View>
+          </View>
+        ) : null}
 
         {/* centerpiece — breathing guide + cover inside the playback ring */}
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

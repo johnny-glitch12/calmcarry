@@ -28,7 +28,7 @@ type AuthValue = {
   signIn: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   /** Sign in with a verified Apple/Google identity token (backend creates/resumes the account) */
-  socialSignIn: (provider: 'apple' | 'google', idToken: string) => Promise<void>;
+  socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** unlock premium. DEMO stand-in for an Apple/Google IAP — production validates
    *  the store receipt server-side before setting the entitlement. */
@@ -188,9 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const socialSignIn = useCallback(async (provider: 'apple' | 'google', idToken: string) => {
+  const socialSignIn = useCallback(async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => {
     // backend verifies the token, creates/resumes the household, returns our JWT
-    const { token: t, user: u } = await api.social(provider, idToken);
+    const { token: t, user: u } = await api.social(provider, idToken, authorizationCode);
     let ent: ApiEntitlement = FREE;
     try {
       ent = (await api.me(t)).entitlement;

@@ -32,6 +32,12 @@ export const config = {
     // App Store Server Notifications V2 verification (webhooks):
     appAppleId: parseInt(process.env.APPLE_APP_APPLE_ID ?? '0', 10), // numeric app id (prod online checks)
     rootCertsDir: process.env.APPLE_ROOT_CERTS_DIR ?? '', // dir of Apple Root CA .cer/.pem files
+    // Sign in with Apple revoke (App Store account-deletion requirement): the team id
+    // + key id + .p8 private key that sign the client_secret JWT used to exchange the
+    // auth code and revoke the user's Apple tokens when their account is deleted.
+    signInTeamId: process.env.APPLE_TEAM_ID ?? '', // PLACEHOLDER
+    signInKeyId: process.env.APPLE_SIGNIN_KEY_ID ?? '', // PLACEHOLDER
+    signInKeyP8: (process.env.APPLE_SIGNIN_KEY_P8 ?? '').replace(/\\n/g, '\n'), // PLACEHOLDER (.p8 contents)
   },
 
   // ---- Google: Sign in with Google + Play Billing validation ----
@@ -74,6 +80,10 @@ export const config = {
   // guards the CMS write endpoints (content publishing)
   cmsAdminKey: process.env.CMS_ADMIN_KEY ?? 'dev-cms-key',
 
+  // Optional shared store for rate-limit counters across serverless/multi-instance
+  // deploys. Unset → per-instance in-memory (limits don't hold across machines).
+  redisUrl: process.env.REDIS_URL ?? '',
+
   // product ids whose validated receipt grants the premium subscription. The
   // server NEVER trusts a client/receipt product id outside this allowlist.
   premiumProductIds: (
@@ -91,7 +101,13 @@ export const isProd = config.nodeEnv === 'production';
 /** Which integrations have real credentials. False → DEV-FALLBACK mode. */
 export const integrations = {
   appleSignIn: !!config.apple.signInClientId,
-  appleIap: !!config.apple.iapSharedSecret,
+  appleIap: !!config.apple.rootCertsDir, // StoreKit 2 validation uses the Apple Root CA certs
+  appleRevoke: !!(
+    config.apple.signInClientId &&
+    config.apple.signInTeamId &&
+    config.apple.signInKeyId &&
+    config.apple.signInKeyP8
+  ),
   googleSignIn: !!config.google.signInClientId,
   googleIap: !!config.google.playServiceAccountJson,
   shopify: !!(config.shopify.shop && config.shopify.adminToken),

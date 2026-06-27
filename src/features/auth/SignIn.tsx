@@ -49,11 +49,11 @@ export function SignIn() {
     androidClientId: GOOGLE.androidClientId,
   });
 
-  const social = async (provider: 'apple' | 'google', idToken: string) => {
+  const social = async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => {
     setBusy(true);
     setError(null);
     try {
-      await socialSignIn(provider, idToken);
+      await socialSignIn(provider, idToken, authorizationCode);
       router.replace('/');
     } catch {
       setError('Social sign-in isn’t available yet — try email, or add the provider keys.');
@@ -78,7 +78,7 @@ export function SignIn() {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      if (cred.identityToken) await social('apple', cred.identityToken);
+      if (cred.identityToken) await social('apple', cred.identityToken, cred.authorizationCode ?? undefined);
     } catch {
       /* user cancelled the Apple sheet */
     }

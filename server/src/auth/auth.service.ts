@@ -26,7 +26,7 @@ export class AuthService {
   ) {}
 
   /** Sign in with Apple / Google — verifies the identity token, then finds or creates the household. */
-  async socialLogin(provider: SocialProvider, idToken: string): Promise<AuthResult> {
+  async socialLogin(provider: SocialProvider, idToken: string, authorizationCode?: string): Promise<AuthResult> {
     const id = await this.social.verify(provider, idToken);
     let owner = await this.usersService.findByEmail(id.email);
     if (!owner) {
@@ -39,7 +39,21 @@ export class AuthService {
       // by claiming its address. Require a provider-verified email to merge.
       throw new UnauthorizedException('Email not verified by the provider');
     }
+    // Sign in with Apple: capture a refresh token so we can revoke the user's Apple
+    // tokens if they later delete their account (Apple App Store requirement).
+    if (provider === 'apple' && authorizationCode && this.social.appleRevokeConfigured()) {
+      const refresh = await this.social.appleExchangeCode(authorizationCode);
+      if (refresh) await this.usersService.setAppleRefreshToken(owner.id, refresh);
+    }
     return this.buildAuthResult(owner);
+  }
+
+  /** Account deletion: revoke Sign in with Apple tokens FIRST (Apple requirement),
+   *  then erase all data. Revoke is best-effort and never blocks the deletion. */
+  async deleteAccount(ownerId: string): Promise<void> {
+    const owner = await this.usersService.findById(ownerId);
+    if (owner?.appleRefreshToken) await this.social.appleRevoke(owner.appleRefreshToken);
+    await this.usersService.deleteAccount(ownerId);
   }
 
   // A fixed bcrypt hash so the "unknown email" path still performs a comparison —

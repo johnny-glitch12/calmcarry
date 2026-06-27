@@ -1,10 +1,11 @@
 import './load-env'; // MUST be first — populates process.env before ./config reads it
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { config, integrations, isProd } from './config';
 
 async function bootstrap() {
@@ -73,6 +74,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Surface unhandled 5xx errors + failed webhook verifications in the logs.
+  app.useGlobalFilters(new AllExceptionsFilter(app.get(HttpAdapterHost)));
 
   await app.listen(config.port, '0.0.0.0');
 

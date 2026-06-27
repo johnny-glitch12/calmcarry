@@ -5,7 +5,9 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppText, GlowOrb, Logo, PrimaryButton, Screen } from '@/components';
+import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
 import { covers, type CoverKey } from '@/content/covers';
+import { TRACKS } from '@/content/library';
 import { markOnboarded } from '@/lib/onboarding';
 import { useTheme } from '@/theme';
 
@@ -33,10 +35,25 @@ const SLIDES: Slide[] = [
   },
 ];
 
+// The personalization step — same warm, forward-looking feelings as the nightly
+// check-in (safe words only; no clinical terms). Picks the first session so the
+// recommendation feels earned before the paywall ever appears.
+const FEELINGS: { id: Feeling; label: string }[] = [
+  { id: 'racing', label: 'My mind’s racing' },
+  { id: 'cant-switch-off', label: 'I can’t switch off' },
+  { id: 'wired-tired', label: 'Wired but tired' },
+  { id: 'wound-up', label: 'I’m wound up' },
+  { id: 'heavy-day', label: 'It’s been a heavy day' },
+  { id: 'quiet', label: 'I just want quiet' },
+];
+
 export function Onboarding() {
   const router = useRouter();
   const { c } = useTheme();
+  const { setFeeling } = useProfile();
+  const [stage, setStage] = useState<'intro' | 'quiz' | 'result'>('intro');
   const [i, setI] = useState(0);
+  const [chosen, setChosen] = useState<Feeling | null>(null);
   const last = i === SLIDES.length - 1;
   const slide = SLIDES[i];
 
@@ -45,18 +62,107 @@ export function Onboarding() {
     router.replace('/auth');
   };
 
-  return (
-    <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-      {/* brand + skip */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
-        <Logo size="sm" />
-        {!last ? (
+  const pick = (f: Feeling) => {
+    setChosen(f);
+    setFeeling(f); // seeds the recommendation for this session (best-effort)
+    setStage('result');
+  };
+
+  // ---- personalization quiz ----
+  if (stage === 'quiz') {
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
+          <Logo size="sm" />
           <Pressable onPress={finish} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
             <AppText variant="label" tone="muted">
               Skip
             </AppText>
           </Pressable>
-        ) : null}
+        </View>
+        <Animated.View entering={FadeIn.duration(320)} style={{ flex: 1, justifyContent: 'center' }}>
+          <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
+            How are you arriving tonight?
+          </AppText>
+          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12, alignSelf: 'center' }}>
+            Just so we can start you somewhere that fits. There’s no wrong answer.
+          </AppText>
+          <View style={{ gap: 10, marginTop: 28 }}>
+            {FEELINGS.map((f) => (
+              <Pressable
+                key={f.id}
+                onPress={() => pick(f.id)}
+                accessibilityRole="button"
+                accessibilityLabel={f.label}>
+                <View
+                  style={{
+                    paddingVertical: 16,
+                    paddingHorizontal: 18,
+                    borderRadius: 14,
+                    backgroundColor: c.surface,
+                    borderWidth: 1,
+                    borderColor: c.line,
+                    ...c.shadow,
+                  }}>
+                  <AppText variant="bodyMedium" tone="title">
+                    {f.label}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+      </Screen>
+    );
+  }
+
+  // ---- earned first recommendation (primes the soft paywall) ----
+  if (stage === 'result' && chosen) {
+    const map = FEELING_MAP[chosen];
+    const track = TRACKS[map.track] ?? TRACKS['slow-tide'];
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <View style={{ minHeight: 28 }}>
+          <Logo size="sm" />
+        </View>
+        <Animated.View entering={FadeIn.duration(360)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Image
+            source={covers[track.cover]}
+            style={{ width: 200, height: 200, borderRadius: 28 }}
+            contentFit="cover"
+            accessibilityIgnoresInvertColors
+          />
+          <AppText variant="caption" tone="accent" style={{ marginTop: 20 }}>
+            {map.line}
+          </AppText>
+          <AppText variant="display" tone="title" style={{ textAlign: 'center', marginTop: 6 }}>
+            We’ll start you with {track.title}
+          </AppText>
+          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300, marginTop: 10 }}>
+            It’s yours free tonight. Create your account to keep your picks across the household.
+          </AppText>
+        </Animated.View>
+        <PrimaryButton label="Create your account" onPress={finish} />
+        <Pressable onPress={() => setStage('quiz')} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
+          <AppText variant="label" tone="muted">
+            Choose again
+          </AppText>
+        </Pressable>
+      </Screen>
+    );
+  }
+
+  // ---- intro slides ----
+  return (
+    <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+      {/* brand + skip */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
+        <Logo size="sm" />
+        <Pressable onPress={finish} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
+          <AppText variant="label" tone="muted">
+            Skip
+          </AppText>
+        </Pressable>
       </View>
 
       {/* slide */}
@@ -100,9 +206,8 @@ export function Onboarding() {
 
       <PrimaryButton
         label={last ? 'Get started' : 'Next'}
-        onPress={() => (last ? finish() : setI((v) => v + 1))}
+        onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))}
       />
-      {/* Back — let people revisit a slide (ui-ux-pro-max: provide Skip AND Back) */}
       {i > 0 ? (
         <Pressable
           onPress={() => setI((v) => Math.max(0, v - 1))}

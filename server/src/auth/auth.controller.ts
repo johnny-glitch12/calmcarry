@@ -44,7 +44,7 @@ export class AuthController {
   @Throttle(CREDENTIAL_THROTTLE)
   @Post('auth/social')
   social(@Body() dto: SocialLoginDto) {
-    return this.authService.socialLogin(dto.provider, dto.idToken);
+    return this.authService.socialLogin(dto.provider, dto.idToken, dto.authorizationCode);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -75,7 +75,14 @@ export class AuthController {
   @Delete('me')
   @HttpCode(200)
   async deleteMe(@CurrentUser() user: JwtPayload) {
-    await this.usersService.deleteAccount(user.sub);
+    await this.authService.deleteAccount(user.sub);
     return { ok: true, deleted: true };
+  }
+
+  // Data-access export (GDPR Art.15 / UK-GDPR / AU APP 12) — the caller's own data.
+  @UseGuards(JwtAuthGuard)
+  @Get('me/export')
+  exportMe(@CurrentUser() user: JwtPayload) {
+    return this.usersService.exportAccount(user.sub);
   }
 }

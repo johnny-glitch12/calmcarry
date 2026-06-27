@@ -23,6 +23,11 @@ export class Owner {
   @Column()
   name: string;
 
+  // Sign in with Apple refresh token — kept ONLY so we can call Apple's /auth/revoke
+  // when this account is deleted (Apple's account-deletion requirement). Never exported.
+  @Column({ type: 'text', nullable: true })
+  appleRefreshToken: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -18,6 +18,7 @@ import { LogsModule } from './logs/logs.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OwnershipModule } from './ownership/ownership.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { RetentionModule } from './retention/retention.module';
 import { SeedModule } from './seed/seed.module';
 import { UsersModule } from './users/users.module';
 
@@ -44,6 +45,9 @@ import { UsersModule } from './users/users.module';
     // Global DoS backstop: 300 requests / 10s / IP — generous enough for a normal
     // app-open burst + shared (NAT) networks, still caps sustained abuse. Auth
     // routes are tightened to 10/min; /health is skipped (monitoring pings it).
+    // NOTE: storage is in-memory (per instance) — on serverless/multi-instance these
+    // counters don't hold across machines. Set REDIS_URL + a shared ThrottlerStorage
+    // (e.g. @nest-lab/throttler-storage-redis) before scaling horizontally.
     ThrottlerModule.forRoot([{ ttl: 10_000, limit: 300 }]),
     IntegrationsModule,
     AuthModule,
@@ -60,6 +64,7 @@ import { UsersModule } from './users/users.module';
     EventsModule,
     HouseholdModule,
     CaregiversModule,
+    RetentionModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

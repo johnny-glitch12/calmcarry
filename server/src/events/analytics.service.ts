@@ -46,21 +46,49 @@ export class AnalyticsService {
     return rows.length;
   }
 
-  /** Aggregate funnel counts per event name + the session completion rate (§15). */
-  async funnel(): Promise<Record<string, number>> {
-    const rows = await this.repo
-      .createQueryBuilder('e')
-      .select('e.name', 'name')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('e.name')
-      .getRawMany<{ name: string; count: string }>();
-    const counts: Record<string, number> = {};
-    for (const r of rows) counts[r.name] = Number(r.count);
-    const starts = counts['session_start'] ?? 0;
-    const completes = counts['session_complete'] ?? 0;
-    return {
-      ...counts,
-      completionRate: starts ? Math.round((completes / starts) * 100) / 100 : 0,
-    };
+  private static readonly STAGES = [
+    'app_open',
+    'sign_up',
+    'sign_in',
+    'check_in_shown',
+    'session_start',
+    'session_complete',
+    'paywall_view',
+    'subscribe_success',
+    'subscription_cancelled',
+  ];
+
+  /** Per-window funnel: stage counts + completion rate + paywall conversion for
+   *  all-time / last-30d / last-7d (§15). Uses createdAt range filters so it's
+   *  portable across SQLite (dev) and Postgres (prod). */
+  async funnel(): Promise<Record<string, unknown>> {
+    const windows: { key: string; sinceMs: number | null }[] = [
+      { key: 'allTime', sinceMs: null },
+      { key: 'last30d', sinceMs: 30 * 86_400_000 },
+      { key: 'last7d', sinceMs: 7 * 86_400_000 },
+    ];
+    const out: Record<string, unknown> = {};
+    for (const w of windows) {
+      const qb = this.repo
+        .createQueryBuilder('e')
+        .select('e.name', 'name')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('e.name');
+      if (w.sinceMs) qb.where('e.createdAt >= :since', { since: new Date(Date.now() - w.sinceMs) });
+      const rows = await qb.getRawMany<{ name: string; count: string }>();
+      const counts: Record<string, number> = {};
+      for (const s of AnalyticsService.STAGES) counts[s] = 0;
+      for (const r of rows) counts[r.name] = Number(r.count);
+      const starts = counts['session_start'] || 0;
+      const completes = counts['session_complete'] || 0;
+      const paywallViews = counts['paywall_view'] || 0;
+      const subscribes = counts['subscribe_success'] || 0;
+      out[w.key] = {
+        ...counts,
+        completionRate: starts ? Math.round((completes / starts) * 100) / 100 : 0,
+        paywallConversion: paywallViews ? Math.round((subscribes / paywallViews) * 100) / 100 : 0,
+      };
+    }
+    return out;
   }
 }

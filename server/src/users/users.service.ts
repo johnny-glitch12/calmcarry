@@ -54,6 +54,38 @@ export class UsersService {
     });
   }
 
+  /** Store/clear the Apple refresh token used to revoke the user's tokens on deletion. */
+  async setAppleRefreshToken(ownerId: string, token: string | null): Promise<void> {
+    await this.ownerRepo.update({ id: ownerId }, { appleRefreshToken: token });
+  }
+
+  /** GDPR/UK-GDPR/AU-APP12 data-access export — the account's own data as JSON
+   *  (build plan §13). NEVER includes the password hash or the Apple refresh token. */
+  async exportAccount(ownerId: string): Promise<Record<string, unknown>> {
+    const owner = await this.ownerRepo.findOne({ where: { id: ownerId } });
+    if (!owner) return {};
+    const profileRepo = this.dataSource.getRepository(Profile);
+    const profiles = await profileRepo.find({ where: { ownerId } });
+    const profileIds = profiles.map((p) => p.id);
+    const [devices, entitlements, savedMixes, sessionLogs] = await Promise.all([
+      this.dataSource.getRepository(Device).find({ where: { ownerId } }),
+      this.entitlementRepo.find({ where: { ownerId } }),
+      profileIds.length
+        ? this.dataSource.getRepository(SavedMix).find({ where: { profileId: In(profileIds) } })
+        : Promise.resolve([]),
+      this.dataSource.getRepository(SessionLog).find({ where: { ownerId } }),
+    ]);
+    return {
+      exportedAt: new Date().toISOString(),
+      account: { id: owner.id, email: owner.email, name: owner.name, createdAt: owner.createdAt },
+      profiles,
+      devices,
+      entitlements,
+      savedMixes,
+      sessionLogs,
+    };
+  }
+
   findByEmail(email: string): Promise<Owner | null> {
     return this.ownerRepo.findOne({ where: { email } });
   }

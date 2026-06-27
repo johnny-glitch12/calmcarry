@@ -117,3 +117,30 @@ export const integrations = {
 
 /** In dev (no prod keys) we simulate success so the app runs without credentials. */
 export const devFallback = config.nodeEnv !== 'production';
+
+/**
+ * The production secret-gate. Returns the list of missing/default critical secrets
+ * (empty in non-prod). BOTH entrypoints (main.ts and the Vercel serverless function)
+ * MUST call this before serving — otherwise prod could silently boot on the public
+ * dev JWT secret + dev fallbacks. Pure (no logging/exit) so each caller decides how
+ * to fail (main exits the process; serverless throws so the function 500s).
+ */
+export function prodSecretGaps(): string[] {
+  if (!isProd) return [];
+  const missing: string[] = [];
+  if (!process.env.JWT_SECRET || config.jwtSecret.includes('change-me')) missing.push('JWT_SECRET');
+  if (config.cmsAdminKey === 'dev-cms-key') missing.push('CMS_ADMIN_KEY');
+  if (!config.databaseUrl) missing.push('DATABASE_URL');
+  if (!config.cdn.baseUrl || !config.cdn.signingKey) missing.push('CDN_BASE_URL + CDN_SIGNING_KEY');
+  if (!config.corsOrigins.length) missing.push('CORS_ORIGINS');
+  if (!config.apple.signInClientId && !config.google.signInClientId) missing.push('APPLE_SIGNIN_CLIENT_ID or GOOGLE_SIGNIN_CLIENT_ID');
+  if (!integrations.appleIap && !integrations.googleIap) missing.push('APPLE_IAP_SHARED_SECRET or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
+  return missing;
+}
+
+/** True if NODE_ENV is set to an unrecognized value (a typo like "prod"/"staging"
+ *  would run every prod guard OFF). Both entrypoints refuse to start on this. */
+export function nodeEnvIsInvalid(): boolean {
+  const raw = process.env.NODE_ENV;
+  return !!raw && !['development', 'test', 'production'].includes(raw);
+}

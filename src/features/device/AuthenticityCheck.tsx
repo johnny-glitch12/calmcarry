@@ -22,7 +22,7 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 const CHECK_PATH = 'M5 12.5 L10 17.5 L19 7';
 const CHECK_LEN = 28;
 
-type ApiDevice = { id: string; serial: string; model?: string };
+type ApiDevice = { id: string; serial: string; model?: string; warrantyStatus?: string; warrantyMonths?: number };
 type Phase = 'checking' | 'authentic' | 'unverified';
 
 /** The sage check that strokes on (strokeDashoffset reveal) + a soft scale settle. */
@@ -54,11 +54,13 @@ function DrawOnCheck({ size, draw }: { size: number; draw: SharedValue<number> }
 }
 
 /**
- * AuthenticityCheck — the app's defining TRUST moment (§4 "Authenticity check",
- * §7 Peak). It verifies against the device actually registered to the account:
- * a breathing "checking" state, then either a genuine confirmation (sage check
- * DRAWS ON over a one-shot GlowOrb burst, real serial revealed) or an honest
- * "can't confirm" state that routes to registration. No device → no green check.
+ * AuthenticityCheck — the device-registration TRUST moment (§4, §7 Peak). It is
+ * HONEST: it confirms the Glow Orb actually registered to this account (warranty +
+ * replacement support), NOT a cryptographic genuineness proof — we have no
+ * manufactured-serial registry yet, so we never claim "genuine/verified authentic"
+ * from a registration alone. Registered → sage check + real device on file;
+ * no device → an invitation to register. (When Glowco supplies a serial registry,
+ * upgrade the copy + a server `verified` flag.)
  */
 export function AuthenticityCheck() {
   const { c } = useTheme();
@@ -115,7 +117,7 @@ export function AuthenticityCheck() {
   return (
     <Screen mode="light" scroll tabBarSpacing contentStyle={{ alignItems: 'center', paddingTop: 24 }}>
       <AppText variant="caption" tone="accent">
-        {authentic ? 'Verified' : checking ? 'Checking' : 'Not verified'}
+        {authentic ? 'Registered' : checking ? 'Checking' : 'Not registered'}
       </AppText>
 
       {/* orb + check overlay — reserveGlow keeps the halo from bleeding onto the text */}
@@ -129,17 +131,17 @@ export function AuthenticityCheck() {
       {authentic ? (
         <Reveal index={0} style={{ alignItems: 'center', marginTop: 8 }}>
           <AppText variant="h1" tone="title">
-            Genuine Glow Orb
+            Registered to your account
           </AppText>
         </Reveal>
       ) : checking ? (
         <AppText variant="h1" tone="title" style={{ marginTop: 8 }}>
-          Checking authenticity…
+          Checking your device…
         </AppText>
       ) : (
         <Reveal index={0} style={{ alignItems: 'center', marginTop: 8 }}>
           <AppText variant="h1" tone="title" style={{ textAlign: 'center' }}>
-            We can’t confirm this device
+            No device registered yet
           </AppText>
         </Reveal>
       )}
@@ -148,7 +150,7 @@ export function AuthenticityCheck() {
         <>
           <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300 }}>
-              Genuine Glow Company device · registered to your account
+              On file with The Glow Company · warranty &amp; replacement support active
             </AppText>
           </Reveal>
 
@@ -166,12 +168,21 @@ export function AuthenticityCheck() {
               }}>
               <Row label="Model" value={device?.model ?? 'CalmCarry · Glow Orb'} />
               <Row label="Serial" value={device?.serial ?? '—'} />
-              <Row label="Warranty" value="Active · 24 months" />
+              <Row
+                label="Warranty"
+                value={
+                  device?.warrantyStatus === 'active'
+                    ? `Active · ${device?.warrantyMonths ?? 24} months`
+                    : device?.warrantyStatus
+                      ? device.warrantyStatus.charAt(0).toUpperCase() + device.warrantyStatus.slice(1)
+                      : '—'
+                }
+              />
             </View>
           </Reveal>
 
           <Reveal index={3} style={{ alignItems: 'center', marginTop: 16 }}>
-            <StatusChip label="Authenticity confirmed" icon="shield" confirm />
+            <StatusChip label="Registered & covered" icon="shield" confirm />
           </Reveal>
 
           <Reveal index={4} style={{ alignSelf: 'stretch', marginTop: 20 }}>
@@ -183,8 +194,8 @@ export function AuthenticityCheck() {
           <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320 }}>
               {!token || token === 'local'
-                ? 'Sign in and register your Glow Orb so we can confirm it’s genuine and activate its warranty.'
-                : 'No genuine Glow Orb is registered to this account yet. Register your device to confirm it’s authentic and covered.'}
+                ? 'Sign in and register your Glow Orb to activate its warranty and replacement support.'
+                : 'No Glow Orb is registered to this account yet. Register your device to activate its warranty and replacement support.'}
             </AppText>
           </Reveal>
           <Reveal index={2} style={{ alignSelf: 'stretch', marginTop: 24 }}>

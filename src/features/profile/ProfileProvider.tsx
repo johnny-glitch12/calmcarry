@@ -12,7 +12,8 @@ import {
 import { useAuth } from '@/features/auth/AuthProvider';
 import { setAnalyticsMode } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { getRecents } from '@/lib/recents';
+import { clearCoppaConsent } from '@/lib/consent';
+import { clearRecents, getRecents } from '@/lib/recents';
 import { recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
 
@@ -212,6 +213,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setJSON(KEYS.profiles, DEFAULT_PROFILES);
     setJSON(KEYS.activeId, DEFAULT_PROFILES[0].id);
     remove(KEYS.intent);
+    // COPPA: consent is per-account — never let account B inherit account A's
+    // consent (it would skip the consent screen for a new kid profile). Also drop
+    // the previous account's on-disk recents (memory was cleared above).
+    clearCoppaConsent();
+    clearRecents();
   }, [hydrated, token, user?.email]);
 
   const setActiveProfile = useCallback((id: string) => {

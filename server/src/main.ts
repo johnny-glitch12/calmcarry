@@ -6,7 +6,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
-import { config, integrations, isProd } from './config';
+import { config, integrations, isProd, nodeEnvIsInvalid, prodSecretGaps } from './config';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -15,34 +15,20 @@ async function bootstrap() {
   // silently run with every prod guard OFF (dev JWT secret, dev fallbacks), so a
   // set-but-unrecognized value is a hard boot failure. An UNSET value is allowed
   // for local dev but warned loudly — a real deployment must export NODE_ENV.
-  const rawEnv = process.env.NODE_ENV;
-  if (rawEnv && !['development', 'test', 'production'].includes(rawEnv)) {
-    logger.error(`Refusing to start: unrecognized NODE_ENV="${rawEnv}". Use development | test | production.`);
+  if (nodeEnvIsInvalid()) {
+    logger.error(`Refusing to start: unrecognized NODE_ENV="${process.env.NODE_ENV}". Use development | test | production.`);
     process.exit(1);
   }
-  if (!rawEnv) {
+  if (!process.env.NODE_ENV) {
     logger.warn('NODE_ENV is unset — running in INSECURE development posture. Set NODE_ENV=production for any deployment.');
   }
 
-  // Fail fast in production if critical secrets are missing/default. We guard the
-  // secrets the app actually uses (NOT DATABASE_URL — the app runs on SQLite).
-  if (isProd) {
-    const missing: string[] = [];
-    if (!process.env.JWT_SECRET || config.jwtSecret.includes('change-me')) missing.push('JWT_SECRET');
-    if (config.cmsAdminKey === 'dev-cms-key') missing.push('CMS_ADMIN_KEY');
-    // Prod must run on a real (Postgres) DB, not the local SQLite file.
-    if (!config.databaseUrl) missing.push('DATABASE_URL');
-    // Without CDN signing, "locked" audio would be served as unsigned public URLs.
-    if (!config.cdn.baseUrl || !config.cdn.signingKey) missing.push('CDN_BASE_URL + CDN_SIGNING_KEY');
-    if (!config.corsOrigins.length) missing.push('CORS_ORIGINS');
-    // Sign-in & billing fail closed (503) without these; refuse a prod deploy that
-    // would silently ship with social login / receipt validation disabled.
-    if (!config.apple.signInClientId && !config.google.signInClientId) missing.push('APPLE_SIGNIN_CLIENT_ID or GOOGLE_SIGNIN_CLIENT_ID');
-    if (!integrations.appleIap && !integrations.googleIap) missing.push('APPLE_IAP_SHARED_SECRET or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
-    if (missing.length) {
-      logger.error(`Refusing to start in production — set: ${missing.join(', ')}`);
-      process.exit(1);
-    }
+  // Fail fast in production if critical secrets are missing/default (shared gate so
+  // the serverless entrypoint enforces the exact same posture).
+  const missing = prodSecretGaps();
+  if (missing.length) {
+    logger.error(`Refusing to start in production — set: ${missing.join(', ')}`);
+    process.exit(1);
   }
 
   // rawBody enables HMAC verification of the Shopify order webhook

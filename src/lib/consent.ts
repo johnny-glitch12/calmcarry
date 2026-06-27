@@ -1,4 +1,4 @@
-import { getJSON, setJSON } from './store';
+import { getJSON, remove, setJSON } from './store';
 
 /**
  * COPPA verifiable-parental-consent record (build plan §13). Before any child
@@ -23,4 +23,11 @@ export async function hasCoppaConsent(): Promise<boolean> {
 
 export async function recordCoppaConsent(): Promise<void> {
   await setJSON(KEY, { acceptedAt: Date.now(), version: VERSION } satisfies ConsentRecord);
+}
+
+/** Consent is per-ACCOUNT, not per-device: clear it on sign-out / account switch so
+ *  a second account can never inherit the first parent's consent and add a kid
+ *  profile with no consent ever shown (COPPA). */
+export async function clearCoppaConsent(): Promise<void> {
+  await remove(KEY);
 }

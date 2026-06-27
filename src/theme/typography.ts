@@ -17,6 +17,9 @@ export const fonts = {
   // Montserrat — headings & display
   heading: 'Montserrat_600SemiBold',
   display: 'Montserrat_700Bold',
+  // dedicated brand-lockup weight (the "calm" wordmark) — heavier than display,
+  // used ONLY by the Logo component, never for body/display text.
+  logoMark: 'Montserrat_800ExtraBold',
 } as const;
 
 /** The font modules to pass to useFonts() in the root layout. */
@@ -27,6 +30,7 @@ export const fontMap = {
   Poppins_700Bold: require('@expo-google-fonts/poppins/700Bold/Poppins_700Bold.ttf'),
   Montserrat_600SemiBold: require('@expo-google-fonts/montserrat/600SemiBold/Montserrat_600SemiBold.ttf'),
   Montserrat_700Bold: require('@expo-google-fonts/montserrat/700Bold/Montserrat_700Bold.ttf'),
+  Montserrat_800ExtraBold: require('@expo-google-fonts/montserrat/800ExtraBold/Montserrat_800ExtraBold.ttf'),
 };
 
 /**

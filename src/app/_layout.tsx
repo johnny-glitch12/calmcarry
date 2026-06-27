@@ -166,6 +166,7 @@ function RootNav() {
       <Stack.Screen name="replacement-claim" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
       <Stack.Screen name="shop" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
       <Stack.Screen name="about" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+      <Stack.Screen name="privacy" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
       <Stack.Screen name="parent-gate" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal }} />
       <Stack.Screen name="program" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
       <Stack.Screen name="learn" options={{ animation: 'slide_from_right', gestureEnabled: true }} />

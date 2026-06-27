@@ -2,14 +2,17 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 /**
- * The nightly wind-down reminder (build plan §8/§12: "gentle, opt-in, rare").
- * Implemented as a REAL repeating LOCAL notification via expo-notifications —
- * no server/push keys required. Local notifications are native-only, so on web
- * this is a no-op and the toggle is hidden (we never show a control that can't work).
+ * Local notifications (build plan §8/§12: "gentle, opt-in, rare"). Two distinct,
+ * separately-cancellable reminders so toggling one never clears the other:
+ *  - the nightly wind-down nudge (recurring, user-set time)
+ *  - the honest free-trial pre-charge reminder (one-off, before the trial ends)
+ * Native-only; on web these are no-ops and the controls are hidden.
  */
 const DEFAULT_HOUR = 21;
 const DEFAULT_MINUTE = 30; // a gentle 9:30pm local nudge
 const supported = Platform.OS !== 'web';
+const BEDTIME_ID = 'cc-bedtime-reminder';
+const TRIAL_ID = 'cc-trial-ending';
 
 export const remindersSupported = supported;
 
@@ -23,11 +26,17 @@ export const REMINDER_TIMES = [
   { hour: 23, minute: 0, label: '11:00 PM' },
 ] as const;
 
+async function ensurePermission(): Promise<boolean> {
+  const current = await Notifications.getPermissionsAsync();
+  if (current.status === 'granted') return true;
+  const asked = await Notifications.requestPermissionsAsync();
+  return asked.status === 'granted';
+}
+
 /**
- * Enable/disable the nightly reminder. On enable, asks OS permission and
- * schedules a real daily notification; on disable, cancels it. Returns true
- * only if a real reminder is now scheduled (false on web / denied permission),
- * so the UI never shows "on" for something that isn't actually scheduled.
+ * Enable/disable the nightly reminder at the chosen time. Cancels ONLY the bedtime
+ * notification (by id) so an unrelated trial reminder survives. Returns true only if
+ * one is actually scheduled (false on web / denied) so the UI never shows a phantom on.
  */
 export async function setBedtimeReminder(
   enabled: boolean,
@@ -36,18 +45,11 @@ export async function setBedtimeReminder(
 ): Promise<boolean> {
   if (!supported) return false;
   try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    await Notifications.cancelScheduledNotificationAsync(BEDTIME_ID).catch(() => {});
     if (!enabled) return false;
-
-    const current = await Notifications.getPermissionsAsync();
-    let granted = current.status === 'granted';
-    if (!granted) {
-      const req = await Notifications.requestPermissionsAsync();
-      granted = req.status === 'granted';
-    }
-    if (!granted) return false;
-
+    if (!(await ensurePermission())) return false;
     await Notifications.scheduleNotificationAsync({
+      identifier: BEDTIME_ID,
       content: { title: 'A gentle nudge', body: 'Time to wind down with CalmCarry.' },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
     });
@@ -55,4 +57,35 @@ export async function setBedtimeReminder(
   } catch {
     return false;
   }
+}
+
+/**
+ * The honest free-trial pre-charge reminder — fires ~1 day before the trial ends so
+ * the user is never surprise-charged (the exact trap CalmCarry's brand exists to avoid).
+ * Best-effort; safe to call on trial start.
+ */
+export async function scheduleTrialEndingReminder(trialDays: number, priceLabel: string): Promise<void> {
+  if (!supported || trialDays <= 0) return;
+  try {
+    if (!(await ensurePermission())) return;
+    await Notifications.cancelScheduledNotificationAsync(TRIAL_ID).catch(() => {});
+    const renewAt = new Date(Date.now() + trialDays * 86_400_000);
+    const fireAt = new Date(Date.now() + Math.max(trialDays - 1, 1) * 86_400_000);
+    await Notifications.scheduleNotificationAsync({
+      identifier: TRIAL_ID,
+      content: {
+        title: 'Your free trial ends soon',
+        body: `You'll be charged ${priceLabel} on ${renewAt.toLocaleDateString()} unless you cancel. Tap to manage anytime — one tap, no hassle.`,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Clear the trial reminder (e.g. the user cancelled, or already converted). */
+export async function clearTrialEndingReminder(): Promise<void> {
+  if (!supported) return;
+  await Notifications.cancelScheduledNotificationAsync(TRIAL_ID).catch(() => {});
 }

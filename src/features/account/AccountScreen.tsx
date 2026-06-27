@@ -1,13 +1,13 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, Switch, View } from 'react-native';
+import { Linking, Pressable, Share, Switch, View } from 'react-native';
 
 import { AppText, GlowOrb, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
-import { PRIVACY_URL, SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
+import { SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
@@ -104,6 +104,7 @@ export function AccountScreen() {
   const [anonymous, setAnonymous] = useState(true); // community anonymity — ON by default (§6)
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [renewAt, setRenewAt] = useState<string | null>(null);
 
   // hydrate persisted preferences
   useEffect(() => {
@@ -115,6 +116,20 @@ export function AccountScreen() {
       setAnonymous(await getJSON('cc.anonymous', true));
     })();
   }, []);
+
+  // Show the next charge date IN-APP (BetterSleep hides it; opacity is what fuels
+  // their surprise-charge complaints). Premium + signed-in only; offline-safe.
+  useEffect(() => {
+    if (!isPremium || !token || token === 'local') return;
+    let alive = true;
+    api
+      .billingStatus(token)
+      .then((s) => alive && setRenewAt(s.expiresAt ?? null))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [isPremium, token]);
 
   // schedules a REAL daily local notification; only shows ON if one was actually
   // scheduled (permission granted) — never a toggle that quietly does nothing.
@@ -179,6 +194,17 @@ export function AccountScreen() {
     }
   };
 
+  // GDPR / UK-GDPR / AU APP 12 data-access export — hand the user their own data.
+  const onExport = async () => {
+    if (!token || token === 'local') return;
+    try {
+      const data = await api.exportMe(token);
+      await Share.share({ message: JSON.stringify(data, null, 2) });
+    } catch {
+      /* offline / unavailable — silent */
+    }
+  };
+
   // entering kids requires a parent PIN to exist first (so a child can't create one and walk out)
   const enterKids = async () => {
     if (await hasParentPin()) {
@@ -228,6 +254,11 @@ export function AccountScreen() {
               ? 'Premium is on — the full library, programs and the whole sound machine, shared across your household.'
               : 'Unlock the full library, programs and sound machine with CalmCarry Premium.'}
           </AppText>
+          {isPremium && renewAt ? (
+            <AppText variant="label" tone="muted" style={{ marginTop: 8, textTransform: 'none', letterSpacing: 0 }}>
+              Renews {new Date(renewAt).toLocaleDateString()} · manage anytime, one tap
+            </AppText>
+          ) : null}
           <View style={{ marginTop: 12 }}>
             <StatusChip
               label={isPremium ? 'Premium active' : 'Go Premium'}
@@ -300,7 +331,10 @@ export function AccountScreen() {
           <SettingRow icon="box" label="My CalmCarry" onPress={() => router.push('/device' as Href)} />
           <SettingRow icon="users" label="Family & devices" onPress={() => router.push('/family')} />
           <SettingRow icon="bell" label="Notifications" onPress={() => Linking.openSettings().catch(() => {})} />
-          <SettingRow icon="lock" label="Privacy & data" onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} />
+          <SettingRow icon="shield" label="Your data & privacy" onPress={() => router.push('/privacy' as Href)} />
+          {token && token !== 'local' ? (
+            <SettingRow icon="download" label="Export my data" onPress={onExport} />
+          ) : null}
           <SettingRow icon="help-circle" label="Help & support" onPress={() => Linking.openURL(SUPPORT_URL).catch(() => {})} />
           <SettingRow icon="info" label="About CalmCarry" onPress={() => router.push('/about' as Href)} last />
         </Group>

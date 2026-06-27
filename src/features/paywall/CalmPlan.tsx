@@ -5,10 +5,11 @@ import { Linking, Pressable, View } from 'react-native';
 
 import { AppText, GlowOrb, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { PRICING, PRIVACY_URL, TERMS_URL, type PlanId } from '@/content/store';
+import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { fetchLocalizedPrices, iapSupported, purchaseSubscription, restoreSubscription } from '@/lib/iap';
+import { scheduleTrialEndingReminder } from '@/lib/reminders';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { brand, useTheme } from '@/theme';
 
@@ -167,6 +168,8 @@ export function CalmPlan() {
     if (ok) {
       await activatePremium();
       track('subscribe_success', { plan });
+      // Honest trial: WE own the pre-charge reminder so the trial can never surprise-charge.
+      if (plan === 'annual') scheduleTrialEndingReminder(TRIAL_DAYS, display('annual').price).catch(() => {});
     }
     if (!mounted.current) return;
     setBusy(false);
@@ -246,8 +249,25 @@ export function CalmPlan() {
       </Reveal>
 
       <Reveal index={3} style={{ marginTop: 20, gap: 10 }}>
+        {/* honest-billing beats — the exact pains BetterSleep-style apps inflict */}
+        <View style={{ gap: 8, marginBottom: 2 }}>
+          {['One subscription covers your whole household', 'Cancel in one tap, anytime — no email, no phone call'].map((t) => (
+            <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Feather name="shield" size={14} color={c.textAccent} />
+              <AppText variant="label" tone="muted" style={{ flex: 1, textTransform: 'none', letterSpacing: 0 }}>
+                {t}
+              </AppText>
+            </View>
+          ))}
+        </View>
         <PrimaryButton
-          label={isPremium ? 'You’re premium ✓' : `Start ${PRICING[plan].label.toLowerCase()} — ${display(plan).price}${PRICING[plan].per}`}
+          label={
+            isPremium
+              ? 'You’re premium ✓'
+              : plan === 'annual'
+                ? `Start your ${TRIAL_DAYS}-day free trial`
+                : `Start monthly — ${display('monthly').price}${PRICING.monthly.per}`
+          }
           onPress={subscribe}
           loading={busy}
           disabled={isPremium}
@@ -259,7 +279,9 @@ export function CalmPlan() {
         ) : null}
         {/* required subscription disclosure */}
         <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
-          Auto-renews at {display(plan).price}{PRICING[plan].per} until cancelled. No free trial. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.
+          {plan === 'annual'
+            ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled — we’ll remind you before it ends. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+            : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
         </AppText>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
           <Pressable onPress={restore} accessibilityRole="button" hitSlop={12} style={{ paddingVertical: 8 }}>

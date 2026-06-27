@@ -67,6 +67,8 @@ export const api = {
   me: (token: string) => req<{ user: ApiUser; entitlement: ApiEntitlement }>('/me', {}, token),
   // permanent account + data deletion (Apple 5.1.1(v) / COPPA / GDPR)
   deleteAccount: (token: string) => req<{ ok: boolean; deleted: boolean }>('/me', { method: 'DELETE' }, token),
+  // GDPR/UK-GDPR/AU-APP12 data-access export (the caller's own data as JSON)
+  exportMe: (token: string) => req<Record<string, unknown>>('/me/export', {}, token),
   content: () => req<{ tracks: unknown[]; programs: unknown[]; newThisMonth?: string[] }>('/content'),
   devices: (token: string) => req<unknown[]>('/devices', {}, token),
   registerDevice: (token: string, data: { serial: string; purchaseDate?: string; retailer?: string }) =>
@@ -83,7 +85,15 @@ export const api = {
       { method: 'POST', body: JSON.stringify(data) },
       token,
     ),
-  billingStatus: (token: string) => req<{ tier: string; isPremium: boolean }>('/billing/status', {}, token),
+  billingStatus: (token: string) =>
+    req<{
+      tier: string;
+      isPremium: boolean;
+      plan?: string | null;
+      source?: string | null;
+      expiresAt?: string | null;
+      status?: string;
+    }>('/billing/status', {}, token),
 
   // ---- household profiles ----
   profiles: (token: string) =>

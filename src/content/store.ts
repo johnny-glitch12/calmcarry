@@ -62,6 +62,12 @@ export const PRICING = {
 
 export type PlanId = keyof typeof PRICING;
 
+/** Honest intro offer: the ANNUAL plan opens with a short free trial. The store
+ *  (App Store Connect / Play) must carry the matching intro offer; the client just
+ *  presents it and — unlike BetterSleep — schedules its OWN pre-charge reminder so a
+ *  user is never surprise-charged when the trial ends (see lib/reminders.ts). */
+export const TRIAL_DAYS = 3;
+
 /** Why it's worth having more than one. */
 export const DEVICE_BENEFITS = [
   'Works the moment you hold it — no app, no setup, nothing to charge',

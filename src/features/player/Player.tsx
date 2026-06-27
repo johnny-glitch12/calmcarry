@@ -23,6 +23,7 @@ import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { track as logEvent } from '@/lib/analytics';
+import { resolveAudioSource } from '@/lib/audioSource';
 import { markCalmNightToday } from '@/lib/calmNights';
 import { isFavorite, toggleFavorite } from '@/lib/favorites';
 import { markProgramStepDone } from '@/lib/programs';
@@ -111,6 +112,8 @@ export function Player() {
   const status = useAudioPlayerStatus(player);
   const progress = useSharedValue(0);
   const loggedRef = useRef(false);
+  const startedAtRef = useRef<number | null>(null); // wall-clock at session_start (for durationSec)
+  const completedRef = useRef(false); // session_complete fired once
 
   // allow playback in silent mode + keep playing with the screen off / app backgrounded
   // (sleep apps must run all night — build plan §12)
@@ -124,9 +127,24 @@ export function Player() {
     player.loop = track.category === 'soundscape';
     player.volume = 1;
     let cancelled = false;
-    getJSON('cc.autoplay', true).then((auto) => {
+    (async () => {
+      // Resolve a CMS/CDN streaming source BEFORE the first play, with a guaranteed
+      // bundled fallback (§11). The effect runs once per player (i.e. once per track),
+      // and resolveAudioSource caches per track id — so a track resolves exactly once
+      // and the swap always happens before playback begins, never mid-night (§12).
+      try {
+        const src = await resolveAudioSource(track, token);
+        if (!cancelled && src && src !== audioSources[track.audio]) {
+          player.replace(src);
+          player.loop = track.category === 'soundscape';
+          player.volume = 1;
+        }
+      } catch {
+        /* stay on the bundled asset */
+      }
+      const auto = await getJSON('cc.autoplay', true);
       if (!cancelled && auto && !blocked) player.play();
-    });
+    })();
     return () => {
       cancelled = true;
       try {
@@ -135,6 +153,7 @@ export function Player() {
         /* player already released */
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player]);
 
   // drive the ring from the real playback position
@@ -153,6 +172,7 @@ export function Player() {
   useEffect(() => {
     if (!loggedRef.current && status.playing) {
       loggedRef.current = true;
+      startedAtRef.current = Date.now();
       logSession(token, { contentId: track.id });
       logEvent('session_start', { contentId: track.id, category: track.category });
       markCalmNightToday().catch(() => {});
@@ -160,7 +180,7 @@ export function Player() {
       // mark this program night complete once it's actually playing (real progress)
       if (program && day) markProgramStepDone(program, Number(day)).catch(() => {});
     }
-  }, [status.playing, token, track.id, mode, program, day]);
+  }, [status.playing, token, track.id, track.category, mode, program, day]);
 
   // saved / favourite state for this track
   const [saved, setSaved] = useState(false);
@@ -253,9 +273,34 @@ export function Player() {
   // Used by both didJustFinish (guided sessions/tales/breathing) and the sleep timer.
   const fadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endingRef = useRef(false);
+
+  // Fire the §15 activation event exactly once, on the FIRST exit path taken
+  // (gentle auto-end, sleep timer, or manual close). reachedEnd distinguishes a
+  // completed wind-down from an early leave; a ≥60s listen also counts as complete.
+  const fireComplete = useCallback(
+    (reachedEnd: boolean) => {
+      if (completedRef.current || !loggedRef.current) return;
+      completedRef.current = true;
+      const durationSec = startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : undefined;
+      const completed = reachedEnd || (durationSec ?? 0) >= 60;
+      getJSON('cc.firstSessionDone', false).then((done) => {
+        logEvent('session_complete', {
+          contentId: track.id,
+          category: track.category,
+          completed,
+          durationSec,
+          first: !done,
+        });
+        if (!done) setJSON('cc.firstSessionDone', true);
+      });
+    },
+    [track.id, track.category],
+  );
+
   const endSession = useCallback(() => {
     if (endingRef.current) return;
     endingRef.current = true;
+    fireComplete(true); // the session reached a gentle end
     let v = 1;
     const step = () => {
       v -= 0.1;
@@ -276,7 +321,7 @@ export function Player() {
       }
     };
     step();
-  }, [player, router]);
+  }, [player, router, fireComplete]);
 
   // Guided sessions, sleep tales and breathing must play once and END — not freeze
   // on a silent 100% ring. Soundscapes (which loop) are excluded.
@@ -295,6 +340,14 @@ export function Player() {
     return () => clearTimeout(id);
   }, [sleepMin, endSession]);
   useEffect(() => () => { if (fadeRef.current) clearTimeout(fadeRef.current); }, []);
+  // Count completion on any other exit (manual close / back / swipe-dismiss / nav away).
+  // Hold the LATEST fireComplete in a ref and run on UNMOUNT ONLY ([] deps) so a
+  // mid-session track change can't fire a stale-track completion or run the cleanup early.
+  const fireCompleteRef = useRef(fireComplete);
+  useEffect(() => {
+    fireCompleteRef.current = fireComplete;
+  });
+  useEffect(() => () => fireCompleteRef.current(false), []);
   const cycleSleep = () => {
     const i = (SLEEP_OPTIONS as readonly number[]).indexOf(sleepMin);
     const next = SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];

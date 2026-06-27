@@ -1,8 +1,8 @@
 /**
- * Cover-art registry. These are AI-generated CONCEPT covers (Higgsfield /
- * Recraft 4.1, locked to the brand eucalyptus palette) standing in for the
- * licensed artwork Glowco supplies in production (V1_SCOPE: Glowco provides
- * all media/brand assets). One cohesive painterly style (§7).
+ * Cover-art registry. Soft hand-painted watercolour illustrations (Recraft 4.1,
+ * locked to the brand eucalyptus/sage palette with soft peach accents) — one
+ * cohesive light, airy fine-art set, standing in for the licensed artwork Glowco
+ * supplies in production (V1_SCOPE: Glowco provides all media/brand assets). §7.
  */
 export const covers = {
   slowTide: require('../../assets/covers/slow-tide.webp'),

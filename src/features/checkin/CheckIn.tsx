@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { AppText, GlowOrb, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { track } from '@/lib/analytics';
 import { maybeRequestReview } from '@/lib/reviews';
 
 /**
@@ -21,6 +22,12 @@ export function CheckIn() {
   useEffect(() => {
     maybeRequestReview({ kids: mode === 'kids' });
   }, [mode]);
+
+  // §15 funnel — the wind-down close was reached. No mood/Feeling is ever sent
+  // (analytics no-ops in kids mode and scrubs any non-allow-listed prop).
+  useEffect(() => {
+    track('check_in_shown');
+  }, []);
 
   return (
     <Screen mode="night">

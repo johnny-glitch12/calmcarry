@@ -4,6 +4,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { config, isProd } from '../config';
+import { AnalyticsService } from '../events/analytics.service';
 import { UsersService } from '../users/users.service';
 
 /**
@@ -25,7 +26,16 @@ export class WebhooksService {
   private appleVerifier: SignedDataVerifier | null = null;
   private readonly googleClient = new OAuth2Client();
 
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly analytics: AnalyticsService,
+  ) {}
+
+  // Server-authoritative churn signal (§15: subscription churn + cancellation reasons).
+  // Fire-and-forget AFTER verification + state change so it can never 503 a valid webhook.
+  private recordChurn(reason: 'expired' | 'refund' | 'revoked' | 'user_cancelled'): void {
+    void this.analytics.record('subscription_cancelled', null, { reason }).catch(() => {});
+  }
 
   // ---------- Apple ----------
   private loadAppleRootCerts(): Buffer[] {
@@ -86,10 +96,15 @@ export class WebhooksService {
       case NotificationTypeV2.EXPIRED:
       case NotificationTypeV2.GRACE_PERIOD_EXPIRED:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' });
+        this.recordChurn('expired');
         break;
       case NotificationTypeV2.REFUND:
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
+        this.recordChurn('refund');
+        break;
       case NotificationTypeV2.REVOKE:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
+        this.recordChurn('revoked');
         break;
       default:
         break; // DID_CHANGE_RENEWAL_STATUS etc. leave the current term intact
@@ -145,12 +160,19 @@ export class WebhooksService {
         break;
       case 13:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' });
+        this.recordChurn('expired');
         break;
       case 12:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
+        this.recordChurn('revoked');
+        break;
+      case 3:
+        // CANCELED — auto-renew turned off; term stays active until it lapses, but
+        // record the cancellation intent so churn/cancellation reasons are visible.
+        this.recordChurn('user_cancelled');
         break;
       default:
-        break; // 3 CANCELED / 5 ON_HOLD / 6 IN_GRACE leave the term active until it lapses
+        break; // 5 ON_HOLD / 6 IN_GRACE leave the term active until it lapses
     }
     this.logger.log(`google type=${sub.notificationType} ref=${ref} applied=${applied}`);
     return { ok: true, applied };

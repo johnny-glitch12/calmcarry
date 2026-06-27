@@ -17,18 +17,20 @@ import { useTheme } from '@/theme';
 
 // Lyric-free instrumental music (build plan §6/§7 — Listen = Music + Sound machine).
 // CMS-extensible; the sound machine below handles ambient sounds.
-const MUSIC_IDS = ['spa', 'gymnopedie'];
+// gymnopedie is the ONE free music track (§6.1); spa is premium and shows a lock for free adults
+const MUSIC_IDS = ['gymnopedie', 'spa'];
 
-type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'forest' | 'drone'>;
+// the free four-sound mixer (§6.1): rain, brown noise, a soft hum, ocean
+type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'brown' | 'drone'>;
 type Levels = Record<SoundKey, number>; // 0 = off, 1 = low, 2 = med, 3 = full
 
 const SOUNDS: { key: SoundKey; label: string; cover: CoverKey }[] = [
   { key: 'rain', label: 'Rain', cover: 'rainfall' },
   { key: 'ocean', label: 'Ocean', cover: 'slowTide' },
-  { key: 'forest', label: 'Forest', cover: 'forestStream' },
+  { key: 'brown', label: 'Brown noise', cover: 'brownNoise' },
   { key: 'drone', label: 'Soft hum', cover: 'deepRest' },
 ];
-const ZERO: Levels = { rain: 0, ocean: 0, forest: 0, drone: 0 };
+const ZERO: Levels = { rain: 0, ocean: 0, brown: 0, drone: 0 };
 const TIMERS = [0, 15, 30, 60] as const;
 
 type SavedMix = { name: string; levels: Levels };
@@ -108,9 +110,9 @@ export function ListenScreen() {
   // one looping player per sound (fixed set → hooks stay at top level)
   const rain = useAudioPlayer(audioSources.rain);
   const ocean = useAudioPlayer(audioSources.ocean);
-  const forest = useAudioPlayer(audioSources.forest);
+  const brown = useAudioPlayer(audioSources.brown);
   const drone = useAudioPlayer(audioSources.drone);
-  const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, forest, drone };
+  const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, brown, drone };
 
   useEffect(() => {
     // all-night background playback with the screen off (build plan §12)

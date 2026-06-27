@@ -129,7 +129,7 @@ export const api = {
 
   // ---- signed CDN url for an item's audio ----
   signedUrl: (token: string, id: string) =>
-    req<{ url: string; signed: boolean }>(`/content/${id}/signed-url`, {}, token),
+    req<{ url: string; expiresAt: number | null; signed: boolean }>(`/content/${id}/signed-url`, {}, token),
 
   // ---- shared caregivers (one household, whole family) ----
   caregivers: (token: string) =>
@@ -148,4 +148,13 @@ export const api = {
   // ---- first-party analytics (anonymous funnel events, §15) ----
   trackEvent: (name: string, anonId: string, props?: Record<string, unknown>) =>
     req<{ ok: boolean }>('/events', { method: 'POST', body: JSON.stringify({ name, anonId, props }) }),
+  // batched intake — the client buffers events and flushes a small batch at a time
+  trackEvents: (
+    anonId: string,
+    events: { name: string; props?: Record<string, unknown>; at: string }[],
+  ) =>
+    req<{ ok: boolean; accepted: number }>('/events/batch', {
+      method: 'POST',
+      body: JSON.stringify({ anonId, events }),
+    }),
 };

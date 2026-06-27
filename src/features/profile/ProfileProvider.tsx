@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { useAuth } from '@/features/auth/AuthProvider';
+import { setAnalyticsMode } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
@@ -260,6 +261,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     [profiles, activeId]
   );
   const mode = activeProfile.type;
+
+  // Publish the active mode so first-party analytics NEVER tracks a child profile
+  // (COPPA — kids are never tracked). Keeps the gate out of every call site.
+  useEffect(() => {
+    setAnalyticsMode(mode);
+  }, [mode]);
 
   // RANKED recommendations matching the check-in answer (feeling × intent ×
   // time-of-day × mode). recommendedTrackId is the top pick; recommendedTrackIds

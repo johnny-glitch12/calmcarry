@@ -11,6 +11,7 @@ import { AppState } from 'react-native';
 
 import { track } from '@/lib/analytics';
 import { api, type ApiEntitlement, type ApiUser } from '@/lib/api';
+import { clearAudioSourceCache } from '@/lib/audioSource';
 import { secureDelete, secureGet, secureSet } from '@/lib/secureStore';
 import { getJSON, KEYS, remove, setJSON } from '@/lib/store';
 
@@ -206,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    clearAudioSourceCache(); // drop any signed CDN URLs so the next account re-resolves cleanly
     setToken(null);
     setUser(null);
     setEntitlement(FREE);

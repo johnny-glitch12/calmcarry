@@ -8,8 +8,10 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
 import { PRIVACY_URL, SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
+import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
+import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { remindersSupported, setBedtimeReminder } from '@/lib/reminders';
 import { getJSON, setJSON } from '@/lib/store';
 import { brand, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
@@ -96,6 +98,7 @@ export function AccountScreen() {
   const { user, isPremium, token, signOut } = useAuth();
   const { mode, setMode } = useProfile();
   const [reminder, setReminder] = useState(false);
+  const [pushOn, setPushOn] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [anonymous, setAnonymous] = useState(true); // community anonymity — ON by default (§6)
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -105,6 +108,7 @@ export function AccountScreen() {
   useEffect(() => {
     (async () => {
       setReminder(await getJSON('cc.reminder', false));
+      setPushOn(await hasPushOptIn());
       setAutoplay(await getJSON('cc.autoplay', true));
       setAnonymous(await getJSON('cc.anonymous', true));
     })();
@@ -116,6 +120,11 @@ export function AccountScreen() {
     const scheduled = await setBedtimeReminder(v);
     setReminder(scheduled);
     setJSON('cc.reminder', scheduled);
+  };
+  // gentle remote reminders — opt-in only; shows ON only if a device token actually
+  // registered (push.ts persists 'cc.push' itself). Permission is requested only here.
+  const togglePush = async (v: boolean) => {
+    setPushOn(await setPushOptIn(v, token));
   };
   const toggleAutoplay = (v: boolean) => {
     setAutoplay(v);
@@ -241,6 +250,11 @@ export function AccountScreen() {
       <Reveal index={3} style={{ marginTop: 24 }}>
         <SectionHeader kicker="Preferences" title="Sleep & sound" />
         <Group>
+          {/* gentle remote reminders — opt-in, account-tied; native + signed-in adults only.
+              never shown in kids mode (notifications are for the parent account) */}
+          {pushSupported && mode !== 'kids' && token && token !== 'local' ? (
+            <SettingRow icon="heart" label="Gentle reminders" toggle={pushOn} onToggle={togglePush} />
+          ) : null}
           {/* bedtime reminder is a real local notification — native only, so hide on web */}
           {remindersSupported ? (
             <SettingRow icon="bell" label="Bedtime reminder" toggle={reminder} onToggle={toggleReminder} />
@@ -258,7 +272,14 @@ export function AccountScreen() {
             icon="credit-card"
             label="Subscription"
             value={isPremium ? 'Premium' : 'Free'}
-            onPress={() => (isPremium ? Linking.openURL(SUBSCRIPTION_URL).catch(() => {}) : router.push('/unlock'))}
+            onPress={() => {
+              if (isPremium) {
+                track('subscription_manage_open'); // §15: cancellation/manage intent (client proxy)
+                Linking.openURL(SUBSCRIPTION_URL).catch(() => {});
+              } else {
+                router.push('/unlock');
+              }
+            }}
           />
           <SettingRow icon="box" label="My CalmCarry" onPress={() => router.push('/device' as Href)} />
           <SettingRow icon="users" label="Family & devices" onPress={() => router.push('/family')} />

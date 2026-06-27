@@ -73,10 +73,21 @@ export class SeedService implements OnApplicationBootstrap {
       { id: 'rainfall', type: 'soundscape', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', duration: '45 min', audioKey: 'rain', coverKey: 'rainfall', locked: true },
       { id: 'forest', type: 'soundscape', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', duration: 'loops', audioKey: 'forest', coverKey: 'forestStream', locked: true },
       { id: 'box-breathing', type: 'breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', duration: '8 min', audioKey: 'drone', coverKey: 'boxBreathing', locked: false },
-      { id: 'deep-rest', type: 'meditation', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', duration: '13 min', audioKey: 'drone', coverKey: 'deepRest', locked: false, newThisMonth: true },
+      { id: 'deep-rest', type: 'meditation', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', duration: '13 min', audioKey: 'drone', coverKey: 'deepRest', locked: true, newThisMonth: true },
       { id: 'letting-go', type: 'meditation', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', duration: '13 min', audioKey: 'drone', coverKey: 'lettingGo', locked: true, newThisMonth: true },
       { id: 'penguin', type: 'story', title: "A Penguin's Voyage", subtitle: 'Sleep tale · ages 4+', duration: '27 min', audioKey: 'ocean', coverKey: 'penguinVoyage', locked: false },
-      { id: 'spa', type: 'soundscape', title: 'Spa Piano', subtitle: 'Playlist · soft keys', duration: '60 min', audioKey: 'piano', coverKey: 'spaMusic', locked: false, newThisMonth: true },
+      { id: 'spa', type: 'soundscape', title: 'Spa Piano', subtitle: 'Playlist · soft keys', duration: '60 min', audioKey: 'piano', coverKey: 'spaMusic', locked: true, newThisMonth: true },
+      // The remaining catalogue — mirrors src/content/library.ts so the signed-URL
+      // endpoint enforces the SAME free/premium split server-side (no paywall bypass).
+      // Free taste = gymnopedie (the one free music track) + brown-noise (the free
+      // mixer sound); everything else premium (§6.1).
+      { id: 'gymnopedie', type: 'soundscape', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', duration: '3 min', audioKey: 'gymnopedie', coverKey: 'gymnopedie', locked: false, newThisMonth: true },
+      { id: 'shoreline', type: 'soundscape', title: 'Shoreline', subtitle: 'Waves washing over rock', duration: 'loops', audioKey: 'waves', coverKey: 'shoreline', locked: true, newThisMonth: true },
+      { id: 'fireside', type: 'soundscape', title: 'Fireside', subtitle: 'A slow, crackling campfire', duration: 'loops', audioKey: 'fire', coverKey: 'fireside', locked: true },
+      { id: 'dawn-chorus', type: 'soundscape', title: 'Dawn Chorus', subtitle: 'Birdsong · open woodland', duration: 'loops', audioKey: 'birdsong', coverKey: 'dawnWoods', locked: true },
+      { id: 'brown-noise', type: 'soundscape', title: 'Brown Noise', subtitle: 'Deep, even masking', duration: 'loops', audioKey: 'brown', coverKey: 'brownNoise', locked: false },
+      { id: 'pink-noise', type: 'soundscape', title: 'Pink Noise', subtitle: 'Soft, balanced hush', duration: 'loops', audioKey: 'pink', coverKey: 'pinkNoise', locked: true },
+      { id: 'white-noise', type: 'soundscape', title: 'White Noise', subtitle: 'Bright, steady cover', duration: 'loops', audioKey: 'white', coverKey: 'whiteNoise', locked: true },
     ];
     await this.contentRepo.save(tracks.map((t) => this.contentRepo.create(t)));
     this.logger.log(`Seeded ${tracks.length} content tracks.`);

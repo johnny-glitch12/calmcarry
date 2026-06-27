@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { ProfileProvider, useProfile } from '@/features/profile/ProfileProvider';
-import { track } from '@/lib/analytics';
+import { startAnalytics, track } from '@/lib/analytics';
 import { captureError, initMonitoring } from '@/lib/monitoring';
 import { getOnboarded } from '@/lib/onboarding';
 import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } from '@/theme';
@@ -94,15 +94,27 @@ function RootNav() {
   const [fontsLoaded, fontError] = useFonts(fontMap);
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const { hydrated: schemeHydrated } = useColorSchemePref();
-  const { hydrated: profileHydrated } = useProfile();
+  const { hydrated: profileHydrated, mode } = useProfile();
   const router = useRouter();
   const navState = useRootNavigationState();
   const didRedirect = useRef(false);
 
   useEffect(() => {
     getOnboarded().then(setOnboarded);
-    track('app_open'); // §15 funnel: top of funnel
+    startAnalytics(); // load the durable event buffer + attach the background-flush hook
   }, []);
+
+  // §15 funnel top — fire ONLY once the active profile is known AND it isn't a kid.
+  // Guarding on `mode` at the call site is race-proof (it doesn't depend on the
+  // ProfileProvider→setAnalyticsMode effect having run yet), so a child profile's
+  // open is never recorded (COPPA). openedRef keeps it to a single fire.
+  const openedRef = useRef(false);
+  useEffect(() => {
+    if (profileHydrated && mode !== 'kids' && !openedRef.current) {
+      openedRef.current = true;
+      track('app_open');
+    }
+  }, [profileHydrated, mode]);
 
   // On native, hold the splash until we know the route + theme + ACTIVE PROFILE so
   // first paint is correct. Waiting on profile hydration is a child-safety gate:

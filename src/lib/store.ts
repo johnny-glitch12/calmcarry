@@ -34,3 +34,13 @@ export async function remove(...keys: string[]): Promise<void> {
     /* ignore */
   }
 }
+
+/** Wipe ALL local app data. Used on permanent account deletion so nothing personal
+ *  (recents, mixes, profiles, consent, prefs) survives on the device. */
+export async function clearAll(): Promise<void> {
+  try {
+    await AsyncStorage.clear();
+  } catch {
+    /* ignore */
+  }
+}

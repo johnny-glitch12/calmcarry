@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, Share, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, Share, Switch, View } from 'react-native';
 
 import { AppText, GlowOrb, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -13,7 +13,7 @@ import { api } from '@/lib/api';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
-import { getJSON, setJSON } from '@/lib/store';
+import { clearAll, getJSON, setJSON } from '@/lib/store';
 import { brand, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
 
 const SCHEMES: SchemePref[] = ['light', 'dark', 'system'];
@@ -101,7 +101,6 @@ export function AccountScreen() {
   const [reminderIdx, setReminderIdx] = useState(1); // default 9:30 PM
   const [pushOn, setPushOn] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
-  const [anonymous, setAnonymous] = useState(true); // community anonymity — ON by default (§6)
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [renewAt, setRenewAt] = useState<string | null>(null);
@@ -113,7 +112,6 @@ export function AccountScreen() {
       setReminderIdx(await getJSON('cc.reminderTimeIdx', 1));
       setPushOn(await hasPushOptIn());
       setAutoplay(await getJSON('cc.autoplay', true));
-      setAnonymous(await getJSON('cc.anonymous', true));
     })();
   }, []);
 
@@ -158,10 +156,6 @@ export function AccountScreen() {
     setAutoplay(v);
     setJSON('cc.autoplay', v);
   };
-  const toggleAnonymous = (v: boolean) => {
-    setAnonymous(v);
-    setJSON('cc.anonymous', v);
-  };
 
   const onSignOut = async () => {
     await signOut();
@@ -189,6 +183,7 @@ export function AccountScreen() {
     } catch {
       /* even if the server is unreachable, clear the local session below */
     } finally {
+      await clearAll(); // permanent deletion must leave nothing personal on the device
       await signOut();
       router.replace('/auth');
     }
@@ -201,7 +196,7 @@ export function AccountScreen() {
       const data = await api.exportMe(token);
       await Share.share({ message: JSON.stringify(data, null, 2) });
     } catch {
-      /* offline / unavailable — silent */
+      Alert.alert('Couldn’t export right now', 'Please check your connection and try again in a moment.');
     }
   };
 
@@ -234,7 +229,9 @@ export function AccountScreen() {
 
       {/* entitlement */}
       <Reveal index={1} style={{ marginTop: 24 }}>
-        <Pressable onPress={() => router.push('/unlock')} accessibilityRole="button">
+        <Pressable
+          onPress={() => (isPremium ? Linking.openURL(SUBSCRIPTION_URL).catch(() => {}) : router.push('/unlock'))}
+          accessibilityRole="button">
         <View
           style={{
             borderRadius: 20,
@@ -306,8 +303,7 @@ export function AccountScreen() {
           {remindersSupported && reminder ? (
             <SettingRow icon="clock" label="Reminder time" value={REMINDER_TIMES[reminderIdx].label} onPress={cycleReminderTime} />
           ) : null}
-          <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} />
-          <SettingRow icon="eye-off" label="Anonymous in community" toggle={anonymous} onToggle={toggleAnonymous} last />
+          <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} last />
         </Group>
       </Reveal>
 

@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppText, BearMascot, Reveal, Screen } from '@/components';
@@ -59,10 +59,13 @@ export function KidsHome() {
   const [nights, setNights] = useState(0);
   const firstName = (user?.name ?? '').split(' ')[0] || 'friend';
 
-  // real count — earned by actually doing calm sessions (see markCalmNightToday)
-  useEffect(() => {
-    getCalmNights().then(setNights);
-  }, []);
+  // real count — earned by actually doing calm sessions (see markCalmNightToday).
+  // Refetch on focus so a star appears right after a session, not only on first mount.
+  useFocusEffect(
+    useCallback(() => {
+      getCalmNights().then(setNights);
+    }, [])
+  );
 
   const story = TRACKS['penguin'] ?? TRACKS['slow-tide'];
 

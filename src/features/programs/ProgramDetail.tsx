@@ -16,7 +16,8 @@ export function ProgramDetail() {
   const router = useRouter();
   const { isPremium } = useAuth();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const program = (id && PROGRAMS[id]) || PROGRAMS['night-reset'];
+  // fall back to the FREE starter arc (not a locked premium program) for a bad/legacy link
+  const program = (id && PROGRAMS[id]) || PROGRAMS['first-week'];
   const locked = !!program.locked && !isPremium;
 
   // real completion state — refreshes when returning from the player

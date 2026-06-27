@@ -346,11 +346,13 @@ export function Player() {
         } catch {
           /* ignore */
         }
-        router.replace('/check-in' as Href);
+        // a child must never land on the adult "were you settled?" check-in — send
+        // kids back to their own home instead
+        router.replace((mode === 'kids' ? '/' : '/check-in') as Href);
       }
     };
     step();
-  }, [player, router, fireComplete]);
+  }, [player, router, fireComplete, mode]);
 
   // Guided sessions, sleep tales and breathing must play once and END — not freeze
   // on a silent 100% ring. Soundscapes (which loop) are excluded.

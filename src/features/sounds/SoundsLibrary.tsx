@@ -127,7 +127,7 @@ export function SoundsLibrary() {
       {rails.map((rail, i) => (
         <Reveal key={rail.title} index={i + 1} style={{ marginBottom: 28 }}>
           <View style={{ paddingHorizontal: 24 }}>
-            <SectionHeader kicker={rail.kicker} title={rail.title} actionLabel="See all" />
+            <SectionHeader kicker={rail.kicker} title={rail.title} />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 14 }}>
             {rail.ids.map((id) => {
@@ -174,7 +174,7 @@ export function SoundsLibrary() {
       {!kids ? (
         <Reveal index={rails.length + 2} style={{ marginBottom: 28 }}>
           <View style={{ paddingHorizontal: 24 }}>
-            <SectionHeader kicker="Guided" title="Programs" actionLabel="See all" onAction={() => router.push('/sounds')} />
+            <SectionHeader kicker="Guided" title="Programs" />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 14 }}>
             {Object.values(PROGRAMS).map((p) => (

@@ -67,7 +67,11 @@ export class ReceiptValidationService {
 
   private assertPremiumSku(sku?: string): void {
     const allow = config.premiumProductIds;
-    if (allow.length && sku && !allow.includes(sku)) {
+    if (!allow.length) return; // no allowlist configured (dev) → skip
+    // REQUIRE a known premium SKU. A missing/undefined productId must NOT grant
+    // premium — otherwise a verified transaction with no product silently bypasses
+    // the allowlist (money-path hole).
+    if (!sku || !allow.includes(sku)) {
       throw new UnauthorizedException('Receipt product is not a premium subscription');
     }
   }

@@ -264,7 +264,7 @@ export function CommunityScreen() {
             <Animated.View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.accent }, dotStyle]} />
             <AppText variant="bodyMedium" tone="title" style={{ flex: 1, fontSize: 15 }}>
               {presence && presence > 0
-                ? `${presence} quiet ${presence === 1 ? 'win' : 'wins'} shared tonight`
+                ? `${presence} quiet ${presence === 1 ? 'win' : 'wins'} shared by parents`
                 : 'A quiet, anonymous space to wind down together'}
             </AppText>
           </View>

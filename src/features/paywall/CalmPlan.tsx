@@ -150,8 +150,10 @@ export function CalmPlan() {
         if (mounted.current) setBusy(false);
         return; // user backed out — no error nag
       }
-    } else if (live) {
-      // web/dev: exercise the server validation path (dev-fallback grants without keys)
+    } else if (live && __DEV__) {
+      // DEV/web ONLY: exercise the server validation path (dev-fallback grants without
+      // keys). Gated to __DEV__ so a PRODUCTION web build can never fake a receipt —
+      // real purchases happen on-device via Apple/Google IAP.
       try {
         const r = await api.billingValidate(token, {
           store: 'apple',

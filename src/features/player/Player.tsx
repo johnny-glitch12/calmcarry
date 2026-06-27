@@ -184,6 +184,31 @@ export function Player() {
     }
   }, [status.playing, token, track.id, track.category, mode, program, day]);
 
+  // surface a load failure (e.g. a CDN source that never loads) instead of a dead,
+  // silent play button. Bundled assets load instantly, so this only trips on a
+  // genuinely broken/streamed source after a grace period.
+  const [loadFailed, setLoadFailed] = useState(false);
+  useEffect(() => {
+    if (status.isLoaded) {
+      if (loadFailed) setLoadFailed(false);
+      return;
+    }
+    const id = setTimeout(() => setLoadFailed((prev) => (status.isLoaded ? prev : true)), 8000);
+    return () => clearTimeout(id);
+  }, [status.isLoaded, loadFailed]);
+  const retryLoad = () => {
+    setLoadFailed(false);
+    try {
+      // fall back to the guaranteed-local bundled asset and try again
+      player.replace(audioSources[track.audio]);
+      player.loop = track.category === 'soundscape';
+      player.volume = 1;
+      player.play();
+    } catch {
+      /* released */
+    }
+  };
+
   // saved / favourite state for this track
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -489,13 +514,26 @@ export function Player() {
             {track.subtitle}
           </AppText>
 
-          {/* rotating, sensation-honest device cue */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
-            <Feather name="circle" size={10} color="#8FC9BE" />
-            <AppText variant="caption" tone="dim">
-              {CUES[cueIdx]}
-            </AppText>
-          </View>
+          {/* rotating, sensation-honest device cue — or a calm load-failure + retry */}
+          {loadFailed ? (
+            <Pressable
+              onPress={retryLoad}
+              accessibilityRole="button"
+              accessibilityLabel="Couldn't load this session. Tap to try again."
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 18 }}>
+              <Feather name="refresh-cw" size={13} color="#8FC9BE" />
+              <AppText variant="caption" tone="dim">
+                Couldn’t load this session — tap to try again
+              </AppText>
+            </Pressable>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
+              <Feather name="circle" size={10} color="#8FC9BE" />
+              <AppText variant="caption" tone="dim">
+                {CUES[cueIdx]}
+              </AppText>
+            </View>
+          )}
         </View>
 
         {/* controls — heart (save) · play/pause · matching spacer keeps play centered */}

@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/react-native';
  */
 const DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 let started = false;
+let kids = false; // COPPA: never send a child's crashes/errors to a third party
 
 export function initMonitoring(): void {
   if (started || !DSN) return;
@@ -18,8 +19,14 @@ export function initMonitoring(): void {
   }
 }
 
+/** Gate reporting by active profile, exactly like analytics — zero third-party
+ *  reporting while a kid profile is active. */
+export function setMonitoringMode(mode: 'adult' | 'kids'): void {
+  kids = mode === 'kids';
+}
+
 export function captureError(error: unknown): void {
-  if (!started) return;
+  if (!started || kids) return;
   try {
     Sentry.captureException(error);
   } catch {

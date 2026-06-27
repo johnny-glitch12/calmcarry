@@ -29,7 +29,9 @@ export const CRISIS_RESOURCES = [
   { region: 'Australia', name: 'Lifeline', contact: 'Call 13 11 14', url: 'tel:131114' },
 ] as const;
 
-/** Support / legal pages — placeholders; swap for the real Glow Company URLs. */
+/** Support / legal pages. LAUNCH BLOCKER: these are best-guess Shopify-style paths —
+ *  confirm the real published Glow Company URLs and verify each returns 200 before
+ *  shipping (App/Play review reject dead privacy/terms links). */
 export const SUPPORT_URL = `${STORE_URL}/pages/contact`;
 export const PRIVACY_URL = `${STORE_URL}/pages/privacy-policy`;
 export const TERMS_URL = `${STORE_URL}/pages/terms-of-service`;
@@ -38,8 +40,9 @@ export const DEVICE_NAME = 'CalmCarry Glow Orb';
 
 /**
  * Premium subscription pricing (locked decision: subscription only, via Apple/
- * Google IAP, annual-leading, NO free trial). Shown in-app — that's the compliant
- * path for digital subscriptions (IAP), unlike the physical device (external).
+ * Google IAP, annual-leading). The ANNUAL plan opens with a short intro free trial
+ * (TRIAL_DAYS) — see below. Shown in-app — that's the compliant path for digital
+ * subscriptions (IAP), unlike the physical device (external).
  */
 export const PRICING = {
   annual: {

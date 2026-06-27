@@ -11,6 +11,7 @@ import {
 
 import { useAuth } from '@/features/auth/AuthProvider';
 import { setAnalyticsMode } from '@/lib/analytics';
+import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
 import { clearCoppaConsent } from '@/lib/consent';
 import { clearRecents, getRecents } from '@/lib/recents';
@@ -74,6 +75,7 @@ type ProfileValue = {
   activeProfile: Profile;
   setActiveProfile: (id: string) => void;
   addProfile: (name: string, type: AppMode) => void;
+  removeProfile: (id: string) => void;
   /** the active profile's type — drives kids vs adult content everywhere */
   mode: AppMode;
   /** switch to the (first) profile of this type — kept for the Adult/Kids toggles + parent gate */
@@ -98,6 +100,7 @@ const ProfileContext = createContext<ProfileValue>({
   activeProfile: fallback,
   setActiveProfile: () => {},
   addProfile: () => {},
+  removeProfile: () => {},
   mode: 'adult',
   setMode: () => {},
   intent: null,
@@ -250,6 +253,23 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (t && t !== 'local') api.createProfile(t, { name: profile.name, type }).catch(() => {});
   }, []);
 
+  // Remove a profile + its data (COPPA: a parent can delete a child's profile any
+  // time). Refuses to remove the last adult / the only profile; switches away if
+  // the removed one was active.
+  const removeProfile = useCallback((id: string) => {
+    setProfiles((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (!target || prev.length <= 1) return prev;
+      if (target.type === 'adult' && prev.filter((p) => p.type === 'adult').length <= 1) return prev;
+      const next = prev.filter((p) => p.id !== id);
+      setJSON(KEYS.profiles, next);
+      setActiveId((cur) => (cur === id ? (next.find((p) => p.type === 'adult') ?? next[0]).id : cur));
+      return next;
+    });
+    const t = tokenRef.current;
+    if (t && t !== 'local') api.deleteProfile(t, id).catch(() => {});
+  }, []);
+
   const setIntent = useCallback((i: Intent) => {
     setIntentState(i);
     setJSON(KEYS.intent, i);
@@ -278,6 +298,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // (COPPA — kids are never tracked). Keeps the gate out of every call site.
   useEffect(() => {
     setAnalyticsMode(mode);
+    setMonitoringMode(mode); // COPPA: pause crash/error reporting in kids mode too
   }, [mode]);
 
   // RANKED recommendations matching the check-in answer (feeling × intent ×
@@ -296,6 +317,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       activeProfile,
       setActiveProfile,
       addProfile,
+      removeProfile,
       mode,
       setMode,
       intent,
@@ -307,7 +329,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       recommendedTrackId,
       recommendedTrackIds,
     }),
-    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds]
+    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds]
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

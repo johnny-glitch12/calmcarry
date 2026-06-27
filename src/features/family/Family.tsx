@@ -5,12 +5,12 @@ import { Pressable, Switch, View } from 'react-native';
 
 import { AppText, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { useProfile, type AppMode } from '@/features/profile/ProfileProvider';
+import { useProfile, type AppMode, type Profile } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
 import { api } from '@/lib/api';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
-import { hasParentPin } from '@/lib/parentGate';
-import { useTheme } from '@/theme';
+import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
+import { brand, useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
 
@@ -18,7 +18,7 @@ export function Family() {
   const { c, isNight } = useTheme();
   const router = useRouter();
   const { token } = useAuth();
-  const { mode, setMode, addProfile } = useProfile();
+  const { mode, setMode, addProfile, removeProfile, profiles } = useProfile();
 
   // real registered devices for this account (no hardcoded household). Refetched on
   // focus so a device just registered on /register-device shows up on return.
@@ -53,6 +53,21 @@ export function Family() {
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AppMode>('kids');
   const [needConsent, setNeedConsent] = useState(false);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+
+  // COPPA: a parent can delete a child's profile + data any time, behind the gate.
+  const onRemove = async (p: Profile) => {
+    if ((await hasParentPin()) && !parentRecentlyVerified('removeProfile')) {
+      router.push('/parent-gate?intent=removeProfile' as Href);
+      return;
+    }
+    if (confirmRemoveId !== p.id) {
+      setConfirmRemoveId(p.id); // two-tap confirm — first tap arms, second removes
+      return;
+    }
+    removeProfile(p.id);
+    setConfirmRemoveId(null);
+  };
 
   const finishAdd = () => {
     addProfile(newName, newType);
@@ -113,9 +128,9 @@ export function Family() {
                   </AppText>
                 </View>
                 <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0, lineHeight: 18 }}>
-                  A kid profile keeps only a first name and an age band — to pick age-appropriate
-                  sounds and stories. Kids mode is 100% ad-free, has no chat or community, and we
-                  never sell or share your child’s data. You can delete the profile any time.
+                  A kid profile keeps only a first name. Kids mode is 100% ad-free, has no chat or
+                  community, and we never sell or share your child’s data. You can remove the
+                  profile and its data any time, below.
                 </AppText>
                 <PrimaryButton label="I’m the parent or guardian — I consent" onPress={grantConsentAndAdd} />
                 <Pressable onPress={() => setNeedConsent(false)} accessibilityRole="button" style={{ alignSelf: 'center', paddingVertical: 6 }}>
@@ -130,6 +145,27 @@ export function Family() {
         <AppText variant="label" tone="muted" style={{ marginTop: 14, textTransform: 'none', letterSpacing: 0 }}>
           One subscription covers everyone — each profile keeps its own picks.
         </AppText>
+
+        {/* remove a child profile + its data (COPPA) — gated, two-tap confirm */}
+        {profiles.filter((p) => p.type === 'kids').length > 0 ? (
+          <View style={{ marginTop: 14, gap: 8 }}>
+            {profiles
+              .filter((p) => p.type === 'kids')
+              .map((p) => (
+                <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Feather name="smile" size={14} color={c.muted} />
+                  <AppText variant="label" tone="muted" style={{ flex: 1, textTransform: 'none', letterSpacing: 0 }}>
+                    {p.name}
+                  </AppText>
+                  <Pressable onPress={() => onRemove(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${p.name}`}>
+                    <AppText variant="label" style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent }}>
+                      {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
+                    </AppText>
+                  </Pressable>
+                </View>
+              ))}
+          </View>
+        ) : null}
       </Reveal>
 
       <Reveal index={2} style={{ marginTop: 28 }}>

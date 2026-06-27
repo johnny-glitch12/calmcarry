@@ -69,13 +69,15 @@ export async function scheduleTrialEndingReminder(trialDays: number, priceLabel:
   try {
     if (!(await ensurePermission())) return;
     await Notifications.cancelScheduledNotificationAsync(TRIAL_ID).catch(() => {});
-    const renewAt = new Date(Date.now() + trialDays * 86_400_000);
+    // Fire ~1 day before our presented trial length. We deliberately do NOT assert an
+    // exact charge date — the authoritative renewal date lives in the store receipt,
+    // not in the app — so we nudge honestly without inventing a guaranteed date.
     const fireAt = new Date(Date.now() + Math.max(trialDays - 1, 1) * 86_400_000);
     await Notifications.scheduleNotificationAsync({
       identifier: TRIAL_ID,
       content: {
-        title: 'Your free trial ends soon',
-        body: `You'll be charged ${priceLabel} on ${renewAt.toLocaleDateString()} unless you cancel. Tap to manage anytime — one tap, no hassle.`,
+        title: 'Your free trial is ending soon',
+        body: `After the trial, CalmCarry Premium continues at ${priceLabel} unless you cancel — cancel anytime in one tap.`,
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
     });

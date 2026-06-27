@@ -45,11 +45,19 @@ export const TRACK_TAGS: Record<string, Tags> = {
 // which content category each intent leans toward (a soft affinity, not a filter)
 const INTENT_CATEGORY: Record<Intent, string> = { sleep: 'meditation', reset: 'breathing', sounds: 'soundscape', suggest: 'soundscape' };
 
-export type Answer = { feeling: Feeling | null; intent: Intent | null; mode: AppMode; hour: number };
+export type Answer = {
+  feeling: Feeling | null;
+  intent: Intent | null;
+  mode: AppMode;
+  hour: number;
+  /** most-recently-played track ids (newest first) — gently favours picking back up */
+  recentIds?: string[];
+};
 
 /** Ranked track ids best matching the answer. Always returns ≥1 (graceful fallback). */
 export function recommendTracks(answer: Answer): string[] {
   const part = timeOfDay(answer.hour);
+  const recent = answer.recentIds ?? [];
   const ids = Object.keys(TRACKS).filter((id) => {
     const t = TRACKS[id];
     if (!t) return false;
@@ -67,6 +75,12 @@ export function recommendTracks(answer: Answer): string[] {
       if (tags.parts.includes(part)) s += 1;
     }
     if (answer.intent && t.category === INTENT_CATEGORY[answer.intent]) s += 1;
+    // Gentle recency nudge — a recently-played track is a touch easier to pick back
+    // up, but capped well below a strong feeling/intent match (max +1.5 vs +6) so it
+    // never hijacks the recommendation. When there's NO check-in answer yet, this is
+    // what surfaces "where you left off" as the hero.
+    const r = recent.indexOf(id);
+    if (r >= 0) s += Math.max(1.5 - r * 0.2, 0.3);
     return { id, s };
   });
 

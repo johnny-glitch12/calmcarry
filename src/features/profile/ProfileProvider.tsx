@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/features/auth/AuthProvider';
 import { setAnalyticsMode } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { getRecents } from '@/lib/recents';
 import { recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
 
@@ -115,6 +116,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [intent, setIntentState] = useState<Intent | null>(null);
   const [feeling, setFeelingState] = useState<Feeling | null>(null);
   const [needsCheckIn, setNeedsCheckIn] = useState(false);
+  // recently-played track ids — read once per app open so the recommendation is
+  // stable within a session but fresh each open (local-only, never a server profile).
+  const [recents, setRecents] = useState<string[]>([]);
   const { token, user } = useAuth();
 
   // keep latest in refs so setMode/setActiveProfile/addProfile read fresh values.
@@ -153,6 +157,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setIntentState(savedIntent);
       // NOTE: `feeling` is intentionally NOT persisted — the nightly check-in is
       // forward-looking and must never become a stored mood log (build plan §3/§14).
+      setRecents(await getRecents());
       const now = Date.now();
       setNeedsCheckIn(prevOpen == null || now - prevOpen > CHECKIN_GAP_MS);
       setJSON(KEYS.lastOpen, now);
@@ -203,6 +208,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setIntentState(null);
     setFeelingState(null);
     setNeedsCheckIn(false);
+    setRecents([]);
     setJSON(KEYS.profiles, DEFAULT_PROFILES);
     setJSON(KEYS.activeId, DEFAULT_PROFILES[0].id);
     remove(KEYS.intent);
@@ -272,8 +278,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // time-of-day × mode). recommendedTrackId is the top pick; recommendedTrackIds
   // powers a "tailored tonight" set. See lib/recommend.
   const recommendedTrackIds = useMemo(
-    () => recommendTracks({ feeling, intent, mode, hour: new Date().getHours() }),
-    [mode, intent, feeling]
+    () => recommendTracks({ feeling, intent, mode, hour: new Date().getHours(), recentIds: recents }),
+    [mode, intent, feeling, recents]
   );
   const recommendedTrackId = recommendedTrackIds[0];
 

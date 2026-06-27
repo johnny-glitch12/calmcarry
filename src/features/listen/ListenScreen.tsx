@@ -20,17 +20,23 @@ import { useTheme } from '@/theme';
 // gymnopedie is the ONE free music track (§6.1); spa is premium and shows a lock for free adults
 const MUSIC_IDS = ['gymnopedie', 'spa'];
 
-// the free four-sound mixer (§6.1): rain, brown noise, a soft hum, ocean
-type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'brown' | 'drone'>;
+// The mixer palette. CMS-shaped: each sound carries its own `premium` flag, so the
+// set grows without code changes. The free tier keeps the original four (§6.1); the
+// rest are part of the Calm Plan's "full sound machine" (kids are never paywalled).
+type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'brown' | 'drone' | 'pink' | 'white' | 'fire' | 'birdsong'>;
 type Levels = Record<SoundKey, number>; // 0 = off, 1 = low, 2 = med, 3 = full
 
-const SOUNDS: { key: SoundKey; label: string; cover: CoverKey }[] = [
+const SOUNDS: { key: SoundKey; label: string; cover: CoverKey; premium?: boolean }[] = [
   { key: 'rain', label: 'Rain', cover: 'rainfall' },
   { key: 'ocean', label: 'Ocean', cover: 'slowTide' },
   { key: 'brown', label: 'Brown noise', cover: 'brownNoise' },
   { key: 'drone', label: 'Soft hum', cover: 'deepRest' },
+  { key: 'pink', label: 'Pink noise', cover: 'pinkNoise', premium: true },
+  { key: 'white', label: 'White noise', cover: 'whiteNoise', premium: true },
+  { key: 'fire', label: 'Fireside', cover: 'fireside', premium: true },
+  { key: 'birdsong', label: 'Dawn birds', cover: 'dawnWoods', premium: true },
 ];
-const ZERO: Levels = { rain: 0, ocean: 0, brown: 0, drone: 0 };
+const ZERO: Levels = { rain: 0, ocean: 0, brown: 0, drone: 0, pink: 0, white: 0, fire: 0, birdsong: 0 };
 const TIMERS = [0, 15, 30, 60] as const;
 
 type SavedMix = { name: string; levels: Levels };
@@ -40,10 +46,11 @@ function haptic() {
   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 }
 
-function Tile({ label, cover, level, onToggle, onLevel }: {
+function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   label: string;
   cover: CoverKey;
   level: number;
+  locked?: boolean;
   onToggle: () => void;
   onLevel: (l: number) => void;
 }) {
@@ -51,7 +58,11 @@ function Tile({ label, cover, level, onToggle, onLevel }: {
   const on = level > 0;
   return (
     <View style={{ width: '47%' }}>
-      <Pressable onPress={onToggle} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${label}${on ? ', on' : ', off'}`}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityState={{ selected: on }}
+        accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}>
         <View
           style={{
             height: 116,
@@ -63,14 +74,17 @@ function Tile({ label, cover, level, onToggle, onLevel }: {
           }}>
           <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
           <View style={{ flex: 1, backgroundColor: on ? 'rgba(20,30,28,0.5)' : 'rgba(20,30,28,0.58)', padding: 12, justifyContent: 'space-between' }}>
-            <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, backgroundColor: on ? c.accent : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name={on ? 'volume-2' : 'plus'} size={14} color="#FFFFFF" />
+            <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, backgroundColor: locked ? 'rgba(255,255,255,0.18)' : on ? c.accent : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name={locked ? 'lock' : on ? 'volume-2' : 'plus'} size={14} color="#FFFFFF" />
             </View>
             <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 15, color: '#FFFFFF' }}>{label}</AppText>
           </View>
         </View>
       </Pressable>
-      {/* per-sound volume — 3 levels */}
+      {/* per-sound volume — 3 levels (a locked tile shows a matching spacer instead) */}
+      {locked ? (
+        <View style={{ height: 8, marginTop: 8 }} />
+      ) : (
       <View style={{ flexDirection: 'row', gap: 6, marginTop: 8, height: 8, opacity: on ? 1 : 0.3 }}>
         {[1, 2, 3].map((l) => (
           <Pressable
@@ -86,6 +100,7 @@ function Tile({ label, cover, level, onToggle, onLevel }: {
           </Pressable>
         ))}
       </View>
+      )}
     </View>
   );
 }
@@ -112,7 +127,11 @@ export function ListenScreen() {
   const ocean = useAudioPlayer(audioSources.ocean);
   const brown = useAudioPlayer(audioSources.brown);
   const drone = useAudioPlayer(audioSources.drone);
-  const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, brown, drone };
+  const pink = useAudioPlayer(audioSources.pink);
+  const white = useAudioPlayer(audioSources.white);
+  const fire = useAudioPlayer(audioSources.fire);
+  const birdsong = useAudioPlayer(audioSources.birdsong);
+  const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, brown, drone, pink, white, fire, birdsong };
 
   useEffect(() => {
     // all-night background playback with the screen off (build plan §12)
@@ -165,6 +184,12 @@ export function ListenScreen() {
 
   const toggle = (k: SoundKey) => {
     haptic();
+    // premium sounds open the Calm Plan for free adults (kids are never paywalled)
+    const s = SOUNDS.find((x) => x.key === k);
+    if (s?.premium && !isPremium && !kids) {
+      router.push('/unlock' as Href);
+      return;
+    }
     setLevels((prev) => ({ ...prev, [k]: prev[k] > 0 ? 0 : 3 }));
   };
   const setLevel = (k: SoundKey, l: number) => setLevels((prev) => ({ ...prev, [k]: l }));
@@ -212,7 +237,7 @@ export function ListenScreen() {
   const saveMix = () => {
     if (!anyOn) return;
     haptic();
-    const next = [...mixes, { name: `Mix ${mixes.length + 1}`, levels }].slice(-6);
+    const next = [...mixes, { name: `Mix ${mixes.length + 1}`, levels }].slice(-12);
     setMixes(next);
     setJSON('cc.mixes', next);
   };
@@ -297,6 +322,7 @@ export function ListenScreen() {
               label={s.label}
               cover={s.cover}
               level={levels[s.key]}
+              locked={!!s.premium && !isPremium && !kids}
               onToggle={() => toggle(s.key)}
               onLevel={(l) => setLevel(s.key, l)}
             />

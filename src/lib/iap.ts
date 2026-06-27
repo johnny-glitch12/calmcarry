@@ -15,3 +15,8 @@ export async function purchaseSubscription(_plan: 'monthly' | 'annual', _token: 
 export async function restoreSubscription(_token: string): Promise<IapResult> {
   return { ok: false, reason: 'unavailable' };
 }
+
+/** No native store on web — the paywall falls back to the static PRICING. */
+export async function fetchLocalizedPrices(): Promise<Partial<Record<'monthly' | 'annual', string>>> {
+  return {};
+}

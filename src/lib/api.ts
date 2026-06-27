@@ -67,7 +67,7 @@ export const api = {
   me: (token: string) => req<{ user: ApiUser; entitlement: ApiEntitlement }>('/me', {}, token),
   // permanent account + data deletion (Apple 5.1.1(v) / COPPA / GDPR)
   deleteAccount: (token: string) => req<{ ok: boolean; deleted: boolean }>('/me', { method: 'DELETE' }, token),
-  content: () => req<{ tracks: unknown[]; programs: unknown[] }>('/content'),
+  content: () => req<{ tracks: unknown[]; programs: unknown[]; newThisMonth?: string[] }>('/content'),
   devices: (token: string) => req<unknown[]>('/devices', {}, token),
   registerDevice: (token: string, data: { serial: string; purchaseDate?: string; retailer?: string }) =>
     req<unknown>('/devices', { method: 'POST', body: JSON.stringify(data) }, token),

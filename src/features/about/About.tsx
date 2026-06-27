@@ -4,7 +4,7 @@ import { Linking, Pressable, View } from 'react-native';
 
 import { AppText, Logo, Reveal, Screen } from '@/components';
 import { WELLNESS_DISCLAIMER } from '@/content/library';
-import { PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
+import { CRISIS_RESOURCES, PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
 import { useTheme } from '@/theme';
 
 const APP_VERSION = '1.0.0';
@@ -90,7 +90,42 @@ export function About() {
         </View>
       </Reveal>
 
-      <Reveal index={3} style={{ marginTop: 24 }}>
+      <Reveal index={3} style={{ marginTop: 28 }}>
+        <AppText variant="label" tone="muted" style={{ marginBottom: 10 }}>
+          If tonight feels heavy, you’re not alone
+        </AppText>
+        <View style={{ borderRadius: 18, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
+          {CRISIS_RESOURCES.map((r, i) => (
+            <Pressable
+              key={r.region}
+              onPress={() => Linking.openURL(r.url).catch(() => {})}
+              accessibilityRole="button"
+              accessibilityLabel={`${r.name}. ${r.contact}.`}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderBottomWidth: i === CRISIS_RESOURCES.length - 1 ? 0 : 1,
+                borderBottomColor: c.line,
+              }}>
+              <Feather name="heart" size={16} color={c.accent} />
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+                  {r.name}
+                </AppText>
+                <AppText variant="label" tone="muted" style={{ marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
+                  {r.region} · {r.contact}
+                </AppText>
+              </View>
+              <Feather name="phone" size={15} color={c.accent} />
+            </Pressable>
+          ))}
+        </View>
+      </Reveal>
+
+      <Reveal index={4} style={{ marginTop: 24 }}>
         <AppText
           variant="caption"
           tone="dim"

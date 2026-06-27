@@ -8,7 +8,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { PRICING, PRIVACY_URL, TERMS_URL, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { iapSupported, purchaseSubscription, restoreSubscription } from '@/lib/iap';
+import { fetchLocalizedPrices, iapSupported, purchaseSubscription, restoreSubscription } from '@/lib/iap';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { brand, useTheme } from '@/theme';
 
@@ -20,11 +20,25 @@ const INCLUDED = [
   'Fresh sessions and music every month',
 ];
 
-function PlanCard({ id, selected, onSelect }: { id: PlanId; selected: boolean; onSelect: () => void }) {
+function PlanCard({
+  id,
+  price,
+  note,
+  sub,
+  selected,
+  onSelect,
+}: {
+  id: PlanId;
+  price: string;
+  note: string | null;
+  sub: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const { c } = useTheme();
   const p = PRICING[id];
   return (
-    <Pressable onPress={onSelect} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={`${p.label}, ${p.price} ${p.per}`}>
+    <Pressable onPress={onSelect} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={`${p.label}, ${price} ${p.per}`}>
       <View
         style={{
           borderRadius: 16,
@@ -39,19 +53,19 @@ function PlanCard({ id, selected, onSelect }: { id: PlanId; selected: boolean; o
               <AppText variant="h2" tone="title" style={{ fontSize: 18 }}>
                 {p.label}
               </AppText>
-              {p.note ? (
+              {note ? (
                 <AppText variant="caption" style={{ color: c.textAccent, textTransform: 'none', letterSpacing: 0 }}>
-                  {p.note}
+                  {note}
                 </AppText>
               ) : null}
             </View>
             <AppText variant="label" tone="muted" style={{ marginTop: 4 }}>
-              {p.sub}
+              {sub}
             </AppText>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <AppText variant="bodyMedium" tone="title">
-              {p.price}
+              {price}
             </AppText>
             <AppText variant="label" tone="muted">
               {p.per}
@@ -83,6 +97,7 @@ export function CalmPlan() {
   const [plan, setPlan] = useState<PlanId>('annual');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [prices, setPrices] = useState<Partial<Record<PlanId, string>>>({});
   const mounted = useRef(true);
   useEffect(() => {
     track('paywall_view');
@@ -93,6 +108,23 @@ export function CalmPlan() {
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const live = !!token && token !== 'local';
+
+  // Localized store prices for UK/CA/AU so the paywall never shows a USD string
+  // that mismatches what StoreKit/Play charges. Falls back to the static PRICING.
+  useEffect(() => {
+    let alive = true;
+    if (iapSupported && live) fetchLocalizedPrices().then((p) => alive && setPrices(p)).catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [live]);
+  const display = (id: PlanId): { price: string; note: string | null; sub: string } => {
+    const p = PRICING[id];
+    const localized = prices[id];
+    if (!localized) return { price: p.price, note: p.note as string | null, sub: p.sub };
+    // localized price found → drop the USD-derived note/sub to avoid wrong amounts
+    return { price: localized, note: id === 'annual' ? 'Best value' : null, sub: id === 'annual' ? 'Billed yearly' : 'Billed monthly' };
+  };
 
   // Buy: on a real device the StoreKit/Play purchase yields a receipt the backend
   // validates; premium unlocks only when validation succeeds (no offline freebie).
@@ -209,13 +241,13 @@ export function CalmPlan() {
       </Reveal>
 
       <Reveal index={2} style={{ marginTop: 24, gap: 12 }}>
-        <PlanCard id="annual" selected={plan === 'annual'} onSelect={() => setPlan('annual')} />
-        <PlanCard id="monthly" selected={plan === 'monthly'} onSelect={() => setPlan('monthly')} />
+        <PlanCard id="annual" {...display('annual')} selected={plan === 'annual'} onSelect={() => setPlan('annual')} />
+        <PlanCard id="monthly" {...display('monthly')} selected={plan === 'monthly'} onSelect={() => setPlan('monthly')} />
       </Reveal>
 
       <Reveal index={3} style={{ marginTop: 20, gap: 10 }}>
         <PrimaryButton
-          label={isPremium ? 'You’re premium ✓' : `Start ${PRICING[plan].label.toLowerCase()} — ${PRICING[plan].price}${PRICING[plan].per}`}
+          label={isPremium ? 'You’re premium ✓' : `Start ${PRICING[plan].label.toLowerCase()} — ${display(plan).price}${PRICING[plan].per}`}
           onPress={subscribe}
           loading={busy}
           disabled={isPremium}
@@ -227,7 +259,7 @@ export function CalmPlan() {
         ) : null}
         {/* required subscription disclosure */}
         <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
-          Auto-renews at {PRICING[plan].price}{PRICING[plan].per} until cancelled. No free trial. Cancel anytime in one tap; we’ll remind you before any renewal. Billed through your Apple or Google account.
+          Auto-renews at {display(plan).price}{PRICING[plan].per} until cancelled. No free trial. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.
         </AppText>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
           <Pressable onPress={restore} accessibilityRole="button" hitSlop={12} style={{ paddingVertical: 8 }}>

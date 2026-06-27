@@ -12,7 +12,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
-import { remindersSupported, setBedtimeReminder } from '@/lib/reminders';
+import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
 import { getJSON, setJSON } from '@/lib/store';
 import { brand, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
 
@@ -98,6 +98,7 @@ export function AccountScreen() {
   const { user, isPremium, token, signOut } = useAuth();
   const { mode, setMode } = useProfile();
   const [reminder, setReminder] = useState(false);
+  const [reminderIdx, setReminderIdx] = useState(1); // default 9:30 PM
   const [pushOn, setPushOn] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [anonymous, setAnonymous] = useState(true); // community anonymity — ON by default (§6)
@@ -108,6 +109,7 @@ export function AccountScreen() {
   useEffect(() => {
     (async () => {
       setReminder(await getJSON('cc.reminder', false));
+      setReminderIdx(await getJSON('cc.reminderTimeIdx', 1));
       setPushOn(await hasPushOptIn());
       setAutoplay(await getJSON('cc.autoplay', true));
       setAnonymous(await getJSON('cc.anonymous', true));
@@ -117,9 +119,20 @@ export function AccountScreen() {
   // schedules a REAL daily local notification; only shows ON if one was actually
   // scheduled (permission granted) — never a toggle that quietly does nothing.
   const toggleReminder = async (v: boolean) => {
-    const scheduled = await setBedtimeReminder(v);
+    const t = REMINDER_TIMES[reminderIdx];
+    const scheduled = await setBedtimeReminder(v, t.hour, t.minute);
     setReminder(scheduled);
     setJSON('cc.reminder', scheduled);
+  };
+  // let the user choose their wind-down time; reschedule live if the reminder is on
+  const cycleReminderTime = async () => {
+    const next = (reminderIdx + 1) % REMINDER_TIMES.length;
+    setReminderIdx(next);
+    setJSON('cc.reminderTimeIdx', next);
+    if (reminder) {
+      const t = REMINDER_TIMES[next];
+      await setBedtimeReminder(true, t.hour, t.minute);
+    }
   };
   // gentle remote reminders — opt-in only; shows ON only if a device token actually
   // registered (push.ts persists 'cc.push' itself). Permission is requested only here.
@@ -259,6 +272,9 @@ export function AccountScreen() {
           {remindersSupported ? (
             <SettingRow icon="bell" label="Bedtime reminder" toggle={reminder} onToggle={toggleReminder} />
           ) : null}
+          {remindersSupported && reminder ? (
+            <SettingRow icon="clock" label="Reminder time" value={REMINDER_TIMES[reminderIdx].label} onPress={cycleReminderTime} />
+          ) : null}
           <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} />
           <SettingRow icon="eye-off" label="Anonymous in community" toggle={anonymous} onToggle={toggleAnonymous} last />
         </Group>
@@ -310,7 +326,9 @@ export function AccountScreen() {
             {deleting
               ? 'Deleting…'
               : confirmDelete
-                ? 'Tap again to permanently delete your account & data'
+                ? isPremium
+                  ? 'Tap again to delete everything. Your subscription bills through the App Store / Google Play — cancel it there too.'
+                  : 'Tap again to permanently delete your account & data'
                 : 'Delete account'}
           </AppText>
         </Pressable>

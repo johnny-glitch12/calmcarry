@@ -158,6 +158,24 @@ export function TonightScreen() {
     }, [])
   );
 
+  // "New this month" — driven by the CMS catalog flag so the shelf rotates without
+  // an app release. Falls back to the bundled default; only shows tracks we ship.
+  const [newIds, setNewIds] = useState<string[]>(NEW_THIS_MONTH);
+  useEffect(() => {
+    let alive = true;
+    api
+      .content()
+      .then((cat) => {
+        if (!alive) return;
+        const ids = (cat?.newThisMonth ?? []).filter((id) => TRACKS[id]);
+        if (ids.length) setNewIds(ids.slice(0, 8));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // "how CalmCarry works" intro for newcomers (dismissible, persisted)
   const [hiwDismissed, setHiwDismissed] = useState(false);
   useEffect(() => {
@@ -286,7 +304,7 @@ export function TonightScreen() {
         <View style={{ marginTop: 32 }}>
           <SectionHeader kicker="Fresh" title="New this month" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
-            {NEW_THIS_MONTH.map((id) => {
+            {newIds.map((id) => {
               const t = TRACKS[id];
               if (!t) return null;
               const locked = t.locked && !isPremium;

@@ -7,11 +7,21 @@ import { Platform } from 'react-native';
  * no server/push keys required. Local notifications are native-only, so on web
  * this is a no-op and the toggle is hidden (we never show a control that can't work).
  */
-const HOUR = 21;
-const MINUTE = 30; // a gentle 9:30pm local nudge
+const DEFAULT_HOUR = 21;
+const DEFAULT_MINUTE = 30; // a gentle 9:30pm local nudge
 const supported = Platform.OS !== 'web';
 
 export const remindersSupported = supported;
+
+/** Selectable wind-down times (let users pick — a fixed 9:30pm is wrong for shift
+ *  workers, parents, and across time zones). */
+export const REMINDER_TIMES = [
+  { hour: 21, minute: 0, label: '9:00 PM' },
+  { hour: 21, minute: 30, label: '9:30 PM' },
+  { hour: 22, minute: 0, label: '10:00 PM' },
+  { hour: 22, minute: 30, label: '10:30 PM' },
+  { hour: 23, minute: 0, label: '11:00 PM' },
+] as const;
 
 /**
  * Enable/disable the nightly reminder. On enable, asks OS permission and
@@ -19,7 +29,11 @@ export const remindersSupported = supported;
  * only if a real reminder is now scheduled (false on web / denied permission),
  * so the UI never shows "on" for something that isn't actually scheduled.
  */
-export async function setBedtimeReminder(enabled: boolean): Promise<boolean> {
+export async function setBedtimeReminder(
+  enabled: boolean,
+  hour: number = DEFAULT_HOUR,
+  minute: number = DEFAULT_MINUTE,
+): Promise<boolean> {
   if (!supported) return false;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -35,7 +49,7 @@ export async function setBedtimeReminder(enabled: boolean): Promise<boolean> {
 
     await Notifications.scheduleNotificationAsync({
       content: { title: 'A gentle nudge', body: 'Time to wind down with CalmCarry.' },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: HOUR, minute: MINUTE },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
     });
     return true;
   } catch {

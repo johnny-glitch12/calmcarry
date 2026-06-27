@@ -9,10 +9,12 @@ primary_region = "iad"
 
 [env]
   PORT = "4000"
-  # DEMO posture: dev mode so the showcase backend boots without the (not-yet-real)
-  # CDN/social/IAP secrets the prod boot-guard requires, and so it seeds demo data.
-  # For the real launch, set this to "production" and provide all prod secrets.
-  NODE_ENV = "development"
+  # Production posture. The boot-guard in main.ts FAILS CLOSED unless every prod
+  # secret is set first (fly secrets set JWT_SECRET=… CMS_ADMIN_KEY=… DATABASE_URL=…
+  # CDN_BASE_URL=… CDN_SIGNING_KEY=… CORS_ORIGINS=… + Apple/Google sign-in & IAP).
+  # The demo user is NOT seeded in production. Set NODE_ENV=development only for a
+  # throwaway showcase that should boot without real credentials.
+  NODE_ENV = "production"
 
 [http_service]
   internal_port = 4000

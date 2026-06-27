@@ -5,7 +5,11 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { config, devFallback, integrations } from '../config';
+import { Environment, SignedDataVerifier } from '@apple/app-store-server-library';
+import { GoogleAuth } from 'google-auth-library';
+import { readdirSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { config, devFallback, integrations, isProd } from '../config';
 import type { EntitlementPlan } from '../entities';
 
 export type Store = 'apple' | 'google';
@@ -19,16 +23,23 @@ export interface ValidatedSubscription {
 }
 
 /**
- * Validates an App Store / Play Billing receipt server-side and returns the
- * normalized subscription. Real validation runs ONLY when credentials exist
- * (config.apple.iapSharedSecret / config.google.playServiceAccountJson); without
- * them it returns a dev grant so the app's purchase flow works end-to-end.
+ * Validates a purchase server-side and returns the normalized subscription.
  *
- * PLACEHOLDER: set APPLE_IAP_SHARED_SECRET / GOOGLE_PLAY_SERVICE_ACCOUNT_JSON.
+ *  - Apple: StoreKit 2. The client sends the JWS signed transaction (purchaseToken);
+ *    we verify it with the App Store Server API verifier (the same x5c-chain
+ *    verification used for webhooks) — NOT the deprecated /verifyReceipt endpoint.
+ *    Needs the Apple Root CA certs (APPLE_ROOT_CERTS_DIR), shared with webhooks.
+ *  - Google: Play Billing. We call androidpublisher v3 purchases.subscriptions
+ *    authenticated with the Play service account (GOOGLE_PLAY_SERVICE_ACCOUNT_JSON).
+ *
+ * Without credentials it FAILS CLOSED in production and hands back a dev grant in
+ * dev so the purchase flow is exercisable end-to-end.
  */
 @Injectable()
 export class ReceiptValidationService {
   private readonly logger = new Logger('ReceiptValidation');
+  private appleVerifiers: Partial<Record<'prod' | 'sandbox', SignedDataVerifier>> = {};
+  private googleAuth: GoogleAuth | null = null;
 
   async validate(store: Store, receipt: string, productId?: string): Promise<ValidatedSubscription> {
     if (store === 'apple') return this.apple(receipt, productId);
@@ -44,7 +55,7 @@ export class ReceiptValidationService {
   private devGrant(productId?: string): ValidatedSubscription {
     const plan = this.planFor(productId);
     const days = plan === 'annual' ? 365 : 30;
-    this.logger.warn(`IAP keys absent → DEV grant (${plan}). Set store secrets for real validation.`);
+    this.logger.warn(`IAP keys absent → DEV grant (${plan}). Set store creds for real validation.`);
     return {
       valid: true,
       plan,
@@ -54,62 +65,131 @@ export class ReceiptValidationService {
     };
   }
 
+  private assertPremiumSku(sku?: string): void {
+    const allow = config.premiumProductIds;
+    if (allow.length && sku && !allow.includes(sku)) {
+      throw new UnauthorizedException('Receipt product is not a premium subscription');
+    }
+  }
+
+  // ---------- Apple (StoreKit 2 / App Store Server API) ----------
+  private appleRootCerts(): Buffer[] {
+    const dir = config.apple.rootCertsDir;
+    if (!dir) return [];
+    try {
+      return readdirSync(dir)
+        .filter((f) => /\.(cer|pem|der|crt)$/i.test(f))
+        .map((f) => readFileSync(join(dir, f)));
+    } catch {
+      return [];
+    }
+  }
+
+  private appleVerifier(env: 'prod' | 'sandbox'): SignedDataVerifier {
+    const cached = this.appleVerifiers[env];
+    if (cached) return cached;
+    const certs = this.appleRootCerts();
+    if (!certs.length) {
+      throw new ServiceUnavailableException('Apple IAP verification not configured (root certs missing)');
+    }
+    const verifier = new SignedDataVerifier(
+      certs,
+      true, // online (OCSP) checks
+      env === 'prod' ? Environment.PRODUCTION : Environment.SANDBOX,
+      config.apple.bundleId,
+      config.apple.appAppleId || undefined,
+    );
+    this.appleVerifiers[env] = verifier;
+    return verifier;
+  }
+
   private async apple(receipt: string, productId?: string): Promise<ValidatedSubscription> {
-    if (!integrations.appleIap) {
-      // FAIL CLOSED in production — never hand out premium without real validation
+    if (!config.apple.rootCertsDir) {
       if (!devFallback) throw new ServiceUnavailableException('IAP not configured');
       return this.devGrant(productId);
     }
-    const body = {
-      'receipt-data': receipt,
-      password: config.apple.iapSharedSecret,
-      'exclude-old-transactions': true,
-    };
-    // production first, then retry sandbox on Apple's 21007 (sandbox receipt sent to prod)
-    let json = await this.post(config.apple.verifyUrl, body);
-    if (json.status === 21007) json = await this.post(config.apple.verifyUrlSandbox, body);
-    if (json.status !== 0) throw new UnauthorizedException(`Apple receipt invalid (status ${json.status})`);
-    const info = (json.latest_receipt_info ?? []).sort(
-      (a: any, b: any) => Number(b.expires_date_ms) - Number(a.expires_date_ms),
-    )[0];
-    if (!info) throw new UnauthorizedException('No subscription in receipt');
-    // Only our known premium SKUs grant premium — never trust an arbitrary
-    // product_id from the receipt blob.
-    const allow = config.premiumProductIds;
-    if (allow.length && !allow.includes(info.product_id)) {
-      throw new UnauthorizedException('Receipt product is not a premium subscription');
+    if (!receipt) throw new BadRequestException('Missing transaction');
+    // App Review tests sandbox purchases even on production builds, so try the
+    // build's environment first, then fall back to the other.
+    const order: ('prod' | 'sandbox')[] = isProd ? ['prod', 'sandbox'] : ['sandbox', 'prod'];
+    let tx: { productId?: string; originalTransactionId?: string; transactionId?: string; expiresDate?: number } | null =
+      null;
+    let lastErr: unknown;
+    for (const env of order) {
+      try {
+        tx = await this.appleVerifier(env).verifyAndDecodeTransaction(receipt);
+        break;
+      } catch (e) {
+        lastErr = e;
+      }
     }
-    // NOTE: for full account-binding, also verify info.app_account_token matches a
-    // token minted for the requesting account at purchase time (prevents receipt reuse).
+    if (!tx) {
+      this.logger.warn(`Apple transaction verification failed: ${String(lastErr)}`);
+      throw new UnauthorizedException('Apple transaction failed verification');
+    }
+    const sku = tx.productId ?? productId;
+    this.assertPremiumSku(sku);
+    const plan = this.planFor(sku);
     return {
       valid: true,
-      plan: this.planFor(info.product_id),
-      productId: info.product_id,
-      transactionRef: info.original_transaction_id,
-      expiresAt: new Date(Number(info.expires_date_ms)),
+      plan,
+      productId: sku ?? `calmcarry.premium.${plan}`,
+      transactionRef: String(tx.originalTransactionId ?? tx.transactionId ?? `apple-${Date.now()}`),
+      expiresAt: tx.expiresDate
+        ? new Date(Number(tx.expiresDate))
+        : new Date(Date.now() + (plan === 'annual' ? 365 : 30) * 86_400_000),
     };
   }
 
+  // ---------- Google Play (androidpublisher v3) ----------
   private async google(purchaseToken: string, productId?: string): Promise<ValidatedSubscription> {
     if (!integrations.googleIap) {
       if (!devFallback) throw new ServiceUnavailableException('IAP not configured');
       return this.devGrant(productId);
     }
-    // Real impl: call Android Publisher API
-    // GET androidpublisher/v3/applications/{pkg}/purchases/subscriptions/{productId}/tokens/{token}
-    // authenticated with the service account (config.google.playServiceAccountJson).
-    // Left as a guarded integration point so it never runs without creds.
-    throw new BadRequestException(
-      'Google Play validation not wired — add a Play Developer API client using GOOGLE_PLAY_SERVICE_ACCOUNT_JSON',
-    );
-  }
+    if (!purchaseToken) throw new BadRequestException('Missing purchase token');
+    const sku = productId;
+    if (!sku) throw new BadRequestException('productId required for Google validation');
+    this.assertPremiumSku(sku);
 
-  private async post(url: string, body: unknown): Promise<any> {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return res.json();
+    if (!this.googleAuth) {
+      let creds: Record<string, unknown>;
+      try {
+        creds = JSON.parse(config.google.playServiceAccountJson);
+      } catch {
+        throw new ServiceUnavailableException('Invalid Google service-account JSON');
+      }
+      this.googleAuth = new GoogleAuth({
+        credentials: creds,
+        scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+      });
+    }
+
+    const pkg = config.google.playPackage;
+    const url =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}` +
+      `/purchases/subscriptions/${encodeURIComponent(sku)}/tokens/${encodeURIComponent(purchaseToken)}`;
+    let data: { expiryTimeMillis?: string; paymentState?: number; orderId?: string };
+    try {
+      const client = await this.googleAuth.getClient();
+      const res = await client.request<typeof data>({ url });
+      data = res.data;
+    } catch (e) {
+      this.logger.warn(`Google purchase verification failed: ${String(e)}`);
+      throw new UnauthorizedException('Google purchase failed verification');
+    }
+    const expiryMs = Number(data?.expiryTimeMillis ?? 0);
+    if (!expiryMs) throw new UnauthorizedException('No expiry on Google purchase');
+    // paymentState: 0 pending, 1 received, 2 free-trial, 3 deferred. Reject unpaid.
+    if (data.paymentState != null && data.paymentState !== 1 && data.paymentState !== 2) {
+      throw new UnauthorizedException('Google purchase is not paid');
+    }
+    return {
+      valid: true,
+      plan: this.planFor(sku),
+      productId: sku,
+      transactionRef: String(data.orderId ?? purchaseToken),
+      expiresAt: new Date(expiryMs),
+    };
   }
 }

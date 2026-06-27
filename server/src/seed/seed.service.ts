@@ -72,9 +72,9 @@ export class SeedService implements OnApplicationBootstrap {
       { id: 'slow-tide', type: 'soundscape', title: 'Slow Tide', subtitle: 'Ocean swell · low drone', duration: '20 min', audioKey: 'ocean', coverKey: 'slowTide', locked: false },
       { id: 'rainfall', type: 'soundscape', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', duration: '45 min', audioKey: 'rain', coverKey: 'rainfall', locked: true },
       { id: 'forest', type: 'soundscape', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', duration: 'loops', audioKey: 'forest', coverKey: 'forestStream', locked: true },
-      { id: 'box-breathing', type: 'breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', duration: '8 min', audioKey: 'drone', coverKey: 'boxBreathing', locked: false },
-      { id: 'deep-rest', type: 'meditation', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', duration: '13 min', audioKey: 'drone', coverKey: 'deepRest', locked: true, newThisMonth: true },
-      { id: 'letting-go', type: 'meditation', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', duration: '13 min', audioKey: 'drone', coverKey: 'lettingGo', locked: true, newThisMonth: true },
+      { id: 'box-breathing', type: 'breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', duration: '3 min', audioKey: 'guided-box-breathing', coverKey: 'boxBreathing', locked: false },
+      { id: 'deep-rest', type: 'meditation', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', duration: '4 min', audioKey: 'guided-deep-rest', coverKey: 'deepRest', locked: true, newThisMonth: true },
+      { id: 'letting-go', type: 'meditation', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', duration: '4 min', audioKey: 'guided-letting-go', coverKey: 'lettingGo', locked: true, newThisMonth: true },
       { id: 'penguin', type: 'story', title: "A Penguin's Voyage", subtitle: 'Sleep tale · ages 4+', duration: '27 min', audioKey: 'ocean', coverKey: 'penguinVoyage', locked: false },
       { id: 'spa', type: 'soundscape', title: 'Spa Piano', subtitle: 'Playlist · soft keys', duration: '60 min', audioKey: 'piano', coverKey: 'spaMusic', locked: true, newThisMonth: true },
       // The remaining catalogue — mirrors src/content/library.ts so the signed-URL

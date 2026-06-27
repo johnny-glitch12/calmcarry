@@ -96,6 +96,30 @@ export async function purchaseSubscription(plan: 'monthly' | 'annual', token: st
   }
 }
 
+/**
+ * Localized store prices for the paywall (e.g. "£5.99", "A$99.99") so UK/CA/AU
+ * buyers never see a USD string that mismatches what StoreKit/Play actually charges.
+ * Returns {} on any failure — the caller falls back to the static USD PRICING.
+ */
+export async function fetchLocalizedPrices(): Promise<Partial<Record<'monthly' | 'annual', string>>> {
+  try {
+    await ensureConnection();
+    const products = (await fetchProducts({ skus: Object.values(PRODUCT_IDS), type: 'subs' } as never)) as unknown as Record<
+      string,
+      string
+    >[];
+    const out: Partial<Record<'monthly' | 'annual', string>> = {};
+    for (const plan of ['monthly', 'annual'] as const) {
+      const p = (products ?? []).find((x) => (x.id || x.productId) === PRODUCT_IDS[plan]);
+      const price = p && (p.displayPrice || p.localizedPrice || p.price);
+      if (price) out[plan] = String(price);
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export async function restoreSubscription(token: string): Promise<IapResult> {
   try {
     await ensureConnection();

@@ -11,6 +11,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "co.theglowcompany.calmcarry",
       "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],

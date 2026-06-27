@@ -1,4 +1,4 @@
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 
 /**
  * Two purchase paths (definitive build plan):
@@ -13,8 +13,21 @@ export const STORE_URL = 'https://www.theglowcompany.co';
 /** Product page for the device. Point this at the real listing when it's live. */
 export const DEVICE_CHECKOUT_URL = `${STORE_URL}/products/calmcarry-glow-orb`;
 
-/** OS subscription management (honest billing: one-tap cancel routes here). */
-export const SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions';
+/** OS subscription management (honest billing: one-tap cancel routes here). Must be
+ *  store-correct per platform — an Apple URL on Android is a Play-review + ROSCA fail. */
+export const SUBSCRIPTION_URL =
+  Platform.OS === 'android'
+    ? 'https://play.google.com/store/account/subscriptions'
+    : 'https://apps.apple.com/account/subscriptions';
+
+/** Region-aware crisis/help signpost (shown in About). A calm/sleep app sold in
+ *  US/UK/CA/AU should signpost local support; this is care, not a medical claim. */
+export const CRISIS_RESOURCES = [
+  { region: 'US', name: '988 Suicide & Crisis Lifeline', contact: 'Call or text 988', url: 'tel:988' },
+  { region: 'UK & ROI', name: 'Samaritans', contact: 'Call 116 123', url: 'tel:116123' },
+  { region: 'Canada', name: 'Talk Suicide Canada', contact: 'Call 1-833-456-4566', url: 'tel:18334564566' },
+  { region: 'Australia', name: 'Lifeline', contact: 'Call 13 11 14', url: 'tel:131114' },
+] as const;
 
 /** Support / legal pages — placeholders; swap for the real Glow Company URLs. */
 export const SUPPORT_URL = `${STORE_URL}/pages/contact`;

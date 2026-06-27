@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -144,18 +144,25 @@ export default function WindDownScreen() {
   const { mode } = useProfile();
   // the wind-down plays the track the home screen recommended (falls back to Slow Tide)
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const requested = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
-  // Never stream a locked premium track in the free wind-down ritual: fall back to a
-  // free bed. The ritual is about winding down, not a specific paid track — so a free
-  // user is neither handed paid content nor bounced to a paywall mid-calm.
-  const track = requested.locked && !isPremium && mode !== 'kids' ? TRACKS['slow-tide'] : requested;
+  const track = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
+  // Entitlement gate (mirrors Player.tsx isPreview): a locked premium track must NOT
+  // stream in the wind-down for a free, non-kids user — that bundled asset plays with
+  // no server signed-url check, so it would bypass the paywall entirely. Kids are
+  // never paywalled. We send free users to the paywall UP FRONT rather than starting a
+  // 20-minute ritual and yanking it away at a 60s preview cap.
+  const lockedForUser = !!track.locked && !isPremium && mode !== 'kids';
 
   // ambient bed: the recommended track, looping, plays through the wind-down ritual
   const audio = useAudioPlayer(audioSources[track.audio]);
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
   }, []);
+  // locked premium track + free user → straight to the paywall (no audio plays)
   useEffect(() => {
+    if (lockedForUser) router.replace(`/unlock?id=${track.id}` as Href);
+  }, [lockedForUser, track.id, router]);
+  useEffect(() => {
+    if (lockedForUser) return; // gated — redirecting to the paywall, never play paid audio
     audio.loop = true;
     audio.play();
     return () => {
@@ -165,11 +172,12 @@ export default function WindDownScreen() {
         /* released */
       }
     };
-  }, [audio]);
+  }, [audio, lockedForUser]);
   useEffect(() => {
+    if (lockedForUser) return;
     if (paused) audio.pause();
     else audio.play();
-  }, [paused, audio]);
+  }, [paused, audio, lockedForUser]);
 
   // session progress 0→1; the ring depletes and the scrim deepens off this value
   const progress = useSharedValue(0);
@@ -252,6 +260,7 @@ export default function WindDownScreen() {
 
   // mount: spring the centerpiece in, start the session, arm the idle fade
   useEffect(() => {
+    if (lockedForUser) return; // gated — don't arm timers/progress while redirecting to paywall
     if (!reduced) {
       enter.value = withTiming(1, { duration: dur.modal, easing: ease.out });
     }

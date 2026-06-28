@@ -119,7 +119,10 @@ export function Onboarding() {
   // ---- earned first recommendation (primes the soft paywall) ----
   if (stage === 'result' && chosen) {
     const map = FEELING_MAP[chosen];
-    const track = TRACKS[map.track] ?? TRACKS['slow-tide'];
+    // the onboarding user is always free (pre-account) and the next screen promises
+    // "it's yours free tonight" — so never surface a locked track as the earned pick
+    const picked = TRACKS[map.track];
+    const track = picked && !picked.locked ? picked : TRACKS['slow-tide'];
     return (
       <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
         <View style={{ minHeight: 28 }}>

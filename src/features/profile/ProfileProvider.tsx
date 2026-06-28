@@ -15,6 +15,7 @@ import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
 import { clearCoppaConsent } from '@/lib/consent';
 import { clearRecents, getRecents } from '@/lib/recents';
+import { TRACKS } from '@/content/library';
 import { recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
 
@@ -123,7 +124,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // recently-played track ids — read once per app open so the recommendation is
   // stable within a session but fresh each open (local-only, never a server profile).
   const [recents, setRecents] = useState<string[]>([]);
-  const { token, user } = useAuth();
+  const { token, user, isPremium } = useAuth();
 
   // keep latest in refs so setMode/setActiveProfile/addProfile read fresh values.
   // Written in an effect (not during render) so it's React-Compiler safe.
@@ -308,7 +309,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     () => recommendTracks({ feeling, intent, mode, hour: new Date().getHours(), recentIds: recents }),
     [mode, intent, feeling, recents]
   );
-  const recommendedTrackId = recommendedTrackIds[0];
+  // The HERO / "Begin wind-down" CTA must be free-PLAYABLE for a free, non-kids user —
+  // the core nightly loop can't dead-end at a paywall (that's the BetterSleep tease we
+  // exist to avoid). Locked picks still sit in recommendedTrackIds for the labelled
+  // "More for tonight" upsell rail; premium + kids get the true top pick.
+  const recommendedTrackId = useMemo(() => {
+    if (mode === 'kids' || isPremium) return recommendedTrackIds[0];
+    return recommendedTrackIds.find((id) => !TRACKS[id]?.locked) ?? recommendedTrackIds[0];
+  }, [recommendedTrackIds, mode, isPremium]);
 
   const value = useMemo<ProfileValue>(
     () => ({

@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Linking, Pressable, View } from 'react-native';
 
-import { AppText, Reveal, Screen } from '@/components';
+import { AppText, Card, Reveal, Screen } from '@/components';
 import { PRIVACY_URL } from '@/content/store';
 import { useTheme } from '@/theme';
 
@@ -64,19 +64,17 @@ export default function PrivacyPanel() {
 
       <Reveal index={2} style={{ marginTop: 24, gap: 14 }}>
         {POINTS.map((p) => (
-          <View
-            key={p.title}
-            style={{ flexDirection: 'row', gap: 14, padding: 16, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
+          <Card key={p.title} style={{ flexDirection: 'row', gap: 14 }}>
             <Feather name={p.icon} size={18} color={c.accent} style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
-              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+              <AppText variant="cardTitle" tone="title">
                 {p.title}
               </AppText>
               <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
                 {p.body}
               </AppText>
             </View>
-          </View>
+          </Card>
         ))}
       </Reveal>
 
@@ -86,7 +84,7 @@ export default function PrivacyPanel() {
           accessibilityRole="button"
           accessibilityHint="Opens in your browser"
           style={{ alignItems: 'center', paddingVertical: 12 }}>
-          <AppText variant="label" style={{ color: c.textAccent }}>
+          <AppText variant="label" tone="accent">
             Read the full privacy policy
           </AppText>
         </Pressable>

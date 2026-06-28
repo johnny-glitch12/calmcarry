@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
-import { AppText, Reveal, Screen } from '@/components';
+import { AppText, Card, Reveal, Screen } from '@/components';
 import { covers } from '@/content/covers';
 import { LEARN, WELLNESS_DISCLAIMER } from '@/content/library';
 import { useTheme } from '@/theme';
@@ -26,18 +26,7 @@ export function LearnList() {
       <Reveal index={1} style={{ marginTop: 24, gap: 12 }}>
         {items.map((a) => (
           <Pressable key={a.id} onPress={() => router.push((a.videoUrl ? `/watch?id=${a.id}` : `/learn-article?id=${a.id}`) as Href)} accessibilityRole="button">
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                padding: 12,
-                borderRadius: 16,
-                backgroundColor: c.surface,
-                borderWidth: 1,
-                borderColor: c.line,
-                ...c.shadow,
-              }}>
+            <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {a.cover ? (
                 <Image source={covers[a.cover]} style={{ width: 60, height: 60, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
               ) : null}
@@ -53,7 +42,7 @@ export function LearnList() {
                 </AppText>
               </View>
               <Feather name="chevron-right" size={20} color={c.accent} />
-            </View>
+            </Card>
           </Pressable>
         ))}
       </Reveal>
@@ -103,7 +92,7 @@ export function LearnArticle() {
             borderColor: c.line,
             padding: 14,
           }}>
-          <AppText variant="caption" tone="dim" style={{ lineHeight: 16, textTransform: 'none', letterSpacing: 0 }}>
+          <AppText variant="meta" tone="dim" style={{ lineHeight: 16 }}>
             {WELLNESS_DISCLAIMER}
           </AppText>
         </View>

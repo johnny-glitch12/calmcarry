@@ -4,7 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { AppText, PrimaryButton, Reveal, Screen } from '@/components';
+import { AppText, Card, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
@@ -92,18 +92,10 @@ export function ProgramDetail() {
             const isDone = done.includes(step.day);
             return (
               <Pressable key={step.day} onPress={() => open(step.day, step.trackId)} accessibilityRole="button" accessibilityState={{ selected: isDone }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 14,
-                    padding: 14,
-                    borderRadius: 16,
-                    backgroundColor: isDone ? c.panel : c.surface,
-                    borderWidth: 1,
-                    borderColor: isDone ? c.lineSage : c.line,
-                    ...c.shadow,
-                  }}>
+                <Card
+                  variant={isDone ? 'panel' : 'surface'}
+                  padding={14}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <View
                     style={{
                       width: 42,
@@ -122,7 +114,7 @@ export function ProgramDetail() {
                     )}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+                    <AppText variant="cardTitle" tone="title">
                       {step.title}
                     </AppText>
                     {t ? (
@@ -132,7 +124,7 @@ export function ProgramDetail() {
                     ) : null}
                   </View>
                   <Feather name={locked ? 'lock' : isDone ? 'rotate-ccw' : 'play'} size={16} color={c.accent} />
-                </View>
+                </Card>
               </Pressable>
             );
           })}

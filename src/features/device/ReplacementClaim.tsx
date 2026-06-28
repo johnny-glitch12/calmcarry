@@ -157,7 +157,7 @@ export function ReplacementClaim() {
           }}>
           <Feather name="box" size={18} color={c.textAccent} />
           <View style={{ flex: 1 }}>
-            <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+            <AppText variant="cardTitle" tone="title">
               {device?.model ?? 'CalmCarry · Glow Orb'}
             </AppText>
             <AppText variant="label" tone="muted">

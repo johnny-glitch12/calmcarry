@@ -3,7 +3,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, Share, Switch, View } from 'react-native';
 
-import { AppText, GlowOrb, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
+import { AppText, Card, GlowOrb, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
@@ -42,7 +42,7 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
         borderBottomColor: c.line,
       }}>
       <Feather name={icon} size={18} color={c.accent} />
-      <AppText variant="bodyMedium" tone="title" style={{ flex: 1, fontSize: 15 }}>
+      <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
         {label}
       </AppText>
       {toggle !== undefined ? (
@@ -76,18 +76,10 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
 }
 
 function Group({ children }: { children: React.ReactNode }) {
-  const { c } = useTheme();
   return (
-    <View
-      style={{
-        borderRadius: 18,
-        backgroundColor: c.surface,
-        borderWidth: 1,
-        borderColor: c.line,
-        ...c.shadow,
-      }}>
+    <Card variant="surface" radius={18} padding={0}>
       {children}
-    </View>
+    </Card>
   );
 }
 
@@ -252,7 +244,7 @@ export function AccountScreen() {
               : 'Unlock the full library, programs and sound machine with CalmCarry Premium.'}
           </AppText>
           {isPremium && renewAt ? (
-            <AppText variant="label" tone="muted" style={{ marginTop: 8, textTransform: 'none', letterSpacing: 0 }}>
+            <AppText variant="meta" tone="muted" style={{ marginTop: 8 }}>
               Renews {new Date(renewAt).toLocaleDateString()} · manage anytime, one tap
             </AppText>
           ) : null}
@@ -352,7 +344,7 @@ export function AccountScreen() {
           accessibilityRole="button"
           accessibilityLabel={confirmDelete ? 'Confirm permanent account deletion' : 'Delete account'}
           style={{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }}>
-          <AppText variant="label" style={{ color: confirmDelete ? brand.coral : c.dim, textTransform: 'none', letterSpacing: 0 }}>
+          <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
             {deleting
               ? 'Deleting…'
               : confirmDelete

@@ -167,7 +167,7 @@ export function RegisterDevice() {
       <Reveal index={2} style={{ marginTop: 28 }}>
         <PrimaryButton label="Register device" onPress={submit} loading={busy} />
         {formError ? (
-          <AppText variant="label" style={{ color: c.textAccent, textAlign: 'center', marginTop: 12, textTransform: 'none', letterSpacing: 0 }}>
+          <AppText variant="meta" tone="accent" style={{ textAlign: 'center', marginTop: 12 }}>
             {formError}
           </AppText>
         ) : null}

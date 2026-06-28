@@ -5,7 +5,7 @@ import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { AppText, GlowOrb, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { AppText, Card, GlowOrb, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
@@ -105,21 +105,10 @@ function DeviceSummaryCard({
         : 'Sign in to see your registered Glow Orb';
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 14,
-          padding: 16,
-          borderRadius: 20,
-          backgroundColor: c.surface,
-          borderWidth: 1,
-          borderColor: c.lineSage,
-          ...c.shadow,
-        }}>
+      <Card variant="surface" radius={20} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <GlowOrb size={56} reserveGlow aura={!!device} breathing={!!device} />
         <View style={{ flex: 1 }}>
-          <AppText variant="h2" tone="title" style={{ fontSize: 18 }}>
+          <AppText variant="h3" tone="title">
             {title}
           </AppText>
           <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
@@ -136,7 +125,7 @@ function DeviceSummaryCard({
           ) : null}
         </View>
         <Feather name="chevron-right" size={20} color={c.accent} />
-      </View>
+      </Card>
     </Pressable>
   );
 }
@@ -216,8 +205,8 @@ export function DeviceHub() {
         <View style={{ gap: 12 }}>
           <ActionRow
             icon="shield"
-            title="Authenticity check"
-            subtitle="Confirm this is a genuine device"
+            title="Device registration"
+            subtitle="Confirm it's registered &amp; covered"
             onPress={() => router.push('/authenticity')}
           />
           <ActionRow

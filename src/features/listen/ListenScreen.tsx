@@ -6,7 +6,7 @@ import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, ScrollView, View } from 'react-native';
 
-import { AppText, Reveal, Screen, SectionHeader } from '@/components';
+import { AppText, Card, Reveal, Screen, SectionHeader } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources, type AudioKey } from '@/content/audio';
@@ -364,7 +364,7 @@ export function ListenScreen() {
                 onPress={() => router.push((locked ? `/unlock?id=${id}` : `/player?id=${id}`) as Href)}
                 accessibilityRole="button"
                 accessibilityLabel={`Play ${t.title}`}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
+                <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <Image source={covers[t.cover]} style={{ width: 56, height: 56, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
                   <View style={{ flex: 1 }}>
                     <AppText variant="bodyMedium" tone="title">
@@ -375,7 +375,7 @@ export function ListenScreen() {
                     </AppText>
                   </View>
                   <Feather name={locked ? 'lock' : 'play'} size={18} color={c.textAccent} />
-                </View>
+                </Card>
               </Pressable>
             );
           })}
@@ -393,7 +393,7 @@ export function ListenScreen() {
               <Pressable key={i} onPress={() => loadMix(m)} accessibilityRole="button">
                 <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="disc" size={15} color={c.textAccent} />
-                  <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+                  <AppText variant="cardTitle" tone="title">
                     {m.name}
                   </AppText>
                 </View>
@@ -426,7 +426,7 @@ export function ListenScreen() {
           <Pressable onPress={cycleTimer} accessibilityRole="button" style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: timer > 0 ? c.panelStrong : c.surface, borderWidth: 1, borderColor: timer > 0 ? c.accent : c.line }}>
               <Feather name="moon" size={16} color={c.textAccent} />
-              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+              <AppText variant="cardTitle" tone="title">
                 {timer > 0 ? `${timer} min` : 'Sleep timer'}
               </AppText>
             </View>
@@ -434,7 +434,7 @@ export function ListenScreen() {
           <Pressable onPress={saveMix} disabled={!anyOn} accessibilityRole="button" style={{ flex: 1, opacity: anyOn ? 1 : 0.45 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
               <Feather name="bookmark" size={16} color={c.textAccent} />
-              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+              <AppText variant="cardTitle" tone="title">
                 Save mix
               </AppText>
             </View>
@@ -447,13 +447,13 @@ export function ListenScreen() {
             accessibilityLabel="Share this mix anonymously to the community"
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
             <Feather name="share-2" size={15} color={c.textAccent} />
-            <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+            <AppText variant="cardTitle" tone="title">
               Share this mix anonymously
             </AppText>
           </Pressable>
         ) : null}
         {shareNote ? (
-          <AppText variant="label" tone="muted" style={{ textAlign: 'center', marginTop: 8, textTransform: 'none', letterSpacing: 0 }}>
+          <AppText variant="meta" tone="muted" style={{ textAlign: 'center', marginTop: 8 }}>
             {shareNote}
           </AppText>
         ) : null}

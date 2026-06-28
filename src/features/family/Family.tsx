@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, Switch, View } from 'react-native';
 
-import { AppText, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
+import { AppText, Card, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile, type AppMode, type Profile } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
@@ -120,14 +120,14 @@ export function Family() {
             <FormField label="Name" value={newName} onChangeText={setNewName} placeholder="e.g. Mia" icon="user" />
             <Segmented options={['Adult', 'Kid']} value={newType === 'kids' ? 1 : 0} onChange={(i) => { setNewType(i === 1 ? 'kids' : 'adult'); setNeedConsent(false); }} />
             {needConsent ? (
-              <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, gap: 10 }}>
+              <Card variant="panel" style={{ gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="shield" size={16} color={c.textAccent} />
                   <AppText variant="cardTitle" tone="title">
                     A quick parent consent
                   </AppText>
                 </View>
-                <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0, lineHeight: 18 }}>
+                <AppText variant="meta" tone="muted" style={{ lineHeight: 18 }}>
                   A kid profile keeps only a first name. Kids mode is 100% ad-free, has no chat or
                   community, and we never sell or share your child’s data. You can remove the
                   profile and its data any time, below.
@@ -136,13 +136,13 @@ export function Family() {
                 <Pressable onPress={() => setNeedConsent(false)} accessibilityRole="button" style={{ alignSelf: 'center', paddingVertical: 6 }}>
                   <AppText variant="label" tone="muted">Cancel</AppText>
                 </Pressable>
-              </View>
+              </Card>
             ) : (
               <PrimaryButton label="Add to household" onPress={submitAdd} />
             )}
           </View>
         ) : null}
-        <AppText variant="label" tone="muted" style={{ marginTop: 14, textTransform: 'none', letterSpacing: 0 }}>
+        <AppText variant="meta" tone="muted" style={{ marginTop: 14 }}>
           One subscription covers everyone — each profile keeps its own picks.
         </AppText>
 
@@ -154,7 +154,7 @@ export function Family() {
               .map((p) => (
                 <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Feather name="smile" size={14} color={c.muted} />
-                  <AppText variant="label" tone="muted" style={{ flex: 1, textTransform: 'none', letterSpacing: 0 }}>
+                  <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
                     {p.name}
                   </AppText>
                   <Pressable onPress={() => onRemove(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${p.name}`}>
@@ -172,19 +172,11 @@ export function Family() {
         <SectionHeader kicker="Your orbs" title="Your devices" />
         <View style={{ gap: 12 }}>
           {devices.map((d) => (
-            <View
+            <Card
               key={d.id}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                padding: 14,
-                borderRadius: 16,
-                backgroundColor: c.surface,
-                borderWidth: 1,
-                borderColor: c.line,
-                ...c.shadow,
-              }}>
+              variant="surface"
+              padding={14}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               <GlowOrb size={44} reserveGlow breathing={false} />
               <View style={{ flex: 1 }}>
                 <AppText variant="cardTitle" tone="title">
@@ -195,7 +187,7 @@ export function Family() {
                 </AppText>
               </View>
               <StatusChip label="Registered" icon="check" />
-            </View>
+            </Card>
           ))}
           {devicesLoaded && devices.length === 0 ? (
             <View
@@ -206,7 +198,7 @@ export function Family() {
                 borderWidth: 1,
                 borderColor: c.panelStrong,
               }}>
-              <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+              <AppText variant="meta" tone="muted">
                 No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.
               </AppText>
             </View>
@@ -233,7 +225,7 @@ export function Family() {
             onPress={() => router.push('/shop')}
             accessibilityRole="button"
             style={{ alignItems: 'center', paddingVertical: 6 }}>
-            <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+            <AppText variant="meta" tone="muted">
               Need another?{' '}
               <AppText variant="label" style={{ color: c.textAccent }}>
                 Buy a Glow Orb
@@ -245,16 +237,7 @@ export function Family() {
 
       <Reveal index={2} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Kids" title="Child autonomy" />
-        <View
-          style={{
-            borderRadius: 16,
-            backgroundColor: c.surface,
-            borderWidth: 1,
-            borderColor: c.line,
-            ...c.shadow,
-            padding: 16,
-            gap: 14,
-          }}>
+        <Card variant="surface" style={{ gap: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Feather name="smile" size={18} color={c.accent} />
             <View style={{ flex: 1 }}>
@@ -279,11 +262,11 @@ export function Family() {
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Feather name="shield" size={14} color={c.textAccent} />
-            <AppText variant="caption" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+            <AppText variant="meta" tone="muted">
               Parent-gated · minimal data · no ads (COPPA-ready)
             </AppText>
           </View>
-        </View>
+        </Card>
       </Reveal>
 
       {/* caregivers — share the household with a partner or grandparent (real) */}

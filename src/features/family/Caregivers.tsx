@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
-import { AppText, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { AppText, Card, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { brand, useTheme } from '@/theme';
@@ -122,26 +122,26 @@ export function Caregivers() {
         </View>
       ) : error ? (
         <Reveal index={1} style={{ marginTop: 22 }}>
-          <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, alignItems: 'center', gap: 8 }}>
+          <Card variant="panel" style={{ alignItems: 'center', gap: 8 }}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
               We couldn’t load your household just now.
             </AppText>
             <Pressable onPress={refresh} accessibilityRole="button" hitSlop={8}>
-              <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+              <AppText variant="bodyMedium" tone="accent">
                 Tap to retry
               </AppText>
             </Pressable>
-          </View>
+          </Card>
         </Reveal>
       ) : memberOf ? (
         <Reveal index={1} style={{ marginTop: 22 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+          <Card variant="panel" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Feather name="home" size={18} color={c.textAccent} />
-            <AppText variant="bodyMedium" tone="title" style={{ flex: 1, fontSize: 15 }}>
+            <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
               You’re part of {memberOf.name}’s household
             </AppText>
             <StatusChip label="Shared" icon="users" />
-          </View>
+          </Card>
         </Reveal>
       ) : (
         <>
@@ -149,17 +149,17 @@ export function Caregivers() {
           <Reveal index={1} style={{ marginTop: 24 }}>
             <SectionHeader kicker="Add someone" title="Invite a caregiver" />
             {inviteCode ? (
-              <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, alignItems: 'center', gap: 8 }}>
-                <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+              <Card variant="panel" style={{ alignItems: 'center', gap: 8 }}>
+                <AppText variant="meta" tone="muted">
                   Share this code with them (valid 7 days):
                 </AppText>
                 <AppText variant="display" tone="title" style={{ letterSpacing: 2 }}>
                   {inviteCode}
                 </AppText>
-                <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0, textAlign: 'center' }}>
+                <AppText variant="meta" tone="muted" style={{ textAlign: 'center' }}>
                   They enter it under Profile → Family & devices → Caregivers → “Have a code”.
                 </AppText>
-              </View>
+              </Card>
             ) : (
               <PrimaryButton label="Create an invite code" onPress={invite} loading={busy} />
             )}
@@ -171,10 +171,10 @@ export function Caregivers() {
               <SectionHeader kicker="In your household" title="Caregivers" />
               <View style={{ gap: 12 }}>
                 {caregivers.map((cg) => (
-                  <View key={cg.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
+                  <Card key={cg.id} variant="surface" padding={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <GlowOrb size={40} reserveGlow breathing={false} />
                     <View style={{ flex: 1 }}>
-                      <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+                      <AppText variant="cardTitle" tone="title">
                         {cg.name}
                       </AppText>
                       <AppText variant="label" tone="muted">
@@ -186,7 +186,7 @@ export function Caregivers() {
                         Remove
                       </AppText>
                     </Pressable>
-                  </View>
+                  </Card>
                 ))}
               </View>
             </Reveal>
@@ -205,7 +205,7 @@ export function Caregivers() {
 
       {note ? (
         <Reveal index={4} style={{ marginTop: 16 }}>
-          <AppText variant="label" style={{ color: brand.coral, textTransform: 'none', letterSpacing: 0, textAlign: 'center' }}>
+          <AppText variant="meta" style={{ color: brand.coral, textAlign: 'center' }}>
             {note}
           </AppText>
         </Reveal>

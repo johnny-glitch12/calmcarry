@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, FormField, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { AppText, Card, FormField, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { setPendingMix } from '@/lib/mixShare';
@@ -55,17 +55,17 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
   };
 
   return (
-    <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow, opacity: win.pending ? 0.6 : 1 }}>
+    <Card variant="surface" muted={win.pending}>
       {/* header — one shared moon glyph for everyone (a symbol, never a person), the
           fixed anonymous handle, and a quiet relative time */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
           <Feather name="moon" size={15} color={c.textAccent} />
         </View>
-        <AppText variant="label" tone="muted" style={{ flex: 1, textTransform: 'none', letterSpacing: 0 }}>
+        <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
           {win.handle}
         </AppText>
-        <AppText variant="label" tone="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>
+        <AppText variant="meta" tone="dim">
           {win.when}
         </AppText>
       </View>
@@ -86,10 +86,10 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
               <Feather name="sliders" size={15} color={c.textAccent} />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
+              <AppText variant="cardTitle" tone="title">
                 {win.mix.name}
               </AppText>
-              <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+              <AppText variant="meta" tone="muted">
                 {soundCount} {soundCount === 1 ? 'sound' : 'sounds'} · Load this mix
               </AppText>
             </View>
@@ -115,13 +115,13 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
           style={{ alignSelf: 'flex-start', marginTop: 12 }}>
           <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, reactStyle]}>
             <Feather name="heart" size={14} color={carried ? c.textAccent : c.accent} />
-            <AppText variant="label" style={{ color: carried ? c.textAccent : c.muted, textTransform: 'none', letterSpacing: 0 }}>
+            <AppText variant="meta" style={{ color: carried ? c.textAccent : c.muted }}>
               {carried ? 'You carried this' : 'Carried this with you'}
             </AppText>
           </Animated.View>
         </Pressable>
       )}
-    </View>
+    </Card>
   );
 }
 
@@ -133,14 +133,14 @@ function SkeletonCard() {
     <View style={{ width: w, height: 12, borderRadius: 6, backgroundColor: c.panel, marginTop: mt }} />
   );
   return (
-    <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
+    <Card variant="surface">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.panel }} />
         {bar(120)}
       </View>
       {bar('100%')}
       {bar('72%', 8)}
-    </View>
+    </Card>
   );
 }
 
@@ -259,10 +259,10 @@ export function CommunityScreen() {
 
       {/* presence + trust */}
       <Reveal index={1} style={{ marginTop: 18 }}>
-        <View style={{ padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+        <Card variant="panel" radius={18}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Animated.View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.accent }, dotStyle]} />
-            <AppText variant="bodyMedium" tone="title" style={{ flex: 1, fontSize: 15 }}>
+            <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
               {presence && presence > 0
                 ? `${presence} quiet ${presence === 1 ? 'win' : 'wins'} shared by parents`
                 : 'A quiet, anonymous space to wind down together'}
@@ -272,7 +272,7 @@ export function CommunityScreen() {
             <StatusChip label="Anonymous" icon="eye-off" />
             <StatusChip label="Adults only" icon="shield" />
           </View>
-        </View>
+        </Card>
       </Reveal>
 
       {/* pressure-free filter — Latest / With a mix (never Following or Popular) */}
@@ -299,7 +299,7 @@ export function CommunityScreen() {
                   borderWidth: 1,
                   borderColor: on ? c.ctaBg : c.line,
                 }}>
-                <AppText variant="label" style={{ color: on ? c.ctaText : c.muted, textTransform: 'none', letterSpacing: 0 }}>
+                <AppText variant="meta" style={{ color: on ? c.ctaText : c.muted }}>
                   {f.label}
                 </AppText>
               </Pressable>
@@ -327,7 +327,7 @@ export function CommunityScreen() {
           </View>
         </Pressable>
         {note ? (
-          <AppText variant="label" style={{ color: c.dim, marginTop: 10, textTransform: 'none', letterSpacing: 0 }}>
+          <AppText variant="meta" style={{ color: c.dim, marginTop: 10 }}>
             {note}
           </AppText>
         ) : null}
@@ -347,24 +347,24 @@ export function CommunityScreen() {
               <WinCard key={w.key} win={w} onLoadMix={w.mix ? () => loadSharedMix(w.mix!.levels) : undefined} />
             ))
           ) : error ? (
-            <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, alignItems: 'center', gap: 4 }}>
+            <Card variant="panel" style={{ alignItems: 'center', gap: 4 }}>
               <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
                 We couldn’t load the wall just now.
               </AppText>
-              <AppText variant="label" tone="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>
+              <AppText variant="meta" tone="dim">
                 Pull to refresh or come back in a moment.
               </AppText>
-            </View>
+            </Card>
           ) : (
-            <View style={{ padding: 20, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, alignItems: 'center', gap: 6 }}>
+            <Card variant="panel" padding={20} style={{ alignItems: 'center', gap: 6 }}>
               <Feather name="moon" size={22} color={c.textAccent} />
               <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
                 No wins shared yet tonight.
               </AppText>
-              <AppText variant="label" tone="dim" style={{ textTransform: 'none', letterSpacing: 0, textAlign: 'center' }}>
+              <AppText variant="meta" tone="dim" style={{ textAlign: 'center' }}>
                 Be the first — a small calm thing that went right.
               </AppText>
-            </View>
+            </Card>
           )}
         </Animated.View>
       </Reveal>

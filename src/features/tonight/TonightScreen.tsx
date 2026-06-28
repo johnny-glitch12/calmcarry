@@ -6,6 +6,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import {
   AppText,
+  Card,
   CoverCard,
   GlowOrb,
   LibraryCard,
@@ -249,7 +250,7 @@ export function TonightScreen() {
       {/* how CalmCarry works — newcomer intro */}
       {!hiwDismissed ? (
         <Reveal index={2}>
-          <View style={{ marginTop: 18, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+          <Card variant="panel" radius={18} style={{ marginTop: 18 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <AppText variant="caption" tone="accent">
                 New here?
@@ -264,7 +265,7 @@ export function TonightScreen() {
             <AppText variant="body" tone="muted" style={{ marginTop: 6 }}>
               Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down — the device does the rest.
             </AppText>
-          </View>
+          </Card>
         </Reveal>
       ) : null}
 
@@ -315,7 +316,7 @@ export function TonightScreen() {
               <AppText variant="bodyMedium" tone="title">
                 {rescueLabel}
               </AppText>
-              <AppText variant="label" tone="muted" style={{ marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
+              <AppText variant="meta" tone="muted" style={{ marginTop: 2 }}>
                 Tap once for a free drift back to sleep — no sign-in needed.
               </AppText>
             </View>
@@ -353,18 +354,10 @@ export function TonightScreen() {
           it's an encouragement, never an empty "0/7" guilt-meter */}
       {nights > 0 ? (
         <Reveal index={5}>
-          <View
-            style={{
-              marginTop: 28,
-              padding: 16,
-              borderRadius: 18,
-              backgroundColor: c.panel,
-              borderWidth: 1,
-              borderColor: c.lineSage,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 14,
-            }}>
+          <Card
+            variant="panel"
+            radius={18}
+            style={{ marginTop: 28, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <View style={{ flex: 1 }}>
               <AppText variant="caption" tone="accent">
                 Your calm nights
@@ -378,7 +371,7 @@ export function TonightScreen() {
                 ))}
               </View>
             </View>
-          </View>
+          </Card>
         </Reveal>
       ) : null}
 

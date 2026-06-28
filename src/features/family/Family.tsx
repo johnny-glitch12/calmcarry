@@ -123,7 +123,7 @@ export function Family() {
               <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage, gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="shield" size={16} color={c.textAccent} />
-                  <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+                  <AppText variant="cardTitle" tone="title">
                     A quick parent consent
                   </AppText>
                 </View>
@@ -187,7 +187,7 @@ export function Family() {
               }}>
               <GlowOrb size={44} reserveGlow breathing={false} />
               <View style={{ flex: 1 }}>
-                <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+                <AppText variant="cardTitle" tone="title">
                   {d.model ?? 'Glow Orb'}
                 </AppText>
                 <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
@@ -258,7 +258,7 @@ export function Family() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Feather name="smile" size={18} color={c.accent} />
             <View style={{ flex: 1 }}>
-              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+              <AppText variant="cardTitle" tone="title">
                 Kids&apos; mode
               </AppText>
               <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
@@ -302,7 +302,7 @@ export function Family() {
             }}>
             <Feather name="user-plus" size={18} color={c.textAccent} />
             <View style={{ flex: 1 }}>
-              <AppText variant="bodyMedium" tone="title" style={{ fontSize: 15 }}>
+              <AppText variant="cardTitle" tone="title">
                 Caregivers
               </AppText>
               <AppText variant="label" tone="muted">

@@ -217,7 +217,7 @@ export function AccountScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
           <GlowOrb size={56} reserveGlow breathing={false} />
           <View style={{ flex: 1 }}>
-            <AppText variant="h1" tone="title" style={{ fontSize: 22 }}>
+            <AppText variant="h1Compact" tone="title">
               {user?.name ?? 'Welcome'}
             </AppText>
             <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
@@ -242,7 +242,7 @@ export function AccountScreen() {
           }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Feather name="award" size={18} color={c.textAccent} />
-            <AppText variant="h2" tone="title" style={{ fontSize: 18, color: c.textAccent }}>
+            <AppText variant="h3" tone="accent">
               {isPremium ? 'CalmCarry Premium' : 'Free tier'}
             </AppText>
           </View>

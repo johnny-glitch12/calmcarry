@@ -43,13 +43,15 @@ module.exports = {
         orb: '20px',
       },
       fontFamily: {
-        // Specific @expo-google-fonts variants (RN needs the exact family per weight).
-        sans: ['Montserrat_400Regular'],
-        medium: ['Montserrat_500Medium'],
-        semibold: ['Montserrat_600SemiBold'],
-        bold: ['Montserrat_700Bold'],
-        serif: ['Fraunces_400Regular'],
-        display: ['Fraunces_600SemiBold'],
+        // Mirror src/theme/typography.ts EXACTLY — Poppins (body/UI) + Montserrat
+        // (headings/display). NO serif (the old Fraunces entries were a forbidden,
+        // never-loaded leftover). RN needs the exact @expo-google-fonts variant per weight.
+        sans: ['Poppins_400Regular'],
+        medium: ['Poppins_500Medium'],
+        semibold: ['Poppins_600SemiBold'],
+        bold: ['Poppins_700Bold'],
+        heading: ['Montserrat_600SemiBold'],
+        display: ['Montserrat_700Bold'],
       },
     },
   },

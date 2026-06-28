@@ -1,15 +1,22 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 import { AppText, BearMascot, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
-import { useTheme } from '@/theme';
+import { fonts, useTheme } from '@/theme';
+
+// light tap feedback on the big kid affordances (paired with the Pressable `pressed`
+// scale below) — a child should feel every tap respond
+const tapHaptic = () => {
+  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+};
 // Big, friendly, calm sounds a child can pick on their own.
 const KID_SOUNDS = ['forest', 'rainfall', 'slow-tide'];
 
@@ -78,7 +85,7 @@ export function KidsHome() {
             <AppText variant="caption" tone="accent">
               Bedtime
             </AppText>
-            <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 34, color: c.textAccent, marginTop: 4 }}>
+            <AppText style={{ fontFamily: fonts.display, fontSize: 34, color: c.textAccent, marginTop: 4 }}>
               Hi {firstName}!
             </AppText>
           </View>
@@ -118,14 +125,19 @@ export function KidsHome() {
 
       {/* BIG story hero */}
       <Reveal index={3} style={{ marginTop: 22 }}>
-        <Pressable onPress={() => router.push(`/player?id=${story.id}`)} accessibilityRole="button" accessibilityLabel={`Play ${story.title}`}>
+        <Pressable
+          onPress={() => router.push(`/player?id=${story.id}`)}
+          onPressIn={tapHaptic}
+          accessibilityRole="button"
+          accessibilityLabel={`Play ${story.title}`}
+          style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null)}>
           <View style={{ borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image source={covers[story.cover]} style={{ width: '100%', height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
             <View style={{ padding: 20, backgroundColor: c.surface }}>
               <AppText variant="caption" tone="accent">
                 Tonight’s calm
               </AppText>
-              <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 26, color: c.textAccent, marginTop: 4 }}>
+              <AppText style={{ fontFamily: fonts.display, fontSize: 26, color: c.textAccent, marginTop: 4 }}>
                 {story.title}
               </AppText>
               <View
@@ -140,7 +152,7 @@ export function KidsHome() {
                   backgroundColor: c.ctaBg,
                 }}>
                 <Feather name="play" size={22} color={c.ctaText} />
-                <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 18, color: c.ctaText }}>
+                <AppText style={{ fontFamily: fonts.display, fontSize: 18, color: c.ctaText }}>
                   Start
                 </AppText>
               </View>
@@ -151,7 +163,7 @@ export function KidsHome() {
 
       {/* big calm-sound buttons */}
       <Reveal index={4} style={{ marginTop: 28 }}>
-        <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 22, color: c.textAccent, marginBottom: 14 }}>
+        <AppText style={{ fontFamily: fonts.display, fontSize: 22, color: c.textAccent, marginBottom: 14 }}>
           Pick a calm sound
         </AppText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 }}>
@@ -162,14 +174,15 @@ export function KidsHome() {
               <Pressable
                 key={id}
                 onPress={() => router.push(`/player?id=${id}`)}
+                onPressIn={tapHaptic}
                 accessibilityRole="button"
                 accessibilityLabel={t.title}
-                style={{ width: '31%' }}>
+                style={({ pressed }) => [{ width: '31%' }, pressed ? { transform: [{ scale: 0.97 }], opacity: 0.96 } : null]}>
                 <View style={{ aspectRatio: 1, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
                   <Image source={covers[t.cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
                   <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.55)', justifyContent: 'flex-end', padding: 10 }}>
-                    <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 13, color: '#FFFFFF' }}>
-                      {t.title.split(' ')[0]}
+                    <AppText numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 13, color: '#FFFFFF' }}>
+                      {t.title}
                     </AppText>
                   </View>
                 </View>

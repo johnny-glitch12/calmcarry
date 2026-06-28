@@ -14,7 +14,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { dur, ease, fonts, useTheme } from '@/theme';
+import { dur, ease, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
 
@@ -170,10 +170,7 @@ export function CoverCard({
               {title}
             </AppText>
           ) : (
-            <AppText
-              tone="title"
-              numberOfLines={2}
-              style={{ fontFamily: fonts.semibold, fontSize: 18, lineHeight: 22 }}>
+            <AppText variant="cardTitleLg" tone="title" numberOfLines={2}>
               {title}
             </AppText>
           )}

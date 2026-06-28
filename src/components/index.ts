@@ -4,6 +4,7 @@ export { BearMascot } from './BearMascot';
 export { Screen } from './Screen';
 export { GlowOrb } from './GlowOrb';
 export { PrimaryButton } from './PrimaryButton';
+export { Card } from './Card';
 export { CoverCard } from './CoverCard';
 export { LibraryCard } from './LibraryCard';
 export { StatusChip } from './StatusChip';

@@ -79,11 +79,7 @@ export function LibraryCard({ title, subtitle, image, locked = false, size = 152
             </View>
           ) : null}
         </View>
-        <AppText
-          variant="bodyMedium"
-          tone="title"
-          numberOfLines={2}
-          style={{ marginTop: 10, fontSize: 15, lineHeight: 19 }}>
+        <AppText variant="cardTitle" tone="title" numberOfLines={2} style={{ marginTop: 10 }}>
           {title}
         </AppText>
         {subtitle ? (

@@ -55,6 +55,32 @@ export const type = {
     fontSize: 20,
     lineHeight: 26,
   },
+  // compact display heading (between h1 and h2) — e.g. a profile name
+  h1Compact: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    lineHeight: 28,
+    letterSpacing: 0.1,
+  },
+  // small heading for card headers / dense sections (replaces inline h2→18 overrides)
+  h3: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  // the canonical card / list-row title (replaces the inline bodyMedium→15/14 overrides
+  // scattered across every screen — the single most-repeated text class in the app)
+  cardTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  // larger card title for prominent horizontal cards (e.g. CoverCard rails)
+  cardTitleLg: {
+    fontFamily: fonts.semibold,
+    fontSize: 18,
+    lineHeight: 24,
+  },
   body: {
     fontFamily: fonts.regular,
     fontSize: 16,
@@ -82,5 +108,13 @@ export const type = {
     lineHeight: 14,
     letterSpacing: 1.3, // ~0.12em uppercase kicker
     textTransform: 'uppercase',
+  },
+  // sentence-case microcopy (sub-labels, helper/meta text): a `label` WITHOUT the
+  // tracking, so call sites stop pasting `textTransform:'none', letterSpacing:0`.
+  meta: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    letterSpacing: 0,
   },
 } satisfies Record<string, TextStyle>;

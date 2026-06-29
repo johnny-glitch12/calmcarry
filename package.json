@@ -67,7 +67,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
-    "build:site": "rm -rf calmcarry-preview && EXPO_PUBLIC_API_BASE=https://calmcarry-api.vercel.app EXPO_WEB_BASE_URL=/app EXPO_PUBLIC_COMP_LOGIN=1 expo export --platform web --clear --output-dir calmcarry-preview/app && cp web/index.html web/vercel.json web/middleware.js calmcarry-preview/",
+    "build:site": "rm -rf calmcarry-preview && EXPO_PUBLIC_API_BASE=https://calmcarry-api.vercel.app EXPO_WEB_BASE_URL=/app EXPO_PUBLIC_COMP_LOGIN=1 expo export --platform web --clear --output-dir calmcarry-preview/app && node scripts/postexport-fix.mjs && cp web/index.html web/vercel.json web/middleware.js calmcarry-preview/",
     "deploy:site": "npm run build:site && vercel deploy calmcarry-preview --prod"
   },
   "private": true

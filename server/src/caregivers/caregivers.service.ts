@@ -26,7 +26,10 @@ export class CaregiversService {
     const isCaregiver = await this.links.findOne({ where: { caregiverOwnerId: householdOwnerId } });
     if (isCaregiver) throw new ForbiddenException('Only the household owner can invite caregivers.');
 
-    const code = `${crypto.randomBytes(2).toString('hex')}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase();
+    // ~48 bits of entropy (3 groups), single-use + 7-day expiry, and /redeem is
+    // rate-limited — so an invite code can't be feasibly brute-forced.
+    const grp = () => crypto.randomBytes(2).toString('hex');
+    const code = `${grp()}-${grp()}-${grp()}`.toUpperCase();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
     await this.invites.save(this.invites.create({ code, householdOwnerId, expiresAt }));
     return { code, expiresAt };

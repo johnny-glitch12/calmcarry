@@ -1,7 +1,8 @@
 {
   "buildCommand": "npm run build",
   "functions": {
-    "api/index.js": { "memory": 1024, "maxDuration": 30 }
+    "api/index.js": { "memory": 1024, "maxDuration": 60 }
   },
+  "crons": [{ "path": "/retention/purge", "schedule": "0 4 * * *" }],
   "rewrites": [{ "source": "/(.*)", "destination": "/api/index.js" }]
 }

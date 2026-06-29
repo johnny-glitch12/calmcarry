@@ -2,12 +2,16 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Owner } from './owner.entity';
 
+// Indexed for the daily retention purge (DELETE WHERE startedAt < cutoff) — without
+// it that DELETE is a full table scan that can blow the serverless function timeout.
+@Index('idx_session_log_started_at', ['startedAt'])
 @Entity('session_logs')
 export class SessionLog {
   @PrimaryGeneratedColumn('uuid')

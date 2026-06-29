@@ -30,16 +30,19 @@ export class RetentionService implements OnApplicationBootstrap, OnModuleDestroy
     if (this.timer) clearInterval(this.timer);
   }
 
-  /** Delete session logs + anonymous analytics older than the retention window. */
-  async purge(): Promise<void> {
+  /** Delete session logs + anonymous analytics older than the retention window.
+   *  Returns the number of records purged (for cron/endpoint observability). */
+  async purge(): Promise<number> {
     const cutoff = new Date(Date.now() - RETENTION_DAYS * DAY_MS);
     try {
       const a = await this.logs.delete({ startedAt: LessThan(cutoff) });
       const b = await this.events.delete({ createdAt: LessThan(cutoff) });
       const n = (a.affected ?? 0) + (b.affected ?? 0);
       if (n) this.logger.log(`Purged ${n} record(s) older than ${RETENTION_DAYS}d (retention limit).`);
+      return n;
     } catch (e) {
       this.logger.warn(`Retention purge skipped: ${String(e)}`);
+      return 0;
     }
   }
 }

@@ -32,6 +32,17 @@ async function bootstrap(): Promise<express.Express> {
   if (missing.length) {
     throw new Error(`Refusing to serve in production — set: ${missing.join(', ')}`);
   }
+  // This function is EPHEMERAL, so RetentionService's in-process daily timer never
+  // fires reliably — the COPPA/data-retention purge runs ONLY via Vercel Cron hitting
+  // /retention/purge, which authenticates with CRON_SECRET. Absent that secret the cron
+  // 401s forever and the purge silently never runs (a 4xx the exception filter doesn't
+  // even log), so a serverless prod deploy must refuse to serve without it. (Long-lived
+  // `npm start` deploys don't gate this — their in-process timer runs the purge directly.)
+  if (isProd && !config.cronSecret) {
+    throw new Error(
+      'Refusing to serve in production — set CRON_SECRET (the daily retention/COPPA purge cron authenticates with it; absent, the purge silently never runs).',
+    );
+  }
 
   const server = express();
   const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server), { rawBody: true });

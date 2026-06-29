@@ -80,6 +80,12 @@ export const config = {
   // guards the CMS write endpoints (content publishing)
   cmsAdminKey: process.env.CMS_ADMIN_KEY ?? 'dev-cms-key',
 
+  // Auth for the serverless retention-purge cron. Vercel Cron sends
+  // `Authorization: Bearer ${CRON_SECRET}`; set this on the Vercel project or the
+  // daily COPPA/retention purge will 401 and never run. (Long-lived deploys don't
+  // need it — their in-process daily timer runs the purge directly.)
+  cronSecret: process.env.CRON_SECRET ?? '',
+
   // Optional shared store for rate-limit counters across serverless/multi-instance
   // deploys. Unset → per-instance in-memory (limits don't hold across machines).
   redisUrl: process.env.REDIS_URL ?? '',

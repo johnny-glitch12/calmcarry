@@ -12,6 +12,8 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
+  withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -21,7 +23,8 @@ import { TRACKS } from '@/content/library';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
 import { lightTap } from '@/lib/haptics';
 import { markOnboarded } from '@/lib/onboarding';
-import { dur, ease, useTheme } from '@/theme';
+import { setSleepGoalHours, SLEEP_GOAL_DEFAULT, SLEEP_GOAL_MAX, SLEEP_GOAL_MIN } from '@/lib/sleepGoal';
+import { dur, ease, fonts, useTheme } from '@/theme';
 
 type Art = 'orb' | 'cluster' | 'shield';
 type Slide = { art: Art; title: string; body: string };
@@ -144,13 +147,88 @@ function Dot({ active }: { active: boolean }) {
   return <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: active ? c.accent : c.line }, style]} />;
 }
 
+/** A ruler-style sleep-goal picker: a big circular hour badge that springs on
+ *  change, over a row of tick marks (tap to set). Transform/opacity only. */
+function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: number) => void }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const pop = useSharedValue(1);
+  const hours = Array.from({ length: SLEEP_GOAL_MAX - SLEEP_GOAL_MIN + 1 }, (_, i) => SLEEP_GOAL_MIN + i);
+  const set = (h: number) => {
+    if (h === value) return;
+    lightTap();
+    onChange(h);
+    if (!reduced) {
+      pop.value = withSequence(
+        withTiming(1.08, { duration: 110, easing: ease.out }),
+        withSpring(1, { damping: 12, stiffness: 200, mass: 0.6 })
+      );
+    }
+  };
+  const badgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <Animated.View
+        style={[
+          {
+            width: 132,
+            height: 132,
+            borderRadius: 66,
+            borderWidth: 2,
+            borderColor: c.accent,
+            backgroundColor: c.surface,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...c.shadow,
+          },
+          badgeStyle,
+        ]}>
+        <AppText style={{ fontFamily: fonts.display, fontSize: 40, lineHeight: 46, color: c.textAccent }}>{value}h</AppText>
+      </Animated.View>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginTop: 28 }}>
+        {hours.map((h) => {
+          const active = h === value;
+          const labelled = active || h % 2 === 0;
+          return (
+            <Pressable
+              key={h}
+              onPress={() => set(h)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`${h} hours`}
+              accessibilityState={{ selected: active }}
+              style={{ width: 30, alignItems: 'center' }}>
+              <View
+                style={{
+                  width: active ? 3 : 2,
+                  height: active ? 34 : h % 2 === 0 ? 22 : 14,
+                  borderRadius: 2,
+                  backgroundColor: active ? c.accent : c.line,
+                }}
+              />
+              {labelled ? (
+                <AppText variant="label" tone={active ? 'accent' : 'muted'} style={{ marginTop: 6 }}>
+                  {h}
+                </AppText>
+              ) : (
+                <View style={{ height: 17 }} />
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export function Onboarding() {
   const router = useRouter();
   const { c } = useTheme();
   const { setFeeling } = useProfile();
-  const [stage, setStage] = useState<'intro' | 'quiz' | 'voice' | 'result'>('intro');
+  const [stage, setStage] = useState<'intro' | 'goal' | 'quiz' | 'voice' | 'result'>('intro');
   const [i, setI] = useState(0);
   const [chosen, setChosen] = useState<Feeling | null>(null);
+  const [goalHours, setGoalHours] = useState(SLEEP_GOAL_DEFAULT);
   const last = i === SLIDES.length - 1;
   const slide = SLIDES[i];
 
@@ -164,6 +242,38 @@ export function Onboarding() {
     setFeeling(f);
     setStage('voice');
   };
+
+  // ---- nightly sleep-hours goal (a real saved preference, not a tracked metric) ----
+  if (stage === 'goal') {
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <AmbientMotes />
+        <OnboardingHeader onSkip={finish} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen)}>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
+              Your nightly sleep goal
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
+              Most adults do best on 7 to 9 hours. We’ll keep your goal in mind as you build a calmer evening rhythm.
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(180)} style={{ marginTop: 44 }}>
+            <SleepGoalDial value={goalHours} onChange={setGoalHours} />
+          </Animated.View>
+        </View>
+        <PrimaryButton
+          label="Continue"
+          onPress={() => {
+            setSleepGoalHours(goalHours);
+            setStage('quiz');
+          }}
+        />
+      </Screen>
+    );
+  }
 
   // ---- personalization quiz ----
   if (stage === 'quiz') {
@@ -319,7 +429,7 @@ export function Onboarding() {
         ))}
       </View>
 
-      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))} />
+      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('goal') : setI((v) => v + 1))} />
       {i > 0 ? (
         <Pressable
           onPress={() => setI((v) => Math.max(0, v - 1))}

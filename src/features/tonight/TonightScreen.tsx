@@ -79,8 +79,8 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 22, gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <AppText variant="caption" tone="accent">
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="caption" tone="accent" numberOfLines={2}>
                 {kicker}
               </AppText>
               <AppText
@@ -95,7 +95,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
               </AppText>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
                 <Feather name="clock" size={13} color={c.textAccent} />
-                <AppText variant="label" style={{ color: c.textAccent }}>
+                <AppText variant="label" numberOfLines={1} style={{ flex: 1, minWidth: 0, color: c.textAccent }}>
                   {track.duration} · rest it in your palm
                 </AppText>
               </View>

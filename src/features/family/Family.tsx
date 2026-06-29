@@ -178,11 +178,11 @@ export function Family() {
               padding={14}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               <GlowOrb size={44} reserveGlow breathing={false} />
-              <View style={{ flex: 1 }}>
-                <AppText variant="cardTitle" tone="title">
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <AppText variant="cardTitle" tone="title" numberOfLines={1}>
                   {d.model ?? 'Glow Orb'}
                 </AppText>
-                <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+                <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
                   {d.serial}
                 </AppText>
               </View>
@@ -240,7 +240,7 @@ export function Family() {
         <Card variant="surface" style={{ gap: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Feather name="smile" size={18} color={c.accent} />
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <AppText variant="cardTitle" tone="title">
                 Kids&apos; mode
               </AppText>
@@ -284,7 +284,7 @@ export function Family() {
               borderColor: c.panelStrong,
             }}>
             <Feather name="user-plus" size={18} color={c.textAccent} />
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <AppText variant="cardTitle" tone="title">
                 Caregivers
               </AppText>

@@ -59,8 +59,8 @@ function Segment({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <Animated.Text style={[LABEL, { color: mutedColor }, mutedStyle]}>{label}</Animated.Text>
-        <Animated.Text style={[LABEL, { color: activeColor, position: 'absolute' }, activeStyle]}>{label}</Animated.Text>
+        <Animated.Text numberOfLines={1} style={[LABEL, { color: mutedColor }, mutedStyle]}>{label}</Animated.Text>
+        <Animated.Text numberOfLines={1} style={[LABEL, { color: activeColor, position: 'absolute' }, activeStyle]}>{label}</Animated.Text>
       </View>
     </Pressable>
   );

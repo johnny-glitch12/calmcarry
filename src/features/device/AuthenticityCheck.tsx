@@ -213,11 +213,15 @@ export function AuthenticityCheck() {
 function Row({ label, value }: { label: string; value: string }) {
   const { c } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
       <AppText variant="label" tone="dim">
         {label}
       </AppText>
-      <AppText variant="label" tone="text" style={{ color: c.textAccent }}>
+      <AppText
+        variant="label"
+        tone="text"
+        numberOfLines={1}
+        style={{ color: c.textAccent, flexShrink: 1, textAlign: 'right' }}>
         {value}
       </AppText>
     </View>

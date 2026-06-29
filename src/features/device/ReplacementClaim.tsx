@@ -27,7 +27,7 @@ function IssueChip({ label, selected, onPress }: { label: string; selected: bool
           borderWidth: 1,
           borderColor: selected ? c.accent : c.line,
         }}>
-        <AppText style={{ fontFamily: fonts.medium, fontSize: 13, color: selected ? '#FFFFFF' : c.text }}>
+        <AppText numberOfLines={1} style={{ fontFamily: fonts.medium, fontSize: 13, color: selected ? '#FFFFFF' : c.text }}>
           {label}
         </AppText>
       </View>
@@ -156,11 +156,11 @@ export function ReplacementClaim() {
             borderColor: c.panelStrong,
           }}>
           <Feather name="box" size={18} color={c.textAccent} />
-          <View style={{ flex: 1 }}>
-            <AppText variant="cardTitle" tone="title">
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText variant="cardTitle" tone="title" numberOfLines={1}>
               {device?.model ?? 'CalmCarry · Glow Orb'}
             </AppText>
-            <AppText variant="label" tone="muted">
+            <AppText variant="label" tone="muted" numberOfLines={2}>
               {device ? `${device.serial} · warranty active` : 'Register your device to file a claim'}
             </AppText>
           </View>

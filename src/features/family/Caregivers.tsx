@@ -137,7 +137,7 @@ export function Caregivers() {
         <Reveal index={1} style={{ marginTop: 22 }}>
           <Card variant="panel" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Feather name="home" size={18} color={c.textAccent} />
-            <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
+            <AppText variant="cardTitle" tone="title" style={{ flex: 1, minWidth: 0 }} numberOfLines={2}>
               You’re part of {memberOf.name}’s household
             </AppText>
             <StatusChip label="Shared" icon="users" />
@@ -173,11 +173,11 @@ export function Caregivers() {
                 {caregivers.map((cg) => (
                   <Card key={cg.id} variant="surface" padding={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <GlowOrb size={40} reserveGlow breathing={false} />
-                    <View style={{ flex: 1 }}>
-                      <AppText variant="cardTitle" tone="title">
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <AppText variant="cardTitle" tone="title" numberOfLines={1}>
                         {cg.name}
                       </AppText>
-                      <AppText variant="label" tone="muted">
+                      <AppText variant="label" tone="muted" numberOfLines={1}>
                         {cg.email}
                       </AppText>
                     </View>

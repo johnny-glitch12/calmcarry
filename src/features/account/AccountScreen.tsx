@@ -43,7 +43,7 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
         borderBottomColor: c.line,
       }}>
       <Feather name={icon} size={18} color={c.accent} />
-      <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
+      <AppText variant="cardTitle" tone="title" style={{ flex: 1, minWidth: 0 }} numberOfLines={1}>
         {label}
       </AppText>
       {toggle !== undefined ? (
@@ -58,7 +58,7 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {value ? (
-            <AppText variant="label" tone="muted">
+            <AppText variant="label" tone="muted" numberOfLines={1}>
               {value}
             </AppText>
           ) : null}
@@ -215,11 +215,11 @@ export function AccountScreen() {
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
           <GlowOrb size={56} reserveGlow breathing={false} />
-          <View style={{ flex: 1 }}>
-            <AppText variant="h1Compact" tone="title">
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText variant="h1Compact" tone="title" numberOfLines={1}>
               {user?.name ?? 'Welcome'}
             </AppText>
-            <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+            <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
               {user?.email ?? 'Sign in to sync your Glow account'}
             </AppText>
           </View>

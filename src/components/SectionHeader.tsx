@@ -35,13 +35,13 @@ export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
         justifyContent: 'space-between',
         marginBottom: 12,
       }}>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         {kicker ? (
-          <AppText variant="caption" tone="accent" style={{ marginBottom: 4 }}>
+          <AppText variant="caption" tone="accent" numberOfLines={1} style={{ marginBottom: 4 }}>
             {kicker}
           </AppText>
         ) : null}
-        <AppText variant="h2" tone="title">
+        <AppText variant="h2" tone="title" numberOfLines={2}>
           {title}
         </AppText>
       </View>
@@ -57,7 +57,7 @@ export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
           hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }}
           accessibilityRole="button">
           <Animated.View style={actionStyle}>
-            <AppText style={[type.label, { color: c.textAccent }]}>{actionLabel}</AppText>
+            <AppText numberOfLines={1} style={[type.label, { color: c.textAccent }]}>{actionLabel}</AppText>
           </Animated.View>
         </Pressable>
       ) : null}

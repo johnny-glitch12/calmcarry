@@ -49,23 +49,23 @@ function PlanCard({
           borderColor: selected ? c.accent : c.line,
         }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-              <AppText variant="h2" tone="title" style={{ fontSize: 18 }}>
+              <AppText variant="h2" tone="title" style={{ fontSize: 18 }} numberOfLines={1}>
                 {p.label}
               </AppText>
               {note ? (
-                <AppText variant="caption" style={{ color: c.textAccent, textTransform: 'none', letterSpacing: 0 }}>
+                <AppText variant="caption" style={{ flexShrink: 1, color: c.textAccent, textTransform: 'none', letterSpacing: 0 }} numberOfLines={1}>
                   {note}
                 </AppText>
               ) : null}
             </View>
-            <AppText variant="label" tone="muted" style={{ marginTop: 4 }}>
+            <AppText variant="label" tone="muted" style={{ marginTop: 4 }} numberOfLines={1}>
               {sub}
             </AppText>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <AppText variant="bodyMedium" tone="title">
+            <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
               {price}
             </AppText>
             <AppText variant="label" tone="muted">

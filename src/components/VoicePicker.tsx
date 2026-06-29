@@ -102,11 +102,11 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
               }}>
               <Feather name={active ? 'volume-2' : 'play'} size={18} color={active ? '#FFFFFF' : c.textAccent} />
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="bodyMedium" tone="title">
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
                 {v.name}
               </AppText>
-              <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+              <AppText variant="label" tone="muted" numberOfLines={1} style={{ marginTop: 2 }}>
                 {v.tag} · tap to hear
               </AppText>
             </View>

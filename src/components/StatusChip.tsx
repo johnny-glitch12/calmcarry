@@ -81,7 +81,7 @@ export function StatusChip({ label, icon = 'shield', tone = 'sage', confirm = fa
         style,
       ]}>
       {icon ? <Feather name={icon} size={13} color={t.fg} /> : null}
-      <AppText style={[type.label, { color: t.fg }]}>{label}</AppText>
+      <AppText numberOfLines={1} style={[type.label, { color: t.fg }]}>{label}</AppText>
     </Animated.View>
   );
 }

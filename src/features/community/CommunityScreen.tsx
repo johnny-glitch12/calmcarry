@@ -68,7 +68,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
           <Feather name="moon" size={15} color={c.textAccent} />
         </View>
-        <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
+        <AppText variant="meta" tone="muted" style={{ flex: 1, minWidth: 0 }} numberOfLines={1}>
           {win.handle}
         </AppText>
         <AppText variant="meta" tone="dim">
@@ -91,11 +91,11 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="sliders" size={15} color={c.textAccent} />
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="cardTitle" tone="title">
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="cardTitle" tone="title" numberOfLines={1}>
                 {win.mix.name}
               </AppText>
-              <AppText variant="meta" tone="muted">
+              <AppText variant="meta" tone="muted" numberOfLines={1}>
                 {soundCount} {soundCount === 1 ? 'sound' : 'sounds'} · Load this mix
               </AppText>
             </View>

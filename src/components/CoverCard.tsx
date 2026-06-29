@@ -164,7 +164,7 @@ export function CoverCard({
         )}
 
         {/* text block */}
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           {featured ? (
             <AppText variant="display" tone="title" numberOfLines={1}>
               {title}
@@ -180,7 +180,7 @@ export function CoverCard({
             </AppText>
           ) : null}
           {meta ? (
-            <AppText variant="label" tone="dim" style={{ marginTop: 6 }}>
+            <AppText variant="label" tone="dim" numberOfLines={1} style={{ marginTop: 6 }}>
               {meta}
             </AppText>
           ) : null}

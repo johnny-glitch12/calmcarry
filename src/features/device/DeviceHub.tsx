@@ -64,11 +64,11 @@ function ActionRow({
           }}>
           <Feather name={icon} size={19} color={c.textAccent} />
         </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodyMedium" tone="title">
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
             {title}
           </AppText>
-          <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+          <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={2}>
             {subtitle}
           </AppText>
         </View>
@@ -107,11 +107,11 @@ function DeviceSummaryCard({
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title}>
       <Card variant="surface" radius={20} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <GlowOrb size={56} reserveGlow aura={!!device} breathing={!!device} />
-        <View style={{ flex: 1 }}>
-          <AppText variant="h3" tone="title">
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText variant="h3" tone="title" numberOfLines={2}>
             {title}
           </AppText>
-          <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+          <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={2}>
             {subtitle}
           </AppText>
           {loading ? (

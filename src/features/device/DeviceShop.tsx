@@ -64,11 +64,11 @@ function ReasonCard({
           }}>
           <Feather name={icon} size={19} color={c.textAccent} />
         </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodyMedium" tone="title">
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
             {title}
           </AppText>
-          <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+          <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={2}>
             {subtitle}
           </AppText>
         </View>
@@ -110,8 +110,8 @@ export function DeviceShop() {
           }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <GlowOrb size={72} reserveGlow aura />
-            <View style={{ flex: 1 }}>
-              <AppText variant="h2" tone="title" style={{ fontSize: 19 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="h2" tone="title" style={{ fontSize: 19 }} numberOfLines={2}>
                 {DEVICE_NAME}
               </AppText>
               <View style={{ marginTop: 8, flexDirection: 'row' }}>
@@ -163,7 +163,11 @@ export function DeviceShop() {
       <Reveal index={3} style={{ marginTop: 22, alignItems: 'center' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Feather name="tool" size={14} color={c.textAccent} />
-          <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+          <AppText
+            variant="label"
+            tone="muted"
+            numberOfLines={2}
+            style={{ flexShrink: 1, textTransform: 'none', letterSpacing: 0 }}>
             Faulty and still in warranty?{' '}
           </AppText>
           <Pressable

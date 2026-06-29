@@ -1,13 +1,16 @@
-// Post-export fix for the Vercel static deploy of the web build.
+// Post-export fixes for the Vercel static deploy of the web build.
 //
-// Expo's web export hashes package-sourced assets (the Google text fonts AND the
-// @expo/vector-icons glyph fonts) under `assets/node_modules/...`. Vercel SKIPS any
-// file under a `node_modules/` path when deploying a static dir, so those fonts 404
-// (the SPA rewrite then returns index.html) → text falls back and icons render as
-// tofu squares. Non-node_modules assets (covers, JS) serve fine.
+// 1) Vercel SKIPS any file under a `node_modules/` path when deploying a static
+//    dir. Expo hashes package-sourced assets (the Google text fonts AND the
+//    @expo/vector-icons glyph fonts) under `assets/node_modules/...`, so those
+//    fonts 404 (the SPA rewrite returns index.html) → text falls back and icons
+//    render as tofu squares. Fix: rename `assets/node_modules` → `assets/nm` and
+//    rewrite every reference in the emitted JS/HTML/CSS.
 //
-// Fix: rename `assets/node_modules` → `assets/nm` and rewrite every reference to it
-// in the emitted JS/HTML/CSS so the URLs point at the (uploaded) `assets/nm` path.
+// 2) Expo's web index omits `viewport-fit=cover`, so `env(safe-area-inset-*)` is 0
+//    in the browser and SafeAreaView can't inset content below the notch / Dynamic
+//    Island / Android camera cutout (content renders under it). Add it to every
+//    page's viewport meta so the browser exposes the real per-device insets.
 import { readdirSync, readFileSync, writeFileSync, renameSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -15,28 +18,36 @@ const ROOT = 'calmcarry-preview/app';
 const FROM = 'assets/node_modules';
 const TO = 'assets/nm';
 
-if (!existsSync(join(ROOT, FROM))) {
-  console.log(`postexport-fix: no ${FROM} in export — nothing to do.`);
-  process.exit(0);
-}
-
-renameSync(join(ROOT, FROM), join(ROOT, TO));
+if (existsSync(join(ROOT, FROM))) renameSync(join(ROOT, FROM), join(ROOT, TO));
 
 let files = 0;
 let rewritten = 0;
+let viewportPatched = 0;
 function walk(dir) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
-    if (e.isDirectory()) walk(p);
-    else if (/\.(js|html|css|json|map)$/.test(e.name)) {
-      files++;
-      const s = readFileSync(p, 'utf8');
-      if (s.includes(FROM)) {
-        writeFileSync(p, s.split(FROM).join(TO));
-        rewritten++;
-      }
+    if (e.isDirectory()) {
+      walk(p);
+      continue;
+    }
+    if (!/\.(js|html|css|json|map)$/.test(e.name)) continue;
+    files++;
+    let s = readFileSync(p, 'utf8');
+    let changed = false;
+    if (s.includes(FROM)) {
+      s = s.split(FROM).join(TO);
+      changed = true;
+    }
+    if (e.name.endsWith('.html') && s.includes('name="viewport"') && !s.includes('viewport-fit=cover')) {
+      s = s.replace(/(<meta name="viewport" content="[^"]*?)("\s*\/?>)/i, '$1, viewport-fit=cover$2');
+      changed = true;
+      viewportPatched++;
+    }
+    if (changed) {
+      writeFileSync(p, s);
+      rewritten++;
     }
   }
 }
 walk(ROOT);
-console.log(`postexport-fix: ${FROM} → ${TO}; rewrote ${rewritten}/${files} text files.`);
+console.log(`postexport-fix: ${FROM} → ${TO}; rewrote ${rewritten}/${files} files; viewport-fit=cover added to ${viewportPatched} html.`);

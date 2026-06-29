@@ -83,10 +83,14 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
               <AppText variant="caption" tone="accent">
                 {kicker}
               </AppText>
-              <AppText variant="display" tone="title" style={{ color: c.textAccent, marginTop: 6 }}>
+              <AppText
+                variant="display"
+                tone="title"
+                numberOfLines={2}
+                style={{ color: c.textAccent, marginTop: 6, fontSize: 24, lineHeight: 29 }}>
                 {track.title}
               </AppText>
-              <AppText variant="body" tone="text" style={{ marginTop: 2 }}>
+              <AppText variant="body" tone="text" numberOfLines={2} style={{ marginTop: 2 }}>
                 {track.subtitle}
               </AppText>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
@@ -97,8 +101,8 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
               </View>
             </View>
             {/* orb + a clear, premium play affordance so the hero reads as "tap to begin" */}
-            <View style={{ width: 104, height: 104, alignItems: 'center', justifyContent: 'center' }}>
-              <GlowOrb size={104} aura />
+            <View style={{ width: 88, height: 88, alignItems: 'center', justifyContent: 'center' }}>
+              <GlowOrb size={88} aura />
               <View
                 style={{
                   position: 'absolute',

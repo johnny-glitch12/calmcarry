@@ -17,3 +17,4 @@ export { Reveal } from './Reveal';
 export { ProgressRing } from './ProgressRing';
 export { Segmented } from './Segmented';
 export { FormField } from './FormField';
+export { VoicePicker } from './VoicePicker';

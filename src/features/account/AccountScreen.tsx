@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, Share, Switch, View } from 'react-native';
 
 import { AppText, Card, GlowOrb, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
+import { getVoice, voiceByKey } from '@/lib/voice';
 import { clearAll, getJSON, setJSON } from '@/lib/store';
 import { brand, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
 
@@ -90,6 +91,12 @@ export function AccountScreen() {
   const { user, isPremium, token, signOut } = useAuth();
   const { mode, setMode } = useProfile();
   const [reminder, setReminder] = useState(false);
+  const [voiceName, setVoiceName] = useState('Maya');
+  useFocusEffect(
+    useCallback(() => {
+      getVoice().then((k) => setVoiceName(voiceByKey(k).name));
+    }, []),
+  );
   const [reminderIdx, setReminderIdx] = useState(1); // default 9:30 PM
   const [pushOn, setPushOn] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
@@ -295,6 +302,7 @@ export function AccountScreen() {
           {remindersSupported && reminder ? (
             <SettingRow icon="clock" label="Reminder time" value={REMINDER_TIMES[reminderIdx].label} onPress={cycleReminderTime} />
           ) : null}
+          <SettingRow icon="mic" label="Guided voice" value={voiceName} onPress={() => router.push('/voice' as Href)} />
           <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} last />
         </Group>
       </Reveal>

@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AmbientMotes, AppText, GlowOrb, Logo, PrimaryButton, Screen } from '@/components';
+import { AmbientMotes, AppText, GlowOrb, Logo, PrimaryButton, Screen, VoicePicker } from '@/components';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
@@ -148,7 +148,7 @@ export function Onboarding() {
   const router = useRouter();
   const { c } = useTheme();
   const { setFeeling } = useProfile();
-  const [stage, setStage] = useState<'intro' | 'quiz' | 'result'>('intro');
+  const [stage, setStage] = useState<'intro' | 'quiz' | 'voice' | 'result'>('intro');
   const [i, setI] = useState(0);
   const [chosen, setChosen] = useState<Feeling | null>(null);
   const last = i === SLIDES.length - 1;
@@ -162,7 +162,7 @@ export function Onboarding() {
     lightTap();
     setChosen(f);
     setFeeling(f);
-    setStage('result');
+    setStage('voice');
   };
 
   // ---- personalization quiz ----
@@ -214,6 +214,32 @@ export function Onboarding() {
             ))}
           </View>
         </View>
+      </Screen>
+    );
+  }
+
+  // ---- choose the guided voice ----
+  if (stage === 'voice') {
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <AmbientMotes />
+        <OnboardingHeader onSkip={finish} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen)}>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
+              Choose your voice
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
+              The voice that guides your wind-downs. Tap to hear each, then pick the one that settles you. You can change it any time in Settings.
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(180)} style={{ marginTop: 28 }}>
+            <VoicePicker />
+          </Animated.View>
+        </View>
+        <PrimaryButton label="Continue" onPress={() => setStage('result')} />
       </Screen>
     );
   }

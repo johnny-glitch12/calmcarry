@@ -40,7 +40,7 @@ export function CheckIn() {
         </Reveal>
         <Reveal index={1} style={{ alignItems: 'center' }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 290 }}>
-            Set your Glow Orb down whenever you’re ready. Rest well — there’s nothing else to do.
+            Set your Glow Orb down whenever you’re ready. Rest well. There’s nothing else to do.
           </AppText>
         </Reveal>
       </View>

@@ -63,7 +63,7 @@ export type Feeling = 'racing' | 'cant-switch-off' | 'wired-tired' | 'wound-up' 
 export const FEELING_MAP: Record<Feeling, { intent: Intent; track: string; line: string }> = {
   racing: { intent: 'reset', track: 'box-breathing', line: 'Let’s slow the spin.' },
   'cant-switch-off': { intent: 'sleep', track: 'deep-rest', line: 'We’ll help you set the day down.' },
-  'wired-tired': { intent: 'sleep', track: 'slow-tide', line: 'Tired body, busy mind — let’s settle both.' },
+  'wired-tired': { intent: 'sleep', track: 'slow-tide', line: 'Tired body, busy mind. Let’s settle both.' },
   'wound-up': { intent: 'reset', track: 'box-breathing', line: 'A few slow breaths to unwind.' },
   'heavy-day': { intent: 'sleep', track: 'deep-rest', line: 'Somewhere soft to land.' },
   quiet: { intent: 'sounds', track: 'slow-tide', line: 'Just some calm to rest in.' },

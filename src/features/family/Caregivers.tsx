@@ -75,10 +75,10 @@ export function Caregivers() {
     try {
       await api.redeemCaregiver(token, code);
       setJoinCode('');
-      setNote('Joined — you now share the household.');
+      setNote('Joined. You now share the household.');
       refresh();
     } catch {
-      setNote('That code didn’t work — check it and try again.');
+      setNote('That code didn’t work. Check it and try again.');
     } finally {
       setBusy(false);
     }
@@ -94,7 +94,7 @@ export function Caregivers() {
       await api.removeCaregiver(token, id);
     } catch {
       setCaregivers(prev);
-      setNote('Couldn’t remove that caregiver — please try again.');
+      setNote('Couldn’t remove that caregiver. Please try again.');
     }
   };
 
@@ -111,7 +111,7 @@ export function Caregivers() {
           Caregivers
         </AppText>
         <AppText variant="body" tone="muted" style={{ marginTop: 8 }}>
-          Share your CalmCarry with a partner or grandparent. One subscription covers everyone — they get the full library, your devices and profiles.
+          Share your CalmCarry with a partner or grandparent. One subscription covers everyone: they get the full library, your devices and profiles.
         </AppText>
       </Reveal>
 

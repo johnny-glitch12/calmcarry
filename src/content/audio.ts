@@ -33,4 +33,4 @@ export const audioSources: Record<AudioKey, AudioSource> = {
 
 /** Required attribution for the CC BY tracks (shown in Account). */
 export const AUDIO_CREDITS =
-  'Attribution (CC BY 3.0): “Prelude in C” — Kevin MacLeod (incompetech.com); “Campfire” — Glaneur de sons; “Water on Rocks” — Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white noise beds are generated in-house (royalty-free). Guided-session narration is AI-synthesized voice.';
+  'Attribution (CC BY 3.0): “Prelude in C” by Kevin MacLeod (incompetech.com); “Campfire” by Glaneur de sons; “Water on Rocks” by Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white noise beds are generated in-house (royalty-free). Guided-session narration is AI-synthesized voice.';

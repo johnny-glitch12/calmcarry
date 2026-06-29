@@ -16,7 +16,7 @@ import { brand, useTheme } from '@/theme';
 const INCLUDED = [
   'The full guided session & sleep-tale library',
   'Multi-week gentle programs',
-  'The full sound machine — mix and save your own',
+  'The full sound machine, so you can mix and save your own',
   'Shared access for the whole household',
   'Fresh sessions and music every month',
 ];
@@ -253,7 +253,7 @@ export function CalmPlan() {
       <Reveal index={3} style={{ marginTop: 20, gap: 10 }}>
         {/* honest-billing beats — the exact pains BetterSleep-style apps inflict */}
         <View style={{ gap: 8, marginBottom: 2 }}>
-          {['One subscription covers your whole household', 'Cancel in one tap, anytime — no email, no phone call'].map((t) => (
+          {['One subscription covers your whole household', 'Cancel in one tap, anytime. No email, no phone call'].map((t) => (
             <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Feather name="shield" size={14} color={c.textAccent} />
               <AppText variant="label" tone="muted" style={{ flex: 1, textTransform: 'none', letterSpacing: 0 }}>
@@ -268,7 +268,7 @@ export function CalmPlan() {
               ? 'You’re premium ✓'
               : plan === 'annual'
                 ? `Start your ${TRIAL_DAYS}-day free trial`
-                : `Start monthly — ${display('monthly').price}${PRICING.monthly.per}`
+                : `Start monthly at ${display('monthly').price}${PRICING.monthly.per}`
           }
           onPress={subscribe}
           loading={busy}
@@ -282,7 +282,7 @@ export function CalmPlan() {
         {/* required subscription disclosure */}
         <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
           {plan === 'annual'
-            ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled — we’ll remind you before it ends. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+            ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. We’ll remind you before it ends. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
             : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
         </AppText>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>

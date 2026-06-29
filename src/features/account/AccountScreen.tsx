@@ -240,7 +240,7 @@ export function AccountScreen() {
           </View>
           <AppText variant="body" tone="text" style={{ marginTop: 6 }}>
             {isPremium
-              ? 'Premium is on — the full library, programs and the whole sound machine, shared across your household.'
+              ? 'Premium is on. You have the full library, programs and the whole sound machine, shared across your household.'
               : 'Unlock the full library, programs and sound machine with CalmCarry Premium.'}
           </AppText>
           {isPremium && renewAt ? (
@@ -267,7 +267,7 @@ export function AccountScreen() {
           onChange={(i) => setPref(SCHEMES[i])}
         />
         <AppText variant="label" tone="muted" style={{ marginTop: 20, marginBottom: 10 }}>
-          Mode — kids mode shows bedtime stories & gentle sounds
+          Mode: kids mode shows bedtime stories & gentle sounds
         </AppText>
         <Segmented
           options={['Adult', 'Kids']}
@@ -349,7 +349,7 @@ export function AccountScreen() {
               ? 'Deleting…'
               : confirmDelete
                 ? isPremium
-                  ? 'Tap again to delete everything. Your subscription bills through the App Store / Google Play — cancel it there too.'
+                  ? 'Tap again to delete everything. Your subscription bills through the App Store / Google Play, so cancel it there too.'
                   : 'Tap again to permanently delete your account & data'
                 : 'Delete account'}
           </AppText>

@@ -130,9 +130,9 @@ function CheckInBody({
           </AppText>
           <AppText variant="body" tone="muted" style={{ marginTop: 8 }}>
             {step === 'feeling'
-              ? 'No wrong answer — it just helps us pick. Tap whatever fits.'
+              ? 'There’s no wrong answer. It just helps us pick, so tap whatever fits.'
               : feeling
-                ? `${FEELING_MAP[feeling].line} Here’s what we’d reach for — there’s always a free option.`
+                ? `${FEELING_MAP[feeling].line} Here’s what we’d reach for. There’s always a free option.`
                 : 'One tap and we’ll cue something. There’s always a free option.'}
           </AppText>
         </Reveal>

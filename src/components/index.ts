@@ -1,5 +1,7 @@
 export { AppText } from './AppText';
 export { Logo } from './Logo';
+export { AnimatedLogo } from './AnimatedLogo';
+export { BrandSplash } from './BrandSplash';
 export { BearMascot } from './BearMascot';
 export { Screen } from './Screen';
 export { GlowOrb } from './GlowOrb';

@@ -204,7 +204,7 @@ export function ParentGate() {
       ? 'Keeps the grown-up areas grown-up.'
       : phase === 'confirm'
         ? 'Type it once more to be sure.'
-        : 'A 4-digit code only grown-ups know — it guards leaving Kids mode and the settings, store and community.';
+        : 'A 4-digit code only grown-ups know. It guards leaving Kids mode and the settings, store and community.';
 
   return (
     <Screen mode="night" contentStyle={{ flex: 1 }}>

@@ -26,7 +26,7 @@ const SLIDES: Slide[] = [
   {
     cover: 'deepRest',
     title: 'A library made for sleep',
-    body: 'Soundscapes, sleep tales, and guided wind-downs — held in your hand, fading you to silence.',
+    body: 'Soundscapes, sleep tales, and guided wind-downs, held in your hand, fading you to silence.',
   },
   {
     cover: 'forestStream',

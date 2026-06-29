@@ -13,12 +13,12 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string
   {
     icon: 'eye-off',
     title: 'Anonymous by default',
-    body: 'We key the little we measure to a random per-install id — never your name, email, or account. No profile is built about you.',
+    body: 'We key the little we measure to a random per-install id, never your name, email, or account. No profile is built about you.',
   },
   {
     icon: 'slash',
     title: 'No trackers, no ads',
-    body: 'There are no third-party advertising or tracking SDKs in CalmCarry. We never sell or share your data — and there’s no “ask app not to track” prompt, because we don’t track you across other apps.',
+    body: 'There are no third-party advertising or tracking SDKs in CalmCarry. We never sell or share your data. And there’s no “ask app not to track” prompt, because we don’t track you across other apps.',
   },
   {
     icon: 'moon',
@@ -33,7 +33,7 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string
   {
     icon: 'download',
     title: 'Your data, on request',
-    body: 'Export everything tied to your account as a file, or delete your account and data permanently — both from Settings, anytime, in a tap.',
+    body: 'Export everything tied to your account as a file, or delete your account and data permanently. Both live in Settings, anytime, in a tap.',
   },
 ];
 
@@ -58,7 +58,7 @@ export default function PrivacyPanel() {
           Your data stays yours
         </AppText>
         <AppText variant="body" tone="muted" style={{ marginTop: 10 }}>
-          CalmCarry is built privacy-first — here’s exactly what that means, in plain English.
+          CalmCarry is built privacy-first. Here’s exactly what that means, in plain English.
         </AppText>
       </Reveal>
 

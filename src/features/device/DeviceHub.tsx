@@ -194,7 +194,7 @@ export function DeviceHub() {
         <ActionRow
           icon="shopping-bag"
           title="Buy another Glow Orb"
-          subtitle="An extra for any room — or a replacement"
+          subtitle="An extra for any room, or a replacement"
           onPress={() => router.push('/shop')}
         />
       </Reveal>

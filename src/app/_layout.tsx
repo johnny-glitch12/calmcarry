@@ -8,6 +8,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { BrandSplash } from '@/components';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { ProfileProvider, useProfile } from '@/features/profile/ProfileProvider';
 import { startAnalytics, track } from '@/lib/analytics';
@@ -32,7 +33,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         Let’s take a breath
       </Text>
       <Text style={{ fontSize: 15, color: '#5C6968', textAlign: 'center', marginBottom: 28, lineHeight: 22, maxWidth: 300 }}>
-        Something hiccuped on our end. Nothing you did — let’s try that again.
+        Something hiccuped on our end. Nothing you did. Let’s try that again.
       </Text>
       <Pressable
         onPress={retry}
@@ -93,6 +94,8 @@ function KidsGuard() {
 function RootNav() {
   const [fontsLoaded, fontError] = useFonts(fontMap);
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  // the CalmCarry brand reveal plays once per cold start, over the first route
+  const [showBrand, setShowBrand] = useState(true);
   const { hydrated: schemeHydrated } = useColorSchemePref();
   const { hydrated: profileHydrated, mode } = useProfile();
   const router = useRouter();
@@ -181,6 +184,8 @@ function RootNav() {
       <Stack.Screen name="auth" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal }} />
       <Stack.Screen name="unlock" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: true }} />
       </Stack>
+      {/* CalmCarry brand reveal — overlays the first route on cold start, then fades */}
+      {showBrand ? <BrandSplash onDone={() => setShowBrand(false)} /> : null}
     </>
   );
 }

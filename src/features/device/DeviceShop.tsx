@@ -132,7 +132,7 @@ export function DeviceShop() {
           </View>
 
           <View style={{ marginTop: 20, gap: 8 }}>
-            <PrimaryButton label="Buy now — secure checkout" onPress={() => buy()} />
+            <PrimaryButton label="Buy now, secure checkout" onPress={() => buy()} />
             <AppText
               variant="caption"
               tone="muted"

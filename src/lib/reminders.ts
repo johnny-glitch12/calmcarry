@@ -77,7 +77,7 @@ export async function scheduleTrialEndingReminder(trialDays: number, priceLabel:
       identifier: TRIAL_ID,
       content: {
         title: 'Your free trial is ending soon',
-        body: `After the trial, CalmCarry Premium continues at ${priceLabel} unless you cancel — cancel anytime in one tap.`,
+        body: `After the trial, CalmCarry Premium continues at ${priceLabel} unless you cancel. You can cancel anytime in one tap.`,
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
     });

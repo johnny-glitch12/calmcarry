@@ -167,7 +167,7 @@ export function AuthenticityCheck() {
                 gap: 12,
               }}>
               <Row label="Model" value={device?.model ?? 'CalmCarry · Glow Orb'} />
-              <Row label="Serial" value={device?.serial ?? '—'} />
+              <Row label="Serial" value={device?.serial ?? 'Not on file'} />
               <Row
                 label="Warranty"
                 value={
@@ -175,7 +175,7 @@ export function AuthenticityCheck() {
                     ? `Active · ${device?.warrantyMonths ?? 24} months`
                     : device?.warrantyStatus
                       ? device.warrantyStatus.charAt(0).toUpperCase() + device.warrantyStatus.slice(1)
-                      : '—'
+                      : 'Not on file'
                 }
               />
             </View>

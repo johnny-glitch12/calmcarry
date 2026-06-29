@@ -132,7 +132,7 @@ export function Family() {
                   community, and we never sell or share your child’s data. You can remove the
                   profile and its data any time, below.
                 </AppText>
-                <PrimaryButton label="I’m the parent or guardian — I consent" onPress={grantConsentAndAdd} />
+                <PrimaryButton label="I’m the parent or guardian, and I consent" onPress={grantConsentAndAdd} />
                 <Pressable onPress={() => setNeedConsent(false)} accessibilityRole="button" style={{ alignSelf: 'center', paddingVertical: 6 }}>
                   <AppText variant="label" tone="muted">Cancel</AppText>
                 </Pressable>
@@ -143,7 +143,7 @@ export function Family() {
           </View>
         ) : null}
         <AppText variant="meta" tone="muted" style={{ marginTop: 14 }}>
-          One subscription covers everyone — each profile keeps its own picks.
+          One subscription covers everyone. Each profile keeps its own picks.
         </AppText>
 
         {/* remove a child profile + its data (COPPA) — gated, two-tap confirm */}
@@ -289,7 +289,7 @@ export function Family() {
                 Caregivers
               </AppText>
               <AppText variant="label" tone="muted">
-                Share with a partner or grandparent — one subscription covers everyone
+                Share with a partner or grandparent, one subscription covers everyone
               </AppText>
             </View>
             <Feather name="chevron-right" size={18} color={c.accent} />

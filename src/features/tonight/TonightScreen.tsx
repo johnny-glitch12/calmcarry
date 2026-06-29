@@ -263,7 +263,7 @@ export function TonightScreen() {
               How CalmCarry works
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 6 }}>
-              Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down — the device does the rest.
+              Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down. The device does the rest.
             </AppText>
           </Card>
         </Reveal>
@@ -317,7 +317,7 @@ export function TonightScreen() {
                 {rescueLabel}
               </AppText>
               <AppText variant="meta" tone="muted" style={{ marginTop: 2 }}>
-                Tap once for a free drift back to sleep — no sign-in needed.
+                Tap once for a free drift back to sleep, no sign-in needed.
               </AppText>
             </View>
             <Feather name="play" size={16} color={c.accent} />
@@ -332,7 +332,7 @@ export function TonightScreen() {
           <Pressable
             onPress={() => router.push('/program?id=first-week' as Href)}
             accessibilityRole="button"
-            accessibilityLabel="Your first 7 nights — a free starter program"
+            accessibilityLabel="Your first 7 nights, a free starter program"
             style={{ marginTop: 16, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <AppText variant="caption" tone="accent">
@@ -344,7 +344,7 @@ export function TonightScreen() {
               Your first 7 nights
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
-              A gentle, free week to find your wind-down — one short session a night.
+              A gentle, free week to find your wind-down, one short session a night.
             </AppText>
           </Pressable>
         </Reveal>

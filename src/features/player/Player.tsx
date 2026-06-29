@@ -528,7 +528,7 @@ export function Player() {
               style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 18 }}>
               <Feather name="refresh-cw" size={13} color={c.accent} />
               <AppText variant="caption" tone="dim">
-                Couldn’t load this session — tap to try again
+                Couldn’t load this session. Tap to try again.
               </AppText>
             </Pressable>
           ) : (

@@ -142,7 +142,7 @@ export const LEARN: Record<string, Article> = {
     // footage — we never ship a placeholder/stock clip. Shown as a short read for now.
     body: [
       'Find a comfortable spot, rest your Glow Orb in your palm at a level that feels good, and start a wind-down. Most people notice their shoulders drop and their breathing slow within the first few minutes.',
-      'There is nothing to do and nothing to get right. Let the sound carry you. If your mind is busy, that is normal — just keep returning to the warmth in your hand.',
+      'There is nothing to do and nothing to get right. Let the sound carry you. If your mind is busy, that is normal. Just keep returning to the warmth in your hand.',
       'Used a little each evening, the ritual becomes a cue your body learns to recognise: this is the part of the day where we let go.',
     ],
   },
@@ -154,8 +154,8 @@ export const LEARN: Record<string, Article> = {
     cover: 'boxBreathing',
     body: [
       'CalmCarry rests against a point in the centre of your palm that calming traditions have turned to for a very long time.',
-      'It sends a gentle pulsing — a soft tingling you feel in your palm — that gives your attention something simple and physical to settle on, which helps a busy evening mind find a slower rhythm.',
-      'It works beautifully alongside a wind-down session, so your senses — touch, sound, and breath — are all pointing the same calm direction. Set it to a level that feels comfortable and rest it in your palm.',
+      'It sends a gentle pulsing (a soft tingling you feel in your palm) that gives your attention something simple and physical to settle on, which helps a busy evening mind find a slower rhythm.',
+      'It works beautifully alongside a wind-down session, so your senses (touch, sound, and breath) are all pointing the same calm direction. Set it to a level that feels comfortable and rest it in your palm.',
     ],
   },
   routine: {
@@ -166,7 +166,7 @@ export const LEARN: Record<string, Article> = {
     cover: 'forestStream',
     body: [
       'Pick a consistent time, dim the lights, and put screens away a little earlier than feels necessary. The routine matters more than any single night.',
-      'Pair the Glow Orb with the same sound for a week and your evenings start to run on rails — the cue does the work so you do not have to.',
+      'Pair the Glow Orb with the same sound for a week and your evenings start to run on rails. The cue does the work so you do not have to.',
       'If a night does not settle, let it go. The point is the gentle return, not a perfect score.',
     ],
   },

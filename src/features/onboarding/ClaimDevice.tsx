@@ -59,7 +59,7 @@ export function ClaimDevice() {
               Found your Glow Orb
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
-              You’re a verified owner — your warranty is active and owner content is unlocked.
+              You’re a verified owner. Your warranty is active and owner content is unlocked.
             </AppText>
           </Reveal>
           <Reveal index={1} style={{ marginTop: 16 }}>
@@ -77,14 +77,14 @@ export function ClaimDevice() {
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 320 }}>
               Have a Glow Orb? Register its serial to activate the warranty and unlock owner
-              perks. You can always do this later — the app works either way.
+              perks. You can always do this later. The app works either way.
             </AppText>
           </Reveal>
           <Reveal index={1} style={{ alignSelf: 'stretch', marginTop: 28, gap: 10 }}>
             <PrimaryButton label="Register my Glow Orb" onPress={() => router.push('/register-device' as Href)} />
             <Pressable onPress={enter} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 12 }}>
               <AppText variant="label" tone="muted">
-                Skip — I don’t have one yet
+                Skip, I don’t have one yet
               </AppText>
             </Pressable>
           </Reveal>

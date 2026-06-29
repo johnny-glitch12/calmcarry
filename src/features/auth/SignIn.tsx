@@ -56,7 +56,7 @@ export function SignIn() {
       await socialSignIn(provider, idToken, authorizationCode);
       router.replace('/');
     } catch {
-      setError('Social sign-in isn’t available yet — try email, or add the provider keys.');
+      setError('Social sign-in isn’t available yet. Try email, or add the provider keys.');
     } finally {
       setBusy(false);
     }
@@ -104,7 +104,7 @@ export function SignIn() {
     } catch {
       setError(
         isSignup
-          ? 'We couldn’t create that account — try a different email.'
+          ? 'We couldn’t create that account. Try a different email.'
           : 'That email or password doesn’t look right.',
       );
     } finally {

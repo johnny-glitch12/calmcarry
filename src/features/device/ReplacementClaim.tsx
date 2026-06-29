@@ -95,7 +95,7 @@ export function ReplacementClaim() {
       setError(
         status
           ? 'We couldn’t submit your claim. Please try again or email support.'
-          : 'We couldn’t reach our servers — check your connection and try again.',
+          : 'We couldn’t reach our servers. Check your connection and try again.',
       );
     } finally {
       setBusy(false);

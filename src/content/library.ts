@@ -1,7 +1,11 @@
 import { type AudioKey } from './audio';
 import { type CoverKey } from './covers';
 
-export type TrackCategory = 'soundscape' | 'meditation' | 'story' | 'breathing';
+// Broadened toward a BetterSleep-shaped library so the browse rails can scale by
+// type. 'soundscape' = nature/ambient scenes; 'music' = instrumental/melodic;
+// 'noise' = spectral masking colors. (Frequencies, sleep stories, and ASMR are
+// first-classable here too as their real audio is sourced — see SoundsLibrary.)
+export type TrackCategory = 'soundscape' | 'music' | 'noise' | 'meditation' | 'story' | 'breathing';
 
 export type Track = {
   id: string;
@@ -26,14 +30,17 @@ export const TRACKS: Record<string, Track> = {
   // Honest until Glowco supplies real narration: this is a calm OCEAN soundscape for
   // little ones (it plays the ocean bed), NOT a 27-min narrated tale. Loops gently.
   penguin: { id: 'penguin', title: "A Penguin's Ocean", subtitle: 'Calm ocean · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean' },
-  spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'soundscape', audio: 'piano', locked: true },
-  gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'soundscape', audio: 'gymnopedie' },
+  spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'music', audio: 'piano', locked: true },
+  gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'music', audio: 'gymnopedie' },
   shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'waves', locked: true },
   fireside: { id: 'fireside', title: 'Fireside', subtitle: 'A slow, crackling campfire', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'fire', locked: true },
   'dawn-chorus': { id: 'dawn-chorus', title: 'Dawn Chorus', subtitle: 'Birdsong · open woodland', cover: 'dawnWoods', duration: 'loops', category: 'soundscape', audio: 'birdsong', locked: true },
-  'brown-noise': { id: 'brown-noise', title: 'Brown Noise', subtitle: 'Deep, even masking', cover: 'brownNoise', duration: 'loops', category: 'soundscape', audio: 'brown' },
-  'pink-noise': { id: 'pink-noise', title: 'Pink Noise', subtitle: 'Soft, balanced hush', cover: 'pinkNoise', duration: 'loops', category: 'soundscape', audio: 'pink', locked: true },
-  'white-noise': { id: 'white-noise', title: 'White Noise', subtitle: 'Bright, steady cover', cover: 'whiteNoise', duration: 'loops', category: 'soundscape', audio: 'white', locked: true },
+  'brown-noise': { id: 'brown-noise', title: 'Brown Noise', subtitle: 'Deep, even masking', cover: 'brownNoise', duration: 'loops', category: 'noise', audio: 'brown' },
+  'pink-noise': { id: 'pink-noise', title: 'Pink Noise', subtitle: 'Soft, balanced hush', cover: 'pinkNoise', duration: 'loops', category: 'noise', audio: 'pink', locked: true },
+  'white-noise': { id: 'white-noise', title: 'White Noise', subtitle: 'Bright, steady cover', cover: 'whiteNoise', duration: 'loops', category: 'noise', audio: 'white', locked: true },
+  // Generated in-house (mid-band emphasis ~ rustling leaves). Cover reuses the
+  // forest art until a bespoke green-noise cover is produced.
+  'green-noise': { id: 'green-noise', title: 'Green Noise', subtitle: 'Mid-band hush · nature-like', cover: 'forestStream', duration: 'loops', category: 'noise', audio: 'green', locked: true },
 };
 
 export type Program = {

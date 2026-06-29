@@ -8,7 +8,7 @@ import { type AudioSource } from 'expo-audio';
  */
 export type AudioKey =
   | 'ocean' | 'rain' | 'forest' | 'drone' | 'piano' | 'gymnopedie' | 'fire' | 'waves'
-  | 'birdsong' | 'brown' | 'pink' | 'white'
+  | 'birdsong' | 'brown' | 'pink' | 'white' | 'green'
   | 'guidedBox' | 'guidedRest' | 'guidedLetGo';
 
 export const audioSources: Record<AudioKey, AudioSource> = {
@@ -24,6 +24,8 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   brown: require('../../assets/audio/brown-noise.mp3'),
   pink: require('../../assets/audio/pink-noise.mp3'),
   white: require('../../assets/audio/white-noise.mp3'),
+  green: require('../../assets/audio/green-noise.mp3'), // generated in-house: pink base, mid-500Hz emphasis
+
   // Voiced guided sessions — narration mixed over a soft ambient bed (replaces the
   // old silent drone). Synthesized VO for now; Glowco can swap in human recordings.
   guidedBox: require('../../assets/audio/guided-box-breathing.mp3'),
@@ -33,4 +35,4 @@ export const audioSources: Record<AudioKey, AudioSource> = {
 
 /** Required attribution for the CC BY tracks (shown in Account). */
 export const AUDIO_CREDITS =
-  'Attribution (CC BY 3.0): “Prelude in C” by Kevin MacLeod (incompetech.com); “Campfire” by Glaneur de sons; “Water on Rocks” by Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white noise beds are generated in-house (royalty-free). Guided-session narration is AI-synthesized voice.';
+  'Attribution (CC BY 3.0): “Prelude in C” by Kevin MacLeod (incompetech.com); “Campfire” by Glaneur de sons; “Water on Rocks” by Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white / green noise beds are generated in-house (royalty-free). Guided-session narration is AI-synthesized voice.';

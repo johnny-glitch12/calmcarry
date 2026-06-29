@@ -25,7 +25,7 @@ const MUSIC_IDS = ['gymnopedie', 'spa'];
 // The mixer palette. CMS-shaped: each sound carries its own `premium` flag, so the
 // set grows without code changes. The free tier keeps the original four (§6.1); the
 // rest are part of the Calm Plan's "full sound machine" (kids are never paywalled).
-type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'brown' | 'drone' | 'pink' | 'white' | 'fire' | 'birdsong'>;
+type SoundKey = Extract<AudioKey, 'rain' | 'ocean' | 'brown' | 'drone' | 'pink' | 'white' | 'fire' | 'birdsong' | 'green'>;
 type Levels = Record<SoundKey, number>; // 0 = off, 1 = low, 2 = med, 3 = full
 
 const SOUNDS: { key: SoundKey; label: string; cover: CoverKey; premium?: boolean }[] = [
@@ -37,8 +37,9 @@ const SOUNDS: { key: SoundKey; label: string; cover: CoverKey; premium?: boolean
   { key: 'white', label: 'White noise', cover: 'whiteNoise', premium: true },
   { key: 'fire', label: 'Fireside', cover: 'fireside', premium: true },
   { key: 'birdsong', label: 'Dawn birds', cover: 'dawnWoods', premium: true },
+  { key: 'green', label: 'Green noise', cover: 'forestStream', premium: true },
 ];
-const ZERO: Levels = { rain: 0, ocean: 0, brown: 0, drone: 0, pink: 0, white: 0, fire: 0, birdsong: 0 };
+const ZERO: Levels = { rain: 0, ocean: 0, brown: 0, drone: 0, pink: 0, white: 0, fire: 0, birdsong: 0, green: 0 };
 const TIMERS = [0, 15, 30, 60] as const;
 
 type SavedMix = { name: string; levels: Levels };
@@ -135,7 +136,8 @@ export function ListenScreen() {
   const white = useAudioPlayer(audioSources.white);
   const fire = useAudioPlayer(audioSources.fire);
   const birdsong = useAudioPlayer(audioSources.birdsong);
-  const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, brown, drone, pink, white, fire, birdsong };
+  const green = useAudioPlayer(audioSources.green);
+  const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, brown, drone, pink, white, fire, birdsong, green };
 
   useEffect(() => {
     // all-night background playback with the screen off (build plan §12)

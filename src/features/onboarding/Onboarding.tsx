@@ -49,13 +49,13 @@ const SLIDES: Slide[] = [
   },
 ];
 
-const FEELINGS: { id: Feeling; label: string }[] = [
-  { id: 'racing', label: 'My mind’s racing' },
-  { id: 'cant-switch-off', label: 'I can’t switch off' },
-  { id: 'wired-tired', label: 'Wired but tired' },
-  { id: 'wound-up', label: 'I’m wound up' },
-  { id: 'heavy-day', label: 'It’s been a heavy day' },
-  { id: 'quiet', label: 'I just want quiet' },
+const FEELINGS: { id: Feeling; emoji: string; label: string }[] = [
+  { id: 'racing', emoji: '💭', label: 'My mind’s racing' },
+  { id: 'cant-switch-off', emoji: '💡', label: 'I can’t switch off' },
+  { id: 'wired-tired', emoji: '⚡', label: 'Wired but tired' },
+  { id: 'wound-up', emoji: '🌀', label: 'I’m wound up' },
+  { id: 'heavy-day', emoji: '🌧️', label: 'It’s been a heavy day' },
+  { id: 'quiet', emoji: '🌙', label: 'I just want quiet' },
 ];
 
 /** A cover that drifts up-and-down forever on the UI thread (transform only),
@@ -191,6 +191,9 @@ export function Onboarding() {
                   accessibilityLabel={f.label}
                   style={({ pressed }) => [
                     {
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 14,
                       paddingVertical: 16,
                       paddingHorizontal: 18,
                       borderRadius: 14,
@@ -201,6 +204,7 @@ export function Onboarding() {
                     },
                     pressed ? { transform: [{ scale: 0.98 }], opacity: 0.92 } : null,
                   ]}>
+                  <AppText style={{ fontSize: 22, lineHeight: 26 }}>{f.emoji}</AppText>
                   <AppText variant="bodyMedium" tone="title">
                     {f.label}
                   </AppText>

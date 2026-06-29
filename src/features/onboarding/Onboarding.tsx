@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, GlowOrb, Logo, PrimaryButton, Screen } from '@/components';
+import { AmbientMotes, AppText, GlowOrb, Logo, PrimaryButton, Screen } from '@/components';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
@@ -169,6 +169,7 @@ export function Onboarding() {
   if (stage === 'quiz') {
     return (
       <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <AmbientMotes />
         <OnboardingHeader onSkip={finish} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
@@ -224,6 +225,7 @@ export function Onboarding() {
     const track = picked && !picked.locked ? picked : TRACKS['slow-tide'];
     return (
       <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <AmbientMotes />
         <View style={{ minHeight: 28 }}>
           <Logo size="sm" />
         </View>

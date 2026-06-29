@@ -2,7 +2,9 @@ import * as Haptics from 'expo-haptics';
 import { ActivityIndicator, Platform, Pressable, View, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -36,11 +38,21 @@ export function PrimaryButton({
   style,
 }: Props) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
+  // Press IN dips quickly (eased); release SETTLES on a soft spring so the button
+  // breathes back rather than snapping — a calmer, more soothing tap.
   const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
+    if (reduced) {
+      scale.value = to;
+      return;
+    }
+    scale.value =
+      to < 1
+        ? withTiming(to, { duration: dur.press, easing: ease.out })
+        : withSpring(1, { damping: 16, stiffness: 190, mass: 0.7 });
   };
 
   const onIn = () => {

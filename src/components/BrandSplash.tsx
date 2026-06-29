@@ -12,6 +12,7 @@ import Animated, {
 
 import { audioSources } from '@/content/audio';
 import { dur, ease, useTheme } from '@/theme';
+import { AmbientMotes } from './AmbientMotes';
 import { AnimatedLogo } from './AnimatedLogo';
 
 /**
@@ -94,6 +95,7 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 100 }, fadeStyle]}>
       <LinearGradient colors={bg} style={StyleSheet.absoluteFill} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} />
+      <AmbientMotes />
       <Pressable
         onPress={finish}
         accessibilityRole="button"

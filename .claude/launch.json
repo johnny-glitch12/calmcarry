@@ -10,7 +10,7 @@
     {
       "name": "site",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "-l", "8090"],
+      "runtimeArgs": ["serve", "calmcarry-preview", "-l", "8090"],
       "port": 8090
     }
   ]

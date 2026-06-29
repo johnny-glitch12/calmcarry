@@ -1,5 +1,6 @@
 import '../global.css';
 
+import { Feather } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Redirect, Stack, usePathname, useRootNavigationState, useRouter, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -92,7 +93,10 @@ function KidsGuard() {
 }
 
 function RootNav() {
-  const [fontsLoaded, fontError] = useFonts(fontMap);
+  // Load Feather's glyph font through expo-font (not @expo/vector-icons' own web
+  // loader, which doesn't respect the export base path) so icons render in the
+  // static /app build instead of falling back to tofu squares.
+  const [fontsLoaded, fontError] = useFonts({ ...fontMap, ...Feather.font });
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   // the CalmCarry brand reveal plays once per cold start, over the first route
   const [showBrand, setShowBrand] = useState(true);

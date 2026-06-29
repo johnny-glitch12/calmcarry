@@ -7,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,13 +41,14 @@ const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap 
 
 /**
  * A single tab in the floating-pill bar. The ACTIVE tab is a solid sage-filled
- * pill with its icon + label inline (white); INACTIVE tabs are a muted icon
- * only. Focus is an OPACITY crossfade IN PLACE — the fill, the white icon
- * overlay and the label all fade in over dur.press; nothing translates (§4: no
- * sliding indicator). The active slot grows (flexGrow) and inactive slots are a
- * compact fixed width, so the wide active pill never overflows or reflows mid
- * fade. Soft fade-in on focus; instant clear on blur (avoids a shrinking-slot
- * remnant). Honors reduced motion (instant state, no fade).
+ * pill with its icon + label inline; INACTIVE tabs are a muted icon only.
+ * Selection is REACTIVE: the focus value springs IN (a little overshoot) so the
+ * pill blooms and the icon "pops" + lifts, the white icon/label crossfade in, and
+ * a tap presses the whole tab down (scale) then springs back — with a light haptic.
+ * Everything animates IN PLACE (scale / opacity / tiny vertical lift); nothing
+ * translates horizontally between tabs (§4: no sliding indicator). On blur it clears
+ * instantly so the shrinking slot leaves no remnant. Honors reduced motion (instant,
+ * no pop, no press-scale).
  */
 function TabItem({
   focused,
@@ -66,7 +68,8 @@ function TabItem({
   pillContent: string;
 }) {
   const reduced = useReducedMotion();
-  const t = useSharedValue(focused ? 1 : 0);
+  const t = useSharedValue(focused ? 1 : 0); // focus progress (springs, overshoots)
+  const press = useSharedValue(1); // tap press-scale
 
   useEffect(() => {
     t.value = reduced
@@ -74,17 +77,33 @@ function TabItem({
         ? 1
         : 0
       : focused
-        ? withTiming(1, { duration: dur.press, easing: ease.out })
+        ? withSpring(1, { damping: 14, stiffness: 170, mass: 0.7 }) // bloom + pop on select
         : 0; // instant clear on blur — no fade-out remnant in the shrunk slot
   }, [focused, reduced, t]);
 
-  const fillStyle = useAnimatedStyle(() => ({ opacity: t.value }));
-  const activeIconStyle = useAnimatedStyle(() => ({ opacity: t.value }));
-  const labelStyle = useAnimatedStyle(() => ({ opacity: t.value }));
+  const onPressIn = () => {
+    if (!reduced) press.value = withTiming(0.92, { duration: dur.press, easing: ease.out });
+  };
+  const onPressOut = () => {
+    press.value = reduced ? 1 : withSpring(1, { damping: 15, stiffness: 260 });
+  };
+
+  // opacity is clamped (the spring overshoots past 1); transforms use the raw
+  // overshooting value so the pop actually reads. Press scales the whole tab.
+  const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
+  const fillStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1), transform: [{ scale: 0.9 + t.value * 0.1 }] }));
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + t.value * 0.07 }, { translateY: -t.value }] }));
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1) }));
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(t.value, 1),
+    transform: [{ translateX: (1 - Math.min(t.value, 1)) * -4 }],
+  }));
 
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: focused }}
@@ -93,30 +112,33 @@ function TabItem({
           ? { flexGrow: 1, flexShrink: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
           : { width: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
       }>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: 36,
-          borderRadius: 18,
-          paddingHorizontal: focused ? 12 : 0,
-          gap: 6,
-        }}>
-        {/* sage pill fill — opacity crossfade only (no position/size animation) */}
+      <Animated.View
+        style={[
+          {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 36,
+            borderRadius: 18,
+            paddingHorizontal: focused ? 12 : 0,
+            gap: 6,
+          },
+          rowStyle,
+        ]}>
+        {/* sage pill fill — blooms in (opacity + subtle scale); no horizontal slide */}
         <Animated.View
           pointerEvents="none"
           style={[{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: 18, backgroundColor: pillBg }, fillStyle]}
         />
-        {/* icon — muted base with a white overlay that fades in on focus */}
-        <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+        {/* icon — muted base + white overlay crossfade; the box pops + lifts on select */}
+        <Animated.View style={[{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }, iconStyle]}>
           <Feather name={icon} size={22} color={inactive} />
           <Animated.View
             pointerEvents="none"
-            style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, activeIconStyle]}>
+            style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, overlayStyle]}>
             <Feather name={icon} size={22} color={pillContent} />
           </Animated.View>
-        </View>
+        </Animated.View>
         {focused ? (
           <Animated.Text
             numberOfLines={1}
@@ -127,7 +149,7 @@ function TabItem({
             {label}
           </Animated.Text>
         ) : null}
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }

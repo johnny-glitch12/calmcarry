@@ -1,43 +1,54 @@
+import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { AppText, GlowOrb, Logo, PrimaryButton, Screen } from '@/components';
-import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
+import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
+import { lightTap } from '@/lib/haptics';
 import { markOnboarded } from '@/lib/onboarding';
-import { useTheme } from '@/theme';
+import { dur, ease, useTheme } from '@/theme';
 
-type Slide = { cover?: CoverKey; title: string; body: string };
+type Art = 'orb' | 'cluster' | 'shield';
+type Slide = { art: Art; title: string; body: string };
 
 const SLIDES: Slide[] = [
   {
+    art: 'orb',
     title: 'Welcome to CalmCarry',
     body: 'Your companion for calmer evenings and deeper, more restful nights.',
   },
   {
-    cover: 'slowTide',
+    art: 'orb',
     title: 'Works the moment you hold it',
     body: 'No app is needed to use your Glow Orb. This is simply the calm way to get more from it.',
   },
   {
-    cover: 'deepRest',
+    art: 'cluster',
     title: 'A library made for sleep',
     body: 'Soundscapes, sleep tales, and guided wind-downs, held in your hand, fading you to silence.',
   },
   {
-    cover: 'forestStream',
+    art: 'shield',
     title: 'Yours, protected',
     body: "Register your device, confirm it's genuine, and keep your warranty close.",
   },
 ];
 
-// The personalization step — same warm, forward-looking feelings as the nightly
-// check-in (safe words only; no clinical terms). Picks the first session so the
-// recommendation feels earned before the paywall ever appears.
 const FEELINGS: { id: Feeling; label: string }[] = [
   { id: 'racing', label: 'My mind’s racing' },
   { id: 'cant-switch-off', label: 'I can’t switch off' },
@@ -46,6 +57,92 @@ const FEELINGS: { id: Feeling; label: string }[] = [
   { id: 'heavy-day', label: 'It’s been a heavy day' },
   { id: 'quiet', label: 'I just want quiet' },
 ];
+
+/** A cover that drifts up-and-down forever on the UI thread (transform only),
+ *  desynced by its delay so a cluster never moves in lockstep. */
+function FloatingCover({
+  cover,
+  size,
+  rotate,
+  dx,
+  dy,
+  delay,
+  z,
+}: {
+  cover: CoverKey;
+  size: number;
+  rotate: number;
+  dx: number;
+  dy: number;
+  delay: number;
+  z: number;
+}) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(0);
+  useEffect(() => {
+    if (reduced) return;
+    t.value = withDelay(delay, withRepeat(withTiming(1, { duration: 3400 + delay, easing: ease.sine }), -1, true));
+  }, [reduced, t, delay]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: dx }, { translateY: dy - t.value * 7 }, { rotate: `${rotate}deg` }],
+  }));
+  return (
+    <Animated.View
+      entering={FadeIn.duration(dur.screen).delay(delay)}
+      style={[{ position: 'absolute', zIndex: z, borderRadius: 24, overflow: 'hidden' }, style]}>
+      <Image source={covers[cover]} style={{ width: size, height: size }} contentFit="cover" accessibilityIgnoresInvertColors />
+    </Animated.View>
+  );
+}
+
+/** A small fanned, gently-floating stack of covers (the "library" hero). */
+function CoverCluster() {
+  return (
+    <View style={{ width: 240, height: 220, alignItems: 'center', justifyContent: 'center' }}>
+      <FloatingCover cover="forestStream" size={140} rotate={-9} dx={-66} dy={14} delay={120} z={1} />
+      <FloatingCover cover="deepRest" size={150} rotate={8} dx={64} dy={20} delay={240} z={2} />
+      <FloatingCover cover="slowTide" size={168} rotate={0} dx={0} dy={-8} delay={0} z={3} />
+    </View>
+  );
+}
+
+function SlideArt({ art }: { art: Art }) {
+  const { c } = useTheme();
+  if (art === 'cluster') return <CoverCluster />;
+  return (
+    <GlowOrb size={158} breathing aura reserveGlow>
+      {art === 'shield' ? <Feather name="shield" size={42} color={c.ctaText} /> : null}
+    </GlowOrb>
+  );
+}
+
+/** Brand + optional Skip. Top-level (not defined during render) so it never remounts. */
+function OnboardingHeader({ onSkip }: { onSkip?: () => void }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
+      <Logo size="sm" />
+      {onSkip ? (
+        <Pressable onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
+          <AppText variant="label" tone="muted">
+            Skip
+          </AppText>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/** Progress dot that eases its width when it becomes active (transform-safe width tween). */
+function Dot({ active }: { active: boolean }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const w = useSharedValue(active ? 22 : 8);
+  useEffect(() => {
+    w.value = reduced ? (active ? 22 : 8) : withTiming(active ? 22 : 8, { duration: dur.sheet, easing: ease.out });
+  }, [active, reduced, w]);
+  const style = useAnimatedStyle(() => ({ width: w.value }));
+  return <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: active ? c.accent : c.line }, style]} />;
+}
 
 export function Onboarding() {
   const router = useRouter();
@@ -61,10 +158,10 @@ export function Onboarding() {
     markOnboarded();
     router.replace('/auth');
   };
-
   const pick = (f: Feeling) => {
+    lightTap();
     setChosen(f);
-    setFeeling(f); // seeds the recommendation for this session (best-effort)
+    setFeeling(f);
     setStage('result');
   };
 
@@ -72,46 +169,46 @@ export function Onboarding() {
   if (stage === 'quiz') {
     return (
       <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
-          <Logo size="sm" />
-          <Pressable onPress={finish} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
-            <AppText variant="label" tone="muted">
-              Skip
+        <OnboardingHeader onSkip={finish} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen)}>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
+              How are you arriving tonight?
             </AppText>
-          </Pressable>
-        </View>
-        <Animated.View entering={FadeIn.duration(320)} style={{ flex: 1, justifyContent: 'center' }}>
-          <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
-            How are you arriving tonight?
-          </AppText>
-          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12, alignSelf: 'center' }}>
-            Just so we can start you somewhere that fits. There’s no wrong answer.
-          </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12, alignSelf: 'center' }}>
+              Just so we can start you somewhere that fits. There’s no wrong answer.
+            </AppText>
+          </Animated.View>
           <View style={{ gap: 10, marginTop: 28 }}>
-            {FEELINGS.map((f) => (
-              <Pressable
-                key={f.id}
-                onPress={() => pick(f.id)}
-                accessibilityRole="button"
-                accessibilityLabel={f.label}>
-                <View
-                  style={{
-                    paddingVertical: 16,
-                    paddingHorizontal: 18,
-                    borderRadius: 14,
-                    backgroundColor: c.surface,
-                    borderWidth: 1,
-                    borderColor: c.line,
-                    ...c.shadow,
-                  }}>
+            {FEELINGS.map((f, idx) => (
+              <Animated.View key={f.id} entering={FadeInDown.duration(dur.screen).delay(160 + idx * 60)}>
+                <Pressable
+                  onPress={() => pick(f.id)}
+                  onPressIn={lightTap}
+                  accessibilityRole="button"
+                  accessibilityLabel={f.label}
+                  style={({ pressed }) => [
+                    {
+                      paddingVertical: 16,
+                      paddingHorizontal: 18,
+                      borderRadius: 14,
+                      backgroundColor: c.surface,
+                      borderWidth: 1,
+                      borderColor: c.line,
+                      ...c.shadow,
+                    },
+                    pressed ? { transform: [{ scale: 0.98 }], opacity: 0.92 } : null,
+                  ]}>
                   <AppText variant="bodyMedium" tone="title">
                     {f.label}
                   </AppText>
-                </View>
-              </Pressable>
+                </Pressable>
+              </Animated.View>
             ))}
           </View>
-        </Animated.View>
+        </View>
       </Screen>
     );
   }
@@ -119,8 +216,6 @@ export function Onboarding() {
   // ---- earned first recommendation (primes the soft paywall) ----
   if (stage === 'result' && chosen) {
     const map = FEELING_MAP[chosen];
-    // the onboarding user is always free (pre-account) and the next screen promises
-    // "it's yours free tonight" — so never surface a locked track as the earned pick
     const picked = TRACKS[map.track];
     const track = picked && !picked.locked ? picked : TRACKS['slow-tide'];
     return (
@@ -128,23 +223,27 @@ export function Onboarding() {
         <View style={{ minHeight: 28 }}>
           <Logo size="sm" />
         </View>
-        <Animated.View entering={FadeIn.duration(360)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <Image
-            source={covers[track.cover]}
-            style={{ width: 200, height: 200, borderRadius: 28 }}
-            contentFit="cover"
-            accessibilityIgnoresInvertColors
-          />
-          <AppText variant="caption" tone="accent" style={{ marginTop: 20 }}>
-            {map.line}
-          </AppText>
-          <AppText variant="display" tone="title" style={{ textAlign: 'center', marginTop: 6 }}>
-            We’ll start you with {track.title}
-          </AppText>
-          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300, marginTop: 10 }}>
-            It’s yours free tonight. Create your account to keep your picks across the household.
-          </AppText>
-        </Animated.View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Animated.View entering={FadeIn.duration(dur.reveal)}>
+            <Image
+              source={covers[track.cover]}
+              style={{ width: 200, height: 200, borderRadius: 28 }}
+              contentFit="cover"
+              accessibilityIgnoresInvertColors
+            />
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(220)} style={{ alignItems: 'center' }}>
+            <AppText variant="caption" tone="accent" style={{ marginTop: 20 }}>
+              {map.line}
+            </AppText>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center', marginTop: 6 }}>
+              We’ll start you with {track.title}
+            </AppText>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300, marginTop: 10 }}>
+              It’s yours free tonight. Create your account to keep your picks across the household.
+            </AppText>
+          </Animated.View>
+        </View>
         <PrimaryButton label="Create your account" onPress={finish} />
         <Pressable onPress={() => setStage('quiz')} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
           <AppText variant="label" tone="muted">
@@ -158,59 +257,37 @@ export function Onboarding() {
   // ---- intro slides ----
   return (
     <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-      {/* brand + skip */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
-        <Logo size="sm" />
-        <Pressable onPress={finish} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
-          <AppText variant="label" tone="muted">
-            Skip
-          </AppText>
-        </Pressable>
-      </View>
+      <OnboardingHeader onSkip={finish} />
 
-      {/* slide */}
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Animated.View key={`art-${i}`} entering={FadeIn.duration(320)} style={{ marginBottom: 24 }}>
-          {slide.cover ? (
-            <Image
-              source={covers[slide.cover]}
-              style={{ width: 220, height: 220, borderRadius: 32 }}
-              contentFit="cover"
-              accessibilityIgnoresInvertColors
-            />
-          ) : (
-            <GlowOrb size={150} reserveGlow />
-          )}
+        {/* art re-mounts per slide so its entrance + float replay */}
+        <Animated.View
+          key={`art-${i}`}
+          entering={FadeIn.duration(dur.screen)}
+          exiting={FadeOut.duration(dur.press)}
+          style={{ marginBottom: 28, height: 220, alignItems: 'center', justifyContent: 'center' }}>
+          <SlideArt art={slide.art} />
         </Animated.View>
-        <Animated.View key={`txt-${i}`} entering={FadeIn.duration(320)} style={{ alignItems: 'center' }}>
+        <Animated.View key={`title-${i}`} entering={FadeInDown.duration(dur.screen)} style={{ alignItems: 'center' }}>
           <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
             {slide.title}
           </AppText>
+        </Animated.View>
+        <Animated.View key={`body-${i}`} entering={FadeInDown.duration(dur.screen).delay(90)} style={{ alignItems: 'center' }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12 }}>
             {slide.body}
           </AppText>
         </Animated.View>
       </View>
 
-      {/* dots */}
+      {/* progress dots */}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
         {SLIDES.map((_, idx) => (
-          <View
-            key={idx}
-            style={{
-              width: idx === i ? 22 : 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: idx === i ? c.accent : c.line,
-            }}
-          />
+          <Dot key={idx} active={idx === i} />
         ))}
       </View>
 
-      <PrimaryButton
-        label={last ? 'Get started' : 'Next'}
-        onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))}
-      />
+      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))} />
       {i > 0 ? (
         <Pressable
           onPress={() => setI((v) => Math.max(0, v - 1))}

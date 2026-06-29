@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -24,7 +25,7 @@ import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/Profil
 import { lightTap } from '@/lib/haptics';
 import { markOnboarded } from '@/lib/onboarding';
 import { setSleepGoalHours, SLEEP_GOAL_DEFAULT, SLEEP_GOAL_MAX, SLEEP_GOAL_MIN } from '@/lib/sleepGoal';
-import { dur, ease, fonts, useTheme } from '@/theme';
+import { brand, dur, ease, fonts, useTheme } from '@/theme';
 
 type Art = 'orb' | 'cluster' | 'shield';
 type Slide = { art: Art; title: string; body: string };
@@ -221,11 +222,69 @@ function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: numbe
   );
 }
 
+/** A twinkling star for the transformation scene (opacity + scale pulse). */
+function TwinkleStar({ top, left, size = 16, delay = 0 }: { top: number; left: string; size?: number; delay?: number }) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(0.4);
+  useEffect(() => {
+    if (reduced) {
+      t.value = 0.7;
+      return;
+    }
+    t.value = withDelay(delay, withRepeat(withTiming(1, { duration: 1900, easing: ease.inOut }), -1, true));
+  }, [reduced, t, delay]);
+  const style = useAnimatedStyle(() => ({ opacity: 0.3 + t.value * 0.6, transform: [{ scale: 0.8 + t.value * 0.3 }] }));
+  return (
+    <Animated.Text pointerEvents="none" style={[{ position: 'absolute', top, left: left as unknown as number, fontSize: size, color: brand.sageHover }, style]}>
+      ✦
+    </Animated.Text>
+  );
+}
+
+/** One before/after card: a still, cool card for "today"; a warm, breathing one for "in a week". */
+function TransformCard({ mood, label, style }: { mood: 'today' | 'week'; label: string; style?: ViewStyle }) {
+  const { c } = useTheme();
+  const today = mood === 'today';
+  return (
+    <View style={[{ width: 166, height: 188, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }, style]}>
+      <LinearGradient colors={today ? ['#262B36', '#1E222C'] : [brand.mint, brand.mintSoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, padding: 16 }}>
+        <AppText variant="caption" style={{ color: today ? c.muted : brand.teal }}>
+          {label}
+        </AppText>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <GlowOrb size={82} breathing={!today} aura={!today} />
+        </View>
+      </LinearGradient>
+    </View>
+  );
+}
+
+/** The amber-ish "growth" arrow that springs in between the two cards. */
+function ArrowBadge({ style }: { style?: ViewStyle }) {
+  const reduced = useReducedMotion();
+  const s = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (!reduced) s.value = withDelay(450, withSpring(1, { damping: 12, stiffness: 170, mass: 0.6 }));
+  }, [reduced, s]);
+  const st = useAnimatedStyle(() => ({ opacity: Math.min(1, s.value * 1.4), transform: [{ scale: 0.5 + s.value * 0.5 }] }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        { width: 46, height: 46, borderRadius: 23, backgroundColor: brand.sage, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#10211E' },
+        st,
+        style,
+      ]}>
+      <Feather name="arrow-up-right" size={22} color="#10211E" />
+    </Animated.View>
+  );
+}
+
 export function Onboarding() {
   const router = useRouter();
   const { c } = useTheme();
   const { setFeeling } = useProfile();
-  const [stage, setStage] = useState<'intro' | 'goal' | 'quiz' | 'voice' | 'result'>('intro');
+  const [stage, setStage] = useState<'intro' | 'transform' | 'goal' | 'quiz' | 'voice' | 'result'>('intro');
   const [i, setI] = useState(0);
   const [chosen, setChosen] = useState<Feeling | null>(null);
   const [goalHours, setGoalHours] = useState(SLEEP_GOAL_DEFAULT);
@@ -242,6 +301,38 @@ export function Onboarding() {
     setFeeling(f);
     setStage('voice');
   };
+
+  // ---- before/after transformation (aspirational, not a measured claim) ----
+  if (stage === 'transform') {
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <AmbientMotes />
+        <OnboardingHeader onSkip={finish} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen)}>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
+              A calmer you, a week from now
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
+              A few minutes of wind-down each evening, and busy nights start to feel lighter.
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeIn.duration(dur.reveal).delay(150)} style={{ height: 340, marginTop: 24 }}>
+            <TwinkleStar top={16} left="14%" size={18} delay={0} />
+            <TwinkleStar top={66} left="84%" size={22} delay={500} />
+            <TwinkleStar top={244} left="88%" size={15} delay={900} />
+            <TwinkleStar top={300} left="9%" size={14} delay={1300} />
+            <TransformCard mood="week" label="You in a week" style={{ position: 'absolute', top: 0, right: 6, transform: [{ rotate: '4deg' }], zIndex: 2 }} />
+            <TransformCard mood="today" label="You today" style={{ position: 'absolute', bottom: 0, left: 6, transform: [{ rotate: '-4deg' }], zIndex: 1 }} />
+            <ArrowBadge style={{ position: 'absolute', top: 148, alignSelf: 'center', zIndex: 3 }} />
+          </Animated.View>
+        </View>
+        <PrimaryButton label="Continue" onPress={() => setStage('goal')} />
+      </Screen>
+    );
+  }
 
   // ---- nightly sleep-hours goal (a real saved preference, not a tracked metric) ----
   if (stage === 'goal') {
@@ -429,7 +520,7 @@ export function Onboarding() {
         ))}
       </View>
 
-      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('goal') : setI((v) => v + 1))} />
+      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('transform') : setI((v) => v + 1))} />
       {i > 0 ? (
         <Pressable
           onPress={() => setI((v) => Math.max(0, v - 1))}

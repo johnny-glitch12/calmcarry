@@ -3,6 +3,7 @@ import { useRouter, type Href } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText } from '@/components';
+import { lightTap } from '@/lib/haptics';
 import { hasParentPin } from '@/lib/parentGate';
 import { useTheme } from '@/theme';
 
@@ -12,7 +13,13 @@ function Avatar({ profile, active, onPress }: { profile: Profile; active: boolea
   const { c } = useTheme();
   const initial = (profile.name[0] || '?').toUpperCase();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }} accessibilityLabel={`${profile.name}${active ? ', current' : ''}`} style={{ alignItems: 'center', width: 64 }}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={lightTap}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={`${profile.name}${active ? ', current' : ''}`}
+      style={({ pressed }) => [{ alignItems: 'center', width: 64 }, pressed ? { transform: [{ scale: 0.94 }], opacity: 0.92 } : null]}>
       <View
         style={{
           width: 52,
@@ -64,7 +71,12 @@ export function ProfileSwitcher({ onAdd }: { onAdd?: () => void }) {
         <Avatar key={p.id} profile={p} active={p.id === activeProfile.id} onPress={() => onSelect(p)} />
       ))}
       {onAdd ? (
-        <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add a profile" style={{ alignItems: 'center', width: 64 }}>
+        <Pressable
+          onPress={onAdd}
+          onPressIn={lightTap}
+          accessibilityRole="button"
+          accessibilityLabel="Add a profile"
+          style={({ pressed }) => [{ alignItems: 'center', width: 64 }, pressed ? { transform: [{ scale: 0.94 }], opacity: 0.92 } : null]}>
           <View
             style={{
               width: 52,

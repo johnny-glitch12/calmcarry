@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { lightTap } from '@/lib/haptics';
 import { dur, ease, fonts, useTheme } from '@/theme';
 
 type Props = {
@@ -46,10 +47,11 @@ function Segment({
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
-      style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      style={({ pressed }) => [{ flex: 1, alignItems: 'center', justifyContent: 'center' }, pressed && !active ? { opacity: 0.6 } : null]}>
       {/* the two stacked label layers are decorative (crossfade only) — the Pressable's
           accessibilityLabel is the single authoritative name, so hide them from AT to
           avoid a double-announce ("Adult Adult") */}

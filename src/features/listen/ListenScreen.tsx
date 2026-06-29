@@ -64,7 +64,8 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
-        accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}>
+        accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}
+        style={({ pressed }) => (pressed ? { transform: [{ scale: 0.97 }] } : null)}>
         <View
           style={{
             height: 116,

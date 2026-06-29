@@ -98,6 +98,9 @@ export function Player() {
   const router = useRouter();
   const { token, isPremium } = useAuth();
   const { mode } = useProfile();
+  // Player is always night mode, so `c` resolves to the night theme — read the
+  // palette from tokens instead of hardcoding the night hex throughout.
+  const { c } = useTheme();
   const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
   const track = (id && TRACKS[id]) || TRACKS['slow-tide'];
   // Locked premium tracks give a free user a short PREVIEW, then route to the paywall
@@ -434,7 +437,7 @@ export function Player() {
         {/* top bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
           <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close player">
-            <Feather name="chevron-down" size={28} color="#9DB7B1" />
+            <Feather name="chevron-down" size={28} color={c.text} />
           </Pressable>
           {/* sleep / auto-stop timer — taps cycle Off → 15 → 30 → 45 → 60 min */}
           <Pressable
@@ -453,8 +456,8 @@ export function Player() {
               borderColor: sleepMin ? 'rgba(143,201,190,0.55)' : 'rgba(157,183,177,0.28)',
               backgroundColor: sleepMin ? 'rgba(143,201,190,0.12)' : 'transparent',
             }}>
-            <Feather name="moon" size={14} color={sleepMin ? '#8FC9BE' : '#9DB7B1'} />
-            <AppText variant="label" style={{ color: sleepMin ? '#8FC9BE' : '#9DB7B1' }}>
+            <Feather name="moon" size={14} color={sleepMin ? c.accent : c.text} />
+            <AppText variant="label" style={{ color: sleepMin ? c.textAccent : c.text }}>
               {sleepMin ? `${sleepMin} min` : 'Sleep timer'}
             </AppText>
           </Pressable>
@@ -474,8 +477,8 @@ export function Player() {
                 borderColor: 'rgba(143,201,190,0.45)',
                 backgroundColor: 'rgba(143,201,190,0.12)',
               }}>
-              <Feather name="lock" size={12} color="#8FC9BE" />
-              <AppText variant="label" style={{ color: '#8FC9BE' }}>
+              <Feather name="lock" size={12} color={c.accent} />
+              <AppText variant="label" style={{ color: c.textAccent }}>
                 Free preview
               </AppText>
             </View>
@@ -490,12 +493,12 @@ export function Player() {
             <Animated.View
               pointerEvents="none"
               style={[
-                { position: 'absolute', width: 232, height: 232, borderRadius: 116, backgroundColor: '#8FC9BE' },
+                { position: 'absolute', width: 232, height: 232, borderRadius: 116, backgroundColor: c.accent },
                 haloStyle,
               ]}
             />
             {/* cover inside the ring */}
-            <View style={{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(143,201,190,0.30)' }}>
+            <View style={{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage }}>
               <Image source={covers[track.cover]} style={{ width: 200, height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
             </View>
           </View>
@@ -523,14 +526,14 @@ export function Player() {
               accessibilityRole="button"
               accessibilityLabel="Couldn't load this session. Tap to try again."
               style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 18 }}>
-              <Feather name="refresh-cw" size={13} color="#8FC9BE" />
+              <Feather name="refresh-cw" size={13} color={c.accent} />
               <AppText variant="caption" tone="dim">
                 Couldn’t load this session — tap to try again
               </AppText>
             </Pressable>
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
-              <Feather name="circle" size={10} color="#8FC9BE" />
+              <Feather name="circle" size={10} color={c.accent} />
               <AppText variant="caption" tone="dim">
                 {CUES[cueIdx]}
               </AppText>
@@ -547,7 +550,7 @@ export function Player() {
             accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
             accessibilityState={{ selected: saved }}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-            <Feather name="heart" size={24} color={saved ? '#8FC9BE' : '#9DB7B1'} style={saved ? undefined : { opacity: 0.9 }} />
+            <Feather name="heart" size={24} color={saved ? c.accent : c.text} style={saved ? undefined : { opacity: 0.9 }} />
           </Pressable>
           <PlayPause paused={paused} onPress={toggle} />
           <View style={{ width: 44, height: 44 }} />

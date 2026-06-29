@@ -1,7 +1,13 @@
 import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+
+// light tap feedback, matching the app's press idiom (PrimaryButton / CoverCard)
+const tapHaptic = () => {
+  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+};
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -318,7 +324,16 @@ export function CommunityScreen() {
           placeholder="One calm thing that went right…"
           icon="feather"
         />
-        <Pressable onPress={share} accessibilityRole="button" accessibilityState={{ disabled: !draft.trim() }} disabled={!draft.trim()} style={{ alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 }}>
+        <Pressable
+          onPress={share}
+          onPressIn={() => draft.trim() && tapHaptic()}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !draft.trim() }}
+          disabled={!draft.trim()}
+          style={({ pressed }) => [
+            { alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 },
+            pressed && draft.trim() ? { transform: [{ scale: 0.97 }], opacity: 0.9 } : null,
+          ]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
             <Feather name="send" size={15} color={c.textAccent} />
             <AppText variant="bodyMedium" style={{ color: c.textAccent }}>

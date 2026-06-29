@@ -38,6 +38,14 @@ type AuthValue = {
 const FREE: ApiEntitlement = { tier: 'free', status: 'active' };
 const CALM: ApiEntitlement = { tier: 'calm_plan', status: 'active' };
 
+// Preview-only comp account — lets a reviewer explore the FULL premium app on the
+// gated preview build while the production database isn't provisioned yet. Enabled
+// ONLY when EXPO_PUBLIC_COMP_LOGIN is set, which the preview web export sets and a
+// real App Store / Play build never does — so this can't unlock premium in prod.
+const COMP_LOGIN = process.env.EXPO_PUBLIC_COMP_LOGIN === '1';
+const COMP_EMAIL = 'mason@theglowcompany.co';
+const COMP_PASSWORD = 'GlowOrb2026';
+
 const AuthContext = createContext<AuthValue>({
   status: 'loading',
   user: null,
@@ -134,6 +142,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    // Preview comp account → a local premium session (no backend needed). Gated by
+    // EXPO_PUBLIC_COMP_LOGIN so it only exists in the preview build, never in prod.
+    if (COMP_LOGIN && email.trim().toLowerCase() === COMP_EMAIL && password === COMP_PASSWORD) {
+      const u: ApiUser = { email: COMP_EMAIL, name: 'Mason' };
+      setToken('local');
+      setUser(u);
+      setEntitlement(CALM);
+      setBackendUp(false);
+      setStatus('authed');
+      track('sign_in', { method: 'comp' });
+      await Promise.all([secureSet(KEYS.token, 'local'), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, CALM)]);
+      return;
+    }
     try {
       const { token: t, user: u } = await api.login(email, password);
       let ent: ApiEntitlement = FREE;

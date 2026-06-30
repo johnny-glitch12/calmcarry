@@ -8,6 +8,7 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
+  useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -17,6 +18,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { AmbientMotes, AppText, GlowOrb, Logo, PrimaryButton, Screen, VoicePicker } from '@/components';
 import { covers, type CoverKey } from '@/content/covers';
@@ -280,11 +282,48 @@ function ArrowBadge({ style }: { style?: ViewStyle }) {
   );
 }
 
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+/** An animated "first 7 nights" rhythm line — our real calm-nights mechanic (a
+ *  star per calm night, 7 to a week). Aspirational on a fresh start, not a
+ *  measured sleep stat. The line draws itself on via strokeDashoffset. */
+function WeekChart() {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const W = 300;
+  const H = 150;
+  const x0 = 16;
+  const x1 = 284;
+  const yTop = 14;
+  const yBot = 118;
+  const vals = [0.18, 0.34, 0.3, 0.52, 0.62, 0.58, 0.92]; // gentle, overall-rising rhythm
+  const pts = vals.map((v, i) => ({ x: x0 + (i / (vals.length - 1)) * (x1 - x0), y: yBot - v * (yBot - yTop) }));
+  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const len = pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.y - pts[i].y), 0);
+  const draw = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (!reduced) draw.value = withDelay(250, withTiming(1, { duration: 1500, easing: ease.out }));
+  }, [reduced, draw]);
+  const lineProps = useAnimatedProps(() => ({ strokeDashoffset: len * (1 - draw.value) }));
+  const start = pts[0];
+  const end = pts[pts.length - 1];
+  return (
+    <Svg width={W} height={H}>
+      {[0.25, 0.5, 0.75].map((g) => (
+        <Line key={g} x1={x0} y1={yTop + g * (yBot - yTop)} x2={x1} y2={yTop + g * (yBot - yTop)} stroke={c.line} strokeWidth={1} />
+      ))}
+      <AnimatedPath d={d} stroke={c.accent} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={len} animatedProps={lineProps} />
+      <Circle cx={start.x} cy={start.y} r={5} fill={c.bg} stroke={c.accent} strokeWidth={3} />
+      <Circle cx={end.x} cy={end.y} r={6} fill={c.accent} />
+    </Svg>
+  );
+}
+
 export function Onboarding() {
   const router = useRouter();
   const { c } = useTheme();
   const { setFeeling } = useProfile();
-  const [stage, setStage] = useState<'intro' | 'transform' | 'goal' | 'quiz' | 'voice' | 'result'>('intro');
+  const [stage, setStage] = useState<'welcome' | 'intro' | 'transform' | 'progress' | 'goal' | 'quiz' | 'voice' | 'result'>('welcome');
   const [i, setI] = useState(0);
   const [chosen, setChosen] = useState<Feeling | null>(null);
   const [goalHours, setGoalHours] = useState(SLEEP_GOAL_DEFAULT);
@@ -301,6 +340,81 @@ export function Onboarding() {
     setFeeling(f);
     setStage('voice');
   };
+
+  // ---- constellation welcome (the entry) ----
+  if (stage === 'welcome') {
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <TwinkleStar top={70} left="16%" size={14} delay={0} />
+        <TwinkleStar top={120} left="74%" size={20} delay={350} />
+        <TwinkleStar top={190} left="40%" size={12} delay={700} />
+        <TwinkleStar top={150} left="88%" size={14} delay={1100} />
+        <TwinkleStar top={250} left="10%" size={16} delay={500} />
+        <TwinkleStar top={300} left="64%" size={12} delay={900} />
+        <TwinkleStar top={360} left="28%" size={18} delay={1400} />
+        <TwinkleStar top={420} left="82%" size={13} delay={200} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen)}>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center', fontSize: 34, lineHeight: 40 }}>
+              Welcome
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(120)}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300, marginTop: 14, alignSelf: 'center' }}>
+              Let’s begin your journey to calmer evenings and deeper, more restful nights.
+            </AppText>
+          </Animated.View>
+        </View>
+        <Pressable
+          onPress={() => setStage('intro')}
+          onPressIn={lightTap}
+          accessibilityRole="button"
+          accessibilityLabel="Begin"
+          style={({ pressed }) => [
+            { alignSelf: 'center', width: 78, height: 78, borderRadius: 39, backgroundColor: c.ctaBg, alignItems: 'center', justifyContent: 'center', ...c.shadow },
+            pressed ? { transform: [{ scale: 0.94 }], opacity: 0.9 } : null,
+          ]}>
+          <Feather name="arrow-right" size={28} color={c.ctaText} />
+        </Pressable>
+        <Pressable onPress={finish} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 14, marginTop: 8 }}>
+          <AppText variant="label" tone="muted">
+            I already have an account. <AppText variant="label" style={{ color: c.textAccent }}>Sign in</AppText>
+          </AppText>
+        </Pressable>
+      </Screen>
+    );
+  }
+
+  // ---- first-7-nights rhythm (animated draw; the real calm-nights mechanic) ----
+  if (stage === 'progress') {
+    return (
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
+        <AmbientMotes />
+        <OnboardingHeader onSkip={finish} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen)}>
+            <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
+              Your first 7 nights
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
+              A gentle week to settle into the ritual. Each calm night earns a star — seven builds the rhythm.
+            </AppText>
+          </Animated.View>
+          <Animated.View entering={FadeIn.duration(dur.screen).delay(180)} style={{ marginTop: 40, alignItems: 'center' }}>
+            <WeekChart />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: 300, paddingHorizontal: 10, marginTop: 6 }}>
+              <AppText variant="label" tone="muted">Night 1</AppText>
+              <AppText variant="label" tone="muted">Night 4</AppText>
+              <AppText variant="label" tone="muted">Night 7</AppText>
+            </View>
+          </Animated.View>
+        </View>
+        <PrimaryButton label="Continue" onPress={() => setStage('goal')} />
+      </Screen>
+    );
+  }
 
   // ---- before/after transformation (aspirational, not a measured claim) ----
   if (stage === 'transform') {
@@ -329,7 +443,7 @@ export function Onboarding() {
             <ArrowBadge style={{ position: 'absolute', top: 148, alignSelf: 'center', zIndex: 3 }} />
           </Animated.View>
         </View>
-        <PrimaryButton label="Continue" onPress={() => setStage('goal')} />
+        <PrimaryButton label="Continue" onPress={() => setStage('progress')} />
       </Screen>
     );
   }

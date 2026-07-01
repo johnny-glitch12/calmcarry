@@ -55,9 +55,10 @@ function DriftBlob({
     t.value = withDelay(delay, withRepeat(withTiming(1, { duration, easing: ease.inOut }), -1, true));
     return () => cancelAnimation(t);
   }, [reduced, t, delay, duration]);
+  // transform-ONLY worklet (perf): a constant opacity (set statically below) avoids
+  // a per-frame opacity recomposite on a large blurred blob — the drift alone reads
+  // as alive, and this keeps the ambient field cheap on the (web) main thread.
   const style = useAnimatedStyle(() => ({
-    // drift + a slow opacity "breathe" so the ambient field feels alive, not static
-    opacity: opacity * (0.62 + 0.38 * t.value),
     transform: [
       { translateX: (t.value - 0.5) * range },
       { translateY: (t.value - 0.5) * range * 0.7 },
@@ -66,7 +67,7 @@ function DriftBlob({
   return (
     <Animated.View
       pointerEvents="none"
-      style={[{ position: 'absolute', top, left }, style]}>
+      style={[{ position: 'absolute', top, left, opacity }, style]}>
       <View
         style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }}
       />
@@ -101,13 +102,12 @@ function Mote({ leftPct, top, size, dur, delay }: { leftPct: number; top: number
   );
 }
 
-// Four slow motes (was six) — thins the always-moving field on the sleep screen by a
-// third with no loss of the "living atmosphere"; the slowest durations dominate.
+// Two slow motes (perf: was four, originally six) — enough for a "living
+// atmosphere" without a field of always-animating dots competing with scroll on
+// the main thread; the slowest durations dominate the feel.
 const MOTES = [
-  { leftPct: 28, top: 420, size: 2, dur: 18000, delay: 4000 },
-  { leftPct: 63, top: 540, size: 2, dur: 19000, delay: 2000 },
-  { leftPct: 78, top: 240, size: 3, dur: 17000, delay: 6000 },
-  { leftPct: 88, top: 460, size: 2, dur: 20000, delay: 10000 },
+  { leftPct: 30, top: 420, size: 2, dur: 20000, delay: 3000 },
+  { leftPct: 78, top: 250, size: 3, dur: 18000, delay: 9000 },
 ];
 
 function Motes() {

@@ -1,19 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brand, ease, night, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
+import { brand, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
 
 type Props = {
   mode?: ThemeMode;
@@ -26,97 +17,35 @@ type Props = {
   tabBarSpacing?: boolean;
 };
 
-/** A slow-oscillating soft "blob" for atmosphere (§3) — sage at night, a barely
- *  perceptible mint by day. Translate-only, reduced-motion gated. */
-function DriftBlob({
-  size,
-  color,
-  top,
-  left,
-  delay = 0,
-  range = 26,
-  duration = 20000,
-  opacity = 0.1,
-}: {
+/** A soft, STATIC pool of light for atmospheric depth (§3) — sage at night, a
+ *  barely perceptible mint by day. Deliberately NOT animated: a drifting-blob +
+ *  floating-mote field reads as generic AI-app slop and runs a loop every frame;
+ *  a still, soft wash of light is calmer, more premium, and costs nothing. */
+function DriftBlob({ size, color, top, left, opacity = 0.1 }: {
   size: number;
   color: string;
   top: number;
   left: number;
+  // accepted + ignored so existing call sites don't need editing
   delay?: number;
   range?: number;
   duration?: number;
   opacity?: number;
 }) {
-  const reduced = useReducedMotion();
-  const t = useSharedValue(0);
-  useEffect(() => {
-    if (reduced) return;
-    // phase-offset the start via withDelay (not by inflating the loop duration)
-    t.value = withDelay(delay, withRepeat(withTiming(1, { duration, easing: ease.inOut }), -1, true));
-    return () => cancelAnimation(t);
-  }, [reduced, t, delay, duration]);
-  // transform-ONLY worklet (perf): a constant opacity (set statically below) avoids
-  // a per-frame opacity recomposite on a large blurred blob — the drift alone reads
-  // as alive, and this keeps the ambient field cheap on the (web) main thread.
-  const style = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: (t.value - 0.5) * range },
-      { translateY: (t.value - 0.5) * range * 0.7 },
-    ],
-  }));
   return (
-    <Animated.View
+    <View
       pointerEvents="none"
-      style={[{ position: 'absolute', top, left, opacity }, style]}>
-      <View
-        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }}
-      />
-    </Animated.View>
-  );
-}
-
-/** A single floating "mote" — a tiny dot that drifts slowly upward and fades
- *  in/out, like dust in still light. Night-screen depth, transform/opacity only. */
-function Mote({ leftPct, top, size, dur, delay }: { leftPct: number; top: number; size: number; dur: number; delay: number }) {
-  const reduced = useReducedMotion();
-  const m = useSharedValue(0);
-  useEffect(() => {
-    if (reduced) return;
-    m.value = withDelay(delay, withRepeat(withTiming(1, { duration: dur, easing: ease.sine }), -1, false));
-    return () => cancelAnimation(m);
-  }, [reduced, m, dur, delay]);
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: -m.value * 60 }],
-    // triangle fade: in over first half, out over second — kept low so the brightest
-    // mote stays sub-perceptual on the night base (no high-contrast moving dot)
-    opacity: (m.value < 0.5 ? m.value * 2 : (1 - m.value) * 2) * 0.32,
-  }));
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        { position: 'absolute', top, left: `${leftPct}%`, width: size, height: size, borderRadius: size / 2, backgroundColor: night.glow },
-        style,
-      ]}
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        opacity,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color,
+      }}
     />
-  );
-}
-
-// Two slow motes (perf: was four, originally six) — enough for a "living
-// atmosphere" without a field of always-animating dots competing with scroll on
-// the main thread; the slowest durations dominate the feel.
-const MOTES = [
-  { leftPct: 30, top: 420, size: 2, dur: 20000, delay: 3000 },
-  { leftPct: 78, top: 250, size: 3, dur: 18000, delay: 9000 },
-];
-
-function Motes() {
-  return (
-    <>
-      {MOTES.map((mo, i) => (
-        <Mote key={i} {...mo} />
-      ))}
-    </>
   );
 }
 
@@ -180,10 +109,9 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
         />
         {isNight ? (
           <>
-            <DriftBlob size={260} color="#8FC9BE" top={-40} left={-60} range={28} />
-            <DriftBlob size={200} color="#6FB4A8" top={320} left={220} delay={3000} range={22} />
-            <DriftBlob size={160} color="#5E9C92" top={560} left={-40} delay={6000} range={18} />
-            <Motes />
+            <DriftBlob size={260} color="#8FC9BE" top={-40} left={-60} />
+            <DriftBlob size={200} color="#6FB4A8" top={320} left={220} />
+            <DriftBlob size={160} color="#5E9C92" top={560} left={-40} />
           </>
         ) : (
           // barely-perceptible daytime drift so light mode isn't motion-dead (§7: atmosphere only)

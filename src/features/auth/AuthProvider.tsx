@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { track } from '@/lib/analytics';
 import { api, type ApiEntitlement, type ApiUser } from '@/lib/api';
@@ -42,7 +42,9 @@ const CALM: ApiEntitlement = { tier: 'calm_plan', status: 'active' };
 // gated preview build while the production database isn't provisioned yet. Enabled
 // ONLY when EXPO_PUBLIC_COMP_LOGIN is set, which the preview web export sets and a
 // real App Store / Play build never does — so this can't unlock premium in prod.
-const COMP_LOGIN = process.env.EXPO_PUBLIC_COMP_LOGIN === '1';
+// Also require web: the comp account only exists for the gated WEB preview, so even
+// if the flag ever leaked into a native store build it still can't unlock premium.
+const COMP_LOGIN = process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web';
 const COMP_EMAIL = 'mason@theglowcompany.co';
 const COMP_PASSWORD = 'GlowOrb2026';
 

@@ -51,7 +51,7 @@ const SLIDES: Slide[] = [
   {
     art: 'shield',
     title: 'Yours, protected',
-    body: "Register your device, confirm it's genuine, and keep your warranty close.",
+    body: 'Register your device, unlock owner content, and keep your warranty close.',
   },
 ];
 

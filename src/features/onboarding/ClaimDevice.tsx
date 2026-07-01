@@ -59,11 +59,11 @@ export function ClaimDevice() {
               Found your Glow Orb
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
-              You’re a verified owner. Your warranty is active and owner content is unlocked.
+              You’re a registered owner. Your warranty is active and owner content is unlocked.
             </AppText>
           </Reveal>
           <Reveal index={1} style={{ marginTop: 16 }}>
-            <StatusChip label="Verified owner · warranty active" icon="shield" confirm />
+            <StatusChip label="Registered owner · warranty active" icon="shield" confirm />
           </Reveal>
           <Reveal index={2} style={{ alignSelf: 'stretch', marginTop: 28 }}>
             <PrimaryButton label="Continue" onPress={enter} />

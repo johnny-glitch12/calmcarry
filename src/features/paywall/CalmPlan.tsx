@@ -177,7 +177,8 @@ export function CalmPlan() {
     if (ok) {
       await activatePremium();
       track('subscribe_success', { plan });
-      // Honest trial: WE own the pre-charge reminder so the trial can never surprise-charge.
+      // Best-effort pre-charge reminder (a nice-to-have; the disclosure no longer
+      // PROMISES it, since a local notification can be denied or fail silently).
       if (plan === 'annual') scheduleTrialEndingReminder(TRIAL_DAYS, display('annual').price).catch(() => {});
     }
     if (!mounted.current) return;
@@ -289,7 +290,7 @@ export function CalmPlan() {
         {/* required subscription disclosure */}
         <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
           {plan === 'annual'
-            ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. We’ll remind you before it ends. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+            ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
             : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
         </AppText>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>

@@ -159,9 +159,11 @@ export function Player() {
   // drive the ring from the real playback position
   useEffect(() => {
     if (status.duration > 0) {
+      // short + linear so the ring TRACKS the real playback clock (a longer eased
+      // tween trails the true position and rubber-bands on scrub)
       progress.value = withTiming(Math.min(status.currentTime / status.duration, 1), {
-        duration: dur.sheet,
-        easing: ease.out,
+        duration: 240,
+        easing: Easing.linear,
       });
     }
   }, [status.currentTime, status.duration, progress]);

@@ -275,7 +275,7 @@ export function TonightScreen() {
       <Reveal index={1}>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           {feeling ? <StatusChip label={ARRIVAL_PERSONA[feeling]} icon="user" /> : null}
-          {verifiedOwner ? <StatusChip label="Verified owner" icon="shield" /> : null}
+          {verifiedOwner ? <StatusChip label="Registered owner" icon="shield" /> : null}
           <StatusChip label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'lock'} />
         </View>
       </Reveal>

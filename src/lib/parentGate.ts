@@ -1,5 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { Platform } from 'react-native';
 
 import { secureGet, secureSet } from './secureStore';
 
@@ -24,7 +25,9 @@ const LOCK_MS = 60_000; // 1-minute cooldown after MAX_FAILS wrong tries
 // reach the gated areas without a per-device PIN setup. Enabled ONLY when
 // EXPO_PUBLIC_COMP_LOGIN is set (the preview web export sets it; a real store
 // build never does), so this can't weaken the gate in production.
-const PREVIEW = process.env.EXPO_PUBLIC_COMP_LOGIN === '1';
+// Also require web: the demo code only exists for the gated WEB preview, so even if
+// the flag ever leaked into a native store build it can't weaken the real gate.
+const PREVIEW = process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web';
 const PREVIEW_PIN = '1379';
 
 type PinRecord = { hash: string; salt: string; fails: number; lockedUntil: number };

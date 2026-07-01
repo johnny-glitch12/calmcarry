@@ -159,6 +159,12 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
           </VoiceRow>
         );
       })}
+      <AppText
+        variant="caption"
+        tone="muted"
+        style={{ textAlign: 'center', marginTop: 4, textTransform: 'none', letterSpacing: 0 }}>
+        Preview voices are AI-generated.
+      </AppText>
     </View>
   );
 }

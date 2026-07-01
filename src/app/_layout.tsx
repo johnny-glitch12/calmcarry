@@ -151,8 +151,8 @@ function RootNav() {
   return (
     <>
       <KidsGuard />
-      {/* default = a slow, calm cross-fade between screens (§4 calm motion) */}
-      <Stack screenOptions={{ headerShown: false, animation: 'fade', animationDuration: dur.screen }}>
+      {/* default = a calm cross-fade between screens — nav duration (responsive), not the longer entrance glide */}
+      <Stack screenOptions={{ headerShown: false, animation: 'fade', animationDuration: dur.nav }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
       {/* wind-down rises like a player expanding from the mini-player (§4 stand-in) */}

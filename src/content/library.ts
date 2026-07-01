@@ -29,7 +29,7 @@ export const TRACKS: Record<string, Track> = {
   'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '4 min', category: 'meditation', audio: 'guidedLetGo', locked: true },
   // Honest until Glowco supplies real narration: this is a calm OCEAN soundscape for
   // little ones (it plays the ocean bed), NOT a 27-min narrated tale. Loops gently.
-  penguin: { id: 'penguin', title: "A Penguin's Ocean", subtitle: 'Calm ocean · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean' },
+  penguin: { id: 'penguin', title: 'Ocean for Little Ones', subtitle: 'Calm ocean waves · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean' },
   spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'music', audio: 'piano', locked: true },
   gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'music', audio: 'gymnopedie' },
   shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'waves', locked: true },

@@ -27,18 +27,21 @@ export const spring = {
 
 export const dur = {
   press: 160, // press feedback stays snappy so taps feel responsive (never slow this)
-  sheet: 400,
-  modal: 560,
-  screen: 780, // calm cross-fade / entrance — a slow, settled glide (a sleep app should breathe)
+  nav: 340, // route / drill-down transition — responsive; navigation must never feel sluggish
+  sheet: 340,
+  modal: 480,
+  // Entrance glide. The gentle easing (easeOutCubic) is what makes motion feel
+  // calm, NOT an extreme duration — so this stays moderate to avoid dragging.
+  screen: 600,
   breath: 4800,
   // long, deliberate "signature" durations:
-  draw: 1200, // a stroke/line drawing on
-  reveal: 1750, // a gauge/curve filling on its own
+  draw: 1050, // a stroke/line drawing on
+  reveal: 1400, // a gauge/curve filling on its own
   aura: 6000, // one slow GlowOrb aura ripple (reduced-motion-guarded when looped; low amplitude)
 } as const;
 
 /** Press feedback scale (DESIGN_SYSTEM §4). */
 export const PRESS_SCALE = 0.97;
 
-/** Stagger step for list/section entrances — a calm, graceful cascade. */
-export const STAGGER = 120;
+/** Stagger step for list/section entrances — a calm cascade that doesn't drag on long lists. */
+export const STAGGER = 90;

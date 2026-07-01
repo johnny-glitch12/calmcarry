@@ -11,7 +11,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { brand, night, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
 
@@ -135,23 +135,32 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   const isNight = resolved === 'night';
   const padBottom = tabBarSpacing ? 108 : 24;
 
+  // Top clearance: the real device inset (notch / Dynamic Island / camera) plus a
+  // calm floor so no-notch devices and in-browser views still breathe. We own the
+  // top padding here (not via a SafeAreaView 'top' edge) so a screen's own
+  // contentStyle.paddingTop can't accidentally erase the camera clearance.
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, 12) + 8;
+
   const body = (
-    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1 }} edges={['left', 'right']}>
       {/* lift content above the on-screen keyboard so inputs + submit buttons stay visible */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, paddingTop: topInset }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
             contentContainerStyle={[
-              { paddingHorizontal: 24, paddingTop: 8, paddingBottom: padBottom },
+              { paddingHorizontal: 24, paddingTop: 0, paddingBottom: padBottom },
               contentStyle,
             ]}>
             {children}
           </ScrollView>
         ) : (
-          <View style={[{ flex: 1, paddingHorizontal: 24, paddingTop: 8 }, contentStyle]}>
+          <View style={[{ flex: 1, paddingHorizontal: 24, paddingTop: 0 }, contentStyle]}>
             {children}
           </View>
         )}

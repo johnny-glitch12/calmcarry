@@ -225,7 +225,7 @@ export function AccountScreen() {
               {user?.name ?? 'Welcome'}
             </AppText>
             <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
-              {user?.email ?? 'Sign in to sync your Glow account'}
+              {user?.email ?? 'Sign in to sync your account'}
             </AppText>
           </View>
         </View>

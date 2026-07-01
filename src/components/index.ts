@@ -14,7 +14,7 @@ export { LibraryCard } from './LibraryCard';
 export { StatusChip } from './StatusChip';
 export { SectionHeader } from './SectionHeader';
 export { TabBar } from './TabBar';
-export { Reveal } from './Reveal';
+export { Reveal, RevealReplayProvider } from './Reveal';
 export { ProgressRing } from './ProgressRing';
 export { Segmented } from './Segmented';
 export { FormField } from './FormField';

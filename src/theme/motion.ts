@@ -19,19 +19,19 @@ export const spring = {
 } as const;
 
 export const dur = {
-  press: 140,
-  sheet: 240,
-  modal: 320,
-  screen: 420, // calm cross-fade between screens — slower than the RN default for a settled feel
-  breath: 4000,
-  // long, deliberate "signature" durations (documented exceptions to the <300ms UI cap):
-  draw: 600, // a stroke/check drawing on (authenticity)
-  reveal: 900, // a gauge/score filling on its own (sleep summary)
-  aura: 4800, // one slow GlowOrb aura ripple. One-shot on appear; if looped it MUST be reduced-motion-guarded + low-amplitude (opacity ≤ ~0.18, scale travel ≤ ~0.35), transform/opacity only.
+  press: 160, // press feedback stays snappy so taps feel responsive
+  sheet: 320,
+  modal: 440,
+  screen: 640, // calm cross-fade / entrance — slow + settled (a sleep app should breathe)
+  breath: 4200,
+  // long, deliberate "signature" durations:
+  draw: 950, // a stroke/line drawing on
+  reveal: 1400, // a gauge/curve filling on its own
+  aura: 5200, // one slow GlowOrb aura ripple (reduced-motion-guarded when looped; low amplitude)
 } as const;
 
 /** Press feedback scale (DESIGN_SYSTEM §4). */
 export const PRESS_SCALE = 0.97;
 
-/** Stagger step for list/section entrances (40–60ms). */
-export const STAGGER = 50;
+/** Stagger step for list/section entrances — a calm, noticeable cascade. */
+export const STAGGER = 90;

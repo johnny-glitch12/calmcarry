@@ -2,8 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, View, type ViewStyle } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -150,75 +150,82 @@ function Dot({ active }: { active: boolean }) {
   return <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: active ? c.accent : c.line }, style]} />;
 }
 
-/** A ruler-style sleep-goal picker: a big circular hour badge that springs on
- *  change, over a row of tick marks (tap to set). Transform/opacity only. */
+const TICK_W = 34;
+
+/** A SLIDING sleep-goal picker: drag the ruler and the hour under the centre line
+ *  is your goal (snaps per hour). The big badge springs as the value changes.
+ *  Transform/opacity only; reduced motion just skips the badge spring. */
 function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: number) => void }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const pop = useSharedValue(1);
+  const scroller = useRef<ScrollView>(null);
+  const [vw, setVw] = useState(0);
   const hours = Array.from({ length: SLEEP_GOAL_MAX - SLEEP_GOAL_MIN + 1 }, (_, i) => SLEEP_GOAL_MIN + i);
-  const set = (h: number) => {
-    if (h === value) return;
-    lightTap();
-    onChange(h);
-    if (!reduced) {
-      pop.value = withSequence(
-        withTiming(1.08, { duration: 110, easing: ease.out }),
-        withSpring(1, { damping: 12, stiffness: 200, mass: 0.6 })
-      );
+
+  // centre the current value under the pointer once the viewport width is known
+  useEffect(() => {
+    if (vw > 0) scroller.current?.scrollTo({ x: (value - SLEEP_GOAL_MIN) * TICK_W, animated: false });
+  }, [vw]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / TICK_W);
+    const h = Math.min(SLEEP_GOAL_MAX, Math.max(SLEEP_GOAL_MIN, SLEEP_GOAL_MIN + idx));
+    if (h !== value) {
+      onChange(h);
+      lightTap();
+      if (!reduced) {
+        pop.value = withSequence(
+          withTiming(1.06, { duration: 100, easing: ease.out }),
+          withSpring(1, { damping: 12, stiffness: 200, mass: 0.6 })
+        );
+      }
     }
   };
+
   const badgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  const pad = vw > 0 ? vw / 2 - TICK_W / 2 : 0;
+
   return (
     <View style={{ alignItems: 'center' }}>
       <Animated.View
         style={[
-          {
-            width: 132,
-            height: 132,
-            borderRadius: 66,
-            borderWidth: 2,
-            borderColor: c.accent,
-            backgroundColor: c.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...c.shadow,
-          },
+          { width: 132, height: 132, borderRadius: 66, borderWidth: 2, borderColor: c.accent, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', ...c.shadow },
           badgeStyle,
         ]}>
         <AppText style={{ fontFamily: fonts.display, fontSize: 40, lineHeight: 46, color: c.textAccent }}>{value}h</AppText>
       </Animated.View>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginTop: 28 }}>
-        {hours.map((h) => {
-          const active = h === value;
-          const labelled = active || h % 2 === 0;
-          return (
-            <Pressable
-              key={h}
-              onPress={() => set(h)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={`${h} hours`}
-              accessibilityState={{ selected: active }}
-              style={{ width: 30, alignItems: 'center' }}>
-              <View
-                style={{
-                  width: active ? 3 : 2,
-                  height: active ? 34 : h % 2 === 0 ? 22 : 14,
-                  borderRadius: 2,
-                  backgroundColor: active ? c.accent : c.line,
-                }}
-              />
-              {labelled ? (
-                <AppText variant="label" tone={active ? 'accent' : 'muted'} style={{ marginTop: 6 }}>
+
+      <View
+        onLayout={(e) => setVw(e.nativeEvent.layout.width)}
+        style={{ width: '100%', height: 66, marginTop: 30 }}
+        accessibilityRole="adjustable"
+        accessibilityLabel="Nightly sleep goal in hours"
+        accessibilityValue={{ text: `${value} hours` }}>
+        {/* fixed centre indicator that the ruler slides under */}
+        <View pointerEvents="none" style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -1.5, width: 3, height: 40, borderRadius: 2, backgroundColor: c.accent, zIndex: 2 }} />
+        <ScrollView
+          ref={scroller}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={TICK_W}
+          decelerationRate="fast"
+          scrollEventThrottle={16}
+          onScroll={onScroll}
+          contentContainerStyle={{ paddingHorizontal: pad, alignItems: 'flex-end' }}>
+          {hours.map((h) => (
+            <View key={h} style={{ width: TICK_W, alignItems: 'center' }}>
+              <View style={{ width: h % 2 === 0 ? 2 : 1, height: h % 2 === 0 ? 24 : 14, borderRadius: 1, backgroundColor: c.line }} />
+              {h % 2 === 0 ? (
+                <AppText variant="label" tone="muted" style={{ marginTop: 6 }}>
                   {h}
                 </AppText>
               ) : (
                 <View style={{ height: 17 }} />
               )}
-            </Pressable>
-          );
-        })}
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
@@ -243,19 +250,19 @@ function TwinkleStar({ top, left, size = 16, delay = 0 }: { top: number; left: s
   );
 }
 
-/** One before/after card: a still, cool card for "today"; a warm, breathing one for "in a week". */
-function TransformCard({ mood, label, style }: { mood: 'today' | 'week'; label: string; style?: ViewStyle }) {
+/** One before/after card. A real scene carries the mood: a stormy night for
+ *  "today" (heavy, cool scrim) → a bright dawn for "in a week" (light scrim). */
+function TransformCard({ cover, label, dim, style }: { cover: CoverKey; label: string; dim?: boolean; style?: ViewStyle }) {
   const { c } = useTheme();
-  const today = mood === 'today';
   return (
     <View style={[{ width: 166, height: 188, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }, style]}>
-      <LinearGradient colors={today ? ['#262B36', '#1E222C'] : [brand.mint, brand.mintSoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, padding: 16 }}>
-        <AppText variant="caption" style={{ color: today ? c.muted : brand.teal }}>
-          {label}
-        </AppText>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <GlowOrb size={82} breathing={!today} aura={!today} />
-        </View>
+      <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
+      <LinearGradient
+        colors={dim ? ['rgba(16,22,30,0.32)', 'rgba(16,22,30,0.8)'] : ['rgba(20,30,28,0.04)', 'rgba(20,30,28,0.4)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ flex: 1, padding: 14 }}>
+        <AppText variant="caption" style={{ color: '#FFFFFF' }}>{label}</AppText>
       </LinearGradient>
     </View>
   );
@@ -438,8 +445,8 @@ export function Onboarding() {
             <TwinkleStar top={66} left="84%" size={22} delay={500} />
             <TwinkleStar top={244} left="88%" size={15} delay={900} />
             <TwinkleStar top={300} left="9%" size={14} delay={1300} />
-            <TransformCard mood="week" label="You in a week" style={{ position: 'absolute', top: 0, right: 6, transform: [{ rotate: '4deg' }], zIndex: 2 }} />
-            <TransformCard mood="today" label="You today" style={{ position: 'absolute', bottom: 0, left: 6, transform: [{ rotate: '-4deg' }], zIndex: 1 }} />
+            <TransformCard cover="dawnWoods" label="You in a week" style={{ position: 'absolute', top: 0, right: 6, transform: [{ rotate: '4deg' }], zIndex: 2 }} />
+            <TransformCard cover="rainfall" label="You today" dim style={{ position: 'absolute', bottom: 0, left: 6, transform: [{ rotate: '-4deg' }], zIndex: 1 }} />
             <ArrowBadge style={{ position: 'absolute', top: 148, alignSelf: 'center', zIndex: 3 }} />
           </Animated.View>
         </View>

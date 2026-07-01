@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Easing } from 'react-native';
+import { Dimensions, Easing } from 'react-native';
 
 import { TabBar } from '@/components';
 import { dur } from '@/theme';
@@ -10,11 +10,29 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
-        // Switching a tab is a page change — give it a gentle cross-fade instead of a
-        // hard cut. `animation` runs on RN's Animated (not Reanimated), so the timing
-        // uses react-native's Easing; dur.nav keeps it consistent with drill-downs.
-        animation: 'fade',
-        transitionSpec: { animation: 'timing', config: { duration: dur.nav, easing: Easing.out(Easing.ease) } },
+        // Pages SLIDE across, they don't cross-fade. The old 'fade' put both dark
+        // screens at partial opacity and let the base bleed through — that's the
+        // "goes bright" flash. This is a pure horizontal translate (no opacity):
+        // the current page slides off one edge while the next slides in from the
+        // other, edge-to-edge so nothing behind is ever revealed. 'shift' turns the
+        // transition machinery on; the custom interpolator below replaces its fade.
+        animation: 'shift',
+        transitionSpec: { animation: 'timing', config: { duration: dur.nav, easing: Easing.inOut(Easing.ease) } },
+        sceneStyleInterpolator: ({ current }) => {
+          const w = Dimensions.get('window').width || 400;
+          return {
+            sceneStyle: {
+              transform: [
+                {
+                  translateX: current.progress.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: [w, 0, -w],
+                  }),
+                },
+              ],
+            },
+          };
+        },
       }}
       tabBar={(props) => <TabBar {...props} />}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />

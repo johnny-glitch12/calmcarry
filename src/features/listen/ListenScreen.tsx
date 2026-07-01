@@ -4,7 +4,15 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Platform, ScrollView, View } from 'react-native';
+import { AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { AppText, Card, PressableScale, Reveal, Screen, SectionHeader } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -15,7 +23,7 @@ import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { takePendingMix } from '@/lib/mixShare';
 import { getJSON, remove, setJSON } from '@/lib/store';
-import { useTheme } from '@/theme';
+import { dur, ease, spring, useTheme } from '@/theme';
 
 // Lyric-free instrumental music (build plan §6/§7 — Listen = Music + Sound machine).
 // CMS-extensible; the sound machine below handles ambient sounds.
@@ -58,7 +66,33 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   onLevel: (l: number) => void;
 }) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
   const on = level > 0;
+
+  // Turning a sound ON should feel alive, not a hard flip: the accent ring fades
+  // in, the badge pops + swaps plus→volume, the tile lifts, the bars brighten.
+  // transform + opacity only (we overlay the accent ring rather than animate a
+  // borderColor), reduced-motion-safe, one-shot (no eye-tiring loop).
+  const a = useSharedValue(on ? 1 : 0);
+  const pop = useSharedValue(1);
+  useEffect(() => {
+    a.value = reduced ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: dur.sheet, easing: ease.out });
+    if (on && !reduced) {
+      pop.value = withSequence(
+        withTiming(1.18, { duration: dur.press, easing: ease.out }),
+        withSpring(1, spring),
+      );
+    }
+  }, [on, reduced, a, pop]);
+
+  const ringStyle = useAnimatedStyle(() => ({ opacity: a.value }));
+  const liftStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -2 * a.value }] }));
+  const badgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  const fillStyle = useAnimatedStyle(() => ({ opacity: a.value }));
+  const plusStyle = useAnimatedStyle(() => ({ opacity: 1 - a.value }));
+  const volStyle = useAnimatedStyle(() => ({ opacity: a.value }));
+  const barsStyle = useAnimatedStyle(() => ({ opacity: 0.3 + 0.7 * a.value }));
+
   return (
     <View style={{ width: '47%' }}>
       <PressableScale
@@ -66,43 +100,61 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
         accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}>
-        <View
-          style={{
-            height: 116,
-            borderRadius: 16,
-            overflow: 'hidden',
-            borderWidth: 2,
-            borderColor: on ? c.accent : 'transparent',
-            ...c.shadow,
-          }}>
+        <Animated.View
+          style={[
+            { height: 116, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', ...c.shadow },
+            liftStyle,
+          ]}>
           <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
-          <View style={{ flex: 1, backgroundColor: on ? 'rgba(20,30,28,0.5)' : 'rgba(20,30,28,0.58)', padding: 12, justifyContent: 'space-between' }}>
-            <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, backgroundColor: locked ? 'rgba(255,255,255,0.18)' : on ? c.accent : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name={locked ? 'lock' : on ? 'volume-2' : 'plus'} size={14} color="#FFFFFF" />
+          <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.54)', padding: 12, justifyContent: 'space-between' }}>
+            <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, overflow: 'hidden', backgroundColor: locked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+              {/* accent fill fades in behind the icon when active (opacity-only) */}
+              {!locked ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: c.accent }, fillStyle]} /> : null}
+              <Animated.View style={badgeStyle}>
+                {locked ? (
+                  <Feather name="lock" size={14} color="#FFFFFF" />
+                ) : (
+                  <View style={{ width: 14, height: 14 }}>
+                    <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, plusStyle]}>
+                      <Feather name="plus" size={14} color="#FFFFFF" />
+                    </Animated.View>
+                    <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, volStyle]}>
+                      <Feather name="volume-2" size={14} color="#FFFFFF" />
+                    </Animated.View>
+                  </View>
+                )}
+              </Animated.View>
             </View>
             <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 15, color: '#FFFFFF' }}>{label}</AppText>
           </View>
-        </View>
+          {/* accent activation ring — fades in over the tile edge (avoids animating borderColor) */}
+          {!locked ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFill, { borderRadius: 16, borderWidth: 2, borderColor: c.accent }, ringStyle]}
+            />
+          ) : null}
+        </Animated.View>
       </PressableScale>
       {/* per-sound volume — 3 levels (a locked tile shows a matching spacer instead) */}
       {locked ? (
         <View style={{ height: 8, marginTop: 8 }} />
       ) : (
-      <View style={{ flexDirection: 'row', gap: 6, marginTop: 8, height: 8, opacity: on ? 1 : 0.3 }}>
-        {[1, 2, 3].map((l) => (
-          <PressableScale
-            key={l}
-            onPress={() => onLevel(l)}
-            disabled={!on}
-            hitSlop={{ top: 18, bottom: 18, left: 4, right: 4 }}
-            style={{ flex: 1 }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on && level >= l, disabled: !on }}
-            accessibilityLabel={`Volume level ${l}`}>
-            <View style={{ height: 6, borderRadius: 3, backgroundColor: on && level >= l ? c.accent : c.line }} />
-          </PressableScale>
-        ))}
-      </View>
+        <Animated.View style={[{ flexDirection: 'row', gap: 6, marginTop: 8, height: 8 }, barsStyle]}>
+          {[1, 2, 3].map((l) => (
+            <PressableScale
+              key={l}
+              onPress={() => onLevel(l)}
+              disabled={!on}
+              hitSlop={{ top: 18, bottom: 18, left: 4, right: 4 }}
+              style={{ flex: 1 }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on && level >= l, disabled: !on }}
+              accessibilityLabel={`Volume level ${l}`}>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: on && level >= l ? c.accent : c.line }} />
+            </PressableScale>
+          ))}
+        </Animated.View>
       )}
     </View>
   );

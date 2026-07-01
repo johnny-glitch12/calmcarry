@@ -84,9 +84,13 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
       {win.mix ? (
         <Pressable
           onPress={onLoadMix}
+          onPressIn={tapHaptic}
           accessibilityRole="button"
           accessibilityLabel={`Load mix ${win.mix.name} into the sound machine`}
-          style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+          style={({ pressed }) => [
+            { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage },
+            pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null,
+          ]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="sliders" size={15} color={c.textAccent} />
@@ -293,18 +297,22 @@ export function CommunityScreen() {
               <Pressable
                 key={f.id}
                 onPress={() => setFilter(f.id)}
+                onPressIn={tapHaptic}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
-                style={{
-                  height: 34,
-                  paddingHorizontal: 14,
-                  borderRadius: 17,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: on ? c.ctaBg : 'transparent',
-                  borderWidth: 1,
-                  borderColor: on ? c.ctaBg : c.line,
-                }}>
+                style={({ pressed }) => [
+                  {
+                    height: 34,
+                    paddingHorizontal: 14,
+                    borderRadius: 17,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: on ? c.ctaBg : 'transparent',
+                    borderWidth: 1,
+                    borderColor: on ? c.ctaBg : c.line,
+                  },
+                  pressed ? { transform: [{ scale: 0.96 }], opacity: 0.9 } : null,
+                ]}>
                 <AppText variant="meta" style={{ color: on ? c.ctaText : c.muted }}>
                   {f.label}
                 </AppText>

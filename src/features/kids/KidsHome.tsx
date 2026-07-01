@@ -2,15 +2,22 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { AppText, BearMascot, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
-import { fonts, useTheme } from '@/theme';
+import { dur, ease, fonts, STAGGER, useTheme } from '@/theme';
 
 // light tap feedback on the big kid affordances (paired with the Pressable `pressed`
 // scale below) — a child should feel every tap respond
@@ -44,6 +51,31 @@ function ParentLock({ onPress }: { onPress: () => void }) {
   );
 }
 
+/** One earned star gently pops + fades in on a short stagger — a small, playful
+ *  "count-in" a child feels rewarded by. Un-earned stars rest. Reduced motion →
+ *  static. transform + opacity only. */
+function KidStar({ earned, index, color }: { earned: boolean; index: number; color: string }) {
+  const reduced = useReducedMotion();
+  const shouldAnimate = earned && !reduced;
+  const p = useSharedValue(shouldAnimate ? 0 : 1);
+  useEffect(() => {
+    if (!shouldAnimate) {
+      p.value = 1;
+      return;
+    }
+    p.value = withDelay(index * STAGGER, withTiming(1, { duration: dur.sheet, easing: ease.out }));
+  }, [shouldAnimate, index, p]);
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: 0.35 + p.value * 0.65,
+    transform: [{ scale: 0.7 + p.value * 0.3 }],
+  }));
+  return (
+    <Animated.View style={animStyle}>
+      <Feather name="star" size={20} color={color} />
+    </Animated.View>
+  );
+}
+
 function Stars({ count }: { count: number }) {
   const { c } = useTheme();
   return (
@@ -53,7 +85,7 @@ function Stars({ count }: { count: number }) {
       accessibilityRole="text"
       accessibilityLabel={`${count} of ${CALM_NIGHTS_GOAL} calm nights`}>
       {Array.from({ length: CALM_NIGHTS_GOAL }).map((_, i) => (
-        <Feather key={i} name="star" size={20} color={i < count ? c.accent : c.line} />
+        <KidStar key={i} earned={i < count} index={i} color={i < count ? c.accent : c.line} />
       ))}
     </View>
   );

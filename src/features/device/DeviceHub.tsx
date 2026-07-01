@@ -8,6 +8,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { AppText, Card, GlowOrb, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
@@ -104,7 +105,12 @@ function DeviceSummaryCard({
         ? 'Register your device to activate its warranty'
         : 'Sign in to see your registered Glow Orb';
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={lightTap}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null)}>
       <Card variant="surface" radius={20} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <GlowOrb size={56} reserveGlow aura={!!device} breathing={!!device} />
         <View style={{ flex: 1, minWidth: 0 }}>

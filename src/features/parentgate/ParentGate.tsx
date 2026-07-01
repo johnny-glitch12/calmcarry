@@ -246,7 +246,10 @@ export function ParentGate() {
               disabled={k === '' || lockSeconds > 0}
               accessibilityRole={k === '' ? 'none' : 'button'}
               accessibilityLabel={k === 'del' ? 'Delete' : k || undefined}
-              style={{ width: 88, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+              style={({ pressed }) => [
+                { width: 88, height: 72, alignItems: 'center', justifyContent: 'center' },
+                pressed && k !== '' ? { transform: [{ scale: 0.9 }], opacity: 0.8 } : null,
+              ]}>
               {k === 'del' ? (
                 <Feather name="delete" size={24} color={c.textAccent} />
               ) : k === '' ? null : (

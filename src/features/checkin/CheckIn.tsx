@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 import { AppText, GlowOrb, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { track } from '@/lib/analytics';
+import { lightTap } from '@/lib/haptics';
 import { maybeRequestReview } from '@/lib/reviews';
 
 /**
@@ -44,7 +45,14 @@ export function CheckIn() {
           </AppText>
         </Reveal>
       </View>
-      <Pressable onPress={done} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 18 }}>
+      <Pressable
+        onPress={done}
+        onPressIn={lightTap}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          { alignItems: 'center', paddingVertical: 18 },
+          pressed ? { opacity: 0.9, transform: [{ scale: 0.98 }] } : null,
+        ]}>
         <AppText variant="bodyMedium" tone="accent">
           Done
         </AppText>

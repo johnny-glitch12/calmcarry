@@ -8,6 +8,7 @@ import { AppText, Card, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
+import { lightTap } from '@/lib/haptics';
 import { getProgramDone } from '@/lib/programs';
 import { useTheme } from '@/theme';
 
@@ -41,7 +42,13 @@ export function ProgramDetail() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <Pressable
+          onPress={back}
+          onPressIn={lightTap}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={({ pressed }) => [{ marginBottom: 16 }, pressed ? { transform: [{ scale: 0.92 }], opacity: 0.7 } : null]}>
           <Feather name="chevron-left" size={26} color={c.text} />
         </Pressable>
         <Image
@@ -91,7 +98,13 @@ export function ProgramDetail() {
             const t = step.trackId ? TRACKS[step.trackId] : undefined;
             const isDone = done.includes(step.day);
             return (
-              <Pressable key={step.day} onPress={() => open(step.day, step.trackId)} accessibilityRole="button" accessibilityState={{ selected: isDone }}>
+              <Pressable
+                key={step.day}
+                onPress={() => open(step.day, step.trackId)}
+                onPressIn={lightTap}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isDone }}
+                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
                 <Card
                   variant={isDone ? 'panel' : 'surface'}
                   padding={14}

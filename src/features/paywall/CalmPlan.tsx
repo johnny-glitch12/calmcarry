@@ -8,6 +8,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { fetchLocalizedPrices, iapSupported, purchaseSubscription, restoreSubscription } from '@/lib/iap';
 import { scheduleTrialEndingReminder } from '@/lib/reminders';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
@@ -39,7 +40,13 @@ function PlanCard({
   const { c } = useTheme();
   const p = PRICING[id];
   return (
-    <Pressable onPress={onSelect} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={`${p.label}, ${price} ${p.per}`}>
+    <Pressable
+      onPress={onSelect}
+      onPressIn={lightTap}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${p.label}, ${price} ${p.per}`}
+      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
       <View
         style={{
           borderRadius: 16,

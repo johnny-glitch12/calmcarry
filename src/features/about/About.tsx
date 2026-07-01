@@ -5,6 +5,7 @@ import { Linking, Pressable, View } from 'react-native';
 import { AppText, Logo, Reveal, Screen } from '@/components';
 import { WELLNESS_DISCLAIMER } from '@/content/library';
 import { CRISIS_RESOURCES, PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
+import { lightTap } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 
 const APP_VERSION = '1.0.0';
@@ -31,18 +32,22 @@ function LinkRow({
   return (
     <Pressable
       onPress={() => Linking.openURL(url).catch(() => {})}
+      onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens in your browser"
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: c.line,
-      }}>
+      style={({ pressed }) => [
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 14,
+          paddingVertical: 16,
+          paddingHorizontal: 16,
+          borderBottomWidth: last ? 0 : 1,
+          borderBottomColor: c.line,
+        },
+        pressed ? { opacity: 0.95, transform: [{ scale: 0.98 }] } : null,
+      ]}>
       <Feather name={icon} size={18} color={c.accent} />
       <AppText variant="bodyMedium" tone="title" style={{ flex: 1, fontSize: 15 }}>
         {label}
@@ -99,17 +104,21 @@ export function About() {
             <Pressable
               key={r.region}
               onPress={() => Linking.openURL(r.url).catch(() => {})}
+              onPressIn={lightTap}
               accessibilityRole="button"
               accessibilityLabel={`${r.name}. ${r.contact}.`}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                paddingVertical: 14,
-                paddingHorizontal: 16,
-                borderBottomWidth: i === CRISIS_RESOURCES.length - 1 ? 0 : 1,
-                borderBottomColor: c.line,
-              }}>
+              style={({ pressed }) => [
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: i === CRISIS_RESOURCES.length - 1 ? 0 : 1,
+                  borderBottomColor: c.line,
+                },
+                pressed ? { opacity: 0.95, transform: [{ scale: 0.98 }] } : null,
+              ]}>
               <Feather name="heart" size={16} color={c.accent} />
               <View style={{ flex: 1 }}>
                 <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>

@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { AppText, Card, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { brand, useTheme } from '@/theme';
 
 type Caregiver = { id: string; name: string; email: string };
@@ -101,7 +102,13 @@ export function Caregivers() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <Pressable
+          onPress={back}
+          onPressIn={lightTap}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={({ pressed }) => [{ marginBottom: 16, alignSelf: 'flex-start' }, pressed ? { opacity: 0.6 } : null]}>
           <Feather name="chevron-left" size={26} color={c.text} />
         </Pressable>
         <AppText variant="caption" tone="muted">
@@ -126,7 +133,12 @@ export function Caregivers() {
             <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
               We couldn’t load your household just now.
             </AppText>
-            <Pressable onPress={refresh} accessibilityRole="button" hitSlop={8}>
+            <Pressable
+              onPress={refresh}
+              onPressIn={lightTap}
+              accessibilityRole="button"
+              hitSlop={8}
+              style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}>
               <AppText variant="bodyMedium" tone="accent">
                 Tap to retry
               </AppText>
@@ -181,7 +193,13 @@ export function Caregivers() {
                         {cg.email}
                       </AppText>
                     </View>
-                    <Pressable onPress={() => remove(cg.id)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Remove ${cg.name}`}>
+                    <Pressable
+                      onPress={() => remove(cg.id)}
+                      onPressIn={lightTap}
+                      hitSlop={10}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${cg.name}`}
+                      style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}>
                       <AppText variant="label" style={{ color: brand.coral }}>
                         Remove
                       </AppText>

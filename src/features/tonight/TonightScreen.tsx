@@ -3,6 +3,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 
 import {
   AppText,
@@ -25,8 +32,9 @@ import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
+import { lightTap } from '@/lib/haptics';
 import { getJSON, setJSON } from '@/lib/store';
-import { brand, useTheme } from '@/theme';
+import { brand, dur, ease, STAGGER, useTheme } from '@/theme';
 
 const NEW_THIS_MONTH = ['gymnopedie', 'shoreline', 'spa'];
 
@@ -59,13 +67,43 @@ const INTENT_REASON: Record<Intent, string> = {
   suggest: "Tonight's pick for you",
 };
 
+/** A single calm-nights star. Earned stars gently scale + fade in one after
+ *  another (a soft "count-in"); un-earned stars just appear. Reduced motion →
+ *  everything resting. transform + opacity only. */
+function CalmNightStar({ earned, index, color }: { earned: boolean; index: number; color: string }) {
+  const reduced = useReducedMotion();
+  const shouldAnimate = earned && !reduced;
+  const p = useSharedValue(shouldAnimate ? 0 : 1);
+  useEffect(() => {
+    if (!shouldAnimate) {
+      p.value = 1;
+      return;
+    }
+    p.value = withDelay(index * STAGGER, withTiming(1, { duration: dur.sheet, easing: ease.out }));
+  }, [shouldAnimate, index, p]);
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: 0.4 + p.value * 0.6,
+    transform: [{ scale: 0.85 + p.value * 0.15 }],
+  }));
+  return (
+    <Animated.View style={animStyle}>
+      <Feather name="star" size={16} color={color} />
+    </Animated.View>
+  );
+}
+
 /** The hero ritual panel — personalised to the recommended track (the one
  *  "notice-first" element, §7). The orb is the Glow Orb device twin. */
 function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: string; onPress: () => void }) {
   const { c, isNight } = useTheme();
   const track = TRACKS[trackId] ?? TRACKS['slow-tide'];
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Play ${track.title}`}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={lightTap}
+      accessibilityRole="button"
+      accessibilityLabel={`Play ${track.title}`}
+      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null)}>
       <View
         style={{
           borderRadius: 20,
@@ -300,19 +338,23 @@ export function TonightScreen() {
         <Reveal index={5}>
           <Pressable
             onPress={() => router.push(`/player?id=${FREE_RESCUE}` as Href)}
+            onPressIn={lightTap}
             accessibilityRole="button"
             accessibilityLabel={`${rescueLabel} Play a free calming session now.`}
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 14,
-              padding: 16,
-              borderRadius: 18,
-              backgroundColor: c.panel,
-              borderWidth: 1,
-              borderColor: c.lineSage,
-            }}>
+            style={({ pressed }) => [
+              {
+                marginTop: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                padding: 16,
+                borderRadius: 18,
+                backgroundColor: c.panel,
+                borderWidth: 1,
+                borderColor: c.lineSage,
+              },
+              pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null,
+            ]}>
             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="moon" size={18} color={c.accent} />
             </View>
@@ -335,9 +377,13 @@ export function TonightScreen() {
         <Reveal index={6}>
           <Pressable
             onPress={() => router.push('/program?id=first-week' as Href)}
+            onPressIn={lightTap}
             accessibilityRole="button"
             accessibilityLabel="Your first 7 nights, a free starter program"
-            style={{ marginTop: 16, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
+            style={({ pressed }) => [
+              { marginTop: 16, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage },
+              pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null,
+            ]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <AppText variant="caption" tone="accent">
                 Free starter
@@ -371,7 +417,7 @@ export function TonightScreen() {
               </AppText>
               <View style={{ flexDirection: 'row', gap: 5, marginTop: 10 }}>
                 {Array.from({ length: CALM_NIGHTS_GOAL }).map((_, i) => (
-                  <Feather key={i} name="star" size={16} color={i < nights ? c.accent : c.line} />
+                  <CalmNightStar key={i} earned={i < nights} index={i} color={i < nights ? c.accent : c.line} />
                 ))}
               </View>
             </View>

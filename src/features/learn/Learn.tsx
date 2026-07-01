@@ -6,6 +6,7 @@ import { Pressable, View } from 'react-native';
 import { AppText, Card, Reveal, Screen } from '@/components';
 import { covers } from '@/content/covers';
 import { LEARN, WELLNESS_DISCLAIMER } from '@/content/library';
+import { lightTap } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 
 export function LearnList() {
@@ -25,7 +26,12 @@ export function LearnList() {
 
       <Reveal index={1} style={{ marginTop: 24, gap: 12 }}>
         {items.map((a) => (
-          <Pressable key={a.id} onPress={() => router.push((a.videoUrl ? `/watch?id=${a.id}` : `/learn-article?id=${a.id}`) as Href)} accessibilityRole="button">
+          <Pressable
+            key={a.id}
+            onPress={() => router.push((a.videoUrl ? `/watch?id=${a.id}` : `/learn-article?id=${a.id}`) as Href)}
+            onPressIn={lightTap}
+            accessibilityRole="button"
+            style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
             <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {a.cover ? (
                 <Image source={covers[a.cover]} style={{ width: 60, height: 60, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />

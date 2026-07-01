@@ -225,6 +225,9 @@ export function Player() {
     haptic();
     toggleFavorite(track.id).then(setSaved).catch(() => {});
   };
+  // gentle press feedback on the save/heart control (matches the play/pause button)
+  const heartScale = useSharedValue(1);
+  const heartStyle = useAnimatedStyle(() => ({ transform: [{ scale: heartScale.value }] }));
 
   // breathing pacer (4s in / 6s out) + rotating honest cues — the guided-session feel
   const reduced = useReducedMotion();
@@ -545,12 +548,16 @@ export function Player() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: 28 }}>
           <Pressable
             onPress={onToggleSave}
+            onPressIn={() => (heartScale.value = withTiming(PRESS_SCALE, { duration: dur.press, easing: ease.out }))}
+            onPressOut={() => (heartScale.value = withTiming(1, { duration: dur.press, easing: ease.out }))}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
             accessibilityState={{ selected: saved }}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-            <Feather name="heart" size={24} color={saved ? c.accent : c.text} style={saved ? undefined : { opacity: 0.9 }} />
+            <Animated.View style={heartStyle}>
+              <Feather name="heart" size={24} color={saved ? c.accent : c.text} style={saved ? undefined : { opacity: 0.9 }} />
+            </Animated.View>
           </Pressable>
           <PlayPause paused={paused} onPress={toggle} />
           <View style={{ width: 44, height: 44 }} />

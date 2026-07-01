@@ -8,6 +8,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile, type AppMode, type Profile } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { brand, useTheme } from '@/theme';
@@ -100,7 +101,13 @@ export function Family() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <Pressable
+          onPress={back}
+          onPressIn={lightTap}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={({ pressed }) => [{ marginBottom: 16, alignSelf: 'flex-start' }, pressed ? { opacity: 0.6 } : null]}>
           <Feather name="chevron-left" size={26} color={c.text} />
         </Pressable>
         <AppText variant="caption" tone="muted">
@@ -157,7 +164,13 @@ export function Family() {
                   <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
                     {p.name}
                   </AppText>
-                  <Pressable onPress={() => onRemove(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${p.name}`}>
+                  <Pressable
+                    onPress={() => onRemove(p)}
+                    onPressIn={lightTap}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${p.name}`}
+                    style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}>
                     <AppText variant="label" style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent }}>
                       {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
                     </AppText>
@@ -203,7 +216,11 @@ export function Family() {
               </AppText>
             </View>
           ) : null}
-          <Pressable onPress={() => router.push('/register-device')} accessibilityRole="button">
+          <Pressable
+            onPress={() => router.push('/register-device')}
+            onPressIn={lightTap}
+            accessibilityRole="button"
+            style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
             <View
               style={{
                 flexDirection: 'row',
@@ -223,8 +240,9 @@ export function Family() {
           </Pressable>
           <Pressable
             onPress={() => router.push('/shop')}
+            onPressIn={lightTap}
             accessibilityRole="button"
-            style={{ alignItems: 'center', paddingVertical: 6 }}>
+            style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 6 }, pressed ? { opacity: 0.6 } : null]}>
             <AppText variant="meta" tone="muted">
               Need another?{' '}
               <AppText variant="label" style={{ color: c.textAccent }}>
@@ -271,7 +289,11 @@ export function Family() {
 
       {/* caregivers — share the household with a partner or grandparent (real) */}
       <Reveal index={3} style={{ marginTop: 24 }}>
-        <Pressable onPress={() => router.push('/caregivers' as Href)} accessibilityRole="button">
+        <Pressable
+          onPress={() => router.push('/caregivers' as Href)}
+          onPressIn={lightTap}
+          accessibilityRole="button"
+          style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
           <View
             style={{
               flexDirection: 'row',

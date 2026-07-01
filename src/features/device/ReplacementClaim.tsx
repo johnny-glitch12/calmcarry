@@ -6,6 +6,7 @@ import { Pressable, View } from 'react-native';
 import { AppText, FormField, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { brand, fonts, useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
@@ -15,7 +16,13 @@ const ISSUES = ["Won't power on", 'Battery life', 'Physical damage', 'Sound / au
 function IssueChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const { c } = useTheme();
   return (
-    <Pressable onPress={onPress} hitSlop={{ top: 4, bottom: 4 }} accessibilityRole="button" accessibilityState={{ selected }}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={lightTap}
+      hitSlop={{ top: 4, bottom: 4 }}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.96 }], opacity: 0.95 } : null)}>
       <View
         style={{
           paddingHorizontal: 14,

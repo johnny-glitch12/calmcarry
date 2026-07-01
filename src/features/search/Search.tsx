@@ -7,6 +7,7 @@ import { AppText, CoverCard, FormField, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
+import { lightTap } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 
 type Result = {
@@ -60,7 +61,13 @@ export function Search() {
     <Screen mode="light" scroll>
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
+          <Pressable
+            onPress={back}
+            onPressIn={lightTap}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={({ pressed }) => (pressed ? { transform: [{ scale: 0.92 }], opacity: 0.7 } : null)}>
             <Feather name="chevron-left" size={26} color={c.text} />
           </Pressable>
           <View style={{ flex: 1 }}>

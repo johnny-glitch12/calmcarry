@@ -9,6 +9,7 @@ import { useProfile } from '@/features/profile/ProfileProvider';
 import { covers } from '@/content/covers';
 import { LEARN, PROGRAMS, TRACKS, type Track } from '@/content/library';
 import { getFavorites } from '@/lib/favorites';
+import { lightTap } from '@/lib/haptics';
 import { getRecents } from '@/lib/recents';
 import { useTheme } from '@/theme';
 
@@ -100,16 +101,22 @@ export function SoundsLibrary() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
               <Pressable
                 onPress={() => router.push('/search')}
+                onPressIn={lightTap}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
-                accessibilityLabel="Search">
+                accessibilityLabel="Search"
+                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.9 }], opacity: 0.7 } : null)}>
                 <Feather name="search" size={20} color={c.textAccent} />
               </Pressable>
               <Pressable
                 onPress={() => router.push('/learn')}
+                onPressIn={lightTap}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                style={({ pressed }) => [
+                  { flexDirection: 'row', alignItems: 'center', gap: 4 },
+                  pressed ? { transform: [{ scale: 0.95 }], opacity: 0.7 } : null,
+                ]}>
                 <Feather name="book-open" size={15} color={c.textAccent} />
                 <AppText variant="label" style={{ color: c.textAccent }}>
                   Learn

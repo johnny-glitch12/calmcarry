@@ -10,6 +10,7 @@ import { AUDIO_CREDITS } from '@/content/audio';
 import { SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
@@ -70,7 +71,11 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
 
   if (toggle !== undefined) return <View style={{ paddingHorizontal: 16 }}>{content}</View>;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={{ paddingHorizontal: 16 }}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={lightTap}
+      accessibilityRole="button"
+      style={({ pressed }) => [{ paddingHorizontal: 16 }, pressed ? { opacity: 0.94 } : null]}>
       {content}
     </Pressable>
   );
@@ -230,7 +235,9 @@ export function AccountScreen() {
       <Reveal index={1} style={{ marginTop: 24 }}>
         <Pressable
           onPress={() => (isPremium ? Linking.openURL(SUBSCRIPTION_URL).catch(() => {}) : router.push('/unlock'))}
-          accessibilityRole="button">
+          onPressIn={lightTap}
+          accessibilityRole="button"
+          style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
         <View
           style={{
             borderRadius: 20,
@@ -339,8 +346,9 @@ export function AccountScreen() {
       <Reveal index={5} style={{ marginTop: 24 }}>
         <Pressable
           onPress={onSignOut}
+          onPressIn={lightTap}
           accessibilityRole="button"
-          style={{ alignItems: 'center', paddingVertical: 14 }}>
+          style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 14 }, pressed ? { opacity: 0.6 } : null]}>
           <AppText variant="bodyMedium" style={{ color: brand.coral }}>
             Sign out
           </AppText>
@@ -348,10 +356,11 @@ export function AccountScreen() {
         {/* Account & data deletion — required by App Store 5.1.1(v) + COPPA/GDPR */}
         <Pressable
           onPress={onDeleteAccount}
+          onPressIn={lightTap}
           disabled={deleting}
           accessibilityRole="button"
           accessibilityLabel={confirmDelete ? 'Confirm permanent account deletion' : 'Delete account'}
-          style={{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }}>
+          style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }, pressed && !deleting ? { opacity: 0.6 } : null]}>
           <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
             {deleting
               ? 'Deleting…'

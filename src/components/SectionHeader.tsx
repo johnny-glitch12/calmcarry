@@ -7,6 +7,8 @@ import Animated, {
 
 import { dur, ease, type, useTheme } from '@/theme';
 
+import { lightTap } from '@/lib/haptics';
+
 import { AppText } from './AppText';
 
 type Props = {
@@ -49,6 +51,7 @@ export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
         <Pressable
           onPress={onAction}
           onPressIn={() => {
+            lightTap();
             o.value = withTiming(0.6, { duration: dur.press, easing: ease.out });
           }}
           onPressOut={() => {

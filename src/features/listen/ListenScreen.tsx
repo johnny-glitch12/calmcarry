@@ -365,8 +365,10 @@ export function ListenScreen() {
               <Pressable
                 key={id}
                 onPress={() => router.push((locked ? `/unlock?id=${id}` : `/player?id=${id}`) as Href)}
+                onPressIn={haptic}
                 accessibilityRole="button"
-                accessibilityLabel={`Play ${t.title}`}>
+                accessibilityLabel={`Play ${t.title}`}
+                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
                 <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <Image source={covers[t.cover]} style={{ width: 56, height: 56, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
                   <View style={{ flex: 1 }}>
@@ -393,7 +395,11 @@ export function ListenScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}>
             {mixes.map((m, i) => (
-              <Pressable key={i} onPress={() => loadMix(m)} accessibilityRole="button">
+              <Pressable
+                key={i}
+                onPress={() => loadMix(m)}
+                accessibilityRole="button"
+                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.97 }], opacity: 0.95 } : null)}>
                 <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="disc" size={15} color={c.textAccent} />
                   <AppText variant="cardTitle" tone="title">
@@ -426,7 +432,10 @@ export function ListenScreen() {
       {/* master controls */}
       <Reveal index={3} style={{ marginTop: 28, paddingHorizontal: 24 }}>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Pressable onPress={cycleTimer} accessibilityRole="button" style={{ flex: 1 }}>
+          <Pressable
+            onPress={cycleTimer}
+            accessibilityRole="button"
+            style={({ pressed }) => [{ flex: 1 }, pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: timer > 0 ? c.panelStrong : c.surface, borderWidth: 1, borderColor: timer > 0 ? c.accent : c.line }}>
               <Feather name="moon" size={16} color={c.textAccent} />
               <AppText variant="cardTitle" tone="title">
@@ -434,7 +443,11 @@ export function ListenScreen() {
               </AppText>
             </View>
           </Pressable>
-          <Pressable onPress={saveMix} disabled={!anyOn} accessibilityRole="button" style={{ flex: 1, opacity: anyOn ? 1 : 0.45 }}>
+          <Pressable
+            onPress={saveMix}
+            disabled={!anyOn}
+            accessibilityRole="button"
+            style={({ pressed }) => [{ flex: 1, opacity: anyOn ? 1 : 0.45 }, pressed && anyOn ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
               <Feather name="bookmark" size={16} color={c.textAccent} />
               <AppText variant="cardTitle" tone="title">

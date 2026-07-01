@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
@@ -16,7 +16,7 @@ import {
   parentPinLockSeconds,
   setParentPin,
 } from '@/lib/parentGate';
-import { dur, ease, themes, useTheme } from '@/theme';
+import { dur, ease, spring, themes, useTheme } from '@/theme';
 
 type Phase = 'loading' | 'create' | 'confirm' | 'enter';
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const;
@@ -25,22 +25,45 @@ function tap() {
   if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
 }
 
-function Dots({ count, error }: { count: number; error: boolean }) {
+/** A single PIN dot: an empty ring that fills with a spring pop as a digit lands
+ *  (and shrinks back out on delete). transform + opacity only, reduced-motion-safe. */
+function Dot({ filled, error }: { filled: boolean; error: boolean }) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const color = error ? '#EF626C' : c.accent;
+  const f = useSharedValue(filled ? 1 : 0);
+  useEffect(() => {
+    f.value = reduced
+      ? filled
+        ? 1
+        : 0
+      : filled
+        ? withSpring(1, spring) // pop in when the digit lands
+        : withTiming(0, { duration: dur.press, easing: ease.out }); // shrink out on delete
+  }, [filled, reduced, f]);
+  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scale: f.value }], opacity: f.value }));
+  return (
+    <View
+      style={{
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+      <Animated.View style={[{ width: 12, height: 12, borderRadius: 6, backgroundColor: color }, fillStyle]} />
+    </View>
+  );
+}
+
+function Dots({ count, error }: { count: number; error: boolean }) {
   return (
     <View style={{ flexDirection: 'row', gap: 16, marginTop: 28 }}>
       {[0, 1, 2, 3].map((i) => (
-        <View
-          key={i}
-          style={{
-            width: 16,
-            height: 16,
-            borderRadius: 8,
-            borderWidth: 2,
-            borderColor: error ? '#EF626C' : c.accent,
-            backgroundColor: i < count ? (error ? '#EF626C' : c.accent) : 'transparent',
-          }}
-        />
+        <Dot key={i} filled={i < count} error={error} />
       ))}
     </View>
   );

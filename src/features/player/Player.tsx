@@ -160,7 +160,7 @@ export function Player() {
   useEffect(() => {
     if (status.duration > 0) {
       progress.value = withTiming(Math.min(status.currentTime / status.duration, 1), {
-        duration: 240,
+        duration: dur.sheet,
         easing: ease.out,
       });
     }

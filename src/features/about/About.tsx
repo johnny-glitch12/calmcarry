@@ -143,7 +143,7 @@ export function About() {
         </AppText>
       </Reveal>
 
-      <Reveal index={4} style={{ marginTop: 18, marginBottom: 8 }}>
+      <Reveal index={5} style={{ marginTop: 18, marginBottom: 8 }}>
         <AppText
           variant="caption"
           tone="dim"

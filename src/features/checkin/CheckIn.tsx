@@ -33,13 +33,15 @@ export function CheckIn() {
   return (
     <Screen mode="night">
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <GlowOrb size={120} reserveGlow aura />
-        <Reveal index={0} style={{ alignItems: 'center', marginTop: 8 }}>
+        <Reveal index={0} style={{ alignItems: 'center' }}>
+          <GlowOrb size={120} reserveGlow aura />
+        </Reveal>
+        <Reveal index={1} style={{ alignItems: 'center', marginTop: 8 }}>
           <AppText variant="h1" tone="title">
             That’s your wind-down
           </AppText>
         </Reveal>
-        <Reveal index={1} style={{ alignItems: 'center' }}>
+        <Reveal index={2} style={{ alignItems: 'center' }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 290 }}>
             Set your Glow Orb down whenever you’re ready. Rest well. There’s nothing else to do.
           </AppText>

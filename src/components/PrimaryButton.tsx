@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { dur, ease, PRESS_SCALE, type, useTheme } from '@/theme';
+import { dur, ease, PRESS_SCALE, spring, type, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
 
@@ -52,7 +52,7 @@ export function PrimaryButton({
     scale.value =
       to < 1
         ? withTiming(to, { duration: dur.press, easing: ease.out })
-        : withSpring(1, { damping: 16, stiffness: 190, mass: 0.7 });
+        : withSpring(1, spring);
   };
 
   const onIn = () => {

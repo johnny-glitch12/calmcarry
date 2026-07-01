@@ -13,7 +13,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useProfile } from '@/features/profile/ProfileProvider';
-import { brand, dur, ease, fonts, night, themes, useColorSchemePref } from '@/theme';
+import { brand, dur, ease, fonts, night, spring, themes, useColorSchemePref } from '@/theme';
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.
@@ -68,7 +68,7 @@ function TabItem({
   pillContent: string;
 }) {
   const reduced = useReducedMotion();
-  const t = useSharedValue(focused ? 1 : 0); // focus progress (springs, overshoots)
+  const t = useSharedValue(focused ? 1 : 0); // focus progress (gentle spring settle)
   const press = useSharedValue(1); // tap press-scale
 
   useEffect(() => {
@@ -77,7 +77,7 @@ function TabItem({
         ? 1
         : 0
       : focused
-        ? withSpring(1, { damping: 14, stiffness: 170, mass: 0.7 }) // bloom + pop on select
+        ? withSpring(1, spring) // bloom in on select — gentle settle, no snappy pop
         : 0; // instant clear on blur — no fade-out remnant in the shrunk slot
   }, [focused, reduced, t]);
 
@@ -85,11 +85,11 @@ function TabItem({
     if (!reduced) press.value = withTiming(0.92, { duration: dur.press, easing: ease.out });
   };
   const onPressOut = () => {
-    press.value = reduced ? 1 : withSpring(1, { damping: 15, stiffness: 260 });
+    press.value = reduced ? 1 : withSpring(1, spring);
   };
 
-  // opacity is clamped (the spring overshoots past 1); transforms use the raw
-  // overshooting value so the pop actually reads. Press scales the whole tab.
+  // opacity is clamped defensively; the gentle spring settles toward 1 without
+  // overshoot, so the bloom reads as a soft settle. Press scales the whole tab.
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
   const fillStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1), transform: [{ scale: 0.9 + t.value * 0.1 }] }));
   const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + t.value * 0.07 }, { translateY: -t.value }] }));

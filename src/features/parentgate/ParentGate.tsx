@@ -16,7 +16,7 @@ import {
   parentPinLockSeconds,
   setParentPin,
 } from '@/lib/parentGate';
-import { ease, themes, useTheme } from '@/theme';
+import { dur, ease, themes, useTheme } from '@/theme';
 
 type Phase = 'loading' | 'create' | 'confirm' | 'enter';
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const;
@@ -137,14 +137,17 @@ export function ParentGate() {
     setError(true);
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     // a single soft, eased settle — not a fast 10Hz jitter. Reduced motion skips it
-    // entirely (haptic + coral dots already signal the error).
+    // entirely (haptic + coral dots already signal the error). Durations derive from
+    // the shared dur.press token (never hardcoded) so it stays as responsive as a tap.
     if (reduced) {
       shake.value = 0;
     } else {
+      const swing = Math.round(dur.press * 0.4); // ~64ms out / back — token-anchored, calm
+      const settle = Math.round(dur.press * 0.5); // ~80ms eased settle to rest
       shake.value = withSequence(
-        withTiming(-5, { duration: 60, easing: ease.inOut }),
-        withTiming(5, { duration: 60, easing: ease.inOut }),
-        withTiming(0, { duration: 80, easing: ease.out })
+        withTiming(-5, { duration: swing, easing: ease.inOut }),
+        withTiming(5, { duration: swing, easing: ease.inOut }),
+        withTiming(0, { duration: settle, easing: ease.out })
       );
     }
     setTimeout(() => {

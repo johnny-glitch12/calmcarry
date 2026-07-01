@@ -83,21 +83,21 @@ export function Search() {
       </Reveal>
 
       {q.trim() === '' ? (
-        <View style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
+        <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
           <Feather name="search" size={28} color={c.dim} />
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
             Find a soundscape, sleep tale, breathing session, or program.
           </AppText>
-        </View>
+        </Reveal>
       ) : results.length === 0 ? (
-        <View style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
+        <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
           <AppText variant="h2" tone="title">
             Nothing found
           </AppText>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
             No results for “{q.trim()}”. Try a calmer word.
           </AppText>
-        </View>
+        </Reveal>
       ) : (
         <View style={{ gap: 12 }}>
           {results.map((r, i) => {

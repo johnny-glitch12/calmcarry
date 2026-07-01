@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brand, night, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
+import { brand, ease, night, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
 
 type Props = {
   mode?: ThemeMode;
@@ -52,7 +52,7 @@ function DriftBlob({
   useEffect(() => {
     if (reduced) return;
     // phase-offset the start via withDelay (not by inflating the loop duration)
-    t.value = withDelay(delay, withRepeat(withTiming(1, { duration }), -1, true));
+    t.value = withDelay(delay, withRepeat(withTiming(1, { duration, easing: ease.inOut }), -1, true));
     return () => cancelAnimation(t);
   }, [reduced, t, delay, duration]);
   const style = useAnimatedStyle(() => ({
@@ -81,7 +81,7 @@ function Mote({ leftPct, top, size, dur, delay }: { leftPct: number; top: number
   const m = useSharedValue(0);
   useEffect(() => {
     if (reduced) return;
-    m.value = withDelay(delay, withRepeat(withTiming(1, { duration: dur }), -1, false));
+    m.value = withDelay(delay, withRepeat(withTiming(1, { duration: dur, easing: ease.sine }), -1, false));
     return () => cancelAnimation(m);
   }, [reduced, m, dur, delay]);
   const style = useAnimatedStyle(() => ({

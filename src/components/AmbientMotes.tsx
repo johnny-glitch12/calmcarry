@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -10,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useTheme } from '@/theme';
+import { ease, useTheme } from '@/theme';
 
 type Mote = { top: string; left: string; size: number; dur: number; delay: number; bob: number; max: number };
 
@@ -42,7 +41,7 @@ function MoteDot({ m, color }: { m: Mote; color: string }) {
       t.value = 0.5;
       return;
     }
-    t.value = withDelay(m.delay, withRepeat(withTiming(1, { duration: m.dur, easing: Easing.inOut(Easing.sin) }), -1, true));
+    t.value = withDelay(m.delay, withRepeat(withTiming(1, { duration: m.dur, easing: ease.sine }), -1, true));
   }, [reduced, t, m]);
   const style = useAnimatedStyle(() => ({
     opacity: FLOOR + t.value * (m.max + PEAK_BOOST - FLOOR),

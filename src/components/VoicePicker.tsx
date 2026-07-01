@@ -1,14 +1,64 @@
 import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { audioSources } from '@/content/audio';
 import { lightTap } from '@/lib/haptics';
 import { getVoice, setVoice, VOICES, type VoiceKey } from '@/lib/voice';
-import { useTheme } from '@/theme';
+import { dur, ease, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
+
+/**
+ * VoiceRow — one selectable voice row. Owns its own animated press scale so the
+ * press feedback glides (dur.press + ease.out) instead of snapping instantly,
+ * matching CoverCard / LibraryCard. Transform + opacity only.
+ */
+function VoiceRow({
+  active,
+  onPress,
+  accessibilityLabel,
+  style,
+  children,
+}: {
+  active: boolean;
+  onPress: () => void;
+  accessibilityLabel: string;
+  style: object;
+  children: ReactNode;
+}) {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+  const press = (pressed: boolean) => {
+    scale.value = withTiming(pressed ? 0.98 : 1, { duration: dur.press, easing: ease.out });
+    opacity.value = withTiming(pressed ? 0.92 : 1, { duration: dur.press, easing: ease.out });
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => {
+        press(true);
+        lightTap();
+      }}
+      onPressOut={() => press(false)}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={accessibilityLabel}>
+      <Animated.View style={[style, animStyle]}>{children}</Animated.View>
+    </Pressable>
+  );
+}
 
 /**
  * VoicePicker — choose the guided-session voice. Each row plays a real bedtime
@@ -70,27 +120,22 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
       {VOICES.map((v) => {
         const active = v.key === sel;
         return (
-          <Pressable
+          <VoiceRow
             key={v.key}
+            active={active}
             onPress={() => pick(v.key)}
-            onPressIn={lightTap}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
             accessibilityLabel={`${v.name}, ${v.tag}. Tap to hear and choose.`}
-            style={({ pressed }) => [
-              {
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                padding: 16,
-                borderRadius: 16,
-                backgroundColor: active ? c.panel : c.surface,
-                borderWidth: 1,
-                borderColor: active ? c.textAccent : c.line,
-                ...c.shadow,
-              },
-              pressed ? { transform: [{ scale: 0.98 }], opacity: 0.92 } : null,
-            ]}>
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              padding: 16,
+              borderRadius: 16,
+              backgroundColor: active ? c.panel : c.surface,
+              borderWidth: 1,
+              borderColor: active ? c.textAccent : c.line,
+              ...c.shadow,
+            }}>
             <View
               style={{
                 width: 40,
@@ -111,7 +156,7 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
               </AppText>
             </View>
             {active ? <Feather name="check" size={20} color={c.textAccent} /> : null}
-          </Pressable>
+          </VoiceRow>
         );
       })}
     </View>

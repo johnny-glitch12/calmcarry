@@ -27,7 +27,7 @@ import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/Profil
 import { lightTap } from '@/lib/haptics';
 import { markOnboarded } from '@/lib/onboarding';
 import { setSleepGoalHours, SLEEP_GOAL_DEFAULT, SLEEP_GOAL_MAX, SLEEP_GOAL_MIN } from '@/lib/sleepGoal';
-import { brand, dur, ease, fonts, useTheme } from '@/theme';
+import { brand, dur, ease, fonts, spring, useTheme } from '@/theme';
 
 type Art = 'orb' | 'cluster' | 'shield';
 type Slide = { art: Art; title: string; body: string };
@@ -138,16 +138,25 @@ function OnboardingHeader({ onSkip }: { onSkip?: () => void }) {
   );
 }
 
-/** Progress dot that eases its width when it becomes active (transform-safe width tween). */
+/** Progress dot that eases between a short dot and a wide pill when active.
+ *  Transform-only (scaleX): the base layout is the full active width and we
+ *  scale down horizontally when inactive, so nothing triggers a layout pass. */
+const DOT_ACTIVE_W = 22;
+const DOT_DOT_SCALE = 8 / DOT_ACTIVE_W;
 function Dot({ active }: { active: boolean }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
-  const w = useSharedValue(active ? 22 : 8);
+  const sx = useSharedValue(active ? 1 : DOT_DOT_SCALE);
   useEffect(() => {
-    w.value = reduced ? (active ? 22 : 8) : withTiming(active ? 22 : 8, { duration: dur.sheet, easing: ease.out });
-  }, [active, reduced, w]);
-  const style = useAnimatedStyle(() => ({ width: w.value }));
-  return <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: active ? c.accent : c.line }, style]} />;
+    const to = active ? 1 : DOT_DOT_SCALE;
+    sx.value = reduced ? to : withTiming(to, { duration: dur.sheet, easing: ease.out });
+  }, [active, reduced, sx]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scaleX: sx.value }] }));
+  return (
+    <Animated.View
+      style={[{ width: DOT_ACTIVE_W, height: 8, borderRadius: 4, backgroundColor: active ? c.accent : c.line }, style]}
+    />
+  );
 }
 
 const TICK_W = 34;
@@ -176,8 +185,8 @@ function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: numbe
       lightTap();
       if (!reduced) {
         pop.value = withSequence(
-          withTiming(1.06, { duration: 100, easing: ease.out }),
-          withSpring(1, { damping: 12, stiffness: 200, mass: 0.6 })
+          withTiming(1.06, { duration: dur.press, easing: ease.out }),
+          withSpring(1, spring)
         );
       }
     }
@@ -273,7 +282,7 @@ function ArrowBadge({ style }: { style?: ViewStyle }) {
   const reduced = useReducedMotion();
   const s = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
-    if (!reduced) s.value = withDelay(450, withSpring(1, { damping: 12, stiffness: 170, mass: 0.6 }));
+    if (!reduced) s.value = withDelay(450, withSpring(1, spring));
   }, [reduced, s]);
   const st = useAnimatedStyle(() => ({ opacity: Math.min(1, s.value * 1.4), transform: [{ scale: 0.5 + s.value * 0.5 }] }));
   return (
@@ -309,7 +318,7 @@ function WeekChart() {
   const len = pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.y - pts[i].y), 0);
   const draw = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
-    if (!reduced) draw.value = withDelay(250, withTiming(1, { duration: 1500, easing: ease.out }));
+    if (!reduced) draw.value = withDelay(250, withTiming(1, { duration: dur.reveal, easing: ease.out }));
   }, [reduced, draw]);
   const lineProps = useAnimatedProps(() => ({ strokeDashoffset: len * (1 - draw.value) }));
   const start = pts[0];

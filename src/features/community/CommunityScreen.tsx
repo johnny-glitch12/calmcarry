@@ -183,7 +183,9 @@ export function CommunityScreen() {
   useEffect(() => {
     if (reduced) return;
     listFade.value = 0;
-    listFade.value = withTiming(1, { duration: dur.press, easing: ease.out });
+    // sheet (not screen): a filter tap should re-fade the list smoothly but stay
+    // responsive — a full screen-length fade here would feel laggy on each tap.
+    listFade.value = withTiming(1, { duration: dur.sheet, easing: ease.out });
   }, [filter, reduced, listFade]);
   const listStyle = useAnimatedStyle(() => ({ opacity: reduced ? 1 : listFade.value }));
 

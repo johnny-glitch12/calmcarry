@@ -1,9 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable } from 'react-native';
 
-import { AppText, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 
@@ -82,11 +81,11 @@ export function ClaimDevice() {
           </Reveal>
           <Reveal index={1} style={{ alignSelf: 'stretch', marginTop: 28, gap: 10 }}>
             <PrimaryButton label="Register my Glow Orb" onPress={() => router.push('/register-device' as Href)} />
-            <Pressable onPress={enter} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 12 }}>
+            <PressableScale onPress={enter} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 12 }}>
               <AppText variant="label" tone="muted">
                 Skip, I don’t have one yet
               </AppText>
-            </Pressable>
+            </PressableScale>
           </Reveal>
         </>
       )}

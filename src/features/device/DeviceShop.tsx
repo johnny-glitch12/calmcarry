@@ -1,12 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { View } from 'react-native';
 
-import { AppText, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { DEVICE_BENEFITS, DEVICE_NAME, openCheckout, type PurchaseReason } from '@/content/store';
-import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 
 /** A tappable reason-to-buy card. Its own component so useTheme() resolves to the
  *  Screen theme (light surfaces by day, dark by night). */
@@ -22,38 +20,25 @@ function ReasonCard({
   onPress: () => void;
 }) {
   const { c } = useTheme();
-  const scale = useSharedValue(1);
-  const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
-  };
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      onPressIn={() => {
-        press(PRESS_SCALE);
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      }}
-      onPressOut={() => press(1)}
+      haptic
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${subtitle}`}
-      accessibilityHint="Opens the secure web store">
-      <Animated.View
-        style={[
-          {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            padding: 16,
-            borderRadius: 16,
-            backgroundColor: c.surface,
-            borderWidth: 1,
-            borderColor: c.line,
-            ...c.shadow,
-          },
-          aStyle,
-        ]}>
-        <View
+      accessibilityHint="Opens the secure web store"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: c.surface,
+        borderWidth: 1,
+        borderColor: c.line,
+        ...c.shadow,
+      }}>
+      <View
           style={{
             width: 42,
             height: 42,
@@ -73,8 +58,7 @@ function ReasonCard({
           </AppText>
         </View>
         <Feather name="external-link" size={17} color={c.accent} />
-      </Animated.View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -87,9 +71,9 @@ export function DeviceShop() {
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Glow Orb store
         </AppText>
@@ -170,15 +154,16 @@ export function DeviceShop() {
             style={{ flexShrink: 1, textTransform: 'none', letterSpacing: 0 }}>
             Faulty and still in warranty?{' '}
           </AppText>
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/replacement-claim')}
             accessibilityRole="button"
             hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+            dimTo={0.85}
             style={{ paddingVertical: 6 }}>
             <AppText variant="label" style={{ color: c.textAccent }}>
               File a free claim
             </AppText>
-          </Pressable>
+          </PressableScale>
         </View>
       </Reveal>
     </Screen>

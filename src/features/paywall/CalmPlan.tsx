@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
-import { AppText, GlowOrb, PrimaryButton, Reveal, Screen } from '@/components';
+import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
@@ -40,13 +40,14 @@ function PlanCard({
   const { c } = useTheme();
   const p = PRICING[id];
   return (
-    <Pressable
+    <PressableScale
       onPress={onSelect}
       onPressIn={lightTap}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={`${p.label}, ${price} ${p.per}`}
-      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+      scaleTo={0.98}
+      dimTo={0.95}>
       <View
         style={{
           borderRadius: 16,
@@ -94,7 +95,7 @@ function PlanCard({
           </View>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -223,9 +224,9 @@ export function CalmPlan() {
 
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
-      <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" style={{ alignSelf: 'flex-end' }}>
+      <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85} style={{ alignSelf: 'flex-end' }}>
         <Feather name="x" size={24} color={c.text} />
-      </Pressable>
+      </PressableScale>
 
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 8 }}>
         <GlowOrb size={84} reserveGlow aura />
@@ -294,18 +295,18 @@ export function CalmPlan() {
             : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
         </AppText>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
-          <Pressable onPress={restore} accessibilityRole="button" hitSlop={12} style={{ paddingVertical: 8 }}>
+          <PressableScale onPress={restore} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Restore purchases</AppText>
-          </Pressable>
-          <Pressable onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} style={{ paddingVertical: 8 }}>
+          </PressableScale>
+          <PressableScale onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Terms</AppText>
-          </Pressable>
-          <Pressable onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} style={{ paddingVertical: 8 }}>
+          </PressableScale>
+          <PressableScale onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Privacy</AppText>
-          </Pressable>
-          <Pressable onPress={close} accessibilityRole="button" hitSlop={12} style={{ paddingVertical: 8 }}>
+          </PressableScale>
+          <PressableScale onPress={close} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Maybe later</AppText>
-          </Pressable>
+          </PressableScale>
         </View>
       </Reveal>
     </Screen>

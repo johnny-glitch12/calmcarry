@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, CoverCard, FormField, Reveal, Screen } from '@/components';
+import { AppText, CoverCard, FormField, PressableScale, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
@@ -61,15 +61,15 @@ export function Search() {
     <Screen mode="light" scroll>
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <Pressable
+          <PressableScale
             onPress={back}
             onPressIn={lightTap}
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel="Back"
-            style={({ pressed }) => (pressed ? { transform: [{ scale: 0.92 }], opacity: 0.7 } : null)}>
+            dimTo={0.85}>
             <Feather name="chevron-left" size={26} color={c.text} />
-          </Pressable>
+          </PressableScale>
           <View style={{ flex: 1 }}>
             <FormField
               value={q}

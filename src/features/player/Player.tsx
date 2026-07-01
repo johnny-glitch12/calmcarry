@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, ProgressRing, Screen } from '@/components';
+import { AppText, PressableScale, ProgressRing, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
@@ -30,7 +30,7 @@ import { markProgramStepDone } from '@/lib/programs';
 import { pushRecent } from '@/lib/recents';
 import { logSession } from '@/lib/sessions';
 import { getJSON, setJSON } from '@/lib/store';
-import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
+import { dur, ease, useTheme } from '@/theme';
 
 // Sleep / auto-stop timer options (minutes; 0 = off). Soundscapes otherwise loop
 // all night with no way to stop short of force-closing the app.
@@ -51,46 +51,35 @@ const CUES = [
 
 function PlayPause({ paused, onPress }: { paused: boolean; onPress: () => void }) {
   const { c } = useTheme();
-  const scale = useSharedValue(1);
   const p = useSharedValue(paused ? 1 : 0);
   const reduced = useReducedMotion();
   useEffect(() => {
     p.value = reduced ? (paused ? 1 : 0) : withTiming(paused ? 1 : 0, { duration: dur.press, easing: ease.out });
   }, [paused, reduced, p]);
-  const btn = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const playS = useAnimatedStyle(() => ({ opacity: p.value }));
   const pauseS = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      onPressIn={() => {
-        scale.value = withTiming(PRESS_SCALE, { duration: dur.press, easing: ease.out });
-        haptic();
-      }}
-      onPressOut={() => (scale.value = withTiming(1, { duration: dur.press, easing: ease.out }))}
+      onPressIn={haptic}
       accessibilityRole="button"
       accessibilityLabel={paused ? 'Play' : 'Pause'}
-      hitSlop={8}>
-      <Animated.View
-        style={[
-          {
-            width: 72,
-            height: 72,
-            borderRadius: 36,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: c.ctaBg,
-          },
-          btn,
-        ]}>
-        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, pauseS]}>
-          <Feather name="pause" size={26} color={c.ctaText} />
-        </Animated.View>
-        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, playS]}>
-          <Feather name="play" size={26} color={c.ctaText} style={{ marginLeft: 3 }} />
-        </Animated.View>
+      hitSlop={8}
+      style={{
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: c.ctaBg,
+      }}>
+      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, pauseS]}>
+        <Feather name="pause" size={26} color={c.ctaText} />
       </Animated.View>
-    </Pressable>
+      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, playS]}>
+        <Feather name="play" size={26} color={c.ctaText} style={{ marginLeft: 3 }} />
+      </Animated.View>
+    </PressableScale>
   );
 }
 
@@ -227,9 +216,6 @@ export function Player() {
     haptic();
     toggleFavorite(track.id).then(setSaved).catch(() => {});
   };
-  // gentle press feedback on the save/heart control (matches the play/pause button)
-  const heartScale = useSharedValue(1);
-  const heartStyle = useAnimatedStyle(() => ({ transform: [{ scale: heartScale.value }] }));
 
   // breathing pacer (4s in / 6s out) + rotating honest cues — the guided-session feel
   const reduced = useReducedMotion();
@@ -441,11 +427,11 @@ export function Player() {
       <View style={{ flex: 1 }}>
         {/* top bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
-          <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close player">
+          <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close player" dimTo={0.85}>
             <Feather name="chevron-down" size={28} color={c.text} />
-          </Pressable>
+          </PressableScale>
           {/* sleep / auto-stop timer — taps cycle Off → 15 → 30 → 45 → 60 min */}
-          <Pressable
+          <PressableScale
             onPress={cycleSleep}
             hitSlop={10}
             accessibilityRole="button"
@@ -465,7 +451,7 @@ export function Player() {
             <AppText variant="label" style={{ color: sleepMin ? c.textAccent : c.text }}>
               {sleepMin ? `${sleepMin} min` : 'Sleep timer'}
             </AppText>
-          </Pressable>
+          </PressableScale>
         </View>
 
         {isPreview ? (
@@ -526,16 +512,17 @@ export function Player() {
 
           {/* rotating, sensation-honest device cue — or a calm load-failure + retry */}
           {loadFailed ? (
-            <Pressable
+            <PressableScale
               onPress={retryLoad}
               accessibilityRole="button"
               accessibilityLabel="Couldn't load this session. Tap to try again."
+              dimTo={0.85}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 18 }}>
               <Feather name="refresh-cw" size={13} color={c.accent} />
               <AppText variant="caption" tone="dim">
                 Couldn’t load this session. Tap to try again.
               </AppText>
-            </Pressable>
+            </PressableScale>
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
               <Feather name="circle" size={10} color={c.accent} />
@@ -548,19 +535,15 @@ export function Player() {
 
         {/* controls — heart (save) · play/pause · matching spacer keeps play centered */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: 28 }}>
-          <Pressable
+          <PressableScale
             onPress={onToggleSave}
-            onPressIn={() => (heartScale.value = withTiming(PRESS_SCALE, { duration: dur.press, easing: ease.out }))}
-            onPressOut={() => (heartScale.value = withTiming(1, { duration: dur.press, easing: ease.out }))}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
             accessibilityState={{ selected: saved }}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-            <Animated.View style={heartStyle}>
-              <Feather name="heart" size={24} color={saved ? c.accent : c.text} style={saved ? undefined : { opacity: 0.9 }} />
-            </Animated.View>
-          </Pressable>
+            <Feather name="heart" size={24} color={saved ? c.accent : c.text} style={saved ? undefined : { opacity: 0.9 }} />
+          </PressableScale>
           <PlayPause paused={paused} onPress={toggle} />
           <View style={{ width: 44, height: 44 }} />
         </View>

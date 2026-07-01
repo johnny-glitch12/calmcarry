@@ -1,8 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable } from 'react-native';
 
-import { AppText, Reveal, Screen, VoicePicker } from '@/components';
+import { AppText, PressableScale, Reveal, Screen, VoicePicker } from '@/components';
 import { useTheme } from '@/theme';
 
 /** Settings → Guided voice. Change the narration voice any time; tap to preview. */
@@ -14,14 +13,15 @@ export function VoiceSettings() {
   return (
     <Screen scroll>
       <Reveal index={0}>
-        <Pressable
+        <PressableScale
           onPress={back}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Back"
-          style={({ pressed }) => [{ marginBottom: 16, alignSelf: 'flex-start' }, pressed ? { opacity: 0.6 } : null]}>
+          dimTo={0.6}
+          style={{ marginBottom: 16, alignSelf: 'flex-start' }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Settings
         </AppText>

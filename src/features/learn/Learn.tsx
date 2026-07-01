@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, Card, Reveal, Screen } from '@/components';
+import { AppText, Card, PressableScale, Reveal, Screen } from '@/components';
 import { covers } from '@/content/covers';
 import { LEARN, WELLNESS_DISCLAIMER } from '@/content/library';
 import { lightTap } from '@/lib/haptics';
@@ -26,12 +26,13 @@ export function LearnList() {
 
       <Reveal index={1} style={{ marginTop: 24, gap: 12 }}>
         {items.map((a) => (
-          <Pressable
+          <PressableScale
             key={a.id}
             onPress={() => router.push((a.videoUrl ? `/watch?id=${a.id}` : `/learn-article?id=${a.id}`) as Href)}
             onPressIn={lightTap}
             accessibilityRole="button"
-            style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+            dimTo={0.95}
+            scaleTo={0.98}>
             <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {a.cover ? (
                 <Image source={covers[a.cover]} style={{ width: 60, height: 60, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
@@ -49,7 +50,7 @@ export function LearnList() {
               </View>
               <Feather name="chevron-right" size={20} color={c.accent} />
             </Card>
-          </Pressable>
+          </PressableScale>
         ))}
       </Reveal>
     </Screen>
@@ -66,9 +67,9 @@ export function LearnArticle() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         {article.cover ? (
           <Image source={covers[article.cover]} style={{ width: '100%', height: 160, borderRadius: 20 }} contentFit="cover" accessibilityIgnoresInvertColors />
         ) : null}

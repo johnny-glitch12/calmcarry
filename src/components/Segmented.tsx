@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LayoutChangeEvent, Pressable, View } from 'react-native';
+import { LayoutChangeEvent, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -9,6 +9,8 @@ import Animated, {
 
 import { lightTap } from '@/lib/haptics';
 import { dur, ease, fonts, useTheme } from '@/theme';
+
+import { PressableScale } from './PressableScale';
 
 type Props = {
   options: string[];
@@ -45,13 +47,13 @@ function Segment({
   const activeStyle = useAnimatedStyle(() => ({ opacity: p.value }));
   const mutedStyle = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => [{ flex: 1, alignItems: 'center', justifyContent: 'center' }, pressed && !active ? { opacity: 0.6 } : null]}>
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       {/* the two stacked label layers are decorative (crossfade only) — the Pressable's
           accessibilityLabel is the single authoritative name, so hide them from AT to
           avoid a double-announce ("Adult Adult") */}
@@ -62,7 +64,7 @@ function Segment({
         <Animated.Text numberOfLines={1} style={[LABEL, { color: mutedColor }, mutedStyle]}>{label}</Animated.Text>
         <Animated.Text numberOfLines={1} style={[LABEL, { color: activeColor, position: 'absolute' }, activeStyle]}>{label}</Animated.Text>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -1,15 +1,13 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ActivityIndicator, View } from 'react-native';
 
-import { AppText, Card, GlowOrb, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
-import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
 
@@ -25,36 +23,23 @@ function ActionRow({
   onPress: () => void;
 }) {
   const { c } = useTheme();
-  const scale = useSharedValue(1);
-  const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
-  };
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      onPressIn={() => {
-        press(PRESS_SCALE);
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      }}
-      onPressOut={() => press(1)}
-      accessibilityRole="button">
-      <Animated.View
-        style={[
-          {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            padding: 16,
-            borderRadius: 16,
-            backgroundColor: c.surface,
-            borderWidth: 1,
-            borderColor: c.line,
-            ...c.shadow,
-          },
-          aStyle,
-        ]}>
-        <View
+      haptic
+      accessibilityRole="button"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: c.surface,
+        borderWidth: 1,
+        borderColor: c.line,
+        ...c.shadow,
+      }}>
+      <View
           style={{
             width: 42,
             height: 42,
@@ -74,8 +59,7 @@ function ActionRow({
           </AppText>
         </View>
         <Feather name="chevron-right" size={20} color={c.accent} />
-      </Animated.View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -105,12 +89,13 @@ function DeviceSummaryCard({
         ? 'Register your device to activate its warranty'
         : 'Sign in to see your registered Glow Orb';
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={title}
-      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null)}>
+      scaleTo={0.98}
+      dimTo={0.96}>
       <Card variant="surface" radius={20} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <GlowOrb size={56} reserveGlow aura={!!device} breathing={!!device} />
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -132,7 +117,7 @@ function DeviceSummaryCard({
         </View>
         <Feather name="chevron-right" size={20} color={c.accent} />
       </Card>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -173,9 +158,9 @@ export function DeviceHub() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 8 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 8 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Your device
         </AppText>

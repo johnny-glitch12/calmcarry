@@ -1,11 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
-import { AppText, GlowOrb, Reveal, Screen } from '@/components';
+import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import {
   authenticateBiometric,
@@ -212,9 +212,9 @@ export function ParentGate() {
   return (
     <Screen mode="night" contentStyle={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
+        <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85}>
           <Feather name="x" size={24} color="#9DB7B1" />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -243,39 +243,41 @@ export function ParentGate() {
         {/* keypad */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: 264, marginTop: 40, justifyContent: 'center', opacity: lockSeconds > 0 ? 0.4 : 1 }}>
           {KEYS.map((k, idx) => (
-            <Pressable
+            <PressableScale
               key={idx}
               onPress={() => press(k)}
               disabled={k === '' || lockSeconds > 0}
               accessibilityRole={k === '' ? 'none' : 'button'}
               accessibilityLabel={k === 'del' ? 'Delete' : k || undefined}
-              style={({ pressed }) => [
-                { width: 88, height: 72, alignItems: 'center', justifyContent: 'center' },
-                pressed && k !== '' ? { transform: [{ scale: 0.9 }], opacity: 0.8 } : null,
-              ]}>
+              scaleTo={0.9}
+              dimTo={0.8}
+              style={{ width: 88, height: 72, alignItems: 'center', justifyContent: 'center' }}>
               {k === 'del' ? (
                 <Feather name="delete" size={24} color={c.textAccent} />
               ) : k === '' ? null : (
                 <AppText style={{ fontSize: 28, color: c.title }}>{k}</AppText>
               )}
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
 
         {/* biometric option (plan §13: "PIN or Face ID") — only when entering an existing
             gate, and never for purchase/delete (those require the PIN specifically) */}
         {phase === 'enter' && bioAvailable && !highConsequence ? (
-          <Pressable
-            onPress={tryBiometric}
-            disabled={lockSeconds > 0}
-            accessibilityRole="button"
-            accessibilityLabel="Unlock with Face ID or Touch ID"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, padding: 10, opacity: lockSeconds > 0 ? 0.4 : 1 }}>
-            <Feather name="unlock" size={18} color={c.textAccent} />
-            <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
-              Use Face ID / Touch ID
-            </AppText>
-          </Pressable>
+          <View style={{ opacity: lockSeconds > 0 ? 0.4 : 1 }}>
+            <PressableScale
+              onPress={tryBiometric}
+              disabled={lockSeconds > 0}
+              accessibilityRole="button"
+              accessibilityLabel="Unlock with Face ID or Touch ID"
+              dimTo={0.85}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, padding: 10 }}>
+              <Feather name="unlock" size={18} color={c.textAccent} />
+              <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+                Use Face ID / Touch ID
+              </AppText>
+            </PressableScale>
+          </View>
         ) : null}
       </View>
     </Screen>

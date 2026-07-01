@@ -15,12 +15,12 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, GlowOrb, ProgressRing, Screen } from '@/components';
+import { AppText, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { TRACKS } from '@/content/library';
-import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
+import { dur, ease, useTheme } from '@/theme';
 
 /** Default wind-down session: 20 minutes (DESIGN_SYSTEM hero copy). */
 const SESSION_MS = 20 * 60 * 1000;
@@ -44,39 +44,25 @@ function ControlButton({
   label: string;
 }) {
   const { c } = useTheme();
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
-  };
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      onPressIn={() => {
-        press(PRESS_SCALE);
-        haptic();
-      }}
-      onPressOut={() => press(1)}
+      onPressIn={haptic}
       accessibilityRole="button"
       accessibilityLabel={label}
-      hitSlop={8}>
-      <Animated.View
-        style={[
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(143,201,190,0.12)',
-            borderWidth: 1,
-            borderColor: c.lineSage,
-          },
-          animStyle,
-        ]}>
-        <Feather name={icon} size={size * iconRatio} color={c.accent} />
-      </Animated.View>
-    </Pressable>
+      hitSlop={8}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(143,201,190,0.12)',
+        borderWidth: 1,
+        borderColor: c.lineSage,
+      }}>
+      <Feather name={icon} size={size * iconRatio} color={c.accent} />
+    </PressableScale>
   );
 }
 
@@ -84,7 +70,6 @@ function ControlButton({
 function PlayPauseButton({ paused, onPress }: { paused: boolean; onPress: () => void }) {
   const { c } = useTheme();
   const size = 64;
-  const scale = useSharedValue(1);
   const p = useSharedValue(paused ? 1 : 0); // 0 = pause glyph, 1 = play glyph
   const reduced = useReducedMotion();
 
@@ -92,46 +77,33 @@ function PlayPauseButton({ paused, onPress }: { paused: boolean; onPress: () => 
     p.value = reduced ? (paused ? 1 : 0) : withTiming(paused ? 1 : 0, { duration: dur.press, easing: ease.out });
   }, [paused, reduced, p]);
 
-  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const playStyle = useAnimatedStyle(() => ({ opacity: p.value }));
   const pauseStyle = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
-  const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
-  };
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      onPressIn={() => {
-        press(PRESS_SCALE);
-        haptic();
-      }}
-      onPressOut={() => press(1)}
+      onPressIn={haptic}
       accessibilityRole="button"
       accessibilityLabel={paused ? 'Resume' : 'Pause'}
-      hitSlop={8}>
-      <Animated.View
-        style={[
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(143,201,190,0.12)',
-            borderWidth: 1,
-            borderColor: c.lineSage,
-          },
-          btnStyle,
-        ]}>
-        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, pauseStyle]}>
-          <Feather name="pause" size={23} color={c.accent} />
-        </Animated.View>
-        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, playStyle]}>
-          <Feather name="play" size={23} color={c.accent} style={{ marginLeft: 2 }} />
-        </Animated.View>
+      hitSlop={8}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(143,201,190,0.12)',
+        borderWidth: 1,
+        borderColor: c.lineSage,
+      }}>
+      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, pauseStyle]}>
+        <Feather name="pause" size={23} color={c.accent} />
       </Animated.View>
-    </Pressable>
+      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, playStyle]}>
+        <Feather name="play" size={23} color={c.accent} style={{ marginLeft: 2 }} />
+      </Animated.View>
+    </PressableScale>
   );
 }
 

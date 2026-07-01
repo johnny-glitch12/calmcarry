@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 
-import { AppText, Card, FormField, GlowOrb, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
+import { AppText, Card, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile, type AppMode, type Profile } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
@@ -101,15 +101,16 @@ export function Family() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable
+        <PressableScale
           onPress={back}
           onPressIn={lightTap}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Back"
-          style={({ pressed }) => [{ marginBottom: 16, alignSelf: 'flex-start' }, pressed ? { opacity: 0.6 } : null]}>
+          dimTo={0.85}
+          style={{ marginBottom: 16, alignSelf: 'flex-start' }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Household
         </AppText>
@@ -140,9 +141,9 @@ export function Family() {
                   profile and its data any time, below.
                 </AppText>
                 <PrimaryButton label="I’m the parent or guardian, and I consent" onPress={grantConsentAndAdd} />
-                <Pressable onPress={() => setNeedConsent(false)} accessibilityRole="button" style={{ alignSelf: 'center', paddingVertical: 6 }}>
+                <PressableScale onPress={() => setNeedConsent(false)} accessibilityRole="button" dimTo={0.85} style={{ alignSelf: 'center', paddingVertical: 6 }}>
                   <AppText variant="label" tone="muted">Cancel</AppText>
-                </Pressable>
+                </PressableScale>
               </Card>
             ) : (
               <PrimaryButton label="Add to household" onPress={submitAdd} />
@@ -164,17 +165,17 @@ export function Family() {
                   <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
                     {p.name}
                   </AppText>
-                  <Pressable
+                  <PressableScale
                     onPress={() => onRemove(p)}
                     onPressIn={lightTap}
                     hitSlop={8}
                     accessibilityRole="button"
                     accessibilityLabel={`Remove ${p.name}`}
-                    style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}>
+                    dimTo={0.85}>
                     <AppText variant="label" style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent }}>
                       {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
                     </AppText>
-                  </Pressable>
+                  </PressableScale>
                 </View>
               ))}
           </View>
@@ -216,11 +217,12 @@ export function Family() {
               </AppText>
             </View>
           ) : null}
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/register-device')}
             onPressIn={lightTap}
             accessibilityRole="button"
-            style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+            scaleTo={0.98}
+            dimTo={0.95}>
             <View
               style={{
                 flexDirection: 'row',
@@ -237,19 +239,20 @@ export function Family() {
                 Add a device
               </AppText>
             </View>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             onPress={() => router.push('/shop')}
             onPressIn={lightTap}
             accessibilityRole="button"
-            style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 6 }, pressed ? { opacity: 0.6 } : null]}>
+            dimTo={0.85}
+            style={{ alignItems: 'center', paddingVertical: 6 }}>
             <AppText variant="meta" tone="muted">
               Need another?{' '}
               <AppText variant="label" style={{ color: c.textAccent }}>
                 Buy a Glow Orb
               </AppText>
             </AppText>
-          </Pressable>
+          </PressableScale>
         </View>
       </Reveal>
 
@@ -289,11 +292,12 @@ export function Family() {
 
       {/* caregivers — share the household with a partner or grandparent (real) */}
       <Reveal index={3} style={{ marginTop: 24 }}>
-        <Pressable
+        <PressableScale
           onPress={() => router.push('/caregivers' as Href)}
           onPressIn={lightTap}
           accessibilityRole="button"
-          style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+          scaleTo={0.98}
+          dimTo={0.95}>
           <View
             style={{
               flexDirection: 'row',
@@ -316,7 +320,7 @@ export function Family() {
             </View>
             <Feather name="chevron-right" size={18} color={c.accent} />
           </View>
-        </Pressable>
+        </PressableScale>
       </Reveal>
     </Screen>
   );

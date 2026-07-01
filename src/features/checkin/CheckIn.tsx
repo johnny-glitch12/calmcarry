@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, GlowOrb, Reveal, Screen } from '@/components';
+import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { track } from '@/lib/analytics';
 import { lightTap } from '@/lib/haptics';
@@ -47,18 +47,17 @@ export function CheckIn() {
           </AppText>
         </Reveal>
       </View>
-      <Pressable
+      <PressableScale
         onPress={done}
         onPressIn={lightTap}
         accessibilityRole="button"
-        style={({ pressed }) => [
-          { alignItems: 'center', paddingVertical: 18 },
-          pressed ? { opacity: 0.9, transform: [{ scale: 0.98 }] } : null,
-        ]}>
+        dimTo={0.9}
+        scaleTo={0.98}
+        style={{ alignItems: 'center', paddingVertical: 18 }}>
         <AppText variant="bodyMedium" tone="accent">
           Done
         </AppText>
-      </Pressable>
+      </PressableScale>
     </Screen>
   );
 }

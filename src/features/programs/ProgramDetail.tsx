@@ -2,9 +2,9 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, Card, PrimaryButton, Reveal, Screen } from '@/components';
+import { AppText, Card, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
@@ -42,15 +42,17 @@ export function ProgramDetail() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable
+        <PressableScale
           onPress={back}
           onPressIn={lightTap}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Back"
-          style={({ pressed }) => [{ marginBottom: 16 }, pressed ? { transform: [{ scale: 0.92 }], opacity: 0.7 } : null]}>
+          dimTo={0.85}
+          scaleTo={0.92}
+          style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <Image
           source={covers[program.cover]}
           style={{ width: '100%', height: 180, borderRadius: 20 }}
@@ -98,13 +100,14 @@ export function ProgramDetail() {
             const t = step.trackId ? TRACKS[step.trackId] : undefined;
             const isDone = done.includes(step.day);
             return (
-              <Pressable
+              <PressableScale
                 key={step.day}
                 onPress={() => open(step.day, step.trackId)}
                 onPressIn={lightTap}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isDone }}
-                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+                dimTo={0.95}
+                scaleTo={0.98}>
                 <Card
                   variant={isDone ? 'panel' : 'surface'}
                   padding={14}
@@ -138,7 +141,7 @@ export function ProgramDetail() {
                   </View>
                   <Feather name={locked ? 'lock' : isDone ? 'rotate-ccw' : 'play'} size={16} color={c.accent} />
                 </Card>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from 'react-native';
+import { ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -20,7 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
-import { AmbientMotes, AppText, GlowOrb, Logo, PrimaryButton, Screen, VoicePicker } from '@/components';
+import { AmbientMotes, AppText, GlowOrb, Logo, PressableScale, PrimaryButton, Screen, VoicePicker } from '@/components';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
@@ -128,11 +128,11 @@ function OnboardingHeader({ onSkip }: { onSkip?: () => void }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
       <Logo size="sm" />
       {onSkip ? (
-        <Pressable onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
+        <PressableScale onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button" dimTo={0.85}>
           <AppText variant="label" tone="muted">
             Skip
           </AppText>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </View>
   );
@@ -381,22 +381,20 @@ export function Onboarding() {
             </AppText>
           </Animated.View>
         </View>
-        <Pressable
+        <PressableScale
           onPress={() => setStage('intro')}
           onPressIn={lightTap}
           accessibilityRole="button"
           accessibilityLabel="Begin"
-          style={({ pressed }) => [
-            { alignSelf: 'center', width: 78, height: 78, borderRadius: 39, backgroundColor: c.ctaBg, alignItems: 'center', justifyContent: 'center', ...c.shadow },
-            pressed ? { transform: [{ scale: 0.94 }], opacity: 0.9 } : null,
-          ]}>
+          dimTo={0.9}
+          style={{ alignSelf: 'center', width: 78, height: 78, borderRadius: 39, backgroundColor: c.ctaBg, alignItems: 'center', justifyContent: 'center', ...c.shadow }}>
           <Feather name="arrow-right" size={28} color={c.ctaText} />
-        </Pressable>
-        <Pressable onPress={finish} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 14, marginTop: 8 }}>
+        </PressableScale>
+        <PressableScale onPress={finish} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14, marginTop: 8 }}>
           <AppText variant="label" tone="muted">
             I already have an account. <AppText variant="label" style={{ color: c.textAccent }}>Sign in</AppText>
           </AppText>
-        </Pressable>
+        </PressableScale>
       </Screen>
     );
   }
@@ -516,31 +514,30 @@ export function Onboarding() {
           <View style={{ gap: 10, marginTop: 28 }}>
             {FEELINGS.map((f, idx) => (
               <Animated.View key={f.id} entering={FadeInDown.duration(dur.screen).delay(160 + idx * 60)}>
-                <Pressable
+                <PressableScale
                   onPress={() => pick(f.id)}
                   onPressIn={lightTap}
                   accessibilityRole="button"
                   accessibilityLabel={f.label}
-                  style={({ pressed }) => [
-                    {
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 14,
-                      paddingVertical: 16,
-                      paddingHorizontal: 18,
-                      borderRadius: 14,
-                      backgroundColor: c.surface,
-                      borderWidth: 1,
-                      borderColor: c.line,
-                      ...c.shadow,
-                    },
-                    pressed ? { transform: [{ scale: 0.98 }], opacity: 0.92 } : null,
-                  ]}>
+                  scaleTo={0.98}
+                  dimTo={0.92}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 14,
+                    paddingVertical: 16,
+                    paddingHorizontal: 18,
+                    borderRadius: 14,
+                    backgroundColor: c.surface,
+                    borderWidth: 1,
+                    borderColor: c.line,
+                    ...c.shadow,
+                  }}>
                   <AppText style={{ fontSize: 22, lineHeight: 26 }}>{f.emoji}</AppText>
                   <AppText variant="bodyMedium" tone="title">
                     {f.label}
                   </AppText>
-                </Pressable>
+                </PressableScale>
               </Animated.View>
             ))}
           </View>
@@ -608,11 +605,11 @@ export function Onboarding() {
           </Animated.View>
         </View>
         <PrimaryButton label="Create your account" onPress={finish} />
-        <Pressable onPress={() => setStage('quiz')} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
+        <PressableScale onPress={() => setStage('quiz')} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
           <AppText variant="label" tone="muted">
             Choose again
           </AppText>
-        </Pressable>
+        </PressableScale>
       </Screen>
     );
   }
@@ -652,14 +649,15 @@ export function Onboarding() {
 
       <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('transform') : setI((v) => v + 1))} />
       {i > 0 ? (
-        <Pressable
+        <PressableScale
           onPress={() => setI((v) => Math.max(0, v - 1))}
           accessibilityRole="button"
+          dimTo={0.85}
           style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
           <AppText variant="label" tone="muted">
             Back
           </AppText>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </Screen>
   );

@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Linking, Pressable, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
-import { AppText, Logo, Reveal, Screen } from '@/components';
+import { AppText, Logo, PressableScale, Reveal, Screen } from '@/components';
 import { WELLNESS_DISCLAIMER } from '@/content/library';
 import { CRISIS_RESOURCES, PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
 import { lightTap } from '@/lib/haptics';
@@ -30,30 +30,29 @@ function LinkRow({
 }) {
   const { c } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       onPress={() => Linking.openURL(url).catch(() => {})}
       onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens in your browser"
-      style={({ pressed }) => [
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 14,
-          paddingVertical: 16,
-          paddingHorizontal: 16,
-          borderBottomWidth: last ? 0 : 1,
-          borderBottomColor: c.line,
-        },
-        pressed ? { opacity: 0.95, transform: [{ scale: 0.98 }] } : null,
-      ]}>
+      dimTo={0.95}
+      scaleTo={0.98}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: c.line,
+      }}>
       <Feather name={icon} size={18} color={c.accent} />
       <AppText variant="bodyMedium" tone="title" style={{ flex: 1, fontSize: 15 }}>
         {label}
       </AppText>
       <Feather name="external-link" size={17} color={c.accent} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -65,9 +64,9 @@ export function About() {
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 8 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 8 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
       </Reveal>
 
       <Reveal index={1} style={{ alignItems: 'center', marginTop: 12 }}>
@@ -101,24 +100,23 @@ export function About() {
         </AppText>
         <View style={{ borderRadius: 18, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
           {CRISIS_RESOURCES.map((r, i) => (
-            <Pressable
+            <PressableScale
               key={r.region}
               onPress={() => Linking.openURL(r.url).catch(() => {})}
               onPressIn={lightTap}
               accessibilityRole="button"
               accessibilityLabel={`${r.name}. ${r.contact}.`}
-              style={({ pressed }) => [
-                {
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 14,
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  borderBottomWidth: i === CRISIS_RESOURCES.length - 1 ? 0 : 1,
-                  borderBottomColor: c.line,
-                },
-                pressed ? { opacity: 0.95, transform: [{ scale: 0.98 }] } : null,
-              ]}>
+              dimTo={0.95}
+              scaleTo={0.98}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderBottomWidth: i === CRISIS_RESOURCES.length - 1 ? 0 : 1,
+                borderBottomColor: c.line,
+              }}>
               <Feather name="heart" size={16} color={c.accent} />
               <View style={{ flex: 1 }}>
                 <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
@@ -129,7 +127,7 @@ export function About() {
                 </AppText>
               </View>
               <Feather name="phone" size={15} color={c.accent} />
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       </Reveal>

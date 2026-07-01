@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
-import { AppText } from '@/components';
+import { AppText, PressableScale } from '@/components';
 import { lightTap } from '@/lib/haptics';
 import { hasParentPin } from '@/lib/parentGate';
 import { useTheme } from '@/theme';
@@ -13,13 +13,15 @@ function Avatar({ profile, active, onPress }: { profile: Profile; active: boolea
   const { c } = useTheme();
   const initial = (profile.name[0] || '?').toUpperCase();
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       accessibilityLabel={`${profile.name}${active ? ', current' : ''}`}
-      style={({ pressed }) => [{ alignItems: 'center', width: 64 }, pressed ? { transform: [{ scale: 0.94 }], opacity: 0.92 } : null]}>
+      scaleTo={0.94}
+      dimTo={0.92}
+      style={{ alignItems: 'center', width: 64 }}>
       <View
         style={{
           width: 52,
@@ -42,7 +44,7 @@ function Avatar({ profile, active, onPress }: { profile: Profile; active: boolea
       <AppText variant="label" tone={active ? 'title' : 'muted'} style={{ marginTop: 6 }} numberOfLines={1}>
         {profile.name}
       </AppText>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -71,12 +73,14 @@ export function ProfileSwitcher({ onAdd }: { onAdd?: () => void }) {
         <Avatar key={p.id} profile={p} active={p.id === activeProfile.id} onPress={() => onSelect(p)} />
       ))}
       {onAdd ? (
-        <Pressable
+        <PressableScale
           onPress={onAdd}
           onPressIn={lightTap}
           accessibilityRole="button"
           accessibilityLabel="Add a profile"
-          style={({ pressed }) => [{ alignItems: 'center', width: 64 }, pressed ? { transform: [{ scale: 0.94 }], opacity: 0.92 } : null]}>
+          scaleTo={0.94}
+          dimTo={0.92}
+          style={{ alignItems: 'center', width: 64 }}>
           <View
             style={{
               width: 52,
@@ -93,7 +97,7 @@ export function ProfileSwitcher({ onAdd }: { onAdd?: () => void }) {
           <AppText variant="label" tone="muted" style={{ marginTop: 6 }}>
             Add
           </AppText>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </ScrollView>
   );

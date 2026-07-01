@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -18,6 +18,7 @@ import {
   GlowOrb,
   LibraryCard,
   Logo,
+  PressableScale,
   PrimaryButton,
   Reveal,
   Screen,
@@ -98,12 +99,13 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
   const { c, isNight } = useTheme();
   const track = TRACKS[trackId] ?? TRACKS['slow-tide'];
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={`Play ${track.title}`}
-      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null)}>
+      scaleTo={0.98}
+      dimTo={0.9}>
       <View
         style={{
           borderRadius: 20,
@@ -162,7 +164,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           </View>
         </LinearGradient>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -297,9 +299,9 @@ export function TonightScreen() {
               <AppText variant="caption" tone="accent">
                 New here?
               </AppText>
-              <Pressable onPress={dismissHiw} hitSlop={16} accessibilityRole="button" accessibilityLabel="Dismiss how CalmCarry works">
+              <PressableScale onPress={dismissHiw} hitSlop={16} accessibilityRole="button" accessibilityLabel="Dismiss how CalmCarry works" dimTo={0.85}>
                 <Feather name="x" size={16} color={c.muted} />
-              </Pressable>
+              </PressableScale>
             </View>
             <AppText variant="bodyMedium" tone="title" style={{ marginTop: 6 }}>
               How CalmCarry works
@@ -336,25 +338,24 @@ export function TonightScreen() {
           free drift, no sign-in, no paywall, no quiz. Hidden in kids mode. */}
       {!kids ? (
         <Reveal index={5}>
-          <Pressable
+          <PressableScale
             onPress={() => router.push(`/player?id=${FREE_RESCUE}` as Href)}
             onPressIn={lightTap}
             accessibilityRole="button"
             accessibilityLabel={`${rescueLabel} Play a free calming session now.`}
-            style={({ pressed }) => [
-              {
-                marginTop: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                padding: 16,
-                borderRadius: 18,
-                backgroundColor: c.panel,
-                borderWidth: 1,
-                borderColor: c.lineSage,
-              },
-              pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null,
-            ]}>
+            scaleTo={0.98}
+            dimTo={0.9}
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              padding: 16,
+              borderRadius: 18,
+              backgroundColor: c.panel,
+              borderWidth: 1,
+              borderColor: c.lineSage,
+            }}>
             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="moon" size={18} color={c.accent} />
             </View>
@@ -367,7 +368,7 @@ export function TonightScreen() {
               </AppText>
             </View>
             <Feather name="play" size={16} color={c.accent} />
-          </Pressable>
+          </PressableScale>
         </Reveal>
       ) : null}
 
@@ -375,15 +376,14 @@ export function TonightScreen() {
           an invitation, not clutter once the ritual is established. */}
       {nights === 0 ? (
         <Reveal index={6}>
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/program?id=first-week' as Href)}
             onPressIn={lightTap}
             accessibilityRole="button"
             accessibilityLabel="Your first 7 nights, a free starter program"
-            style={({ pressed }) => [
-              { marginTop: 16, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage },
-              pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null,
-            ]}>
+            scaleTo={0.98}
+            dimTo={0.9}
+            style={{ marginTop: 16, padding: 16, borderRadius: 18, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <AppText variant="caption" tone="accent">
                 Free starter
@@ -396,7 +396,7 @@ export function TonightScreen() {
             <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
               A gentle, free week to find your wind-down, one short session a night.
             </AppText>
-          </Pressable>
+          </PressableScale>
         </Reveal>
       ) : null}
 

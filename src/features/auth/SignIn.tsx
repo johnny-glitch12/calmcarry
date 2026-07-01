@@ -4,9 +4,9 @@ import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, FormField, GlowOrb, Logo, PrimaryButton, Reveal, Screen } from '@/components';
+import { AppText, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { brand, useTheme } from '@/theme';
 
@@ -114,9 +114,9 @@ export function SignIn() {
 
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
-      <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" style={{ alignSelf: 'flex-start' }}>
+      <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85} style={{ alignSelf: 'flex-start' }}>
         <Feather name="x" size={24} color={c.text} />
-      </Pressable>
+      </PressableScale>
 
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 24 }}>
         <GlowOrb size={84} reserveGlow aura />
@@ -138,14 +138,14 @@ export function SignIn() {
             />
           ) : null}
           {googleConfigured ? (
-            <Pressable onPress={() => googlePrompt()} accessibilityRole="button" disabled={busy} accessibilityLabel="Continue with Google">
+            <PressableScale onPress={() => googlePrompt()} accessibilityRole="button" disabled={busy} accessibilityLabel="Continue with Google">
               <View style={{ height: 52, borderRadius: 8, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                 <Feather name="chrome" size={18} color={c.text} />
                 <AppText variant="bodyMedium" tone="title">
                   Continue with Google
                 </AppText>
               </View>
-            </Pressable>
+            </PressableScale>
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
@@ -196,13 +196,14 @@ export function SignIn() {
       </Reveal>
 
       <Reveal index={4} style={{ alignItems: 'center', marginTop: 24 }}>
-        <Pressable
+        <PressableScale
           onPress={() => {
             setMode(isSignup ? 'signin' : 'signup');
             setError(null);
           }}
           hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
           accessibilityRole="button"
+          dimTo={0.85}
           style={{ paddingVertical: 4 }}>
           <AppText variant="label" tone="muted">
             {isSignup ? 'Already have an account? ' : 'New here? '}
@@ -210,7 +211,7 @@ export function SignIn() {
               {isSignup ? 'Sign in' : 'Create an account'}
             </AppText>
           </AppText>
-        </Pressable>
+        </PressableScale>
       </Reveal>
     </Screen>
   );

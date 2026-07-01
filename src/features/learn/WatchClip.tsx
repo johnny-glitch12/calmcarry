@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, Reveal, Screen } from '@/components';
+import { AppText, PressableScale, Reveal, Screen } from '@/components';
 import { LEARN } from '@/content/library';
 import { useTheme } from '@/theme';
 
@@ -26,9 +26,9 @@ export function WatchClip() {
   return (
     <Screen mode="night" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color="#9DB7B1" />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="accent">
           {article.kicker}
         </AppText>

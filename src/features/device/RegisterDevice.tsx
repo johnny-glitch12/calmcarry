@@ -1,9 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable } from 'react-native';
-
-import { AppText, FormField, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { AppText, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { useTheme } from '@/theme';
@@ -121,9 +119,9 @@ export function RegisterDevice() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Warranty
         </AppText>

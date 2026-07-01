@@ -2,12 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Platform, View } from 'react-native';
 
-import { AppText, GlowOrb, Reveal, Screen } from '@/components';
+import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
 import { FEELING_MAP, useProfile, type Feeling, type Intent } from '@/features/profile/ProfileProvider';
-import { dur, ease, PRESS_SCALE, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 
 // STEP 1 — "How are you arriving tonight?" SAFE WORDS ONLY (build plan §3/§14):
 // never "anxious"/"insomnia"/clinical terms. Forward-looking, no symptom tracking.
@@ -28,7 +27,7 @@ const INTENTS: { intent: Intent; label: string; hint: string; icon: keyof typeof
   { intent: 'suggest', label: 'Suggest something', hint: 'Let CalmCarry choose', icon: 'compass' },
 ];
 
-/** A calm, tappable row: gentle scale-0.97 + light haptic on press (§4). */
+/** A calm, tappable row: gentle scale + light haptic on press (§4), via PressableScale. */
 function TapRow({
   icon,
   label,
@@ -43,51 +42,39 @@ function TapRow({
   onPress: () => void;
 }) {
   const { c } = useTheme();
-  const scale = useSharedValue(1);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
-  };
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={() => {
-        press(PRESS_SCALE);
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }}
-      onPressOut={() => press(1)}
       accessibilityRole="button"
-      accessibilityLabel={label}>
-      <Animated.View
-        style={[
-          style,
-          {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            paddingHorizontal: 16,
-            paddingVertical: 16,
-            borderRadius: 16,
-            backgroundColor: highlight ? c.panelStrong : c.surface,
-            borderWidth: 1,
-            borderColor: highlight ? c.accent : c.line,
-            ...c.shadow,
-          },
-        ]}>
-        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
-          <Feather name={icon} size={18} color={c.textAccent} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodyMedium" tone="title">
-            {label}
-          </AppText>
-          <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
-            {hint}
-          </AppText>
-        </View>
-        <Feather name="chevron-right" size={18} color={c.accent} />
-      </Animated.View>
-    </Pressable>
+      accessibilityLabel={label}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderRadius: 16,
+        backgroundColor: highlight ? c.panelStrong : c.surface,
+        borderWidth: 1,
+        borderColor: highlight ? c.accent : c.line,
+        ...c.shadow,
+      }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name={icon} size={18} color={c.textAccent} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText variant="bodyMedium" tone="title">
+          {label}
+        </AppText>
+        <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+          {hint}
+        </AppText>
+      </View>
+      <Feather name="chevron-right" size={18} color={c.accent} />
+    </PressableScale>
   );
 }
 
@@ -108,11 +95,11 @@ function CheckInBody({
   return (
     <>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <Pressable onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button">
+        <PressableScale onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button" dimTo={0.85}>
           <AppText variant="label" tone="muted">
             Skip
           </AppText>
-        </Pressable>
+        </PressableScale>
       </View>
 
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 8 }}>

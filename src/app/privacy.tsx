@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Linking, Pressable, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
-import { AppText, Card, Reveal, Screen } from '@/components';
+import { AppText, Card, PressableScale, Reveal, Screen } from '@/components';
 import { PRIVACY_URL } from '@/content/store';
 import { useTheme } from '@/theme';
 
@@ -45,9 +45,9 @@ export default function PrivacyPanel() {
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 8 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 8 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
       </Reveal>
 
       <Reveal index={1} style={{ marginTop: 4 }}>
@@ -79,15 +79,16 @@ export default function PrivacyPanel() {
       </Reveal>
 
       <Reveal index={3} style={{ marginTop: 18, marginBottom: 8 }}>
-        <Pressable
+        <PressableScale
           onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})}
           accessibilityRole="button"
           accessibilityHint="Opens in your browser"
+          dimTo={0.85}
           style={{ alignItems: 'center', paddingVertical: 12 }}>
           <AppText variant="label" tone="accent">
             Read the full privacy policy
           </AppText>
-        </Pressable>
+        </PressableScale>
       </Reveal>
     </Screen>
   );

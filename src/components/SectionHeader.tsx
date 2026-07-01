@@ -1,15 +1,11 @@
-import { Pressable, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { View } from 'react-native';
 
-import { dur, ease, type, useTheme } from '@/theme';
+import { type, useTheme } from '@/theme';
 
 import { lightTap } from '@/lib/haptics';
 
 import { AppText } from './AppText';
+import { PressableScale } from './PressableScale';
 
 type Props = {
   title: string;
@@ -26,8 +22,6 @@ type Props = {
  */
 export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
   const { c } = useTheme();
-  const o = useSharedValue(1);
-  const actionStyle = useAnimatedStyle(() => ({ opacity: o.value }));
 
   return (
     <View
@@ -48,21 +42,15 @@ export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
         </AppText>
       </View>
       {actionLabel ? (
-        <Pressable
+        <PressableScale
           onPress={onAction}
-          onPressIn={() => {
-            lightTap();
-            o.value = withTiming(0.6, { duration: dur.press, easing: ease.out });
-          }}
-          onPressOut={() => {
-            o.value = withTiming(1, { duration: dur.press, easing: ease.out });
-          }}
+          onPressIn={lightTap}
           hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }}
-          accessibilityRole="button">
-          <Animated.View style={actionStyle}>
-            <AppText numberOfLines={1} style={[type.label, { color: c.textAccent }]}>{actionLabel}</AppText>
-          </Animated.View>
-        </Pressable>
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+          dimTo={0.85}>
+          <AppText numberOfLines={1} style={[type.label, { color: c.textAccent }]}>{actionLabel}</AppText>
+        </PressableScale>
       ) : null}
     </View>
   );

@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AppText, FormField, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { AppText, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
@@ -16,13 +16,14 @@ const ISSUES = ["Won't power on", 'Battery life', 'Physical damage', 'Sound / au
 function IssueChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const { c } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       hitSlop={{ top: 4, bottom: 4 }}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      style={({ pressed }) => (pressed ? { transform: [{ scale: 0.96 }], opacity: 0.95 } : null)}>
+      scaleTo={0.96}
+      dimTo={0.95}>
       <View
         style={{
           paddingHorizontal: 14,
@@ -38,7 +39,7 @@ function IssueChip({ label, selected, onPress }: { label: string; selected: bool
           {label}
         </AppText>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -138,9 +139,9 @@ export function ReplacementClaim() {
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ marginBottom: 16 }}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
-        </Pressable>
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Support
         </AppText>

@@ -7,6 +7,7 @@ export { BearMascot } from './BearMascot';
 export { Screen } from './Screen';
 export { GlowOrb } from './GlowOrb';
 export { PrimaryButton } from './PrimaryButton';
+export { PressableScale } from './PressableScale';
 export { Card } from './Card';
 export { CoverCard } from './CoverCard';
 export { LibraryCard } from './LibraryCard';

@@ -4,9 +4,9 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, ScrollView, View } from 'react-native';
+import { AppState, Platform, ScrollView, View } from 'react-native';
 
-import { AppText, Card, Reveal, Screen, SectionHeader } from '@/components';
+import { AppText, Card, PressableScale, Reveal, Screen, SectionHeader } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources, type AudioKey } from '@/content/audio';
@@ -61,12 +61,11 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const on = level > 0;
   return (
     <View style={{ width: '47%' }}>
-      <Pressable
+      <PressableScale
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
-        accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}
-        style={({ pressed }) => (pressed ? { transform: [{ scale: 0.97 }] } : null)}>
+        accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}>
         <View
           style={{
             height: 116,
@@ -84,14 +83,14 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
             <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 15, color: '#FFFFFF' }}>{label}</AppText>
           </View>
         </View>
-      </Pressable>
+      </PressableScale>
       {/* per-sound volume — 3 levels (a locked tile shows a matching spacer instead) */}
       {locked ? (
         <View style={{ height: 8, marginTop: 8 }} />
       ) : (
       <View style={{ flexDirection: 'row', gap: 6, marginTop: 8, height: 8, opacity: on ? 1 : 0.3 }}>
         {[1, 2, 3].map((l) => (
-          <Pressable
+          <PressableScale
             key={l}
             onPress={() => onLevel(l)}
             disabled={!on}
@@ -101,7 +100,7 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
             accessibilityState={{ selected: on && level >= l, disabled: !on }}
             accessibilityLabel={`Volume level ${l}`}>
             <View style={{ height: 6, borderRadius: 3, backgroundColor: on && level >= l ? c.accent : c.line }} />
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
       )}
@@ -362,13 +361,14 @@ export function ListenScreen() {
             if (!t) return null;
             const locked = !kids && !!t.locked && !isPremium;
             return (
-              <Pressable
+              <PressableScale
                 key={id}
                 onPress={() => router.push((locked ? `/unlock?id=${id}` : `/player?id=${id}`) as Href)}
                 onPressIn={haptic}
                 accessibilityRole="button"
                 accessibilityLabel={`Play ${t.title}`}
-                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+                scaleTo={0.98}
+                dimTo={0.95}>
                 <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <Image source={covers[t.cover]} style={{ width: 56, height: 56, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
                   <View style={{ flex: 1 }}>
@@ -381,7 +381,7 @@ export function ListenScreen() {
                   </View>
                   <Feather name={locked ? 'lock' : 'play'} size={18} color={c.textAccent} />
                 </Card>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -395,18 +395,18 @@ export function ListenScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}>
             {mixes.map((m, i) => (
-              <Pressable
+              <PressableScale
                 key={i}
                 onPress={() => loadMix(m)}
                 accessibilityRole="button"
-                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.97 }], opacity: 0.95 } : null)}>
+                dimTo={0.95}>
                 <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="disc" size={15} color={c.textAccent} />
                   <AppText variant="cardTitle" tone="title">
                     {m.name}
                   </AppText>
                 </View>
-              </Pressable>
+              </PressableScale>
             ))}
           </ScrollView>
         </Reveal>
@@ -432,41 +432,46 @@ export function ListenScreen() {
       {/* master controls */}
       <Reveal index={3} style={{ marginTop: 28, paddingHorizontal: 24 }}>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Pressable
+          <PressableScale
             onPress={cycleTimer}
             accessibilityRole="button"
-            style={({ pressed }) => [{ flex: 1 }, pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null]}>
+            style={{ flex: 1 }}
+            scaleTo={0.98}
+            dimTo={0.95}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: timer > 0 ? c.panelStrong : c.surface, borderWidth: 1, borderColor: timer > 0 ? c.accent : c.line }}>
               <Feather name="moon" size={16} color={c.textAccent} />
               <AppText variant="cardTitle" tone="title">
                 {timer > 0 ? `${timer} min` : 'Sleep timer'}
               </AppText>
             </View>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             onPress={saveMix}
             disabled={!anyOn}
             accessibilityRole="button"
-            style={({ pressed }) => [{ flex: 1, opacity: anyOn ? 1 : 0.45 }, pressed && anyOn ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null]}>
+            style={{ flex: 1, opacity: anyOn ? 1 : 0.45 }}
+            scaleTo={0.98}
+            dimTo={0.95}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
               <Feather name="bookmark" size={16} color={c.textAccent} />
               <AppText variant="cardTitle" tone="title">
                 Save mix
               </AppText>
             </View>
-          </Pressable>
+          </PressableScale>
         </View>
         {anyOn && !kids && !!token && token !== 'local' ? (
-          <Pressable
+          <PressableScale
             onPress={shareMix}
             accessibilityRole="button"
             accessibilityLabel="Share this mix anonymously to the community"
+            dimTo={0.9}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
             <Feather name="share-2" size={15} color={c.textAccent} />
             <AppText variant="cardTitle" tone="title">
               Share this mix anonymously
             </AppText>
-          </Pressable>
+          </PressableScale>
         ) : null}
         {shareNote ? (
           <AppText variant="meta" tone="muted" style={{ textAlign: 'center', marginTop: 8 }}>
@@ -474,11 +479,11 @@ export function ListenScreen() {
           </AppText>
         ) : null}
         {anyOn ? (
-          <Pressable onPress={stopAll} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 16 }}>
+          <PressableScale onPress={stopAll} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 16 }}>
             <AppText variant="label" tone="muted">
               Stop all
             </AppText>
-          </Pressable>
+          </PressableScale>
         ) : null}
       </Reveal>
     </Screen>

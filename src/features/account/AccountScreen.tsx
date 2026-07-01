@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, Share, Switch, View } from 'react-native';
+import { Alert, Linking, Share, Switch, View } from 'react-native';
 
-import { AppText, Card, GlowOrb, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
+import { AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
@@ -71,13 +71,14 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
 
   if (toggle !== undefined) return <View style={{ paddingHorizontal: 16 }}>{content}</View>;
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       accessibilityRole="button"
-      style={({ pressed }) => [{ paddingHorizontal: 16 }, pressed ? { opacity: 0.94 } : null]}>
+      dimTo={0.94}
+      style={{ paddingHorizontal: 16 }}>
       {content}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -233,11 +234,12 @@ export function AccountScreen() {
 
       {/* entitlement */}
       <Reveal index={1} style={{ marginTop: 24 }}>
-        <Pressable
+        <PressableScale
           onPress={() => (isPremium ? Linking.openURL(SUBSCRIPTION_URL).catch(() => {}) : router.push('/unlock'))}
           onPressIn={lightTap}
           accessibilityRole="button"
-          style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null)}>
+          scaleTo={0.98}
+          dimTo={0.95}>
         <View
           style={{
             borderRadius: 20,
@@ -269,7 +271,7 @@ export function AccountScreen() {
             />
           </View>
         </View>
-        </Pressable>
+        </PressableScale>
       </Reveal>
 
       {/* appearance + mode */}
@@ -344,23 +346,25 @@ export function AccountScreen() {
       </Reveal>
 
       <Reveal index={5} style={{ marginTop: 24 }}>
-        <Pressable
+        <PressableScale
           onPress={onSignOut}
           onPressIn={lightTap}
           accessibilityRole="button"
-          style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 14 }, pressed ? { opacity: 0.6 } : null]}>
+          dimTo={0.6}
+          style={{ alignItems: 'center', paddingVertical: 14 }}>
           <AppText variant="bodyMedium" style={{ color: brand.coral }}>
             Sign out
           </AppText>
-        </Pressable>
+        </PressableScale>
         {/* Account & data deletion — required by App Store 5.1.1(v) + COPPA/GDPR */}
-        <Pressable
+        <PressableScale
           onPress={onDeleteAccount}
           onPressIn={lightTap}
           disabled={deleting}
           accessibilityRole="button"
           accessibilityLabel={confirmDelete ? 'Confirm permanent account deletion' : 'Delete account'}
-          style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }, pressed && !deleting ? { opacity: 0.6 } : null]}>
+          dimTo={0.6}
+          style={{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }}>
           <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
             {deleting
               ? 'Deleting…'
@@ -370,7 +374,7 @@ export function AccountScreen() {
                   : 'Tap again to permanently delete your account & data'
                 : 'Delete account'}
           </AppText>
-        </Pressable>
+        </PressableScale>
       </Reveal>
 
       <Reveal index={6} style={{ marginTop: 8 }}>

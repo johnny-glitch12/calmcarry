@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 // light tap feedback, matching the app's press idiom (PrimaryButton / CoverCard)
 const tapHaptic = () => {
@@ -17,7 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, Card, FormField, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { AppText, Card, FormField, PressableScale, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { setPendingMix } from '@/lib/mixShare';
@@ -82,15 +82,14 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
 
       {/* a shared mix renders a tappable card that loads it into the sound machine */}
       {win.mix ? (
-        <Pressable
+        <PressableScale
           onPress={onLoadMix}
           onPressIn={tapHaptic}
           accessibilityRole="button"
           accessibilityLabel={`Load mix ${win.mix.name} into the sound machine`}
-          style={({ pressed }) => [
-            { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage },
-            pressed ? { transform: [{ scale: 0.98 }], opacity: 0.95 } : null,
-          ]}>
+          scaleTo={0.98}
+          dimTo={0.95}
+          style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.panel, borderWidth: 1, borderColor: c.lineSage }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="sliders" size={15} color={c.textAccent} />
@@ -105,7 +104,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
             </View>
             <Feather name="play" size={16} color={c.accent} />
           </View>
-        </Pressable>
+        </PressableScale>
       ) : null}
 
       {/* footer — pending notice, or a one-way, COUNT-LESS acknowledgment */}
@@ -117,7 +116,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
           </AppText>
         </View>
       ) : (
-        <Pressable
+        <PressableScale
           onPress={carry}
           accessibilityRole="button"
           accessibilityState={{ selected: carried }}
@@ -129,7 +128,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
               {carried ? 'You carried this' : 'Carried this with you'}
             </AppText>
           </Animated.View>
-        </Pressable>
+        </PressableScale>
       )}
     </Card>
   );
@@ -296,29 +295,28 @@ export function CommunityScreen() {
           ]).map((f) => {
             const on = filter === f.id;
             return (
-              <Pressable
+              <PressableScale
                 key={f.id}
                 onPress={() => setFilter(f.id)}
                 onPressIn={tapHaptic}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
-                style={({ pressed }) => [
-                  {
-                    height: 34,
-                    paddingHorizontal: 14,
-                    borderRadius: 17,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: on ? c.ctaBg : 'transparent',
-                    borderWidth: 1,
-                    borderColor: on ? c.ctaBg : c.line,
-                  },
-                  pressed ? { transform: [{ scale: 0.96 }], opacity: 0.9 } : null,
-                ]}>
+                scaleTo={0.96}
+                dimTo={0.9}
+                style={{
+                  height: 34,
+                  paddingHorizontal: 14,
+                  borderRadius: 17,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: on ? c.ctaBg : 'transparent',
+                  borderWidth: 1,
+                  borderColor: on ? c.ctaBg : c.line,
+                }}>
                 <AppText variant="meta" style={{ color: on ? c.ctaText : c.muted }}>
                   {f.label}
                 </AppText>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -334,23 +332,21 @@ export function CommunityScreen() {
           placeholder="One calm thing that went right…"
           icon="feather"
         />
-        <Pressable
+        <PressableScale
           onPress={share}
           onPressIn={() => draft.trim() && tapHaptic()}
           accessibilityRole="button"
           accessibilityState={{ disabled: !draft.trim() }}
           disabled={!draft.trim()}
-          style={({ pressed }) => [
-            { alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 },
-            pressed && draft.trim() ? { transform: [{ scale: 0.97 }], opacity: 0.9 } : null,
-          ]}>
+          dimTo={0.9}
+          style={{ alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
             <Feather name="send" size={15} color={c.textAccent} />
             <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
               Share anonymously
             </AppText>
           </View>
-        </Pressable>
+        </PressableScale>
         {note ? (
           <AppText variant="meta" style={{ color: c.dim, marginTop: 10 }}>
             {note}

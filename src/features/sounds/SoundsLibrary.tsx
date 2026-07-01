@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
-import { AppText, LibraryCard, Reveal, Screen, SectionHeader } from '@/components';
+import { AppText, LibraryCard, PressableScale, Reveal, Screen, SectionHeader } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { covers } from '@/content/covers';
@@ -99,29 +99,27 @@ export function SoundsLibrary() {
           {/* search + learn are adult affordances (route to programs/paywall) — hidden in kids */}
           {!kids ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
-              <Pressable
+              <PressableScale
                 onPress={() => router.push('/search')}
                 onPressIn={lightTap}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
                 accessibilityLabel="Search"
-                style={({ pressed }) => (pressed ? { transform: [{ scale: 0.9 }], opacity: 0.7 } : null)}>
+                dimTo={0.85}>
                 <Feather name="search" size={20} color={c.textAccent} />
-              </Pressable>
-              <Pressable
+              </PressableScale>
+              <PressableScale
                 onPress={() => router.push('/learn')}
                 onPressIn={lightTap}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
-                style={({ pressed }) => [
-                  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-                  pressed ? { transform: [{ scale: 0.95 }], opacity: 0.7 } : null,
-                ]}>
+                dimTo={0.85}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Feather name="book-open" size={15} color={c.textAccent} />
                 <AppText variant="label" style={{ color: c.textAccent }}>
                   Learn
                 </AppText>
-              </Pressable>
+              </PressableScale>
             </View>
           ) : null}
         </View>

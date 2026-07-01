@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -12,15 +12,15 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, BearMascot, Reveal, Screen } from '@/components';
+import { AppText, BearMascot, PressableScale, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { dur, ease, fonts, STAGGER, useTheme } from '@/theme';
 
-// light tap feedback on the big kid affordances (paired with the Pressable `pressed`
-// scale below) — a child should feel every tap respond
+// light tap feedback on the big kid affordances (paired with the PressableScale
+// press animation below) — a child should feel every tap respond
 const tapHaptic = () => {
   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 };
@@ -31,7 +31,7 @@ const KID_SOUNDS = ['forest', 'rainfall', 'slow-tide'];
 function ParentLock({ onPress }: { onPress: () => void }) {
   const { c } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       hitSlop={12}
       accessibilityRole="button"
@@ -47,7 +47,7 @@ function ParentLock({ onPress }: { onPress: () => void }) {
         justifyContent: 'center',
       }}>
       <Feather name="lock" size={17} color={c.accent} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -157,12 +157,13 @@ export function KidsHome() {
 
       {/* BIG story hero */}
       <Reveal index={3} style={{ marginTop: 22 }}>
-        <Pressable
+        <PressableScale
           onPress={() => router.push(`/player?id=${story.id}`)}
           onPressIn={tapHaptic}
           accessibilityRole="button"
           accessibilityLabel={`Play ${story.title}`}
-          style={({ pressed }) => (pressed ? { transform: [{ scale: 0.98 }], opacity: 0.96 } : null)}>
+          scaleTo={0.98}
+          dimTo={0.96}>
           <View style={{ borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image source={covers[story.cover]} style={{ width: '100%', height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
             <View style={{ padding: 20, backgroundColor: c.surface }}>
@@ -190,7 +191,7 @@ export function KidsHome() {
               </View>
             </View>
           </View>
-        </Pressable>
+        </PressableScale>
       </Reveal>
 
       {/* big calm-sound buttons */}
@@ -203,13 +204,14 @@ export function KidsHome() {
             const t = TRACKS[id];
             if (!t) return null;
             return (
-              <Pressable
+              <PressableScale
                 key={id}
                 onPress={() => router.push(`/player?id=${id}`)}
                 onPressIn={tapHaptic}
                 accessibilityRole="button"
                 accessibilityLabel={t.title}
-                style={({ pressed }) => [{ width: '31%' }, pressed ? { transform: [{ scale: 0.97 }], opacity: 0.96 } : null]}>
+                dimTo={0.96}
+                style={{ width: '31%' }}>
                 <View style={{ aspectRatio: 1, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
                   <Image source={covers[t.cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
                   <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.55)', justifyContent: 'flex-end', padding: 10 }}>
@@ -218,7 +220,7 @@ export function KidsHome() {
                     </AppText>
                   </View>
                 </View>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

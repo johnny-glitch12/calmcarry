@@ -48,9 +48,10 @@ async function bootstrap(): Promise<express.Express> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server), { rawBody: true });
   app.use(helmet());
   app.use(compression());
-  // Cap request body size — defends against memory-exhaustion DoS (parity with main.ts)
-  app.useBodyParser('json', { limit: '64kb' });
-  app.useBodyParser('urlencoded', { limit: '64kb', extended: true });
+  // Cap request body size — defends against memory-exhaustion DoS (parity with main.ts).
+  // 256kb: StoreKit 2 JWS receipts + store webhook payloads can exceed 64kb.
+  app.useBodyParser('json', { limit: '256kb' });
+  app.useBodyParser('urlencoded', { limit: '256kb', extended: true });
   app.enableCors(
     isProd
       ? { origin: config.corsOrigins, credentials: false }

@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useState } from 'react';
 import { Switch, View } from 'react-native';
 
@@ -7,6 +8,7 @@ import { AppText, Card, FormField, GlowOrb, PressableScale, PrimaryButton, Revea
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile, type AppMode, type Profile } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
+import { PRIVACY_URL, TERMS_URL } from '@/content/store';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
@@ -139,6 +141,13 @@ export function Family() {
                   A kid profile keeps only a first name. Kids mode is 100% ad-free, has no chat or
                   community, and we never sell or share your child’s data. You can remove the
                   profile and its data any time, below.
+                </AppText>
+                <AppText variant="meta" tone="muted" style={{ lineHeight: 18, textTransform: 'none', letterSpacing: 0 }}>
+                  Consenting confirms you accept our{' '}
+                  <AppText variant="meta" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}>Terms</AppText>
+                  {' and '}
+                  <AppText variant="meta" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>Privacy Policy</AppText>
+                  , including how we handle a child’s data.
                 </AppText>
                 <PrimaryButton label="I’m the parent or guardian, and I consent" onPress={grantConsentAndAdd} />
                 <PressableScale onPress={() => setNeedConsent(false)} accessibilityRole="button" dimTo={0.85} style={{ alignSelf: 'center', paddingVertical: 6 }}>

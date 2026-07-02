@@ -36,7 +36,7 @@ Each runs in **DEV-FALLBACK** until its keys are set; the startup log prints whi
 |---|---|---|
 | Apple IAP receipt | `APPLE_IAP_SHARED_SECRET` | grants a dev subscription so the purchase flow works |
 | Google Play billing | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | guarded — wire the Play Developer API client |
-| Apple/Google Sign-in | `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` | decodes the identity token (⚠ verify JWKS in prod) |
+| Apple/Google Sign-in | `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` | verifies the identity token against the provider JWKS (RS256 sig + issuer + audience); fails closed if unset |
 | Shopify ownership | `SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_BUNDLE_PRODUCT_IDS`, `SHOPIFY_WEBHOOK_SECRET` | recognizes theglowcompany.co emails as owners |
 | Content CDN signing | `CDN_BASE_URL`, `CDN_SIGNING_KEY` | returns the bundled asset path unsigned |
 | Push (APNs/FCM) | `FCM_SERVER_KEY` / `APNS_*` | logs instead of sending |
@@ -45,6 +45,6 @@ Each runs in **DEV-FALLBACK** until its keys are set; the startup log prints whi
 ## Before production
 - **Database**: set `DATABASE_URL` (Postgres) and turn OFF `synchronize` in `app.module.ts` — generate TypeORM migrations instead.
 - **Secrets**: real `JWT_SECRET` + the keys above. Never commit `.env`.
-- **Sign-in**: replace the dev token-decode with JWKS signature verification (`google-auth-library` / a JWKS verifier).
+- **Sign-in**: DONE — identity tokens are verified against the Apple/Google JWKS (`jose`: RS256 signature + issuer + audience, fail-closed in `social-auth.service.ts`). Only the real client ids (table above) still need to be set.
 - **Google IAP**: implement the Android Publisher subscription lookup in `receipt-validation.service.ts`.
 - **App wiring (client side, not done here)**: point `src/lib/api.ts` at the deployed URL and call `POST /billing/validate` after a StoreKit/Play purchase, `GET/POST /profiles` for the household, and `GET /community/posts`. The app currently works on local state + these endpoints are ready.

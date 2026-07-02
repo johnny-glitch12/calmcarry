@@ -10,7 +10,8 @@ import { Platform } from 'react-native';
 // builds). Defaults to the local API for the web/dev target.
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:4000';
 
-const TIMEOUT_MS = 3500;
+const TIMEOUT_MS = 8000; // was 3500 — too aggressive on real cellular; the server keeps running after the client aborts
+const MONEY_TIMEOUT_MS = 20000; // receipt validation round-trips to Apple/Google server-side, so give it real headroom
 
 /** A failed HTTP response (has .status). Network/timeout errors are plain Errors
  *  (no .status) so callers can tell "rejected by server" from "couldn't reach server". */
@@ -21,9 +22,9 @@ export class ApiError extends Error {
   }
 }
 
-async function req<T>(path: string, opts: RequestInit = {}, token?: string | null): Promise<T> {
+async function req<T>(path: string, opts: RequestInit = {}, token?: string | null, timeoutMs: number = TIMEOUT_MS): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(API_BASE + path, {
       ...opts,
@@ -84,6 +85,7 @@ export const api = {
       '/billing/validate',
       { method: 'POST', body: JSON.stringify(data) },
       token,
+      MONEY_TIMEOUT_MS,
     ),
   billingStatus: (token: string) =>
     req<{

@@ -356,6 +356,15 @@ export function AccountScreen() {
             Sign out
           </AppText>
         </PressableScale>
+        {/* up-front (not buried in the confirm step): deleting the account does NOT cancel the store subscription */}
+        {isPremium ? (
+          <AppText
+            variant="meta"
+            tone="dim"
+            style={{ textAlign: 'center', marginTop: 6, textTransform: 'none', letterSpacing: 0, lineHeight: 16, paddingHorizontal: 12 }}>
+            Deleting your account won’t cancel your subscription — cancel that in your Apple or Google account settings.
+          </AppText>
+        ) : null}
         {/* Account & data deletion — required by App Store 5.1.1(v) + COPPA/GDPR */}
         <PressableScale
           onPress={onDeleteAccount}

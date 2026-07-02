@@ -8,6 +8,7 @@ import { View } from 'react-native';
 
 import { AppText, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { PRIVACY_URL, TERMS_URL } from '@/content/store';
 import { brand, useTheme } from '@/theme';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -193,6 +194,21 @@ export function SignIn() {
 
       <Reveal index={3} style={{ marginTop: 24 }}>
         <PrimaryButton label={isSignup ? 'Create account' : 'Sign in'} onPress={submit} loading={busy} />
+        {/* Terms + Privacy acceptance (App Store / Play requirement) — implicit via "by continuing" */}
+        <AppText
+          variant="caption"
+          tone="muted"
+          style={{ textAlign: 'center', marginTop: 14, textTransform: 'none', letterSpacing: 0, lineHeight: 17 }}>
+          By continuing you agree to our{' '}
+          <AppText variant="caption" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}>
+            Terms
+          </AppText>
+          {' and '}
+          <AppText variant="caption" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>
+            Privacy Policy
+          </AppText>
+          .
+        </AppText>
       </Reveal>
 
       <Reveal index={4} style={{ alignItems: 'center', marginTop: 24 }}>

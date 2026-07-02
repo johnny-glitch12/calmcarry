@@ -40,9 +40,10 @@ async function bootstrap() {
   // gzip responses — throughput / payload size (catalogue + lists compress well)
   app.use(compression());
 
-  // Cap request body size — defends against memory-exhaustion DoS
-  app.useBodyParser('json', { limit: '64kb' });
-  app.useBodyParser('urlencoded', { limit: '64kb', extended: true });
+  // Cap request body size — defends against memory-exhaustion DoS. 256kb (not 64kb):
+  // StoreKit 2 JWS receipts + store webhook payloads can exceed 64kb; still tiny enough to reject abuse.
+  app.useBodyParser('json', { limit: '256kb' });
+  app.useBodyParser('urlencoded', { limit: '256kb', extended: true });
 
   // Dev reflects the Expo web origin only; production uses an explicit allowlist.
   app.enableCors(

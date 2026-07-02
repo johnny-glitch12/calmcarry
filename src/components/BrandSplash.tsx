@@ -12,7 +12,6 @@ import Animated, {
 
 import { audioSources } from '@/content/audio';
 import { dur, ease, useTheme } from '@/theme';
-import { AmbientMotes } from './AmbientMotes';
 import { AnimatedLogo } from './AnimatedLogo';
 
 /**
@@ -30,6 +29,8 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
   // A low, soothing nature bed (birdsong + soft stream) sets the vibe the moment
   // the app opens: fades in under the reveal, fades out as we hand off. Native
   // autoplays on launch; web blocks autoplay until a gesture (it just stays silent).
+  // The 60ms interval below is intentional AUDIO-volume cadence (expo-audio volume
+  // isn't animatable by Reanimated), not UI motion — hence no dur.* token.
   const ambient = useAudioPlayer(audioSources.forest);
   const vol = useRef(0);
   const AMBIENT_TARGET = 0.25;
@@ -95,7 +96,6 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 100 }, fadeStyle]}>
       <LinearGradient colors={bg} style={StyleSheet.absoluteFill} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} />
-      <AmbientMotes />
       <Pressable
         onPress={finish}
         accessibilityRole="button"

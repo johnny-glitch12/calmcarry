@@ -13,21 +13,20 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
   withDelay,
-  withRepeat,
   withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
-import { AmbientMotes, AppText, GlowOrb, Logo, PressableScale, PrimaryButton, Screen, VoicePicker } from '@/components';
+import { AppText, GlowOrb, Logo, PressableScale, PrimaryButton, Screen, VoicePicker } from '@/components';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
 import { lightTap } from '@/lib/haptics';
 import { markOnboarded } from '@/lib/onboarding';
 import { setSleepGoalHours, SLEEP_GOAL_DEFAULT, SLEEP_GOAL_MAX, SLEEP_GOAL_MIN } from '@/lib/sleepGoal';
-import { brand, dur, ease, fonts, spring, useTheme } from '@/theme';
+import { brand, dur, ease, fonts, spring, STAGGER, useTheme } from '@/theme';
 
 type Art = 'orb' | 'cluster' | 'shield';
 type Slide = { art: Art; title: string; body: string };
@@ -62,8 +61,8 @@ const FEELINGS: { id: Feeling; emoji: string; label: string }[] = [
   { id: 'heavy-day', emoji: '🌧️', label: 'It’s been a heavy day' },
 ];
 
-/** A cover that drifts up-and-down forever on the UI thread (transform only),
- *  desynced by its delay so a cluster never moves in lockstep. */
+/** A cover that settles in ONCE — a gentle rise while it fades in — then rests
+ *  still (transform only). No endless bobbing: restraint per the motion spec. */
 function FloatingCover({
   cover,
   size,
@@ -82,10 +81,13 @@ function FloatingCover({
   z: number;
 }) {
   const reduced = useReducedMotion();
-  const t = useSharedValue(0);
+  const t = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
-    if (reduced) return;
-    t.value = withDelay(delay, withRepeat(withTiming(1, { duration: 3400 + delay, easing: ease.sine }), -1, true));
+    if (reduced) {
+      t.value = 1; // freeze at the resting position
+      return;
+    }
+    t.value = withDelay(delay, withTiming(1, { duration: dur.screen, easing: ease.out }));
   }, [reduced, t, delay]);
   const style = useAnimatedStyle(() => ({
     transform: [{ translateX: dx }, { translateY: dy - t.value * 7 }, { rotate: `${rotate}deg` }],
@@ -99,12 +101,12 @@ function FloatingCover({
   );
 }
 
-/** A small fanned, gently-floating stack of covers (the "library" hero). */
+/** A small fanned stack of covers (the "library" hero) that settles in once. */
 function CoverCluster() {
   return (
     <View style={{ width: 240, height: 220, alignItems: 'center', justifyContent: 'center' }}>
-      <FloatingCover cover="forestStream" size={140} rotate={-9} dx={-66} dy={14} delay={120} z={1} />
-      <FloatingCover cover="deepRest" size={150} rotate={8} dx={64} dy={20} delay={240} z={2} />
+      <FloatingCover cover="forestStream" size={140} rotate={-9} dx={-66} dy={14} delay={2 * STAGGER} z={1} />
+      <FloatingCover cover="deepRest" size={150} rotate={8} dx={64} dy={20} delay={4 * STAGGER} z={2} />
       <FloatingCover cover="slowTide" size={168} rotate={0} dx={0} dy={-8} delay={0} z={3} />
     </View>
   );
@@ -241,16 +243,18 @@ function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: numbe
   );
 }
 
-/** A twinkling star for the transformation scene (opacity + scale pulse). */
+/** A constellation star: fades in ONCE to a stable resting glow, then holds
+ *  still (opacity + scale only). The endless twinkle loop was removed —
+ *  restraint per the motion spec. */
 function TwinkleStar({ top, left, size = 16, delay = 0 }: { top: number; left: string; size?: number; delay?: number }) {
   const reduced = useReducedMotion();
-  const t = useSharedValue(0.4);
+  const t = useSharedValue(reduced ? 0.7 : 0);
   useEffect(() => {
     if (reduced) {
-      t.value = 0.7;
+      t.value = 0.7; // resting glow, no animation
       return;
     }
-    t.value = withDelay(delay, withRepeat(withTiming(1, { duration: 1900, easing: ease.inOut }), -1, true));
+    t.value = withDelay(delay, withTiming(0.7, { duration: dur.reveal, easing: ease.out }));
   }, [reduced, t, delay]);
   const style = useAnimatedStyle(() => ({ opacity: 0.3 + t.value * 0.6, transform: [{ scale: 0.8 + t.value * 0.3 }] }));
   return (
@@ -283,7 +287,7 @@ function ArrowBadge({ style }: { style?: ViewStyle }) {
   const reduced = useReducedMotion();
   const s = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
-    if (!reduced) s.value = withDelay(450, withSpring(1, spring));
+    if (!reduced) s.value = withDelay(dur.screen, withSpring(1, spring)); // one entrance beat after the cards settle
   }, [reduced, s]);
   const st = useAnimatedStyle(() => ({ opacity: Math.min(1, s.value * 1.4), transform: [{ scale: 0.5 + s.value * 0.5 }] }));
   return (
@@ -319,7 +323,7 @@ function WeekChart() {
   const len = pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.y - pts[i].y), 0);
   const draw = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
-    if (!reduced) draw.value = withDelay(250, withTiming(1, { duration: dur.reveal, easing: ease.out }));
+    if (!reduced) draw.value = withDelay(4 * STAGGER, withTiming(1, { duration: dur.reveal, easing: ease.out }));
   }, [reduced, draw]);
   const lineProps = useAnimatedProps(() => ({ strokeDashoffset: len * (1 - draw.value) }));
   const start = pts[0];
@@ -363,20 +367,20 @@ export function Onboarding() {
     return (
       <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
         <TwinkleStar top={70} left="16%" size={14} delay={0} />
-        <TwinkleStar top={120} left="74%" size={20} delay={350} />
-        <TwinkleStar top={190} left="40%" size={12} delay={700} />
-        <TwinkleStar top={150} left="88%" size={14} delay={1100} />
-        <TwinkleStar top={250} left="10%" size={16} delay={500} />
-        <TwinkleStar top={300} left="64%" size={12} delay={900} />
-        <TwinkleStar top={360} left="28%" size={18} delay={1400} />
-        <TwinkleStar top={420} left="82%" size={13} delay={200} />
+        <TwinkleStar top={120} left="74%" size={20} delay={2 * STAGGER} />
+        <TwinkleStar top={190} left="40%" size={12} delay={4 * STAGGER} />
+        <TwinkleStar top={150} left="88%" size={14} delay={6 * STAGGER} />
+        <TwinkleStar top={250} left="10%" size={16} delay={3 * STAGGER} />
+        <TwinkleStar top={300} left="64%" size={12} delay={5 * STAGGER} />
+        <TwinkleStar top={360} left="28%" size={18} delay={7 * STAGGER} />
+        <TwinkleStar top={420} left="82%" size={13} delay={STAGGER} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
             <AppText variant="display" tone="title" style={{ textAlign: 'center', fontSize: 34, lineHeight: 40 }}>
               Welcome
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(120)}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(2 * STAGGER)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300, marginTop: 14, alignSelf: 'center' }}>
               Let’s begin your journey to calmer evenings and deeper, more restful nights.
             </AppText>
@@ -403,21 +407,19 @@ export function Onboarding() {
   // ---- first-7-nights rhythm (animated draw; the real calm-nights mechanic) ----
   if (stage === 'progress') {
     return (
-      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <AmbientMotes />
-        <OnboardingHeader onSkip={finish} />
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>        <OnboardingHeader onSkip={finish} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
             <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
               Your first 7 nights
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
               A gentle week to settle into the ritual. Each calm night earns a star — seven builds the rhythm.
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeIn.duration(dur.screen).delay(180)} style={{ marginTop: 40, alignItems: 'center' }}>
+          <Animated.View entering={FadeIn.duration(dur.screen).delay(3 * STAGGER)} style={{ marginTop: 40, alignItems: 'center' }}>
             <WeekChart />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: 300, paddingHorizontal: 10, marginTop: 6 }}>
               <AppText variant="label" tone="muted">Night 1</AppText>
@@ -434,25 +436,23 @@ export function Onboarding() {
   // ---- before/after transformation (aspirational, not a measured claim) ----
   if (stage === 'transform') {
     return (
-      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <AmbientMotes />
-        <OnboardingHeader onSkip={finish} />
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>        <OnboardingHeader onSkip={finish} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
             <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
               A calmer you, a week from now
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
               A few minutes of wind-down each evening, and busy nights start to feel lighter.
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeIn.duration(dur.reveal).delay(150)} style={{ height: 340, marginTop: 24 }}>
+          <Animated.View entering={FadeIn.duration(dur.reveal).delay(2.5 * STAGGER)} style={{ height: 340, marginTop: 24 }}>
             <TwinkleStar top={16} left="14%" size={18} delay={0} />
-            <TwinkleStar top={66} left="84%" size={22} delay={500} />
-            <TwinkleStar top={244} left="88%" size={15} delay={900} />
-            <TwinkleStar top={300} left="9%" size={14} delay={1300} />
+            <TwinkleStar top={66} left="84%" size={22} delay={2 * STAGGER} />
+            <TwinkleStar top={244} left="88%" size={15} delay={4 * STAGGER} />
+            <TwinkleStar top={300} left="9%" size={14} delay={6 * STAGGER} />
             <TransformCard cover="dawnWoods" label="You in a week" style={{ position: 'absolute', top: 0, right: 6, transform: [{ rotate: '4deg' }], zIndex: 2 }} />
             <TransformCard cover="rainfall" label="You today" dim style={{ position: 'absolute', bottom: 0, left: 6, transform: [{ rotate: '-4deg' }], zIndex: 1 }} />
             <ArrowBadge style={{ position: 'absolute', top: 148, alignSelf: 'center', zIndex: 3 }} />
@@ -466,21 +466,19 @@ export function Onboarding() {
   // ---- nightly sleep-hours goal (a real saved preference, not a tracked metric) ----
   if (stage === 'goal') {
     return (
-      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <AmbientMotes />
-        <OnboardingHeader onSkip={finish} />
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>        <OnboardingHeader onSkip={finish} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
             <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
               Your nightly sleep goal
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
               Most adults do best on 7 to 9 hours. We’ll keep your goal in mind as you build a calmer evening rhythm.
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(180)} style={{ marginTop: 44 }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(3 * STAGGER)} style={{ marginTop: 44 }}>
             <SleepGoalDial value={goalHours} onChange={setGoalHours} />
           </Animated.View>
         </View>
@@ -498,23 +496,21 @@ export function Onboarding() {
   // ---- personalization quiz ----
   if (stage === 'quiz') {
     return (
-      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <AmbientMotes />
-        <OnboardingHeader onSkip={finish} />
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>        <OnboardingHeader onSkip={finish} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
             <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
               How are you arriving tonight?
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12, alignSelf: 'center' }}>
               Just so we can start you somewhere that fits. There’s no wrong answer.
             </AppText>
           </Animated.View>
           <View style={{ gap: 10, marginTop: 28 }}>
             {FEELINGS.map((f, idx) => (
-              <Animated.View key={f.id} entering={FadeInDown.duration(dur.screen).delay(160 + idx * 60)}>
+              <Animated.View key={f.id} entering={FadeInDown.duration(dur.screen).delay((3 + idx) * STAGGER)}>
                 <PressableScale
                   onPress={() => pick(f.id)}
                   onPressIn={lightTap}
@@ -550,21 +546,19 @@ export function Onboarding() {
   // ---- choose the guided voice ----
   if (stage === 'voice') {
     return (
-      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <AmbientMotes />
-        <OnboardingHeader onSkip={finish} />
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>        <OnboardingHeader onSkip={finish} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Animated.View entering={FadeInDown.duration(dur.screen)}>
             <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
               Choose your voice
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
               Tap to preview — or keep the default and change it any time in Settings.
             </AppText>
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(180)} style={{ marginTop: 28 }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(3 * STAGGER)} style={{ marginTop: 28 }}>
             <VoicePicker />
           </Animated.View>
         </View>
@@ -579,9 +573,7 @@ export function Onboarding() {
     const picked = TRACKS[map.track];
     const track = picked && !picked.locked ? picked : TRACKS['slow-tide'];
     return (
-      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>
-        <AmbientMotes />
-        <View style={{ minHeight: 28 }}>
+      <Screen contentStyle={{ flex: 1, paddingTop: 8, paddingBottom: 28 }}>        <View style={{ minHeight: 28 }}>
           <Logo size="sm" />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -593,7 +585,7 @@ export function Onboarding() {
               accessibilityIgnoresInvertColors
             />
           </Animated.View>
-          <Animated.View entering={FadeInDown.duration(dur.screen).delay(220)} style={{ alignItems: 'center' }}>
+          <Animated.View entering={FadeInDown.duration(dur.screen).delay(4 * STAGGER)} style={{ alignItems: 'center' }}>
             <AppText variant="caption" tone="accent" style={{ marginTop: 20 }}>
               {map.line}
             </AppText>
@@ -640,7 +632,7 @@ export function Onboarding() {
             {slide.title}
           </AppText>
         </Animated.View>
-        <Animated.View key={`body-${i}`} entering={FadeInDown.duration(dur.screen).delay(90)} style={{ alignItems: 'center' }}>
+        <Animated.View key={`body-${i}`} entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)} style={{ alignItems: 'center' }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12 }}>
             {slide.body}
           </AppText>

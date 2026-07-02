@@ -9,7 +9,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
-import { brand, fonts, night, useTheme } from '@/theme';
+import { brand, dur, fonts, night, useTheme } from '@/theme';
 import { GlowOrb } from './GlowOrb';
 
 type Size = 'md' | 'lg';
@@ -24,7 +24,12 @@ const S: Record<
 };
 
 // Whole-reveal length. The wordmark lands by ~TOTAL; the orb keeps breathing after.
+// Functional cadence for the signature reveal timeline — intentionally hardcoded,
+// not a dur.* token (it is the master clock the glyph windows are cut from).
 const TOTAL = 2200;
+// Beat-hold on the settled lockup before handing off — a designed pause so the
+// brand registers. Functional cadence, intentionally hardcoded (no dur.* token).
+const HOLD = 650;
 
 // smoothstep — a gentle, worklet-safe ease (3t²−2t³); calmer than linear, no mid snap.
 function smoothstep(x: number): number {
@@ -108,12 +113,15 @@ export function AnimatedLogo({
   useEffect(() => {
     if (reduced) {
       p.value = 1;
-      const t = setTimeout(() => onDone?.(), 500);
+      // reduced motion: show the final lockup for one token beat, then hand off
+      const t = setTimeout(() => onDone?.(), dur.modal);
       return () => clearTimeout(t);
     }
+    // Master timeline driver: linear ON PURPOSE (sanctioned exception) — each
+    // glyph eases inside its own smoothstep window via win(), so easing the
+    // clock itself would compound curves and skew the cascade rhythm.
     p.value = withTiming(1, { duration: TOTAL, easing: Easing.linear });
-    // hold a beat on the settled lockup before handing off
-    const t = setTimeout(() => onDone?.(), TOTAL + 650);
+    const t = setTimeout(() => onDone?.(), TOTAL + HOLD);
     return () => clearTimeout(t);
   }, [reduced, p, onDone]);
 

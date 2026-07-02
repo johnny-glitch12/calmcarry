@@ -21,7 +21,12 @@ export function BearMascot({ size = 140, style, breathing = true }: { size?: num
   const reduced = useReducedMotion();
   const t = useSharedValue(0);
   useEffect(() => {
-    if (reduced || !breathing) return;
+    if (reduced || !breathing) {
+      // rest at scale 1 — a legible resting state even if reduced-motion (or the
+      // breathing prop) flips mid-loop, instead of freezing mid-breath
+      t.value = 0;
+      return;
+    }
     // sine in/out so the breath decelerates smoothly into each turn-around (no snap)
     t.value = withRepeat(withTiming(1, { duration: dur.breath, easing: ease.sine }), -1, true);
     return () => cancelAnimation(t);

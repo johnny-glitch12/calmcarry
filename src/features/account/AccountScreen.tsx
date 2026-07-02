@@ -51,7 +51,9 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
         <Switch
           value={toggle}
           onValueChange={onToggle}
-          accessibilityLabel={label}
+          accessible={false}
+          importantForAccessibility="no"
+          pointerEvents="none"
           trackColor={{ false: offTrack, true: c.accent }}
           thumbColor="#FFFFFF"
           ios_backgroundColor={offTrack}
@@ -69,7 +71,19 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
     </View>
   );
 
-  if (toggle !== undefined) return <View style={{ paddingHorizontal: 16 }}>{content}</View>;
+  if (toggle !== undefined)
+    return (
+      <PressableScale
+        onPress={() => onToggle?.(!toggle)}
+        onPressIn={lightTap}
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: toggle }}
+        dimTo={0.94}
+        style={{ paddingHorizontal: 16 }}>
+        {content}
+      </PressableScale>
+    );
   return (
     <PressableScale
       onPress={onPress}
@@ -142,9 +156,9 @@ export function AccountScreen() {
     setReminder(scheduled);
     setJSON('cc.reminder', scheduled);
   };
-  // let the user choose their wind-down time; reschedule live if the reminder is on
-  const cycleReminderTime = async () => {
-    const next = (reminderIdx + 1) % REMINDER_TIMES.length;
+  // let the user pick their wind-down time from a visible list (no blind tap-to-cycle);
+  // reschedule live if the reminder is on
+  const pickReminderTime = async (next: number) => {
     setReminderIdx(next);
     setJSON('cc.reminderTimeIdx', next);
     if (reminder) {
@@ -234,12 +248,16 @@ export function AccountScreen() {
 
       {/* entitlement */}
       <Reveal index={1} style={{ marginTop: 24 }}>
+        {/* For premium users the card is not a link — an accidental brush shouldn't eject them to
+            the OS billing screen. Manage lives explicitly in the Subscription row below. Free users
+            still tap through to unlock. */}
         <PressableScale
-          onPress={() => (isPremium ? Linking.openURL(SUBSCRIPTION_URL).catch(() => {}) : router.push('/unlock'))}
-          onPressIn={lightTap}
-          accessibilityRole="button"
-          scaleTo={0.98}
-          dimTo={0.95}>
+          onPress={() => (isPremium ? undefined : router.push('/unlock'))}
+          onPressIn={isPremium ? undefined : lightTap}
+          disabled={isPremium}
+          accessibilityRole={isPremium ? undefined : 'button'}
+          scaleTo={isPremium ? 1 : 0.98}
+          dimTo={isPremium ? 1 : 0.95}>
         <View
           style={{
             borderRadius: 20,
@@ -282,8 +300,8 @@ export function AccountScreen() {
           value={SCHEMES.indexOf(pref)}
           onChange={(i) => setPref(SCHEMES[i])}
         />
-        <AppText variant="label" tone="muted" style={{ marginTop: 20, marginBottom: 10 }}>
-          Mode: kids mode shows bedtime stories & gentle sounds
+        <AppText variant="label" tone="muted" style={{ marginTop: 20, marginBottom: 10, textTransform: 'none', letterSpacing: 0 }}>
+          Kids mode shows bedtime stories and gentle sounds.
         </AppText>
         <Segmented
           options={['Adult', 'Kids']}
@@ -309,7 +327,19 @@ export function AccountScreen() {
             <SettingRow icon="bell" label="Bedtime reminder" toggle={reminder} onToggle={toggleReminder} />
           ) : null}
           {remindersSupported && reminder ? (
-            <SettingRow icon="clock" label="Reminder time" value={REMINDER_TIMES[reminderIdx].label} onPress={cycleReminderTime} />
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: c.line, gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <Feather name="clock" size={18} color={c.accent} />
+                <AppText variant="cardTitle" tone="title">
+                  Reminder time
+                </AppText>
+              </View>
+              <Segmented
+                options={REMINDER_TIMES.map((t) => t.label)}
+                value={reminderIdx}
+                onChange={pickReminderTime}
+              />
+            </View>
           ) : null}
           <SettingRow icon="mic" label="Guided voice" value={voiceName} onPress={() => router.push('/voice' as Href)} />
           <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} last />
@@ -335,7 +365,7 @@ export function AccountScreen() {
           />
           <SettingRow icon="box" label="My CalmCarry" onPress={() => router.push('/device' as Href)} />
           <SettingRow icon="users" label="Family & devices" onPress={() => router.push('/family')} />
-          <SettingRow icon="bell" label="Notifications" onPress={() => Linking.openSettings().catch(() => {})} />
+          <SettingRow icon="sliders" label="Notifications" value="System settings" onPress={() => Linking.openSettings().catch(() => {})} />
           <SettingRow icon="shield" label="Your data & privacy" onPress={() => router.push('/privacy' as Href)} />
           {token && token !== 'local' ? (
             <SettingRow icon="download" label="Export my data" onPress={onExport} />
@@ -378,9 +408,7 @@ export function AccountScreen() {
             {deleting
               ? 'Deleting…'
               : confirmDelete
-                ? isPremium
-                  ? 'Tap again to delete everything. Your subscription bills through the App Store / Google Play, so cancel it there too.'
-                  : 'Tap again to permanently delete your account & data'
+                ? 'Tap again to permanently delete your account & data'
                 : 'Delete account'}
           </AppText>
         </PressableScale>

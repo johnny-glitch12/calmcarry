@@ -25,19 +25,31 @@ export function ClaimDevice() {
       return;
     }
     let alive = true;
+    // Never let a slow/captive network gate entry: if the match hasn't answered in
+    // ~5s, fall through to the (non-gating) 'none' screen so there's always a way in.
+    const fallback = setTimeout(() => alive && setPhase('none'), 5000);
     api
       .ownershipMatch(token)
-      .then((r) => alive && setPhase(r.verifiedOwner ? 'owner' : 'none'))
-      .catch(() => alive && setPhase('none'));
+      .then((r) => {
+        if (!alive) return;
+        clearTimeout(fallback);
+        setPhase(r.verifiedOwner ? 'owner' : 'none');
+      })
+      .catch(() => {
+        if (!alive) return;
+        clearTimeout(fallback);
+        setPhase('none');
+      });
     return () => {
       alive = false;
+      clearTimeout(fallback);
     };
   }, [token]);
 
   const enter = () => router.replace('/');
 
   return (
-    <Screen mode="light" scroll contentStyle={{ alignItems: 'center', paddingTop: 48 }}>
+    <Screen scroll contentStyle={{ alignItems: 'center', paddingTop: 48 }}>
       <GlowOrb size={132} reserveGlow aura burst={phase === 'owner'}>
         {phase === 'owner' ? <Feather name="check" size={40} color="#FFFFFF" /> : null}
       </GlowOrb>
@@ -50,6 +62,15 @@ export function ClaimDevice() {
           <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
             Checking your account for a Glow Company order.
           </AppText>
+          <PressableScale
+            onPress={enter}
+            accessibilityRole="button"
+            dimTo={0.85}
+            style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 28 }}>
+            <AppText variant="body" tone="muted">
+              Not now
+            </AppText>
+          </PressableScale>
         </Reveal>
       ) : phase === 'owner' ? (
         <>
@@ -80,10 +101,14 @@ export function ClaimDevice() {
             </AppText>
           </Reveal>
           <Reveal index={1} style={{ alignSelf: 'stretch', marginTop: 28, gap: 10 }}>
-            <PrimaryButton label="Register my Glow Orb" onPress={() => router.push('/register-device' as Href)} />
-            <PressableScale onPress={enter} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 12 }}>
-              <AppText variant="label" tone="muted">
-                Skip, I don’t have one yet
+            <PrimaryButton label="Continue" onPress={enter} />
+            <PressableScale
+              onPress={() => router.push('/register-device' as Href)}
+              accessibilityRole="button"
+              dimTo={0.85}
+              style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center' }}>
+              <AppText variant="body" tone="muted">
+                Register my Glow Orb
               </AppText>
             </PressableScale>
           </Reveal>

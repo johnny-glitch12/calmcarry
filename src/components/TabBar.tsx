@@ -31,10 +31,13 @@ type TabBarProps = {
 };
 
 /** Route name → label + Feather icon. One outline icon family, no emoji (§7). */
-const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
+const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap; night?: boolean }> = {
   index: { label: 'Home', icon: 'home' },
   sounds: { label: 'Library', icon: 'compass' },
-  listen: { label: 'Listen', icon: 'music' },
+  // the Listen screen forces night mode (<Screen mode="night">); the bar must
+  // match so a light-preference user doesn't get a bright cream strip pinned to a
+  // dark sleep screen at 3am.
+  listen: { label: 'Listen', icon: 'music', night: true },
   community: { label: 'Community', icon: 'users' },
   you: { label: 'Profile', icon: 'user' },
 };
@@ -165,8 +168,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const { effective } = useColorSchemePref();
   const { mode } = useProfile();
   const kids = mode === 'kids';
-  const dark = effective === 'night';
-  const t = themes[effective];
+  // the focused route may force night (e.g. the Listen/sleep screen) regardless of
+  // the user's appearance preference; match it so the bar stays dark on that screen.
+  const dark = effective === 'night' || Boolean(TABS[state.routes[state.index]?.name]?.night);
+  const t = themes[dark ? 'night' : effective];
   const inactive = t.muted;
   // active pill = brand SAGE in BOTH themes (matching the reference), with dark
   // eucalyptus content so the label clears WCAG AA — white-on-sage is only 2.75:1,

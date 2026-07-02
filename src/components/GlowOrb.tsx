@@ -115,8 +115,10 @@ export function GlowOrb({
   });
 
   // Sphere sheen: lighter top-left → accent bottom-right gives a lit-from-above sphere.
+  // Night dims to the orb/glow token (#8FC9BE) → deeper sage so the sphere is no
+  // longer the brightest object in the app when stared at while falling asleep.
   const sphereColors: [string, string] = isNight
-    ? ['#B6E0D6', '#5E9C92']
+    ? ['#8FC9BE', '#4E837A']
     : ['#EAF5F2', c.accent];
   const haloColor = c.accent;
   const haloSize = size * 1.6;
@@ -142,7 +144,7 @@ export function GlowOrb({
             height: haloSize,
             borderRadius: haloSize / 2,
             backgroundColor: haloColor,
-            opacity: isNight ? 0.28 : 0.16,
+            opacity: isNight ? 0.2 : 0.16,
           }}
         />
       </Animated.View>
@@ -195,7 +197,7 @@ export function GlowOrb({
               height: size * 0.3,
               borderRadius: size * 0.15,
               backgroundColor: '#FFFFFF',
-              opacity: isNight ? 0.18 : 0.35,
+              opacity: isNight ? 0.1 : 0.35,
             }}
           />
           {children}

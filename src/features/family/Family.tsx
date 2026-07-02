@@ -66,6 +66,7 @@ export function Family() {
     }
     if (confirmRemoveId !== p.id) {
       setConfirmRemoveId(p.id); // two-tap confirm — first tap arms, second removes
+      setTimeout(() => setConfirmRemoveId(null), 5000); // auto-disarm so a stray tap can't sit armed for days
       return;
     }
     removeProfile(p.id);
@@ -177,11 +178,14 @@ export function Family() {
                   <PressableScale
                     onPress={() => onRemove(p)}
                     onPressIn={lightTap}
-                    hitSlop={8}
+                    hitSlop={12}
                     accessibilityRole="button"
                     accessibilityLabel={`Remove ${p.name}`}
-                    dimTo={0.85}>
-                    <AppText variant="label" style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent }}>
+                    dimTo={0.85}
+                    style={{ paddingVertical: 12 }}>
+                    <AppText
+                      variant="label"
+                      style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent, textTransform: 'none', letterSpacing: 0 }}>
                       {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
                     </AppText>
                   </PressableScale>
@@ -252,9 +256,10 @@ export function Family() {
           <PressableScale
             onPress={() => router.push('/shop')}
             onPressIn={lightTap}
+            hitSlop={8}
             accessibilityRole="button"
             dimTo={0.85}
-            style={{ alignItems: 'center', paddingVertical: 6 }}>
+            style={{ alignItems: 'center', paddingVertical: 12 }}>
             <AppText variant="meta" tone="muted">
               Need another?{' '}
               <AppText variant="label" style={{ color: c.textAccent }}>
@@ -274,8 +279,8 @@ export function Family() {
               <AppText variant="cardTitle" tone="title">
                 Kids&apos; mode
               </AppText>
-              <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
-                A gentle, gamified wind-down a child can run themselves
+              <AppText variant="label" tone="muted" style={{ marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
+                A gentle wind-down a child can run themselves.
               </AppText>
             </View>
             <Switch
@@ -323,7 +328,7 @@ export function Family() {
               <AppText variant="cardTitle" tone="title">
                 Caregivers
               </AppText>
-              <AppText variant="label" tone="muted">
+              <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
                 Share with a partner or grandparent, one subscription covers everyone
               </AppText>
             </View>

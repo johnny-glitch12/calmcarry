@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from 'react-native';
 import Animated, {
@@ -56,12 +56,10 @@ const SLIDES: Slide[] = [
 ];
 
 const FEELINGS: { id: Feeling; emoji: string; label: string }[] = [
-  { id: 'racing', emoji: '💭', label: 'My mind’s racing' },
-  { id: 'cant-switch-off', emoji: '💡', label: 'I can’t switch off' },
-  { id: 'wired-tired', emoji: '⚡', label: 'Wired but tired' },
-  { id: 'wound-up', emoji: '🌀', label: 'I’m wound up' },
-  { id: 'heavy-day', emoji: '🌧️', label: 'It’s been a heavy day' },
   { id: 'quiet', emoji: '🌙', label: 'I just want quiet' },
+  { id: 'racing', emoji: '💭', label: 'My mind’s racing' },
+  { id: 'wired-tired', emoji: '⚡', label: 'Wired but tired' },
+  { id: 'heavy-day', emoji: '🌧️', label: 'It’s been a heavy day' },
 ];
 
 /** A cover that drifts up-and-down forever on the UI thread (transform only),
@@ -128,8 +126,12 @@ function OnboardingHeader({ onSkip }: { onSkip?: () => void }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
       <Logo size="sm" />
       {onSkip ? (
-        <PressableScale onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button" dimTo={0.85}>
-          <AppText variant="label" tone="muted">
+        <PressableScale
+          onPress={onSkip}
+          accessibilityRole="button"
+          dimTo={0.85}
+          style={{ paddingVertical: 12, paddingHorizontal: 12, minHeight: 44, justifyContent: 'center' }}>
+          <AppText variant="body" tone="muted">
             Skip
           </AppText>
         </PressableScale>
@@ -208,7 +210,6 @@ function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: numbe
       <View
         onLayout={(e) => setVw(e.nativeEvent.layout.width)}
         style={{ width: '100%', height: 66, marginTop: 30 }}
-        accessibilityRole="adjustable"
         accessibilityLabel="Nightly sleep goal in hours"
         accessibilityValue={{ text: `${value} hours` }}>
         {/* fixed centre indicator that the ruler slides under */}
@@ -267,7 +268,7 @@ function TransformCard({ cover, label, dim, style }: { cover: CoverKey; label: s
     <View style={[{ width: 166, height: 188, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }, style]}>
       <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
       <LinearGradient
-        colors={dim ? ['rgba(16,22,30,0.32)', 'rgba(16,22,30,0.8)'] : ['rgba(20,30,28,0.04)', 'rgba(20,30,28,0.4)']}
+        colors={dim ? ['rgba(16,22,30,0.32)', 'rgba(16,22,30,0.8)'] : ['rgba(20,30,28,0.4)', 'rgba(20,30,28,0.5)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={{ flex: 1, padding: 14 }}>
@@ -339,7 +340,7 @@ export function Onboarding() {
   const router = useRouter();
   const { c } = useTheme();
   const { setFeeling } = useProfile();
-  const [stage, setStage] = useState<'welcome' | 'intro' | 'transform' | 'progress' | 'goal' | 'quiz' | 'voice' | 'result'>('welcome');
+  const [stage, setStage] = useState<'welcome' | 'intro' | 'transform' | 'progress' | 'goal' | 'quiz' | 'voice' | 'result'>('intro');
   const [i, setI] = useState(0);
   const [chosen, setChosen] = useState<Feeling | null>(null);
   const [goalHours, setGoalHours] = useState(SLEEP_GOAL_DEFAULT);
@@ -560,14 +561,14 @@ export function Onboarding() {
           </Animated.View>
           <Animated.View entering={FadeInDown.duration(dur.screen).delay(90)}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 330, marginTop: 12, alignSelf: 'center' }}>
-              The voice that guides your wind-downs. Tap to hear each, then pick the one that settles you. You can change it any time in Settings.
+              Tap to preview — or keep the default and change it any time in Settings.
             </AppText>
           </Animated.View>
           <Animated.View entering={FadeInDown.duration(dur.screen).delay(180)} style={{ marginTop: 28 }}>
             <VoicePicker />
           </Animated.View>
         </View>
-        <PrimaryButton label="Continue" onPress={() => setStage('result')} />
+        <PrimaryButton label="Sounds good" onPress={() => setStage('result')} />
       </Screen>
     );
   }
@@ -600,14 +601,20 @@ export function Onboarding() {
               We’ll start you with {track.title}
             </AppText>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300, marginTop: 10 }}>
-              It’s yours free tonight. Create your account to keep your picks across the household.
+              It’s yours free tonight. An account is optional — it keeps your picks across the household.
             </AppText>
           </Animated.View>
         </View>
-        <PrimaryButton label="Create your account" onPress={finish} />
-        <PressableScale onPress={() => setStage('quiz')} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
-          <AppText variant="label" tone="muted">
-            Choose again
+        <PrimaryButton
+          label="Start listening"
+          onPress={() => {
+            markOnboarded();
+            router.replace(`/player?id=${track.id}` as Href);
+          }}
+        />
+        <PressableScale onPress={finish} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
+          <AppText variant="body" tone="muted">
+            Create an account
           </AppText>
         </PressableScale>
       </Screen>
@@ -647,18 +654,24 @@ export function Onboarding() {
         ))}
       </View>
 
-      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('transform') : setI((v) => v + 1))} />
+      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))} />
       {i > 0 ? (
         <PressableScale
           onPress={() => setI((v) => Math.max(0, v - 1))}
           accessibilityRole="button"
           dimTo={0.85}
-          style={{ alignItems: 'center', paddingVertical: 12, marginTop: 4 }}>
-          <AppText variant="label" tone="muted">
+          style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
+          <AppText variant="body" tone="muted">
             Back
           </AppText>
         </PressableScale>
-      ) : null}
+      ) : (
+        <PressableScale onPress={finish} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
+          <AppText variant="body" tone="muted">
+            I already have an account. <AppText variant="body" style={{ color: c.textAccent }}>Sign in</AppText>
+          </AppText>
+        </PressableScale>
+      )}
     </Screen>
   );
 }

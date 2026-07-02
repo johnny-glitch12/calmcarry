@@ -73,7 +73,7 @@ export function LearnArticle() {
         {article.cover ? (
           <Image source={covers[article.cover]} style={{ width: '100%', height: 160, borderRadius: 20 }} contentFit="cover" accessibilityIgnoresInvertColors />
         ) : null}
-        <AppText variant="caption" tone="accent" style={{ marginTop: 18 }}>
+        <AppText variant="meta" tone="accent" style={{ marginTop: 18 }}>
           {article.kicker} · {article.readMins} min
         </AppText>
         <AppText variant="display" tone="title" style={{ marginTop: 6 }}>
@@ -99,7 +99,7 @@ export function LearnArticle() {
             borderColor: c.line,
             padding: 14,
           }}>
-          <AppText variant="meta" tone="dim" style={{ lineHeight: 16 }}>
+          <AppText variant="meta" tone="dim">
             {WELLNESS_DISCLAIMER}
           </AppText>
         </View>

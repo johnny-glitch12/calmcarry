@@ -416,7 +416,10 @@ export function Player() {
 
   const cycleSleep = () => {
     const i = (SLEEP_OPTIONS as readonly number[]).indexOf(sleepMin);
-    const next = SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
+    // From Off, jump straight to a sane 30-min timer — one groggy tap gets the app's own
+    // "won't loop all night" promise, instead of four taps through 15 → 30. The full
+    // cycle (30 → 45 → 60 → Off → 30) is still reachable from there.
+    const next = sleepMin === 0 ? 30 : SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
     setSleepMin(next);
     setJSON('cc.sleepTimerMin', next);
     haptic();
@@ -433,14 +436,14 @@ export function Player() {
           {/* sleep / auto-stop timer — taps cycle Off → 15 → 30 → 45 → 60 min */}
           <PressableScale
             onPress={cycleSleep}
-            hitSlop={10}
+            hitSlop={14}
             accessibilityRole="button"
             accessibilityLabel={sleepMin ? `Sleep timer set to ${sleepMin} minutes. Tap to change.` : 'Set a sleep timer'}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               gap: 6,
-              paddingVertical: 7,
+              paddingVertical: 12,
               paddingHorizontal: 13,
               borderRadius: 18,
               borderWidth: 1,
@@ -497,8 +500,11 @@ export function Player() {
           {/* breath pacer */}
           <View style={{ height: 22, marginTop: 28, justifyContent: 'center' }}>
             {!reduced ? (
-              <AppText variant="caption" tone="accent" style={{ letterSpacing: 2.5 }}>
-                {phase === 'in' ? 'BREATHE IN' : 'BREATHE OUT'}
+              // Sentence case, default tracking: the one piece of copy the user follows
+              // continuously in the dark should be the easiest to read with tired eyes,
+              // not tracked-out all-caps micro type.
+              <AppText variant="label" tone="accent">
+                {phase === 'in' ? 'Breathe in' : 'Breathe out'}
               </AppText>
             ) : null}
           </View>
@@ -514,10 +520,11 @@ export function Player() {
           {loadFailed ? (
             <PressableScale
               onPress={retryLoad}
+              hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel="Couldn't load this session. Tap to try again."
               dimTo={0.85}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 18 }}>
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, minHeight: 44 }}>
               <Feather name="refresh-cw" size={13} color={c.accent} />
               <AppText variant="caption" tone="dim">
                 Couldn’t load this session. Tap to try again.

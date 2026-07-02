@@ -53,6 +53,10 @@ const TIMERS = [0, 15, 30, 60] as const;
 type SavedMix = { name: string; levels: Levels };
 type TimerState = { endAt: number; mins: number };
 
+// module scope (not component body): keeps the impure Date.now() out of render-path
+// analysis while computing the timer's absolute end time.
+const timerStateFor = (mins: number): TimerState => ({ endAt: Date.now() + mins * 60 * 1000, mins });
+
 function haptic() {
   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 }
@@ -106,7 +110,8 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
             liftStyle,
           ]}>
           <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
-          <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.54)', padding: 12, justifyContent: 'space-between' }}>
+          {/* locked tiles carry a heavier scrim so tired eyes read them as dimmed/paywalled before committing a tap */}
+          <View style={{ flex: 1, backgroundColor: locked ? 'rgba(20,30,28,0.72)' : 'rgba(20,30,28,0.54)', padding: 12, justifyContent: 'space-between' }}>
             <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, overflow: 'hidden', backgroundColor: locked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
               {/* accent fill fades in behind the icon when active (opacity-only) */}
               {!locked ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: c.accent }, fillStyle]} /> : null}
@@ -125,7 +130,14 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
                 )}
               </Animated.View>
             </View>
-            <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 15, color: '#FFFFFF' }}>{label}</AppText>
+            <View>
+              <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 15, color: '#FFFFFF' }}>{label}</AppText>
+              {locked ? (
+                <AppText variant="meta" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                  Calm Plan
+                </AppText>
+              ) : null}
+            </View>
           </View>
           {/* accent activation ring — fades in over the tile edge (avoids animating borderColor) */}
           {!locked ? (
@@ -138,20 +150,20 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
       </PressableScale>
       {/* per-sound volume — 3 levels (a locked tile shows a matching spacer instead) */}
       {locked ? (
-        <View style={{ height: 8, marginTop: 8 }} />
+        <View style={{ height: 12, marginTop: 8 }} />
       ) : (
-        <Animated.View style={[{ flexDirection: 'row', gap: 6, marginTop: 8, height: 8 }, barsStyle]}>
+        <Animated.View style={[{ flexDirection: 'row', gap: 6, marginTop: 8, height: 12 }, barsStyle]}>
           {[1, 2, 3].map((l) => (
             <PressableScale
               key={l}
               onPress={() => onLevel(l)}
               disabled={!on}
-              hitSlop={{ top: 18, bottom: 18, left: 4, right: 4 }}
+              hitSlop={{ top: 18, bottom: 18, left: 6, right: 6 }}
               style={{ flex: 1 }}
               accessibilityRole="button"
               accessibilityState={{ selected: on && level >= l, disabled: !on }}
               accessibilityLabel={`Volume level ${l}`}>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: on && level >= l ? c.accent : c.line }} />
+              <View style={{ height: 10, borderRadius: 5, backgroundColor: on && level >= l ? c.accent : c.line }} />
             </PressableScale>
           ))}
         </Animated.View>
@@ -247,7 +259,9 @@ export function ListenScreen() {
       router.push('/unlock' as Href);
       return;
     }
-    setLevels((prev) => ({ ...prev, [k]: prev[k] > 0 ? 0 : 3 }));
+    // start at medium, never full — a face-full of max-volume rain at 3am jolts a
+    // drowsy user (and a sleeping partner) awake; the level bars still allow one tap up.
+    setLevels((prev) => ({ ...prev, [k]: prev[k] > 0 ? 0 : 2 }));
   };
   const setLevel = (k: SoundKey, l: number) => setLevels((prev) => ({ ...prev, [k]: l }));
 
@@ -277,14 +291,14 @@ export function ListenScreen() {
     }, 300);
   };
 
-  const cycleTimer = () => {
+  // Set the sleep timer to an exact duration — one direct tap, no cycle-and-read loop.
+  const setTimerTo = (mins: number) => {
     haptic();
-    const next = TIMERS[(TIMERS.indexOf(timer as (typeof TIMERS)[number]) + 1) % TIMERS.length];
-    setTimer(next);
+    setTimer(mins);
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (next > 0) {
-      const ms = next * 60 * 1000;
-      setJSON('cc.sleepTimer', { endAt: Date.now() + ms, mins: next });
+    if (mins > 0) {
+      const ms = mins * 60 * 1000;
+      setJSON('cc.sleepTimer', timerStateFor(mins));
       timerRef.current = setTimeout(fadeAndStop, ms);
     } else {
       remove('cc.sleepTimer');
@@ -313,7 +327,11 @@ export function ListenScreen() {
   const saveMix = () => {
     if (!anyOn) return;
     haptic();
-    const next = [...mixes, { name: `Mix ${mixes.length + 1}`, levels }].slice(-12);
+    // name the mix from its active sounds so chips are self-describing ("Rain · Ocean"),
+    // not indistinguishable "Mix 1 / Mix 2" — same naming shareMix already uses
+    const active = SOUNDS.filter((s) => levels[s.key] > 0);
+    const name = active.slice(0, 3).map((s) => s.label).join(' · ') || `Mix ${mixes.length + 1}`;
+    const next = [...mixes, { name, levels }].slice(-12);
     setMixes(next);
     setJSON('cc.mixes', next);
   };
@@ -404,44 +422,9 @@ export function ListenScreen() {
         </AppText>
       </Reveal>
 
-      {/* Music — lyric-free instrumental tracks (plan §7: Listen = Music + Sound machine) */}
-      <Reveal index={1} style={{ marginTop: 24, paddingHorizontal: 24 }}>
-        <SectionHeader kicker="Music" title="Lyric-free, to drift to" />
-        <View style={{ gap: 12 }}>
-          {MUSIC_IDS.map((id) => {
-            const t = TRACKS[id];
-            if (!t) return null;
-            const locked = !kids && !!t.locked && !isPremium;
-            return (
-              <PressableScale
-                key={id}
-                onPress={() => router.push((locked ? `/unlock?id=${id}` : `/player?id=${id}`) as Href)}
-                onPressIn={haptic}
-                accessibilityRole="button"
-                accessibilityLabel={`Play ${t.title}`}
-                scaleTo={0.98}
-                dimTo={0.95}>
-                <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                  <Image source={covers[t.cover]} style={{ width: 56, height: 56, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodyMedium" tone="title">
-                      {t.title}
-                    </AppText>
-                    <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
-                      Lyric-free · {t.duration}
-                    </AppText>
-                  </View>
-                  <Feather name={locked ? 'lock' : 'play'} size={18} color={c.textAccent} />
-                </Card>
-              </PressableScale>
-            );
-          })}
-        </View>
-      </Reveal>
-
-      {/* saved mixes */}
+      {/* saved mixes — the fastest path back to last night's blend, so it sits first */}
       {mixes.length > 0 ? (
-        <Reveal index={1} style={{ marginTop: 20 }}>
+        <Reveal index={1} style={{ marginTop: 24 }}>
           <View style={{ paddingHorizontal: 24 }}>
             <SectionHeader kicker="Saved" title="Your mixes" />
           </View>
@@ -483,20 +466,37 @@ export function ListenScreen() {
 
       {/* master controls */}
       <Reveal index={3} style={{ marginTop: 28, paddingHorizontal: 24 }}>
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <PressableScale
-            onPress={cycleTimer}
-            accessibilityRole="button"
-            style={{ flex: 1 }}
-            scaleTo={0.98}
-            dimTo={0.95}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: timer > 0 ? c.panelStrong : c.surface, borderWidth: 1, borderColor: timer > 0 ? c.accent : c.line }}>
-              <Feather name="moon" size={16} color={c.textAccent} />
-              <AppText variant="cardTitle" tone="title">
-                {timer > 0 ? `${timer} min` : 'Sleep timer'}
-              </AppText>
-            </View>
-          </PressableScale>
+        {/* sleep timer — one direct tap to any duration, no blind cycle-and-read loop */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <Feather name="moon" size={16} color={c.textAccent} />
+          <AppText variant="cardTitle" tone="title">
+            Sleep timer
+          </AppText>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {TIMERS.map((m) => {
+            const active = timer === m;
+            return (
+              <PressableScale
+                key={m}
+                onPress={() => setTimerTo(m)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={m === 0 ? 'Timer off' : `Sleep timer ${m} minutes`}
+                style={{ flex: 1 }}
+                scaleTo={0.98}
+                dimTo={0.95}>
+                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 14, backgroundColor: active ? c.panelStrong : c.surface, borderWidth: 1, borderColor: active ? c.accent : c.line }}>
+                  <AppText variant="cardTitle" tone="title">
+                    {m === 0 ? 'Off' : `${m}`}
+                  </AppText>
+                </View>
+              </PressableScale>
+            );
+          })}
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
           <PressableScale
             onPress={saveMix}
             disabled={!anyOn}
@@ -512,6 +512,24 @@ export function ListenScreen() {
             </View>
           </PressableScale>
         </View>
+
+        {/* Stop all — THE in-bed action: a full-width chip, above share, so silencing
+            everything reads before the lesser share/save affordances */}
+        {anyOn ? (
+          <PressableScale
+            onPress={stopAll}
+            accessibilityRole="button"
+            accessibilityLabel="Stop all sounds"
+            scaleTo={0.98}
+            dimTo={0.95}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
+            <Feather name="square" size={16} color={c.textAccent} />
+            <AppText variant="cardTitle" tone="title">
+              Stop all
+            </AppText>
+          </PressableScale>
+        ) : null}
+
         {anyOn && !kids && !!token && token !== 'local' ? (
           <PressableScale
             onPress={shareMix}
@@ -530,13 +548,42 @@ export function ListenScreen() {
             {shareNote}
           </AppText>
         ) : null}
-        {anyOn ? (
-          <PressableScale onPress={stopAll} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 16 }}>
-            <AppText variant="label" tone="muted">
-              Stop all
-            </AppText>
-          </PressableScale>
-        ) : null}
+      </Reveal>
+
+      {/* Music — lyric-free instrumental tracks. Last, because the one-tap sound grid
+          above is the fastest path to something calming; music is a deliberate choice. */}
+      <Reveal index={4} style={{ marginTop: 28, paddingHorizontal: 24 }}>
+        <SectionHeader kicker="Music" title="Lyric-free, to drift to" />
+        <View style={{ gap: 12 }}>
+          {MUSIC_IDS.map((id) => {
+            const t = TRACKS[id];
+            if (!t) return null;
+            const locked = !kids && !!t.locked && !isPremium;
+            return (
+              <PressableScale
+                key={id}
+                onPress={() => router.push((locked ? `/unlock?id=${id}` : `/player?id=${id}`) as Href)}
+                onPressIn={haptic}
+                accessibilityRole="button"
+                accessibilityLabel={`Play ${t.title}`}
+                scaleTo={0.98}
+                dimTo={0.95}>
+                <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                  <Image source={covers[t.cover]} style={{ width: 56, height: 56, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodyMedium" tone="title">
+                      {t.title}
+                    </AppText>
+                    <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+                      Lyric-free · {t.duration}
+                    </AppText>
+                  </View>
+                  <Feather name={locked ? 'lock' : 'play'} size={18} color={c.textAccent} />
+                </Card>
+              </PressableScale>
+            );
+          })}
+        </View>
       </Reveal>
     </Screen>
   );

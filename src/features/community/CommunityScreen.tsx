@@ -12,7 +12,6 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withRepeat,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -121,6 +120,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
           accessibilityRole="button"
           accessibilityState={{ selected: carried }}
           accessibilityLabel={carried ? 'You carried this win' : 'Acknowledge this win'}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
           style={{ alignSelf: 'flex-start', marginTop: 12 }}>
           <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, reactStyle]}>
             <Feather name="heart" size={14} color={carried ? c.textAccent : c.accent} />
@@ -165,17 +165,6 @@ export function CommunityScreen() {
   const [error, setError] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [filter, setFilter] = useState<'latest' | 'mix'>('latest');
-
-  // gentle "live" pulse on the presence dot (opacity only, breathing cadence, reduced-gated)
-  const pulse = useSharedValue(1);
-  useEffect(() => {
-    if (reduced || !presence) {
-      pulse.value = 1;
-      return;
-    }
-    pulse.value = withRepeat(withTiming(0.4, { duration: dur.breath, easing: ease.sine }), -1, true);
-  }, [reduced, presence, pulse]);
-  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
   // gentle cross-fade of the list when the filter changes (opacity only)
   const listFade = useSharedValue(1);
@@ -272,7 +261,7 @@ export function CommunityScreen() {
       <Reveal index={1} style={{ marginTop: 18 }}>
         <Card variant="panel" radius={18}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Animated.View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.accent }, dotStyle]} />
+            <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.accent }} />
             <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
               {presence && presence > 0
                 ? `${presence} quiet ${presence === 1 ? 'win' : 'wins'} shared by parents`
@@ -304,9 +293,9 @@ export function CommunityScreen() {
                 scaleTo={0.96}
                 dimTo={0.9}
                 style={{
-                  height: 34,
-                  paddingHorizontal: 14,
-                  borderRadius: 17,
+                  height: 44,
+                  paddingHorizontal: 16,
+                  borderRadius: 22,
                   alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: on ? c.ctaBg : 'transparent',
@@ -322,40 +311,9 @@ export function CommunityScreen() {
         </View>
       </Reveal>
 
-      {/* gentle composer */}
-      <Reveal index={3} style={{ marginTop: 24 }}>
-        <SectionHeader kicker="Your turn" title="Share a small win" />
-        <FormField
-          label="You’ll appear as “a CalmCarry parent”"
-          value={draft}
-          onChangeText={setDraft}
-          placeholder="One calm thing that went right…"
-          icon="feather"
-        />
-        <PressableScale
-          onPress={share}
-          onPressIn={() => draft.trim() && tapHaptic()}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !draft.trim() }}
-          disabled={!draft.trim()}
-          dimTo={0.9}
-          style={{ alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
-            <Feather name="send" size={15} color={c.textAccent} />
-            <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
-              Share anonymously
-            </AppText>
-          </View>
-        </PressableScale>
-        {note ? (
-          <AppText variant="meta" style={{ color: c.dim, marginTop: 10 }}>
-            {note}
-          </AppText>
-        ) : null}
-      </Reveal>
-
-      {/* wins wall */}
-      <Reveal index={4} style={{ marginTop: 28 }}>
+      {/* wins wall — reading comes before writing, so the calm content is what a
+          tired user meets first (the composer follows below) */}
+      <Reveal index={3} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Wins wall" title="Tonight’s quiet victories" />
         <Animated.View style={[{ gap: 12 }, listStyle]}>
           {loading ? (
@@ -373,7 +331,7 @@ export function CommunityScreen() {
                 We couldn’t load the wall just now.
               </AppText>
               <AppText variant="meta" tone="dim">
-                Pull to refresh or come back in a moment.
+                It will retry when you come back.
               </AppText>
             </Card>
           ) : (
@@ -388,6 +346,39 @@ export function CommunityScreen() {
             </Card>
           )}
         </Animated.View>
+      </Reveal>
+
+      {/* gentle composer — placed after the wins so reading precedes writing and no
+          keyboard is summoned ahead of the calm content */}
+      <Reveal index={4} style={{ marginTop: 28 }}>
+        <SectionHeader kicker="Share" title="Add a small win" />
+        <FormField
+          label="You’ll appear as “a CalmCarry parent”"
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="One calm thing that went right…"
+          icon="feather"
+        />
+        <PressableScale
+          onPress={share}
+          onPressIn={() => draft.trim() && tapHaptic()}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !draft.trim() }}
+          disabled={!draft.trim()}
+          dimTo={0.9}
+          style={{ alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 13, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
+            <Feather name="send" size={15} color={c.textAccent} />
+            <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+              Share anonymously
+            </AppText>
+          </View>
+        </PressableScale>
+        {note ? (
+          <AppText variant="meta" style={{ color: c.dim, marginTop: 10 }}>
+            {note}
+          </AppText>
+        ) : null}
       </Reveal>
 
       <Reveal index={5} style={{ marginTop: 20, marginBottom: 8 }}>

@@ -305,8 +305,11 @@ export default function WindDownScreen() {
     cancelAnimation(progress);
     if (endTimer.current) clearTimeout(endTimer.current);
     if (fadeRef.current) clearTimeout(fadeRef.current);
-    // ending the ritual → gentle "were you settled?" check-in (build plan peak-end)
-    router.replace('/check-in');
+    // Manually bailing out of the ritual should just make the screen GONE — not spawn a
+    // "were you settled?" question with more light and another aimed tap. The peak-end
+    // check-in stays for the natural 20:00 end in endSession, where reflection fits.
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
   };
 
   // ---- animated styles ----

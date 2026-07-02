@@ -194,18 +194,23 @@ export function DeviceHub() {
       <Reveal index={3} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Manage" title="Device & warranty" />
         <View style={{ gap: 12 }}>
-          <ActionRow
-            icon="shield"
-            title="Device registration"
-            subtitle="Confirm it's registered &amp; covered"
-            onPress={() => router.push('/authenticity')}
-          />
-          <ActionRow
-            icon="plus-circle"
-            title="Register a device"
-            subtitle="Activate your 24-month warranty"
-            onPress={() => router.push('/register-device')}
-          />
+          {/* one row for the account's actual state — a registered device shows its
+              registration; no device shows how to register (never both) */}
+          {device ? (
+            <ActionRow
+              icon="shield"
+              title="Device registration"
+              subtitle="Confirm it's registered &amp; covered"
+              onPress={() => router.push('/authenticity')}
+            />
+          ) : (
+            <ActionRow
+              icon="plus-circle"
+              title="Register a device"
+              subtitle="Activate your 24-month warranty"
+              onPress={() => router.push('/register-device')}
+            />
+          )}
           <ActionRow
             icon="tool"
             title="Report an issue"

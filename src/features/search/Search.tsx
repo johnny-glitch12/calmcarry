@@ -41,6 +41,10 @@ const ALL: Result[] = [
   })),
 ];
 
+// Starter taps for the empty state — each maps to real content so a groggy user
+// gets instant results with zero typing.
+const SUGGESTIONS = ['Rain', 'Ocean', 'Noise', 'Breathing', 'Piano'];
+
 export function Search() {
   const router = useRouter();
   const { c } = useTheme();
@@ -83,11 +87,29 @@ export function Search() {
       </Reveal>
 
       {q.trim() === '' ? (
-        <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
+        <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 16 }}>
           <Feather name="search" size={28} color={c.dim} />
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
             Find a soundscape, sleep tale, breathing session, or program.
           </AppText>
+          {/* one-tap suggestions — typing in bed is the highest-effort thing we can ask */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+            {SUGGESTIONS.map((term) => (
+              <PressableScale
+                key={term}
+                onPress={() => setQ(term)}
+                onPressIn={lightTap}
+                accessibilityRole="button"
+                accessibilityLabel={`Search ${term}`}
+                dimTo={0.95}>
+                <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage }}>
+                  <AppText variant="cardTitle" tone="title">
+                    {term}
+                  </AppText>
+                </View>
+              </PressableScale>
+            ))}
+          </View>
         </Reveal>
       ) : results.length === 0 ? (
         <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
@@ -95,7 +117,7 @@ export function Search() {
             Nothing found
           </AppText>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
-            No results for “{q.trim()}”. Try a calmer word.
+            No results for “{q.trim()}”. Try “rain”, “ocean”, or “sleep”.
           </AppText>
         </Reveal>
       ) : (

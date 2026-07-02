@@ -9,7 +9,7 @@ import { PressableScale } from './PressableScale';
 
 type Props = {
   title: string;
-  /** small uppercase kicker above the title */
+  /** small sentence-case kicker above the title */
   kicker?: string;
   actionLabel?: string;
   onAction?: () => void;
@@ -33,7 +33,10 @@ export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
       }}>
       <View style={{ flex: 1, minWidth: 0 }}>
         {kicker ? (
-          <AppText variant="caption" tone="accent" numberOfLines={1} style={{ marginBottom: 4 }}>
+          // sentence-case `meta` (13px, no tracking) instead of the all-caps 11px
+          // `caption` micro-label — far easier to read with tired, dark-adapted
+          // eyes; tone="accent" still sets it apart from the title.
+          <AppText variant="meta" tone="accent" numberOfLines={1} style={{ marginBottom: 4 }}>
             {kicker}
           </AppText>
         ) : null}

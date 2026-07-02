@@ -32,7 +32,9 @@ type Props = {
   featured?: boolean;
   /** show a lock affordance instead of play (premium/locked content) */
   locked?: boolean;
-  /** subtle breathing on the cover ripple. Disable for long lists (perf). */
+  /** opt-in subtle breathing on the cover ripple (off by default; enable only for
+   *  a hero placement — a whole rail of breathing cards is low-grade stimulation
+   *  for someone winding down, and costs battery on the nightstand). */
   animateArt?: boolean;
 };
 
@@ -50,7 +52,7 @@ export function CoverCard({
   art,
   image,
   featured = false,
-  animateArt = true,
+  animateArt = false,
   locked = false,
 }: Props) {
   const { c, isNight } = useTheme();
@@ -144,7 +146,7 @@ export function CoverCard({
                   height: artSize * 0.62,
                   borderRadius: artSize,
                   borderWidth: 1.5,
-                  borderColor: 'rgba(255,255,255,0.45)',
+                  borderColor: `rgba(255,255,255,${isNight ? 0.3 : 0.45})`,
                   alignItems: 'center',
                   justifyContent: 'center',
                   opacity: 0.8, // constant depth cue (replaces the old animated throb)
@@ -156,7 +158,7 @@ export function CoverCard({
                   width: artSize * 0.3,
                   height: artSize * 0.3,
                   borderRadius: artSize,
-                  backgroundColor: 'rgba(255,255,255,0.85)',
+                  backgroundColor: `rgba(255,255,255,${isNight ? 0.55 : 0.85})`,
                 }}
               />
             </Animated.View>

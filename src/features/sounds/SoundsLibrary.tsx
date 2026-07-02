@@ -17,12 +17,15 @@ type Rail = { kicker: string; title: string; ids: string[] };
 
 // Library organised by the MOMENT, not by feature (build plan §7):
 // Quick calm / Wind down & sleep / Music & sounds (+ Watch & learn + Programs below).
+// Kickers are kept ONLY where they add information the title doesn't already carry
+// ("Tonight"). Redundant restatements ("For right now" over "Quick calm") are dropped —
+// tired eyes shouldn't double-read tiny all-caps text before reaching the cards.
 const ADULT_RAILS: Rail[] = [
-  { kicker: 'For right now', title: 'Quick calm', ids: ['box-breathing'] },
+  { kicker: '', title: 'Quick calm', ids: ['box-breathing'] },
   { kicker: 'Tonight', title: 'Wind down & sleep', ids: ['deep-rest', 'letting-go', 'penguin', 'slow-tide'] },
-  { kicker: 'Nature & ambient', title: 'Soundscapes', ids: ['dawn-chorus', 'shoreline', 'fireside', 'rainfall', 'forest'] },
-  { kicker: 'Instrumental', title: 'Music', ids: ['gymnopedie', 'spa'] },
-  { kicker: 'Block out the world', title: 'Noise & masking', ids: ['brown-noise', 'pink-noise', 'white-noise', 'green-noise'] },
+  { kicker: '', title: 'Soundscapes', ids: ['dawn-chorus', 'shoreline', 'fireside', 'rainfall', 'forest'] },
+  { kicker: '', title: 'Music', ids: ['gymnopedie', 'spa'] },
+  { kicker: '', title: 'Noise & masking', ids: ['brown-noise', 'pink-noise', 'white-noise', 'green-noise'] },
 ];
 
 const KIDS_RAILS: Rail[] = [
@@ -85,7 +88,7 @@ export function SoundsLibrary() {
   };
 
   return (
-    <Screen mode="light" scroll tabBarSpacing contentStyle={{ paddingHorizontal: 0 }}>
+    <Screen mode={kids ? 'night' : 'light'} scroll tabBarSpacing contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24, marginBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <View>
@@ -98,11 +101,11 @@ export function SoundsLibrary() {
           </View>
           {/* search + learn are adult affordances (route to programs/paywall) — hidden in kids */}
           {!kids ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 24 }}>
               <PressableScale
                 onPress={() => router.push('/search')}
                 onPressIn={lightTap}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 accessibilityRole="button"
                 accessibilityLabel="Search"
                 dimTo={0.85}>
@@ -111,7 +114,7 @@ export function SoundsLibrary() {
               <PressableScale
                 onPress={() => router.push('/learn')}
                 onPressIn={lightTap}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 accessibilityRole="button"
                 dimTo={0.85}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

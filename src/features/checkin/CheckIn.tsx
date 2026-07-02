@@ -7,6 +7,7 @@ import { useProfile } from '@/features/profile/ProfileProvider';
 import { track } from '@/lib/analytics';
 import { lightTap } from '@/lib/haptics';
 import { maybeRequestReview } from '@/lib/reviews';
+import { useTheme } from '@/theme';
 
 /**
  * The gentle close to a wind-down. Forward-looking, never a test — we do NOT ask
@@ -15,14 +16,17 @@ import { maybeRequestReview } from '@/lib/reviews';
  */
 export function CheckIn() {
   const router = useRouter();
+  const { c } = useTheme();
   const { mode } = useProfile();
-  const done = () => router.replace('/');
 
-  // peak-end is the only fair moment to ask for a review — gated (never kids, only
-  // after a few earned calm nights, once ever) inside maybeRequestReview.
-  useEffect(() => {
+  // peak-end is the fair moment to EARN a review, but never at lights-out: fire the
+  // gated request (never kids, only after a few calm nights, once ever) behind the
+  // Done tap, so a bright OS star-rating modal never lands on the "set the phone
+  // down and sleep" screen while the user is still resting.
+  const done = () => {
     maybeRequestReview({ kids: mode === 'kids' });
-  }, [mode]);
+    router.replace('/');
+  };
 
   // §15 funnel — the wind-down close was reached. No mood/Feeling is ever sent
   // (analytics no-ops in kids mode and scrubs any non-allow-listed prop).
@@ -53,7 +57,15 @@ export function CheckIn() {
         accessibilityRole="button"
         dimTo={0.9}
         scaleTo={0.98}
-        style={{ alignItems: 'center', paddingVertical: 18 }}>
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 56,
+          borderRadius: 16,
+          backgroundColor: c.surface,
+          borderWidth: 1,
+          borderColor: c.line,
+        }}>
         <AppText variant="bodyMedium" tone="accent">
           Done
         </AppText>

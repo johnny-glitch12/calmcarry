@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -98,6 +98,12 @@ export function KidsHome() {
   const [nights, setNights] = useState(0);
   const firstName = (user?.name ?? '').split(' ')[0] || 'friend';
 
+  // This is the bedtime screen — from evening on, a child (or parent) reopens it in a
+  // dark room, so dim to the night palette instead of a full light-mode blast. Kept
+  // light through the day so early-evening play keeps its bright, friendly identity.
+  // Same time-of-day mechanism the adult flow uses (TonightScreen), bedtime-earlier cutoff.
+  const evening = useMemo(() => new Date().getHours() >= 19, []);
+
   // real count — earned by actually doing calm sessions (see markCalmNightToday).
   // Refetch on focus so a star appears right after a session, not only on first mount.
   useFocusEffect(
@@ -109,7 +115,7 @@ export function KidsHome() {
   const story = TRACKS['penguin'] ?? TRACKS['slow-tide'];
 
   return (
-    <Screen mode="light" scroll tabBarSpacing>
+    <Screen mode={evening ? 'night' : 'light'} scroll tabBarSpacing>
       {/* greeting + grown-up lock */}
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -125,38 +131,8 @@ export function KidsHome() {
         </View>
       </Reveal>
 
-      {/* bear companion */}
-      <Reveal index={1} style={{ alignItems: 'center', marginTop: 8 }}>
-        <BearMascot size={150} />
-        <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center' }}>
-          Bramble’s getting sleepy too. Ready to wind down?
-        </AppText>
-      </Reveal>
-
-      {/* gentle, non-failable stars */}
-      <Reveal index={2} style={{ marginTop: 22 }}>
-        <View
-          style={{
-            padding: 18,
-            borderRadius: 22,
-            backgroundColor: c.panel,
-            borderWidth: 1,
-            borderColor: c.lineSage,
-            alignItems: 'center',
-            gap: 10,
-          }}>
-          <AppText variant="bodyMedium" tone="title">
-            Your calm nights
-          </AppText>
-          <Stars count={nights} />
-          <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
-            Every calm night earns a star. No wrong nights ✨
-          </AppText>
-        </View>
-      </Reveal>
-
-      {/* BIG story hero */}
-      <Reveal index={3} style={{ marginTop: 22 }}>
+      {/* BIG story hero — the one thing they came for: above the fold, one tap to play */}
+      <Reveal index={1} style={{ marginTop: 22 }}>
         <PressableScale
           onPress={() => router.push(`/player?id=${story.id}`)}
           onPressIn={tapHaptic}
@@ -194,6 +170,36 @@ export function KidsHome() {
         </PressableScale>
       </Reveal>
 
+      {/* bear companion */}
+      <Reveal index={2} style={{ alignItems: 'center', marginTop: 22 }}>
+        <BearMascot size={150} />
+        <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center' }}>
+          Bramble’s getting sleepy too. Ready to wind down?
+        </AppText>
+      </Reveal>
+
+      {/* gentle, non-failable stars */}
+      <Reveal index={3} style={{ marginTop: 22 }}>
+        <View
+          style={{
+            padding: 18,
+            borderRadius: 22,
+            backgroundColor: c.panel,
+            borderWidth: 1,
+            borderColor: c.lineSage,
+            alignItems: 'center',
+            gap: 10,
+          }}>
+          <AppText variant="bodyMedium" tone="title">
+            Your calm nights
+          </AppText>
+          <Stars count={nights} />
+          <AppText variant="meta" tone="muted">
+            Every calm night earns a star. No wrong nights ✨
+          </AppText>
+        </View>
+      </Reveal>
+
       {/* big calm-sound buttons */}
       <Reveal index={4} style={{ marginTop: 28 }}>
         <AppText style={{ fontFamily: fonts.display, fontSize: 22, color: c.textAccent, marginBottom: 14 }}>
@@ -215,7 +221,9 @@ export function KidsHome() {
                 <View style={{ aspectRatio: 1, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
                   <Image source={covers[t.cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
                   <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.55)', justifyContent: 'flex-end', padding: 10 }}>
-                    <AppText numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 13, color: '#FFFFFF' }}>
+                    {/* fixed light on the always-dark photo scrim (matches ListenScreen tiles);
+                        a theme token would flip dark in night mode and lose contrast */}
+                    <AppText numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 16, color: '#FFFFFF' }}>
                       {t.title}
                     </AppText>
                   </View>

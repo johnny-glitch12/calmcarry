@@ -1,15 +1,15 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
 import { Platform, View } from 'react-native';
 
 import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
-import { FEELING_MAP, useProfile, type Feeling, type Intent } from '@/features/profile/ProfileProvider';
+import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
 import { useTheme } from '@/theme';
 
-// STEP 1 — "How are you arriving tonight?" SAFE WORDS ONLY (build plan §3/§14):
+// "How are you arriving tonight?" SAFE WORDS ONLY (build plan §3/§14):
 // never "anxious"/"insomnia"/clinical terms. Forward-looking, no symptom tracking.
+// One tap picks a feeling AND starts the tailored session — the answer IS the start.
 const FEELINGS: { key: Feeling; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
   { key: 'racing', label: 'My mind’s racing', hint: 'Lots of thoughts, hard to slow', icon: 'zap' },
   { key: 'cant-switch-off', label: 'I can’t switch off', hint: 'Still in the day', icon: 'power' },
@@ -17,14 +17,6 @@ const FEELINGS: { key: Feeling; label: string; hint: string; icon: keyof typeof 
   { key: 'wound-up', label: 'I’m wound up', hint: 'Tense, on edge', icon: 'rotate-cw' },
   { key: 'heavy-day', label: 'It’s been a heavy day', hint: 'Carrying a lot', icon: 'cloud' },
   { key: 'quiet', label: 'I just want quiet', hint: 'Somewhere calm to rest', icon: 'feather' },
-];
-
-// STEP 2 — "What would feel good right now?" (always ≥1 free option, §6)
-const INTENTS: { intent: Intent; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { intent: 'sleep', label: 'Wind down for sleep', hint: 'Ease into a calm night', icon: 'moon' },
-  { intent: 'reset', label: 'A quick reset', hint: 'A couple of minutes to steady', icon: 'wind' },
-  { intent: 'sounds', label: 'Just calm sounds', hint: 'Layer a soundscape', icon: 'music' },
-  { intent: 'suggest', label: 'Suggest something', hint: 'Let CalmCarry choose', icon: 'compass' },
 ];
 
 /** A calm, tappable row: gentle scale + light haptic on press (§4), via PressableScale. */
@@ -69,7 +61,7 @@ function TapRow({
         <AppText variant="bodyMedium" tone="title">
           {label}
         </AppText>
-        <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+        <AppText variant="meta" tone="muted" style={{ marginTop: 2 }}>
           {hint}
         </AppText>
       </View>
@@ -78,25 +70,17 @@ function TapRow({
   );
 }
 
-function CheckInBody({
-  step,
-  feeling,
-  onFeeling,
-  onIntent,
-  onSkip,
-}: {
-  step: 'feeling' | 'intent';
-  feeling: Feeling | null;
-  onFeeling: (f: Feeling) => void;
-  onIntent: (i: Intent) => void;
-  onSkip: () => void;
-}) {
-  const recommendedIntent = feeling ? FEELING_MAP[feeling].intent : null;
+function CheckInBody({ onFeeling, onSkip }: { onFeeling: (f: Feeling) => void; onSkip: () => void }) {
   return (
     <>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <PressableScale onPress={onSkip} hitSlop={{ top: 13, bottom: 13, left: 12, right: 12 }} accessibilityRole="button" dimTo={0.85}>
-          <AppText variant="label" tone="muted">
+        <PressableScale
+          onPress={onSkip}
+          hitSlop={16}
+          accessibilityRole="button"
+          dimTo={0.85}
+          style={{ paddingVertical: 12, paddingHorizontal: 16 }}>
+          <AppText variant="bodyMedium" tone="muted">
             Skip
           </AppText>
         </PressableScale>
@@ -106,43 +90,24 @@ function CheckInBody({
         <GlowOrb size={96} reserveGlow aura />
       </Reveal>
 
-      {/* keyed by step so the stagger re-runs as a gentle settle on each step */}
-      <View key={step}>
-        <Reveal index={1} style={{ marginTop: 8 }}>
-          <AppText variant="caption" tone="accent">
-            Check in
-          </AppText>
-          <AppText variant="display" tone="title" style={{ marginTop: 8 }}>
-            {step === 'feeling' ? 'How are you arriving tonight?' : 'What would feel good right now?'}
-          </AppText>
-          <AppText variant="body" tone="muted" style={{ marginTop: 8 }}>
-            {step === 'feeling'
-              ? 'There’s no wrong answer. It just helps us pick, so tap whatever fits.'
-              : feeling
-                ? `${FEELING_MAP[feeling].line} Here’s what we’d reach for. There’s always a free option.`
-                : 'One tap and we’ll cue something. There’s always a free option.'}
-          </AppText>
-        </Reveal>
+      <Reveal index={1} style={{ marginTop: 8 }}>
+        <AppText variant="caption" tone="accent">
+          Check in
+        </AppText>
+        <AppText variant="display" tone="title" style={{ marginTop: 8 }}>
+          How are you arriving tonight?
+        </AppText>
+        <AppText variant="body" tone="muted" style={{ marginTop: 8 }}>
+          Tap whatever fits and we’ll start something calm.
+        </AppText>
+      </Reveal>
 
-        <View style={{ gap: 12, marginTop: 24 }}>
-          {step === 'feeling'
-            ? FEELINGS.map((f, i) => (
-                <Reveal key={f.key} index={i + 2}>
-                  <TapRow icon={f.icon} label={f.label} hint={f.hint} onPress={() => onFeeling(f.key)} />
-                </Reveal>
-              ))
-            : INTENTS.map((opt, i) => (
-                <Reveal key={opt.intent} index={i + 2}>
-                  <TapRow
-                    icon={opt.icon}
-                    label={opt.label}
-                    hint={opt.hint}
-                    highlight={opt.intent === recommendedIntent}
-                    onPress={() => onIntent(opt.intent)}
-                  />
-                </Reveal>
-              ))}
-        </View>
+      <View style={{ gap: 12, marginTop: 24 }}>
+        {FEELINGS.map((f, i) => (
+          <Reveal key={f.key} index={i + 2}>
+            <TapRow icon={f.icon} label={f.label} hint={f.hint} onPress={() => onFeeling(f.key)} />
+          </Reveal>
+        ))}
       </View>
     </>
   );
@@ -150,19 +115,15 @@ function CheckInBody({
 
 export function MoodSurvey() {
   const router = useRouter();
-  const { setFeeling, setIntent, dismissCheckIn } = useProfile();
-  const [step, setStep] = useState<'feeling' | 'intent'>('feeling');
-  const [chosen, setChosen] = useState<Feeling | null>(null);
+  const { setFeeling, dismissCheckIn } = useProfile();
 
+  // One tap: record the feeling (which also seeds the matching intent) AND start
+  // the tailored session. Answering IS starting — the user never lands back on Home
+  // to hunt for a sound. FEELING_MAP carries the track we'd reach for.
   const pickFeeling = (f: Feeling) => {
-    setFeeling(f); // also seeds the matching intent, so stopping here still tailors
-    setChosen(f);
-    setStep('intent');
-  };
-  const pickIntent = (i: Intent) => {
-    setIntent(i);
+    setFeeling(f);
     dismissCheckIn();
-    router.replace('/');
+    router.replace(`/player?id=${FEELING_MAP[f].track}`);
   };
   const skip = () => {
     dismissCheckIn();
@@ -170,8 +131,8 @@ export function MoodSurvey() {
   };
 
   return (
-    <Screen scroll contentStyle={{ paddingTop: 8 }}>
-      <CheckInBody step={step} feeling={chosen} onFeeling={pickFeeling} onIntent={pickIntent} onSkip={skip} />
+    <Screen mode="night" scroll contentStyle={{ paddingTop: 8 }}>
+      <CheckInBody onFeeling={pickFeeling} onSkip={skip} />
     </Screen>
   );
 }

@@ -158,7 +158,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
                   borderColor: isNight ? '#16302B' : brand.mint,
                   ...c.shadow,
                 }}>
-                <Feather name="play" size={16} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                <Feather name="play" size={16} color={c.ctaText} style={{ marginLeft: 2 }} />
               </View>
             </View>
           </View>
@@ -194,16 +194,25 @@ export function TonightScreen() {
   const kids = mode === 'kids';
   const firstName = (user?.name ?? '').split(' ')[0] || 'there';
 
+  // Night flags drive dimming + the honest 3 a.m. rescue copy. Declared up here so the
+  // check-in guard below can suppress the survey during the small hours.
+  // Only claim "3 a.m." in the actual small hours — otherwise it reads as a lie at 11pm.
+  const deepNight = hour >= 1 && hour < 5;
+  const lateNight = hour < 5 || hour >= 23;
+
   // offer the forward-looking check-in after >12h away (once per open, not a forced loop).
   // Dismiss the moment it's shown so a Home remount can't re-push the survey onto the stack.
   const checkInShown = useRef(false);
   useEffect(() => {
-    if (needsCheckIn && !kids && !checkInShown.current) {
+    // Never at night: a full-screen survey between a tired person and any sound is the
+    // exact cognitive load the app promises to remove. Not dismissed when skipped, so
+    // the check-in simply waits until morning.
+    if (needsCheckIn && !kids && !lateNight && !checkInShown.current) {
       checkInShown.current = true;
       dismissCheckIn();
       router.push('/survey' as Href);
     }
-  }, [needsCheckIn, kids, router, dismissCheckIn]);
+  }, [needsCheckIn, kids, lateNight, router, dismissCheckIn]);
 
   // gentle, non-failable "calm nights" progress — earned by real sessions, shown
   // to adults too (kids get the playful stars on KidsHome). Refreshed on focus.
@@ -255,13 +264,58 @@ export function TonightScreen() {
   // the next-best matches after the hero pick — ranked to the check-in answer
   const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
   // free 3 a.m. rescue — copy adapts to the hour but always lands on a free track
-  // only claim "3 a.m." in the actual small hours — otherwise it reads as a lie at 11pm
-  const deepNight = hour >= 1 && hour < 5;
-  const lateNight = hour < 5 || hour >= 23;
   const rescueLabel = deepNight ? 'Awake at 3 a.m.?' : lateNight ? 'Can’t sleep?' : 'Can’t switch off right now?';
 
+  // The hero is the one "notice-first" action, so it must ALWAYS be fully playable —
+  // never bait a free user into 60s of calm then a paywall mid-drift. If the pick is
+  // locked, swap to the best free alternative (or the always-free rescue). Locked tracks
+  // stay in the shelves, where the lock badge is visible before the tap.
+  const heroId =
+    TRACKS[recommendedTrackId]?.locked && !isPremium && !kids
+      ? recommendedTrackIds.find((tid) => !TRACKS[tid]?.locked) ?? FREE_RESCUE
+      : recommendedTrackId;
+
+  // The always-free rescue row, defined once and placed either above the hero (deep
+  // night) or below the CTA (otherwise). Reveal index tracks its on-screen position so
+  // the staggered entrance still fades top-to-bottom.
+  const rescueReveal = (
+    <Reveal index={deepNight ? 1 : 5}>
+      <PressableScale
+        onPress={() => router.push(`/player?id=${FREE_RESCUE}` as Href)}
+        onPressIn={lightTap}
+        accessibilityRole="button"
+        accessibilityLabel={`${rescueLabel} Play a free calming session now.`}
+        scaleTo={0.98}
+        dimTo={0.9}
+        style={{
+          marginTop: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 14,
+          padding: 16,
+          borderRadius: 18,
+          backgroundColor: c.panel,
+          borderWidth: 1,
+          borderColor: c.lineSage,
+        }}>
+        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
+          <Feather name="moon" size={18} color={c.accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <AppText variant="bodyMedium" tone="title">
+            {rescueLabel}
+          </AppText>
+          <AppText variant="meta" tone="muted" style={{ marginTop: 2 }}>
+            Tap once for a free drift back to sleep, no sign-in needed.
+          </AppText>
+        </View>
+        <Feather name="play" size={16} color={c.accent} />
+      </PressableScale>
+    </Reveal>
+  );
+
   return (
-    <Screen mode="light" scroll tabBarSpacing>
+    <Screen mode={lateNight ? 'night' : 'light'} scroll tabBarSpacing>
       {/* brand header */}
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -313,64 +367,37 @@ export function TonightScreen() {
         </Reveal>
       ) : null}
 
-      {/* personalised hero */}
-      <Reveal index={3}>
+      {/* Always-free rescue — the honest answer to a 3 a.m. wake-up: one tap into a
+          free drift, no sign-in, no paywall, no quiz. Hidden in kids mode. In the deep
+          night this jumps ABOVE the hero (see rescueReveal below) so the feature built
+          for the small-hours wake-up is the first thing a groggy user reaches. */}
+      {!kids && deepNight ? rescueReveal : null}
+
+      {/* personalised hero — always fully playable via heroId (never baits a free user
+          into a mid-drift paywall). Demoted one Reveal index in the deep night so the
+          rescue row above fades in first. */}
+      <Reveal index={deepNight ? 5 : 3}>
         <View style={{ marginTop: 20 }}>
           <RitualHero
-            trackId={recommendedTrackId}
+            trackId={heroId}
             kicker={heroKicker}
-            onPress={() => router.push(`/player?id=${recommendedTrackId}`)}
+            onPress={() => router.push(`/player?id=${heroId}`)}
           />
         </View>
       </Reveal>
 
-      {/* primary CTA */}
-      <Reveal index={4}>
+      {/* primary CTA — self-explaining so no comparison with the hero is needed */}
+      <Reveal index={deepNight ? 6 : 4}>
         <View style={{ marginTop: 16 }}>
           <PrimaryButton
-            label={kids ? 'Start bedtime' : 'Begin wind-down'}
-            onPress={() => router.push(`/wind-down?id=${recommendedTrackId}` as Href)}
+            label={kids ? 'Start bedtime' : 'Begin 20-min wind-down'}
+            onPress={() => router.push(`/wind-down?id=${heroId}` as Href)}
           />
         </View>
       </Reveal>
 
-      {/* Always-free rescue — the honest answer to a 3 a.m. wake-up: one tap into a
-          free drift, no sign-in, no paywall, no quiz. Hidden in kids mode. */}
-      {!kids ? (
-        <Reveal index={5}>
-          <PressableScale
-            onPress={() => router.push(`/player?id=${FREE_RESCUE}` as Href)}
-            onPressIn={lightTap}
-            accessibilityRole="button"
-            accessibilityLabel={`${rescueLabel} Play a free calming session now.`}
-            scaleTo={0.98}
-            dimTo={0.9}
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 14,
-              padding: 16,
-              borderRadius: 18,
-              backgroundColor: c.panel,
-              borderWidth: 1,
-              borderColor: c.lineSage,
-            }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name="moon" size={18} color={c.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="bodyMedium" tone="title">
-                {rescueLabel}
-              </AppText>
-              <AppText variant="meta" tone="muted" style={{ marginTop: 2 }}>
-                Tap once for a free drift back to sleep, no sign-in needed.
-              </AppText>
-            </View>
-            <Feather name="play" size={16} color={c.accent} />
-          </PressableScale>
-        </Reveal>
-      ) : null}
+      {/* Not deep-night: the rescue row keeps its original position below the CTA. */}
+      {!kids && !deepNight ? rescueReveal : null}
 
       {/* First-7-nights free starter arc — only for newcomers (0 calm nights), so it's
           an invitation, not clutter once the ritual is established. */}

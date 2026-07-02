@@ -56,7 +56,9 @@ export function StatusChip({ label, icon = 'shield', tone = 'sage', confirm = fa
     },
     alert: {
       bg: 'rgba(239,98,108,0.12)',
-      fg: brand.coral,
+      // coral is only ~2.77:1 on the cream/white light surface (fails AA) — use the
+      // darker red by day (matching FormField), keep coral by night where it clears.
+      fg: isNight ? brand.coral : '#B5303A',
       border: 'rgba(239,98,108,0.30)',
     },
   };

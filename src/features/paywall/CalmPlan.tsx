@@ -224,7 +224,7 @@ export function CalmPlan() {
 
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
-      <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85} style={{ alignSelf: 'flex-end' }}>
+      <PressableScale onPress={close} hitSlop={16} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85} style={{ alignSelf: 'flex-end' }}>
         <Feather name="x" size={24} color={c.text} />
       </PressableScale>
 
@@ -294,6 +294,12 @@ export function CalmPlan() {
             ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
             : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
         </AppText>
+        {/* the way out: a single, full-width quiet dismiss right under the button — not lost among the legal links */}
+        <PressableScale onPress={close} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14 }}>
+          <AppText variant="bodyMedium" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+            Maybe later
+          </AppText>
+        </PressableScale>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
           <PressableScale onPress={restore} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Restore purchases</AppText>
@@ -303,9 +309,6 @@ export function CalmPlan() {
           </PressableScale>
           <PressableScale onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Privacy</AppText>
-          </PressableScale>
-          <PressableScale onPress={close} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
-            <AppText variant="label" tone="muted">Maybe later</AppText>
           </PressableScale>
         </View>
       </Reveal>

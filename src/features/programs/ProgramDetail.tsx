@@ -10,7 +10,7 @@ import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
 import { lightTap } from '@/lib/haptics';
 import { getProgramDone } from '@/lib/programs';
-import { useTheme } from '@/theme';
+import { fonts, useTheme } from '@/theme';
 
 export function ProgramDetail() {
   const { c } = useTheme();
@@ -117,14 +117,14 @@ export function ProgramDetail() {
                       width: 42,
                       height: 42,
                       borderRadius: 21,
-                      backgroundColor: isDone ? c.accent : c.panel,
+                      backgroundColor: isDone ? c.ctaBg : c.panel,
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
                     {isDone ? (
-                      <Feather name="check" size={18} color="#FFFFFF" />
+                      <Feather name="check" size={18} color={c.ctaText} />
                     ) : (
-                      <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 16, color: c.textAccent }}>
+                      <AppText style={{ fontFamily: fonts.display, fontSize: 16, color: c.textAccent }}>
                         {step.day}
                       </AppText>
                     )}

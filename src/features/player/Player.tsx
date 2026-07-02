@@ -220,6 +220,10 @@ export function Player() {
   // breathing pacer (4s in / 6s out) + rotating honest cues — the guided-session feel
   const reduced = useReducedMotion();
   const breath = useSharedValue(0);
+  // the exhale ripple — released once per breath at the top of the out-breath,
+  // expanding + dissolving over the full 6s exhale ("letting the day go").
+  // Rests at 1 (fully dissolved = invisible); each exhale rewinds it to 0.
+  const ripple = useSharedValue(1);
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const [cueIdx, setCueIdx] = useState(0);
 
@@ -249,6 +253,10 @@ export function Player() {
       t1 = setTimeout(() => {
         if (!alive) return;
         setPhase('out');
+        // release one ripple at the top of the exhale — it expands and dissolves
+        // over the full out-breath, reaching the night ring as it disappears
+        ripple.value = 0;
+        ripple.value = withTiming(1, { duration: 6000, easing: Easing.out(Easing.ease) });
         t2 = setTimeout(() => {
           if (alive) cycle();
         }, 6000);
@@ -259,8 +267,10 @@ export function Player() {
       alive = false;
       clearTimeout(t1);
       clearTimeout(t2);
+      cancelAnimation(ripple);
+      ripple.value = 1; // rest dissolved (invisible)
     };
-  }, [reduced]);
+  }, [reduced, ripple]);
 
   useEffect(() => {
     if (reduced) return; // honor reduced motion — no auto-rotating cue text
@@ -272,6 +282,17 @@ export function Player() {
   const haloStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + breath.value * 0.12 }],
     opacity: 0.12 + breath.value * 0.1,
+  }));
+  // a crisp drawn ring riding the breath — gives the soft halo a designed edge
+  const breathRingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + breath.value * 0.1 }],
+    opacity: 0.18 + breath.value * 0.22,
+  }));
+  // the exhale ripple: expands from the breath ring to the night ring (300) and
+  // dissolves as it arrives — invisible at rest (ripple = 1 → opacity 0)
+  const rippleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + ripple.value * 0.22 }],
+    opacity: (1 - ripple.value) * 0.3,
   }));
 
   const paused = !status.playing;
@@ -489,6 +510,22 @@ export function Player() {
               style={[
                 { position: 'absolute', width: 232, height: 232, borderRadius: 116, backgroundColor: c.accent },
                 haloStyle,
+              ]}
+            />
+            {/* exhale ripple — one ring released per breath, dissolving as it reaches the night ring */}
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                { position: 'absolute', width: 244, height: 244, borderRadius: 122, borderWidth: 1.5, borderColor: c.accent },
+                rippleStyle,
+              ]}
+            />
+            {/* breath ring — a crisp edge riding the breath */}
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                { position: 'absolute', width: 244, height: 244, borderRadius: 122, borderWidth: 1.25, borderColor: c.lineSage },
+                breathRingStyle,
               ]}
             />
             {/* cover inside the ring */}

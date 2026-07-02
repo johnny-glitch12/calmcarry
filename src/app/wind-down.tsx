@@ -355,7 +355,8 @@ export default function WindDownScreen() {
                 strokeWidth={3}
                 style={{ position: 'absolute' }}
               />
-              <GlowOrb size={216} reserveGlow breathing={!paused} />
+              {/* burst: one soft arrival bloom as the wind-down begins — the room exhales */}
+              <GlowOrb size={216} reserveGlow breathing={!paused} burst />
             </View>
 
             <AppText variant="display" tone="title" style={{ marginTop: 40 }}>

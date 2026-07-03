@@ -153,7 +153,7 @@ function Dot({ active }: { active: boolean }) {
   const sx = useSharedValue(active ? 1 : DOT_DOT_SCALE);
   useEffect(() => {
     const to = active ? 1 : DOT_DOT_SCALE;
-    sx.value = reduced ? to : withTiming(to, { duration: dur.sheet, easing: ease.out });
+    sx.value = reduced ? to : withTiming(to, { duration: dur.sheet, easing: ease.inOut });
   }, [active, reduced, sx]);
   const style = useAnimatedStyle(() => ({ transform: [{ scaleX: sx.value }] }));
   return (
@@ -189,7 +189,7 @@ function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: numbe
       lightTap();
       if (!reduced) {
         pop.value = withSequence(
-          withTiming(1.06, { duration: dur.press, easing: ease.out }),
+          withTiming(1.06, { duration: dur.press, easing: ease.press }),
           withSpring(1, spring)
         );
       }
@@ -623,7 +623,7 @@ export function Onboarding() {
         <Animated.View
           key={`art-${i}`}
           entering={FadeIn.duration(dur.screen)}
-          exiting={FadeOut.duration(dur.press)}
+          exiting={FadeOut.duration(dur.exit)}
           style={{ marginBottom: 28, height: 220, alignItems: 'center', justifyContent: 'center' }}>
           <SlideArt art={slide.art} />
         </Animated.View>

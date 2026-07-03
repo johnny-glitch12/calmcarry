@@ -17,7 +17,7 @@ import { AppText } from './AppText';
 
 /**
  * VoiceRow — one selectable voice row. Owns its own animated press scale so the
- * press feedback glides (dur.press + ease.out) instead of snapping instantly,
+ * press feedback glides (dur.press + ease.press) instead of snapping instantly,
  * matching CoverCard / LibraryCard. Transform + opacity only.
  */
 function VoiceRow({
@@ -40,8 +40,8 @@ function VoiceRow({
     opacity: opacity.value,
   }));
   const press = (pressed: boolean) => {
-    scale.value = withTiming(pressed ? 0.98 : 1, { duration: dur.press, easing: ease.out });
-    opacity.value = withTiming(pressed ? 0.92 : 1, { duration: dur.press, easing: ease.out });
+    scale.value = withTiming(pressed ? 0.98 : 1, { duration: dur.press, easing: ease.press });
+    opacity.value = withTiming(pressed ? 0.92 : 1, { duration: dur.press, easing: ease.press });
   };
 
   return (

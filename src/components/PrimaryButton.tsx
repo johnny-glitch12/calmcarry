@@ -26,7 +26,7 @@ type Props = {
 
 /**
  * PrimaryButton — brand-sage pill. Press feedback: scale 0.97 + Haptics Impact
- * Light, ease-out 140ms, no ripple (DESIGN_SYSTEM §4). Renders in both themes.
+ * Light, ease.press dur.press, no ripple (DESIGN_SYSTEM §4). Renders in both themes.
  */
 export function PrimaryButton({
   label,
@@ -51,7 +51,7 @@ export function PrimaryButton({
     }
     scale.value =
       to < 1
-        ? withTiming(to, { duration: dur.press, easing: ease.out })
+        ? withTiming(to, { duration: dur.press, easing: ease.press })
         : withSpring(1, spring);
   };
 

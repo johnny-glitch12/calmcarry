@@ -25,14 +25,14 @@ type Props = {
 /**
  * LibraryCard — vertical cover card for the Sounds rails (illustrated cover on
  * top, title + meta below). Press: scale 0.97 + haptic + a soft cover dim, all
- * ease-out dur.press (§4). Image fades in via expo-image transition.
+ * ease.press dur.press (§4). Image fades in via expo-image transition.
  */
 export function LibraryCard({ title, subtitle, image, locked = false, size = 152, onPress }: Props) {
   const { c } = useTheme();
   const scale = useSharedValue(1);
   const cardStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const press = (to: number) => {
-    scale.value = withTiming(to, { duration: dur.press, easing: ease.out });
+    scale.value = withTiming(to, { duration: dur.press, easing: ease.press });
   };
 
   return (

@@ -80,12 +80,16 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const a = useSharedValue(on ? 1 : 0);
   const pop = useSharedValue(1);
   useEffect(() => {
-    a.value = reduced ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: dur.sheet, easing: ease.out });
+    // ON gets the sheet-speed arrival; OFF is an exit and must be quicker (~2/3).
+    a.value = reduced ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: on ? dur.sheet : dur.exit, easing: ease.out });
     if (on && !reduced) {
       pop.value = withSequence(
         withTiming(1.18, { duration: dur.press, easing: ease.out }),
         withSpring(1, spring),
       );
+    } else if (!on && !reduced) {
+      // settle the badge back to rest on toggle OFF (interrupts a mid-flight pop)
+      pop.value = withTiming(1, { duration: dur.press, easing: ease.out });
     }
   }, [on, reduced, a, pop]);
 

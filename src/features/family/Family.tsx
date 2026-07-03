@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useState } from 'react';
 import { Switch, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { AppText, Card, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -13,7 +14,7 @@ import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
-import { brand, useTheme } from '@/theme';
+import { brand, dur, useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
 
@@ -170,7 +171,8 @@ export function Family() {
             {profiles
               .filter((p) => p.type === 'kids')
               .map((p) => (
-                <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                // exit-before-remove: the row fades out instead of hard-unmounting on delete
+                <Animated.View key={p.id} exiting={FadeOut.duration(dur.exit)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Feather name="smile" size={14} color={c.muted} />
                   <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
                     {p.name}
@@ -183,13 +185,19 @@ export function Family() {
                     accessibilityLabel={`Remove ${p.name}`}
                     dimTo={0.85}
                     style={{ paddingVertical: 12 }}>
-                    <AppText
-                      variant="label"
-                      style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent, textTransform: 'none', letterSpacing: 0 }}>
-                      {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
-                    </AppText>
+                    {/* keyed crossfade so arm/auto-disarm never snaps coral↔accent — exit faster than enter */}
+                    <Animated.View
+                      key={confirmRemoveId === p.id ? 'confirm' : 'idle'}
+                      entering={FadeIn.duration(dur.press)}
+                      exiting={FadeOut.duration(dur.press)}>
+                      <AppText
+                        variant="label"
+                        style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent, textTransform: 'none', letterSpacing: 0 }}>
+                        {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
+                      </AppText>
+                    </Animated.View>
                   </PressableScale>
-                </View>
+                </Animated.View>
               ))}
           </View>
         ) : null}

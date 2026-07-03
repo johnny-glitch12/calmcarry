@@ -168,8 +168,8 @@ export function ParentGate() {
       const swing = Math.round(dur.press * 0.4); // ~64ms out / back — token-anchored, calm
       const settle = Math.round(dur.press * 0.5); // ~80ms eased settle to rest
       shake.value = withSequence(
-        withTiming(-5, { duration: swing, easing: ease.inOut }),
-        withTiming(5, { duration: swing, easing: ease.inOut }),
+        withTiming(-5, { duration: swing, easing: ease.press }),
+        withTiming(5, { duration: swing, easing: ease.press }),
         withTiming(0, { duration: settle, easing: ease.out })
       );
     }

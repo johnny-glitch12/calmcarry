@@ -221,12 +221,15 @@ export default function WindDownScreen() {
     if (reduced) return; // reduced motion: controls stay put, never auto-fade
     if (idleTimer.current) clearTimeout(idleTimer.current);
     idleTimer.current = setTimeout(() => {
-      controls.value = withTiming(0, { duration: dur.sheet, easing: ease.out });
+      // idle auto-dim is AMBIENT (system-initiated, video-player pattern): it should
+      // melt away unnoticed — deliberately slower than any user-facing exit.
+      controls.value = withTiming(0, { duration: dur.modal, easing: ease.inOut });
     }, 4000);
   }, [controls, reduced]);
 
   const wake = useCallback(() => {
-    controls.value = withTiming(1, { duration: dur.press, easing: ease.out });
+    // wake is user feedback — answers the tap instantly
+    controls.value = withTiming(1, { duration: dur.press, easing: ease.press });
     if (!paused) scheduleIdleFade();
   }, [controls, paused, scheduleIdleFade]);
 

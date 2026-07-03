@@ -85,7 +85,7 @@ function TabItem({
   }, [focused, reduced, t]);
 
   const onPressIn = () => {
-    if (!reduced) press.value = withTiming(0.92, { duration: dur.press, easing: ease.out });
+    if (!reduced) press.value = withTiming(0.92, { duration: dur.press, easing: ease.press });
   };
   const onPressOut = () => {
     press.value = reduced ? 1 : withSpring(1, spring);

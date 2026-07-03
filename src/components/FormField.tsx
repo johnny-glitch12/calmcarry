@@ -99,11 +99,11 @@ export function FormField({
           accessibilityLabel={error ? `${label ?? placeholder ?? 'Field'}, error: ${error}` : (label ?? placeholder)}
           onFocus={() => {
             setFocused(true);
-            f.value = reduced ? 1 : withTiming(1, { duration: dur.press, easing: ease.out });
+            f.value = reduced ? 1 : withTiming(1, { duration: dur.press, easing: ease.press });
           }}
           onBlur={() => {
             setFocused(false);
-            f.value = reduced ? 0 : withTiming(0, { duration: dur.press, easing: ease.out });
+            f.value = reduced ? 0 : withTiming(0, { duration: dur.press, easing: ease.press });
           }}
           style={[
             typeScale.body,

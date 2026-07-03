@@ -53,8 +53,8 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
     setCarried(true);
     if (!reduced) {
       scale.value = withSequence(
-        withTiming(0.95, { duration: dur.press, easing: ease.out }),
-        withTiming(1, { duration: dur.press, easing: ease.out }),
+        withTiming(0.95, { duration: dur.press, easing: ease.press }),
+        withTiming(1, { duration: dur.press, easing: ease.press }),
       );
     }
   };
@@ -173,7 +173,7 @@ export function CommunityScreen() {
     listFade.value = 0;
     // sheet (not screen): a filter tap should re-fade the list smoothly but stay
     // responsive — a full screen-length fade here would feel laggy on each tap.
-    listFade.value = withTiming(1, { duration: dur.sheet, easing: ease.out });
+    listFade.value = withTiming(1, { duration: dur.sheet, easing: ease.inOut });
   }, [filter, reduced, listFade]);
   const listStyle = useAnimatedStyle(() => ({ opacity: reduced ? 1 : listFade.value }));
 

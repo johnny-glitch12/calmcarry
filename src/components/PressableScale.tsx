@@ -57,8 +57,10 @@ export function PressableScale({
 
   const drive = (pressed: boolean) => {
     if (reduced) return; // reduced motion: no scale/opacity animation, just the press itself
-    scale.value = withTiming(pressed ? scaleTo : 1, { duration: dur.press, easing: ease.out });
-    if (dimTo < 1) opacity.value = withTiming(pressed ? dimTo : 1, { duration: dur.press, easing: ease.out });
+    // ease.press (strong out): the scale moves the instant the finger lands —
+    // feedback with zero perceived latency, settling softly.
+    scale.value = withTiming(pressed ? scaleTo : 1, { duration: dur.press, easing: ease.press });
+    if (dimTo < 1) opacity.value = withTiming(pressed ? dimTo : 1, { duration: dur.press, easing: ease.press });
   };
 
   return (

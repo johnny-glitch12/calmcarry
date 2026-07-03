@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Share, Switch, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -16,7 +17,7 @@ import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
 import { getVoice, voiceByKey } from '@/lib/voice';
 import { clearAll, getJSON, setJSON } from '@/lib/store';
-import { brand, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
+import { brand, dur, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
 
 const SCHEMES: SchemePref[] = ['light', 'dark', 'system'];
 
@@ -404,13 +405,19 @@ export function AccountScreen() {
           accessibilityLabel={confirmDelete ? 'Confirm permanent account deletion' : 'Delete account'}
           dimTo={0.6}
           style={{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }}>
-          <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
-            {deleting
-              ? 'Deleting…'
-              : confirmDelete
-                ? 'Tap again to permanently delete your account & data'
-                : 'Delete account'}
-          </AppText>
+          {/* keyed crossfade so arm/disarm never hard-snaps — exit (dur.exit) faster than enter */}
+          <Animated.View
+            key={deleting ? 'deleting' : confirmDelete ? 'confirm' : 'idle'}
+            entering={FadeIn.duration(dur.press)}
+            exiting={FadeOut.duration(dur.press)}>
+            <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
+              {deleting
+                ? 'Deleting…'
+                : confirmDelete
+                  ? 'Tap again to permanently delete your account & data'
+                  : 'Delete account'}
+            </AppText>
+          </Animated.View>
         </PressableScale>
       </Reveal>
 

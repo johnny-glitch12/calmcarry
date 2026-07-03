@@ -49,7 +49,6 @@ export function ProgramDetail() {
           accessibilityRole="button"
           accessibilityLabel="Back"
           dimTo={0.85}
-          scaleTo={0.92}
           style={{ marginBottom: 16 }}>
           <Feather name="chevron-left" size={26} color={c.text} />
         </PressableScale>

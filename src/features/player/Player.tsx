@@ -234,8 +234,8 @@ export function Player() {
     }
     breath.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 6000, easing: Easing.inOut(Easing.ease) })
+        withTiming(1, { duration: 4000, easing: ease.sine }),
+        withTiming(0, { duration: 6000, easing: ease.sine })
       ),
       -1,
       false
@@ -256,7 +256,7 @@ export function Player() {
         // release one ripple at the top of the exhale — it expands and dissolves
         // over the full out-breath, reaching the night ring as it disappears
         ripple.value = 0;
-        ripple.value = withTiming(1, { duration: 6000, easing: Easing.out(Easing.ease) });
+        ripple.value = withTiming(1, { duration: 6000, easing: ease.out });
         t2 = setTimeout(() => {
           if (alive) cycle();
         }, 6000);

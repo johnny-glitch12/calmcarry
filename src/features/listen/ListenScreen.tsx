@@ -5,7 +5,9 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -72,6 +74,33 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const on = level > 0;
+
+  // Fader drag: slide across the volume strip to set the level continuously
+  // (taps on the individual bars still work — the pan only activates after a
+  // deliberate horizontal pull, and vertical motion stays with the ScrollView).
+  const stripW = useSharedValue(0);
+  const lastLvl = useSharedValue(0);
+  const tickLevel = (l: number) => {
+    if (!on) return; // sound turned off mid-drag (stopAll / timer) — don't resurrect it
+    haptic(); // one light tick per step, like a physical detent
+    onLevel(l);
+  };
+  const levelPan = Gesture.Pan()
+    .enabled(on && !locked)
+    .activeOffsetX([-6, 6])
+    .failOffsetY([-16, 16]) // generous vertical window so the mixer's scroll always wins
+    .onBegin(() => {
+      lastLvl.value = 0;
+    })
+    .onUpdate((e) => {
+      const w = stripW.value;
+      if (w <= 0) return;
+      const lvl = Math.min(3, Math.max(1, 1 + Math.floor((e.x / w) * 3)));
+      if (lvl !== lastLvl.value) {
+        lastLvl.value = lvl;
+        runOnJS(tickLevel)(lvl);
+      }
+    });
 
   // Turning a sound ON should feel alive, not a hard flip: the accent ring fades
   // in, the badge pops + swaps plus→volume, the tile lifts, the bars brighten.
@@ -152,25 +181,33 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
           ) : null}
         </Animated.View>
       </PressableScale>
-      {/* per-sound volume — 3 levels (a locked tile shows a matching spacer instead) */}
+      {/* per-sound volume — 3 levels: tap a bar OR slide across the strip like a
+          fader (the drag ticks a light haptic at each step). Locked tiles show a
+          matching spacer instead. */}
       {locked ? (
         <View style={{ height: 12, marginTop: 8 }} />
       ) : (
-        <Animated.View style={[{ flexDirection: 'row', gap: 6, marginTop: 8, height: 12 }, barsStyle]}>
-          {[1, 2, 3].map((l) => (
-            <PressableScale
-              key={l}
-              onPress={() => onLevel(l)}
-              disabled={!on}
-              hitSlop={{ top: 18, bottom: 18, left: 6, right: 6 }}
-              style={{ flex: 1 }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on && level >= l, disabled: !on }}
-              accessibilityLabel={`Volume level ${l}`}>
-              <View style={{ height: 10, borderRadius: 5, backgroundColor: on && level >= l ? c.accent : c.line }} />
-            </PressableScale>
-          ))}
-        </Animated.View>
+        <GestureDetector gesture={levelPan}>
+          <Animated.View
+            onLayout={(e) => {
+              stripW.value = e.nativeEvent.layout.width;
+            }}
+            style={[{ flexDirection: 'row', gap: 6, marginTop: 8, height: 12 }, barsStyle]}>
+            {[1, 2, 3].map((l) => (
+              <PressableScale
+                key={l}
+                onPress={() => onLevel(l)}
+                disabled={!on}
+                hitSlop={{ top: 18, bottom: 18, left: 6, right: 6 }}
+                style={{ flex: 1 }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on && level >= l, disabled: !on }}
+                accessibilityLabel={`${label} volume, level ${l}`}>
+                <View style={{ height: 10, borderRadius: 5, backgroundColor: on && level >= l ? c.accent : c.line }} />
+              </PressableScale>
+            ))}
+          </Animated.View>
+        </GestureDetector>
       )}
     </View>
   );

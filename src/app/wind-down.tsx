@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
+import { AppText, DragDismiss, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
@@ -326,7 +326,8 @@ export default function WindDownScreen() {
   }));
 
   return (
-    <Screen
+    <DragDismiss onDismiss={close}>
+      <Screen
       mode="night"
       overlay={
         <Animated.View
@@ -381,6 +382,7 @@ export default function WindDownScreen() {
           </View>
         </View>
       </Pressable>
-    </Screen>
+      </Screen>
+    </DragDismiss>
   );
 }

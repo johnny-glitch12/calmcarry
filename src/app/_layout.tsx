@@ -155,15 +155,17 @@ function RootNav() {
       <Stack screenOptions={{ headerShown: false, animation: 'fade', animationDuration: dur.nav }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-      {/* wind-down rises like a player expanding from the mini-player (§4 stand-in) */}
+      {/* wind-down rises like a player expanding from the mini-player (§4 stand-in).
+          gestureEnabled OFF: the screen's own DragDismiss pan (finger-tracking,
+          velocity release) is the single dismissal system — no double gesture. */}
       <Stack.Screen
         name="wind-down"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: true }}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: false }}
       />
       {/* content player — rises like the wind-down */}
       <Stack.Screen
         name="player"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: true }}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: false }}
       />
       {/* card-push drill-downs */}
       <Stack.Screen name="device" options={{ animation: 'slide_from_right', gestureEnabled: true }} />

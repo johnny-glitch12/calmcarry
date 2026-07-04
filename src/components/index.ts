@@ -7,6 +7,7 @@ export { Screen } from './Screen';
 export { GlowOrb } from './GlowOrb';
 export { PrimaryButton } from './PrimaryButton';
 export { PressableScale } from './PressableScale';
+export { DragDismiss } from './DragDismiss';
 export { Card } from './Card';
 export { CoverCard } from './CoverCard';
 export { LibraryCard } from './LibraryCard';

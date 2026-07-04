@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, PressableScale, ProgressRing, Screen } from '@/components';
+import { AppText, DragDismiss, PressableScale, ProgressRing, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
@@ -294,6 +294,10 @@ export function Player() {
     transform: [{ scale: 1 + ripple.value * 0.22 }],
     opacity: (1 - ripple.value) * 0.3,
   }));
+  // the cover itself breathes with the guide — barely (2%), like a chest rising
+  const coverStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + breath.value * 0.02 }],
+  }));
 
   const paused = !status.playing;
   const toggle = () => {
@@ -447,7 +451,8 @@ export function Player() {
   };
 
   return (
-    <Screen mode="night">
+    <DragDismiss onDismiss={close}>
+      <Screen mode="night">
       <View style={{ flex: 1 }}>
         {/* top bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
@@ -528,10 +533,11 @@ export function Player() {
                 breathRingStyle,
               ]}
             />
-            {/* cover inside the ring */}
-            <View style={{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage }}>
+            {/* cover inside the ring — breathes with the guide */}
+            <Animated.View
+              style={[{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage }, coverStyle]}>
               <Image source={covers[track.cover]} style={{ width: 200, height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
-            </View>
+            </Animated.View>
           </View>
 
           {/* breath pacer */}
@@ -592,6 +598,7 @@ export function Player() {
           <View style={{ width: 44, height: 44 }} />
         </View>
       </View>
-    </Screen>
+      </Screen>
+    </DragDismiss>
   );
 }

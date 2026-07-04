@@ -30,7 +30,9 @@ import { UsersModule } from './users/users.module';
         ? {
             type: 'postgres' as const,
             url: config.databaseUrl,
-            ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
+            // VERIFIED TLS — this DB holds COPPA-scoped data (kid first names).
+            // Neon/hosted PG present valid certs; never skip verification.
+            ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
           }
         : { type: 'better-sqlite3' as const, database: config.dbPath }),
       entities: ENTITIES,

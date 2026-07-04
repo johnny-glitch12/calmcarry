@@ -10,19 +10,23 @@
     },
     "preview": {
       "distribution": "internal",
-      "ios": { "simulator": true }
+      "ios": {
+        "simulator": true
+      }
     },
     "device": {
       "extends": "preview",
-      "ios": { "simulator": false },
+      "ios": {
+        "simulator": false
+      },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://calmcarry-api.vercel.app"
+        "EXPO_PUBLIC_API_BASE": "https://api.theglowcompany.co"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://calmcarry-api.vercel.app"
+        "EXPO_PUBLIC_API_BASE": "https://api.theglowcompany.co"
       }
     }
   },

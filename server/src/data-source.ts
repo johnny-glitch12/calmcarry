@@ -46,7 +46,8 @@ export const dataSourceOptions: DataSourceOptions = {
     ? {
         type: 'postgres' as const,
         url: config.databaseUrl,
-        ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
+        // verified TLS — mirror of app.module.ts (COPPA-scoped data)
+        ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
       }
     : { type: 'better-sqlite3' as const, database: config.dbPath }),
   entities: ENTITIES,

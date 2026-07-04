@@ -17,8 +17,6 @@ export const config = {
   dbPath: process.env.DB_PATH ?? join(process.cwd(), 'data', 'calmcarry.sqlite'),
   databaseUrl: process.env.DATABASE_URL ?? '',
   databaseSsl: (process.env.DATABASE_SSL ?? 'true') !== 'false', // most hosted PG needs SSL
-  // allow a one-time schema bootstrap on a fresh prod DB (set DB_SYNC=true), else off
-  dbSync: process.env.DB_SYNC === 'true',
   // allowed browser origins in production (comma-separated); dev reflects all
   corsOrigins: (process.env.CORS_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
 
@@ -137,7 +135,11 @@ export function prodSecretGaps(): string[] {
   if (!process.env.JWT_SECRET || config.jwtSecret.includes('change-me')) missing.push('JWT_SECRET');
   if (config.cmsAdminKey === 'dev-cms-key') missing.push('CMS_ADMIN_KEY');
   if (!config.databaseUrl) missing.push('DATABASE_URL');
-  if (!config.cdn.baseUrl || !config.cdn.signingKey) missing.push('CDN_BASE_URL + CDN_SIGNING_KEY');
+  // CDN keys are only required once STREAMING is turned on — v1 ships bundled-only
+  // audio, and CdnService fail-closes (503) cleanly if hit without keys, which the
+  // client catches and falls back to the bundled asset.
+  if (process.env.STREAMING_ENABLED === 'true' && (!config.cdn.baseUrl || !config.cdn.signingKey))
+    missing.push('CDN_BASE_URL + CDN_SIGNING_KEY');
   if (!config.corsOrigins.length) missing.push('CORS_ORIGINS');
   if (!config.apple.signInClientId && !config.google.signInClientId) missing.push('APPLE_SIGNIN_CLIENT_ID or GOOGLE_SIGNIN_CLIENT_ID');
   if (!integrations.appleIap && !integrations.googleIap) missing.push('APPLE_IAP_SHARED_SECRET or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');

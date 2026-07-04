@@ -1,0 +1,25 @@
+# Belt-and-braces trigger for the daily COPPA/data-retention purge.
+# The API's in-process timer (always-on Fly machine) is the primary; this external
+# cron guarantees the purge still runs if the machine was down/crash-looping at
+# 04:00. Requires the CRON_SECRET repo secret (same value as the Fly secret).
+name: retention-purge
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger retention purge
+        run: |
+          code=$(curl -s -o /tmp/purge-body -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://api.theglowcompany.co/retention/purge")
+          echo "status: $code"
+          cat /tmp/purge-body
+          if [ "$code" != "200" ]; then
+            echo "::error::retention purge failed with HTTP $code"
+            exit 1
+          fi

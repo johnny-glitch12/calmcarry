@@ -1,7 +1,8 @@
-# Fly.io deploy config for the CalmCarry API. `fly launch --no-deploy` then `fly deploy`.
-# Set secrets first (see DEPLOY.md):
+# Fly.io deploy config for the CalmCarry API — THE deploy target (the Vercel
+# serverless path was removed; see DEPLOY.md). `fly launch --no-deploy` then
+# `fly deploy`. Set secrets first (see DEPLOY.md):
 #   fly secrets set JWT_SECRET=... CMS_ADMIN_KEY=... DATABASE_URL=... \
-#                   CDN_BASE_URL=... CDN_SIGNING_KEY=... CORS_ORIGINS=...
+#                   CORS_ORIGINS=... CRON_SECRET=... (+ Apple/Google sign-in & IAP)
 app = "calmcarry-api"
 primary_region = "iad"
 
@@ -10,18 +11,29 @@ primary_region = "iad"
 [env]
   PORT = "4000"
   # Production posture. The boot-guard in main.ts FAILS CLOSED unless every prod
-  # secret is set first (fly secrets set JWT_SECRET=… CMS_ADMIN_KEY=… DATABASE_URL=…
-  # CDN_BASE_URL=… CDN_SIGNING_KEY=… CORS_ORIGINS=… + Apple/Google sign-in & IAP).
-  # The demo user is NOT seeded in production. Set NODE_ENV=development only for a
-  # throwaway showcase that should boot without real credentials.
+  # secret is set first. The demo user is NOT seeded in production. Set
+  # NODE_ENV=development only for a throwaway showcase that should boot without
+  # real credentials.
   NODE_ENV = "production"
 
 [http_service]
   internal_port = 4000
   force_https = true
-  auto_stop_machines = "stop"
+  # ALWAYS-ON — deliberately not scale-to-zero. A stopped machine (a) never fires
+  # the in-process daily COPPA retention purge and (b) puts a multi-second Nest
+  # cold boot in front of Apple/Google store webhooks. One warm shared-cpu-1x is
+  # ~$3/mo; that is exactly what it buys.
+  auto_stop_machines = false
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
+
+  # restart a wedged machine automatically
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/health"
 
 [[vm]]
   size = "shared-cpu-1x"

@@ -129,7 +129,7 @@ export function Search() {
                 <CoverCard
                   title={r.title}
                   subtitle={r.subtitle}
-                  meta={isLocked ? `${r.meta} · Calm Plan` : r.meta}
+                  meta={isLocked ? `${r.meta} · Premium` : r.meta}
                   image={covers[r.cover]}
                   locked={isLocked}
                   onPress={() => router.push((isLocked ? `/unlock?id=${r.id}` : r.playHref) as Href)}

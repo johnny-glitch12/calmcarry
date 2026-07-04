@@ -1,10 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -23,6 +22,7 @@ import { audioSources, type AudioKey } from '@/content/audio';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
+import { lightTap } from '@/lib/haptics';
 import { takePendingMix } from '@/lib/mixShare';
 import { getJSON, remove, setJSON } from '@/lib/store';
 import { dur, ease, spring, useTheme } from '@/theme';
@@ -59,9 +59,6 @@ type TimerState = { endAt: number; mins: number };
 // analysis while computing the timer's absolute end time.
 const timerStateFor = (mins: number): TimerState => ({ endAt: Date.now() + mins * 60 * 1000, mins });
 
-function haptic() {
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-}
 
 function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   label: string;
@@ -82,7 +79,7 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const lastLvl = useSharedValue(0);
   const tickLevel = (l: number) => {
     if (!on) return; // sound turned off mid-drag (stopAll / timer) — don't resurrect it
-    haptic(); // one light tick per step, like a physical detent
+    lightTap(); // one light tick per step, like a physical detent
     onLevel(l);
   };
   const levelPan = Gesture.Pan()
@@ -164,10 +161,10 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
               </Animated.View>
             </View>
             <View>
-              <AppText style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 15, color: '#FFFFFF' }}>{label}</AppText>
+              <AppText variant="cardTitle" style={{ color: '#FFFFFF' }}>{label}</AppText>
               {locked ? (
                 <AppText variant="meta" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-                  Calm Plan
+                  Premium
                 </AppText>
               ) : null}
             </View>
@@ -203,7 +200,7 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
                 accessibilityRole="button"
                 accessibilityState={{ selected: on && level >= l, disabled: !on }}
                 accessibilityLabel={`${label} volume, level ${l}`}>
-                <View style={{ height: 10, borderRadius: 5, backgroundColor: on && level >= l ? c.accent : c.line }} />
+                <View style={{ height: 12, borderRadius: 6, backgroundColor: on && level >= l ? c.accent : c.line }} />
               </PressableScale>
             ))}
           </Animated.View>
@@ -293,7 +290,7 @@ export function ListenScreen() {
   const anyOn = (Object.values(levels) as number[]).some((v) => v > 0);
 
   const toggle = (k: SoundKey) => {
-    haptic();
+    lightTap();
     // premium sounds open the Calm Plan for free adults (kids are never paywalled)
     const s = SOUNDS.find((x) => x.key === k);
     if (s?.premium && !isPremium && !kids) {
@@ -334,7 +331,7 @@ export function ListenScreen() {
 
   // Set the sleep timer to an exact duration — one direct tap, no cycle-and-read loop.
   const setTimerTo = (mins: number) => {
-    haptic();
+    lightTap();
     setTimer(mins);
     if (timerRef.current) clearTimeout(timerRef.current);
     if (mins > 0) {
@@ -367,7 +364,7 @@ export function ListenScreen() {
 
   const saveMix = () => {
     if (!anyOn) return;
-    haptic();
+    lightTap();
     // name the mix from its active sounds so chips are self-describing ("Rain · Ocean"),
     // not indistinguishable "Mix 1 / Mix 2" — same naming shareMix already uses
     const active = SOUNDS.filter((s) => levels[s.key] > 0);
@@ -377,7 +374,7 @@ export function ListenScreen() {
     setJSON('cc.mixes', next);
   };
   const loadMix = (m: SavedMix) => {
-    haptic();
+    lightTap();
     // re-gate through the same helper as community mixes so a saved mix can never
     // resurrect a premium sound for a now-free user
     applyExternalLevels(m.levels);
@@ -404,7 +401,7 @@ export function ListenScreen() {
       const pending = takePendingMix();
       if (pending) {
         applyExternalLevels(pending);
-        haptic();
+        lightTap();
       } else {
         // resume the current mix (it was paused on the last blur)
         (Object.keys(players) as SoundKey[]).forEach((k) => {
@@ -435,7 +432,7 @@ export function ListenScreen() {
   // only (kids never post). The name is built from the active sound labels.
   const shareMix = async () => {
     if (!anyOn || kids || !token || token === 'local') return;
-    haptic();
+    lightTap();
     setShareNote(null);
     const active = SOUNDS.filter((s) => levels[s.key] > 0);
     const name = active.slice(0, 3).map((s) => s.label).join(' · ') || 'A shared mix';
@@ -577,8 +574,8 @@ export function ListenScreen() {
             accessibilityRole="button"
             accessibilityLabel="Share this mix anonymously to the community"
             dimTo={0.9}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
-            <Feather name="share-2" size={15} color={c.textAccent} />
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
+            <Feather name="share-2" size={16} color={c.textAccent} />
             <AppText variant="cardTitle" tone="title">
               Share this mix anonymously
             </AppText>
@@ -604,7 +601,7 @@ export function ListenScreen() {
               <PressableScale
                 key={id}
                 onPress={() => router.push((locked ? `/unlock?id=${id}` : `/player?id=${id}`) as Href)}
-                onPressIn={haptic}
+                onPressIn={lightTap}
                 accessibilityRole="button"
                 accessibilityLabel={`Play ${t.title}`}
                 scaleTo={0.98}

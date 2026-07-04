@@ -28,6 +28,9 @@ export function Family() {
   // focus so a device just registered on /register-device shows up on return.
   const [devices, setDevices] = useState<ApiDevice[]>([]);
   const [devicesLoaded, setDevicesLoaded] = useState(false);
+  // distinguish "you have no devices" from "we couldn't check" — an offline user
+  // must not be told they have nothing registered
+  const [devicesError, setDevicesError] = useState(false);
   useFocusEffect(
     useCallback(() => {
       if (!token || token === 'local') {
@@ -38,9 +41,14 @@ export function Family() {
       api
         .devices(token)
         .then((list) => {
-          if (alive) setDevices((list as ApiDevice[]) ?? []);
+          if (alive) {
+            setDevices((list as ApiDevice[]) ?? []);
+            setDevicesError(false);
+          }
         })
-        .catch(() => {})
+        .catch(() => {
+          if (alive) setDevicesError(true);
+        })
         .finally(() => {
           if (alive) setDevicesLoaded(true);
         });
@@ -191,8 +199,8 @@ export function Family() {
                       entering={FadeIn.duration(dur.press)}
                       exiting={FadeOut.duration(dur.press)}>
                       <AppText
-                        variant="label"
-                        style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent, textTransform: 'none', letterSpacing: 0 }}>
+                        variant="bodyMedium"
+                        style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent }}>
                         {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
                       </AppText>
                     </Animated.View>
@@ -234,7 +242,9 @@ export function Family() {
                 borderColor: c.panelStrong,
               }}>
               <AppText variant="meta" tone="muted">
-                No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.
+                {devicesError
+                  ? 'We couldn’t check your devices just now. Pull back in a moment — anything you’ve registered is safe.'
+                  : 'No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.'}
               </AppText>
             </View>
           ) : null}
@@ -285,7 +295,7 @@ export function Family() {
             <Feather name="smile" size={18} color={c.accent} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <AppText variant="cardTitle" tone="title">
-                Kids&apos; mode
+                Kids mode
               </AppText>
               <AppText variant="label" tone="muted" style={{ marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
                 A gentle wind-down a child can run themselves.
@@ -297,7 +307,7 @@ export function Family() {
                 if (v) enterKids();
                 else router.push('/parent-gate?intent=exitKids' as Href);
               }}
-              accessibilityLabel="Kids' mode"
+              accessibilityLabel="Kids mode"
               trackColor={{ false: offTrack, true: c.accent }}
               thumbColor="#FFFFFF"
               ios_backgroundColor={offTrack}

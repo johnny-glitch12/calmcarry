@@ -57,7 +57,7 @@ export function SignIn() {
       await socialSignIn(provider, idToken, authorizationCode);
       router.replace('/');
     } catch {
-      setError('Social sign-in isn’t available yet. Try email, or add the provider keys.');
+      setError('That sign-in didn’t go through. Email works too.');
     } finally {
       setBusy(false);
     }
@@ -123,7 +123,7 @@ export function SignIn() {
         <GlowOrb size={84} reserveGlow aura />
         <Logo size="lg" tagline style={{ marginTop: 14 }} />
         <AppText variant="body" tone="muted" style={{ marginTop: 10, textAlign: 'center' }}>
-          {isSignup ? 'Create your Glow account' : 'Sign in to sync your Glow account'}
+          {isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}
         </AppText>
       </Reveal>
 

@@ -75,7 +75,7 @@ export function About() {
           Version {APP_VERSION}
         </AppText>
         <AppText variant="body" tone="muted" style={{ marginTop: 12, textAlign: 'center', maxWidth: 320 }}>
-          The companion app for your Glow Orb: soundscapes, sleep tales and guided wind-downs to help you settle into calmer nights.
+          The companion app for your Glow Orb: soundscapes, calming music and guided wind-downs to help you settle into calmer nights.
         </AppText>
       </Reveal>
 

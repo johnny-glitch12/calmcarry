@@ -35,7 +35,7 @@ export function LearnList() {
             scaleTo={0.98}>
             <Card variant="surface" padding={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {a.cover ? (
-                <Image source={covers[a.cover]} style={{ width: 60, height: 60, borderRadius: 12 }} contentFit="cover" accessibilityIgnoresInvertColors />
+                <Image source={covers[a.cover]} style={{ width: 60, height: 60, borderRadius: 16 }} contentFit="cover" accessibilityIgnoresInvertColors />
               ) : null}
               <View style={{ flex: 1 }}>
                 <AppText variant="caption" tone="accent">

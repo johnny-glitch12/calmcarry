@@ -1,9 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -17,13 +16,9 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
+import { lightTap } from '@/lib/haptics';
 import { dur, ease, fonts, STAGGER, useTheme } from '@/theme';
 
-// light tap feedback on the big kid affordances (paired with the PressableScale
-// press animation below) — a child should feel every tap respond
-const tapHaptic = () => {
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-};
 // Big, friendly, calm sounds a child can pick on their own.
 const KID_SOUNDS = ['forest', 'rainfall', 'slow-tide'];
 
@@ -135,7 +130,7 @@ export function KidsHome() {
       <Reveal index={1} style={{ marginTop: 22 }}>
         <PressableScale
           onPress={() => router.push(`/player?id=${story.id}`)}
-          onPressIn={tapHaptic}
+          onPressIn={lightTap}
           accessibilityRole="button"
           accessibilityLabel={`Play ${story.title}`}
           scaleTo={0.98}
@@ -213,7 +208,7 @@ export function KidsHome() {
               <PressableScale
                 key={id}
                 onPress={() => router.push(`/player?id=${id}`)}
-                onPressIn={tapHaptic}
+                onPressIn={lightTap}
                 accessibilityRole="button"
                 accessibilityLabel={t.title}
                 dimTo={0.96}

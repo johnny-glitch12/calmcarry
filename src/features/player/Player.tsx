@@ -1,10 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -17,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText, DragDismiss, PressableScale, ProgressRing, Screen } from '@/components';
+import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
@@ -35,10 +35,6 @@ import { dur, ease, useTheme } from '@/theme';
 // Sleep / auto-stop timer options (minutes; 0 = off). Soundscapes otherwise loop
 // all night with no way to stop short of force-closing the app.
 const SLEEP_OPTIONS = [0, 15, 30, 45, 60] as const;
-
-function haptic() {
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-}
 
 // Sensation-honest cues, rotated through the session (build plan: honest device
 // cues + a breathing visual guide the user while they hold the device).
@@ -61,7 +57,7 @@ function PlayPause({ paused, onPress }: { paused: boolean; onPress: () => void }
   return (
     <PressableScale
       onPress={onPress}
-      onPressIn={haptic}
+      onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={paused ? 'Play' : 'Pause'}
       hitSlop={8}
@@ -213,7 +209,7 @@ export function Player() {
     };
   }, [track.id]);
   const onToggleSave = () => {
-    haptic();
+    lightTap();
     toggleFavorite(track.id).then(setSaved).catch(() => {});
   };
 
@@ -447,7 +443,7 @@ export function Player() {
     const next = sleepMin === 0 ? 30 : SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
     setSleepMin(next);
     setJSON('cc.sleepTimerMin', next);
-    haptic();
+    lightTap();
   };
 
   return (

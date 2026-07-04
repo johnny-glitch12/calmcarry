@@ -244,8 +244,7 @@ function SleepGoalDial({ value, onChange }: { value: number; onChange: (h: numbe
 }
 
 /** A constellation star: fades in ONCE to a stable resting glow, then holds
- *  still (opacity + scale only). The endless twinkle loop was removed —
- *  restraint per the motion spec. */
+ *  still (opacity + scale only — no looping twinkle; restraint per the motion spec). */
 function TwinkleStar({ top, left, size = 16, delay = 0 }: { top: number; left: string; size?: number; delay?: number }) {
   const reduced = useReducedMotion();
   const t = useSharedValue(reduced ? 0.7 : 0);

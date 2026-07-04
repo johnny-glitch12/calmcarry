@@ -118,7 +118,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           colors={isNight ? ['#1E302D', '#16302B'] : [brand.mint, brand.mintSoft]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 22, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <AppText variant="caption" tone="accent" numberOfLines={2}>
                 {kicker}

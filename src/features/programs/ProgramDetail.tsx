@@ -71,7 +71,7 @@ export function ProgramDetail() {
 
       <Reveal index={1} style={{ marginTop: 20 }}>
         {locked ? (
-          <PrimaryButton label="Unlock with the Calm Plan" onPress={() => router.push(`/unlock?id=${program.id}` as Href)} />
+          <PrimaryButton label="Unlock with Premium" onPress={() => router.push(`/unlock?id=${program.id}` as Href)} />
         ) : (
           <PrimaryButton
             label={done.length === 0 ? 'Begin program' : done.length >= program.steps.length ? 'Revisit a night' : `Continue · night ${nextStep.day}`}

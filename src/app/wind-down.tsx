@@ -1,9 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
-import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   Extrapolation,
@@ -16,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText, DragDismiss, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
+import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
@@ -24,10 +24,6 @@ import { dur, ease, useTheme } from '@/theme';
 
 /** Default wind-down session: 20 minutes (DESIGN_SYSTEM hero copy). */
 const SESSION_MS = 20 * 60 * 1000;
-
-function haptic() {
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-}
 
 /** Generic circular control with press feedback (scale 0.97 + haptic, ease-out). */
 function ControlButton({
@@ -47,7 +43,7 @@ function ControlButton({
   return (
     <PressableScale
       onPress={onPress}
-      onPressIn={haptic}
+      onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={8}
@@ -83,7 +79,7 @@ function PlayPauseButton({ paused, onPress }: { paused: boolean; onPress: () => 
   return (
     <PressableScale
       onPress={onPress}
-      onPressIn={haptic}
+      onPressIn={lightTap}
       accessibilityRole="button"
       accessibilityLabel={paused ? 'Resume' : 'Pause'}
       hitSlop={8}

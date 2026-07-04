@@ -1,13 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 
-// light tap feedback, matching the app's press idiom (PrimaryButton / CoverCard)
-const tapHaptic = () => {
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-};
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -17,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText, Card, FormField, PressableScale, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { setPendingMix } from '@/lib/mixShare';
@@ -83,7 +79,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
       {win.mix ? (
         <PressableScale
           onPress={onLoadMix}
-          onPressIn={tapHaptic}
+          onPressIn={lightTap}
           accessibilityRole="button"
           accessibilityLabel={`Load mix ${win.mix.name} into the sound machine`}
           scaleTo={0.98}
@@ -287,7 +283,7 @@ export function CommunityScreen() {
               <PressableScale
                 key={f.id}
                 onPress={() => setFilter(f.id)}
-                onPressIn={tapHaptic}
+                onPressIn={lightTap}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 scaleTo={0.96}
@@ -361,7 +357,7 @@ export function CommunityScreen() {
         />
         <PressableScale
           onPress={share}
-          onPressIn={() => draft.trim() && tapHaptic()}
+          onPressIn={() => draft.trim() && lightTap()}
           accessibilityRole="button"
           accessibilityState={{ disabled: !draft.trim() }}
           disabled={!draft.trim()}

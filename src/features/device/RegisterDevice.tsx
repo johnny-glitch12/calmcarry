@@ -103,7 +103,7 @@ export function RegisterDevice() {
         </Reveal>
         <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300 }}>
-            Your Glow Orb warranty is active. We&apos;ll email a confirmation to your Glow account.
+            Your Glow Orb warranty is active. We&apos;ll email a confirmation to your account address.
           </AppText>
         </Reveal>
         <Reveal index={2} style={{ marginTop: 16 }}>

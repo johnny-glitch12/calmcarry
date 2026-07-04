@@ -93,7 +93,7 @@ export function SoundsLibrary() {
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <View>
             <AppText variant="caption" tone="muted">
-              {kids ? 'Kids' : 'Library'}
+              {kids ? 'Kids' : 'Sounds & sessions'}
             </AppText>
             <AppText variant="h1" tone="title" style={{ marginTop: 6 }}>
               {kids ? 'Bedtime library' : 'Library'}

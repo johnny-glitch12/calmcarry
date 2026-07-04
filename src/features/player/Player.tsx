@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -448,7 +449,25 @@ export function Player() {
 
   return (
     <DragDismiss onDismiss={close}>
-      <Screen mode="night">
+      <Screen
+        mode="night"
+        backdrop={
+          // immersive scene: the track's own artwork fills the screen under a deep
+          // night scrim — dark enough for 3am eyes, alive enough to feel like a place
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Image
+              source={covers[track.cover]}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              accessibilityIgnoresInvertColors
+            />
+            <LinearGradient
+              colors={['rgba(14,24,23,0.86)', 'rgba(14,24,23,0.62)', 'rgba(14,24,23,0.94)']}
+              locations={[0, 0.45, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
+        }>
       <View style={{ flex: 1 }}>
         {/* top bar */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>

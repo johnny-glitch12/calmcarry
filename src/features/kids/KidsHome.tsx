@@ -110,7 +110,7 @@ export function KidsHome() {
   const story = TRACKS['penguin'] ?? TRACKS['slow-tide'];
 
   return (
-    <Screen mode={evening ? 'night' : 'light'} scroll tabBarSpacing>
+    <Screen mode={evening ? 'night' : 'day'} scroll tabBarSpacing>
       {/* greeting + grown-up lock */}
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>

@@ -1,5 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, View } from 'react-native';
@@ -19,6 +21,7 @@ import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
+import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { dur, ease, useTheme } from '@/theme';
 
@@ -325,6 +328,18 @@ export default function WindDownScreen() {
     <DragDismiss onDismiss={close}>
       <Screen
       mode="night"
+      backdrop={
+        // immersive scene: tonight's artwork under a deep scrim (heavier than the
+        // player's — the wind-down should feel like the room lights going down)
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Image source={covers[track.cover]} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
+          <LinearGradient
+            colors={['rgba(14,24,23,0.9)', 'rgba(14,24,23,0.72)', 'rgba(14,24,23,0.96)']}
+            locations={[0, 0.45, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+      }
       overlay={
         <Animated.View
           pointerEvents="none"

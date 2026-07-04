@@ -41,6 +41,9 @@ export const TRACKS: Record<string, Track> = {
   // Generated in-house (mid-band emphasis ~ rustling leaves). Cover reuses the
   // forest art until a bespoke green-noise cover is produced.
   'green-noise': { id: 'green-noise', title: 'Green Noise', subtitle: 'Mid-band hush · nature-like', cover: 'forestStream', duration: 'loops', category: 'noise', audio: 'green', locked: true },
+  // in-house blends of the real rain/fire/ocean recordings — honest one-tap scenes
+  'rain-fire': { id: 'rain-fire', title: 'Rain by the Fire', subtitle: 'Steady rain · a low crackle', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'rainFire', locked: true },
+  'rain-ocean': { id: 'rain-ocean', title: 'Rain over the Sea', subtitle: 'Rainfall · slow swell beneath', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'rainOcean', locked: true },
 };
 
 export type Program = {

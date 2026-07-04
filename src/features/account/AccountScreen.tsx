@@ -17,9 +17,7 @@ import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
 import { getVoice, voiceByKey } from '@/lib/voice';
 import { clearAll, getJSON, setJSON } from '@/lib/store';
-import { brand, dur, useColorSchemePref, useTheme, type SchemePref } from '@/theme';
-
-const SCHEMES: SchemePref[] = ['light', 'dark', 'system'];
+import { brand, dur, useTheme } from '@/theme';
 
 type RowProps = {
   icon: keyof typeof Feather.glyphMap;
@@ -108,7 +106,6 @@ function Group({ children }: { children: React.ReactNode }) {
 export function AccountScreen() {
   const router = useRouter();
   const { c } = useTheme();
-  const { pref, setPref } = useColorSchemePref();
   const { user, isPremium, token, signOut } = useAuth();
   const { mode, setMode } = useProfile();
   const [reminder, setReminder] = useState(false);
@@ -293,15 +290,11 @@ export function AccountScreen() {
         </PressableScale>
       </Reveal>
 
-      {/* appearance + mode */}
+      {/* mode — NIGHT-FIRST: the adult app is the night theme by identity (no theme
+          picker); only the kids surface keeps a soft daytime look */}
       <Reveal index={2} style={{ marginTop: 28 }}>
-        <SectionHeader kicker="Appearance" title="Theme" />
-        <Segmented
-          options={['Light', 'Dark', 'System']}
-          value={SCHEMES.indexOf(pref)}
-          onChange={(i) => setPref(SCHEMES[i])}
-        />
-        <AppText variant="label" tone="muted" style={{ marginTop: 20, marginBottom: 10, textTransform: 'none', letterSpacing: 0 }}>
+        <SectionHeader kicker="Who's it for" title="Mode" />
+        <AppText variant="label" tone="muted" style={{ marginBottom: 10, textTransform: 'none', letterSpacing: 0 }}>
           Kids mode shows bedtime stories and gentle sounds.
         </AppText>
         <Segmented

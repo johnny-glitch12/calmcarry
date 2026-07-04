@@ -1,4 +1,3 @@
-import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
@@ -13,6 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { HomeIcon, TAB_ICONS } from './TabIcons';
 import { brand, dur, ease, fonts, night, spring, themes, useColorSchemePref } from '@/theme';
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
@@ -30,16 +30,16 @@ type TabBarProps = {
   };
 };
 
-/** Route name → label + Feather icon. One outline icon family, no emoji (§7). */
-const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap; night?: boolean }> = {
-  index: { label: 'Home', icon: 'home' },
-  sounds: { label: 'Library', icon: 'compass' },
+/** Route name → label. Icons are CalmCarry's own vector set (TabIcons) — the
+ *  brand's geometry, not a stock icon family. */
+const TABS: Record<string, { label: string; night?: boolean }> = {
+  index: { label: 'Home' },
+  sounds: { label: 'Library' },
   // the Listen screen forces night mode (<Screen mode="night">); the bar must
-  // match so a light-preference user doesn't get a bright cream strip pinned to a
-  // dark sleep screen at 3am.
-  listen: { label: 'Listen', icon: 'music', night: true },
-  community: { label: 'Community', icon: 'users' },
-  you: { label: 'Profile', icon: 'user' },
+  // match so the strip never sits bright against a dark sleep screen at 3am.
+  listen: { label: 'Listen', night: true },
+  community: { label: 'Community' },
+  you: { label: 'Profile' },
 };
 
 /**
@@ -55,7 +55,7 @@ const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap;
  */
 function TabItem({
   focused,
-  icon,
+  route,
   label,
   onPress,
   inactive,
@@ -63,13 +63,14 @@ function TabItem({
   pillContent,
 }: {
   focused: boolean;
-  icon: keyof typeof Feather.glyphMap;
+  route: string;
   label: string;
   onPress: () => void;
   inactive: string;
   pillBg: string;
   pillContent: string;
 }) {
+  const Icon = TAB_ICONS[route as keyof typeof TAB_ICONS] ?? HomeIcon;
   const reduced = useReducedMotion();
   const t = useSharedValue(focused ? 1 : 0); // focus progress (gentle spring settle)
   const press = useSharedValue(1); // tap press-scale
@@ -135,11 +136,11 @@ function TabItem({
         />
         {/* icon — muted base + white overlay crossfade; the box pops + lifts on select */}
         <Animated.View style={[{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }, iconStyle]}>
-          <Feather name={icon} size={22} color={inactive} />
+          <Icon size={22} color={inactive} />
           <Animated.View
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, overlayStyle]}>
-            <Feather name={icon} size={22} color={pillContent} />
+            <Icon size={22} color={pillContent} />
           </Animated.View>
         </Animated.View>
         {focused ? (
@@ -231,7 +232,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
               <TabItem
                 key={route.key}
                 focused={focused}
-                icon={meta.icon}
+                route={route.name}
                 label={meta.label}
                 inactive={inactive}
                 pillBg={pillBg}

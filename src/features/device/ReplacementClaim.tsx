@@ -53,6 +53,8 @@ export function ReplacementClaim() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [device, setDevice] = useState<ApiDevice | null>(null);
+  // "couldn't check" must never read as "you have no device" (offline ≠ unregistered)
+  const [deviceLoadFailed, setDeviceLoadFailed] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
 
   // load the household's registered device so the claim is filed against a real one
@@ -64,9 +66,14 @@ export function ReplacementClaim() {
       api
         .devices(token)
         .then((list) => {
-          if (alive) setDevice(((list as ApiDevice[]) ?? [])[0] ?? null);
+          if (alive) {
+            setDevice(((list as ApiDevice[]) ?? [])[0] ?? null);
+            setDeviceLoadFailed(false);
+          }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (alive) setDeviceLoadFailed(true);
+        });
       return () => {
         alive = false;
       };
@@ -169,7 +176,11 @@ export function ReplacementClaim() {
               {device?.model ?? 'CalmCarry · Glow Orb'}
             </AppText>
             <AppText variant="label" tone="muted" numberOfLines={2}>
-              {device ? `${device.serial} · warranty active` : 'Register your device to file a claim'}
+              {device
+                ? `${device.serial} · warranty active`
+                : deviceLoadFailed
+                  ? 'We couldn’t check your device just now — try again in a moment'
+                  : 'Register your device to file a claim'}
             </AppText>
           </View>
         </View>

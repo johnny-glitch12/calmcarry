@@ -8,7 +8,7 @@ import { type AudioSource } from 'expo-audio';
  */
 export type AudioKey =
   | 'ocean' | 'rain' | 'forest' | 'drone' | 'piano' | 'gymnopedie' | 'fire' | 'waves'
-  | 'birdsong' | 'brown' | 'pink' | 'white' | 'green'
+  | 'birdsong' | 'brown' | 'pink' | 'white' | 'green' | 'rainFire' | 'rainOcean'
   | 'guidedBox' | 'guidedRest' | 'guidedLetGo'
   | 'voiceMaya' | 'voiceOrion' | 'voiceLuna';
 
@@ -26,6 +26,10 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   pink: require('../../assets/audio/pink-noise.mp3'),
   white: require('../../assets/audio/white-noise.mp3'),
   green: require('../../assets/audio/green-noise.mp3'), // generated in-house: pink base, mid-500Hz emphasis
+  // In-house blends of the REAL field recordings above (rain+fire, rain+ocean) —
+  // honest one-tap scenes mixed with ffmpeg; loudness-normalized loop beds.
+  rainFire: require('../../assets/audio/rain-fire.mp3'),
+  rainOcean: require('../../assets/audio/rain-ocean.mp3'),
 
   // Voiced guided sessions — narration mixed over a soft ambient bed (replaces the
   // old silent drone). Synthesized VO for now; Glowco can swap in human recordings.

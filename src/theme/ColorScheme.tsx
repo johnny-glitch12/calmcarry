@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useColorScheme as useRNColorScheme } from 'react-native';
 
 import type { ThemeMode } from './colors';
 
@@ -26,16 +25,16 @@ const ColorSchemeContext = createContext<Ctx>({
 });
 
 /**
- * App-level appearance preference. CalmCarry is light-by-day / dark-for-sleep
- * by design; this lets a user force the whole adaptive (utility) surface to the
- * dark eucalyptus theme too. Sleep screens (<Screen mode="night">) stay dark
- * regardless. Default follows the OS. (In-memory for now — persist with a
- * storage layer when one lands.)
+ * NIGHT-FIRST identity: CalmCarry is a sleep product, and the adult app is the
+ * deep-eucalyptus night theme everywhere, always — one cohesive world, like the
+ * best sleep apps, not a utility that happens to have a dark mode. `effective`
+ * therefore always resolves 'night'. The light palette still exists for the
+ * KIDS daytime surface (<Screen mode="day">), which stays soft on purpose.
+ * The pref plumbing is kept so the choice is one line to revisit.
  */
 export function ColorSchemeProvider({ children }: { children: ReactNode }) {
   const [pref, setPrefState] = useState<SchemePref>('system');
   const [hydrated, setHydrated] = useState(false);
-  const os = useRNColorScheme(); // 'light' | 'dark' | null
 
   // load the saved preference once on mount
   useEffect(() => {
@@ -52,10 +51,9 @@ export function ColorSchemeProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, p).catch(() => {});
   }, []);
 
-  const effective = useMemo<ThemeMode>(() => {
-    const resolved = pref === 'system' ? (os === 'dark' ? 'dark' : 'light') : pref;
-    return resolved === 'dark' ? 'night' : 'light';
-  }, [pref, os]);
+  // night-first: the adaptive surface is always the night theme (see doc above).
+  // `pref`/`os` intentionally no longer influence it.
+  const effective = useMemo<ThemeMode>(() => 'night', []);
 
   const value = useMemo(
     () => ({ pref, setPref, effective, hydrated }),

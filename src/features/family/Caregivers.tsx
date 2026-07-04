@@ -166,7 +166,7 @@ export function Caregivers() {
                 <AppText variant="meta" tone="muted">
                   Share this code with them (valid 7 days):
                 </AppText>
-                <AppText variant="display" tone="title" style={{ letterSpacing: 2 }}>
+                <AppText variant="display" tone="title" numberOfLines={1} adjustsFontSizeToFit style={{ letterSpacing: 2 }}>
                   {inviteCode}
                 </AppText>
                 <AppText variant="meta" tone="muted" style={{ textAlign: 'center' }}>

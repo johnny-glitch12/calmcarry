@@ -7,12 +7,17 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { brand, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
 
 type Props = {
-  mode?: ThemeMode;
+  /** 'night' = forced night; 'day' = forced light (KIDS daytime only); 'light' =
+   *  the adaptive surface — which is night-first, i.e. always night for adults. */
+  mode?: ThemeMode | 'day';
   scroll?: boolean;
   children: ReactNode;
   contentStyle?: ViewStyle;
   /** full-screen layer rendered ABOVE the body (e.g. the wind-down dim scrim) */
   overlay?: ReactNode;
+  /** full-bleed layer rendered UNDER the body but over the base gradient — the
+   *  immersive-scene slot (e.g. the player's full-bleed artwork + scrim) */
+  backdrop?: ReactNode;
   /** bottom inset so content clears the floating tab bar */
   tabBarSpacing?: boolean;
 };
@@ -55,11 +60,11 @@ function DriftBlob({ size, color, top, left, opacity = 0.1 }: {
  * with drifting sage blobs on night (DESIGN_SYSTEM §3). Gradients are
  * background-only, never on every card (§7).
  */
-export function Screen({ mode = 'light', scroll, children, contentStyle, overlay, tabBarSpacing }: Props) {
+export function Screen({ mode = 'light', scroll, children, contentStyle, overlay, backdrop, tabBarSpacing }: Props) {
   // Sleep screens force 'night'; everything else is ADAPTIVE — follows the
   // user's appearance preference (light by day, or dark when dark mode is on).
   const { effective } = useColorSchemePref();
-  const resolved: ThemeMode = mode === 'night' ? 'night' : effective;
+  const resolved: ThemeMode = mode === 'night' ? 'night' : mode === 'day' ? 'light' : effective;
   const c = themes[resolved];
   const isNight = resolved === 'night';
   const padBottom = tabBarSpacing ? 108 : 24;
@@ -137,6 +142,8 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
             />
           </>
         )}
+        {/* immersive-scene slot — full-bleed under the content, over the base wash */}
+        {backdrop}
         {body}
         {overlay}
       </View>

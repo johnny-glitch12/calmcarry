@@ -35,12 +35,13 @@ const SCRIPT =
   "Let's slow things down for a moment. Take a slow breath in... and let it go. " +
   "You don't have to carry today into tonight. Just settle in. I'll guide you from here.";
 
-// App personas → preferred ElevenLabs premade voices (by name, with fallbacks),
-// picked for bedtime register: warm/soft, calm/low, gentle/airy.
+// App personas → preferred ElevenLabs premade voices (name PREFIX match — the
+// library names carry suffixes like 'Brian - Deep, Resonant and Comforting'),
+// picked for bedtime register from the account's actual list:
 const PERSONAS = [
-  { file: 'voice-maya.mp3', label: 'Maya (warm & soft)', prefer: ['Matilda', 'Rachel', 'Sarah'] },
-  { file: 'voice-orion.mp3', label: 'Orion (calm & low)', prefer: ['George', 'Brian', 'Daniel'] },
-  { file: 'voice-luna.mp3', label: 'Luna (gentle & airy)', prefer: ['Lily', 'Alice', 'Charlotte'] },
+  { file: 'voice-maya.mp3', label: 'Maya (warm & soft)', prefer: ['Sarah', 'Bella', 'Matilda'] }, // mature, reassuring
+  { file: 'voice-orion.mp3', label: 'Orion (calm & low)', prefer: ['Brian -', 'George -', 'Eric -'] }, // deep, resonant, comforting ('-' disambiguates from the es-language 'BRIAN C')
+  { file: 'voice-luna.mp3', label: 'Luna (gentle & airy)', prefer: ['Lily', 'River', 'Jessica'] }, // velvety / relaxed-calm
 ];
 
 // Calm delivery: high stability (even pacing), low style exaggeration.
@@ -61,7 +62,7 @@ async function main() {
 
   const vres = await fetch(`${API}/v2/voices?page_size=100`, { headers: H });
   const voices = (await vres.json()).voices ?? [];
-  const byName = (n) => voices.find((v) => v.name?.toLowerCase() === n.toLowerCase());
+  const byName = (n) => voices.find((v) => v.name?.toLowerCase().startsWith(n.toLowerCase()));
 
   for (const p of PERSONAS) {
     const voice = p.prefer.map(byName).find(Boolean);

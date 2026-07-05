@@ -36,16 +36,16 @@ owner" badge) — premium works fine without Shopify.
 | `CORS_ORIGINS` | Lock API to your web origins |
 | IAP products in App Store Connect + Play Console | The subscriptions + their prices (`calmcarry.premium.monthly` / `.annual`) |
 | `APPLE_IAP_SHARED_SECRET` / `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Server-side **receipt validation** (anti-fraud) |
-| App Store Server Notifications + Play RTDN webhooks | Remove premium on **cancel / refund / lapse** *(also needs verification code — see end)* |
-| `CDN_BASE_URL` + `CDN_SIGNING_KEY` | Serve premium audio via signed URLs |
+| App Store Server Notifications + Play RTDN webhooks | Remove premium on **cancel / refund / lapse** — verification (Apple JWS + Google Pub/Sub OIDC) is implemented; just configure the endpoints + env vars (§4–5) |
 
 ### 🟡 Nice-to-have / can cut for v1
 | Key | Note |
 |---|---|
-| `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` + `EXPO_PUBLIC_GOOGLE_*` | Social sign-in. Can launch **email-only** and skip these *(also needs JWKS code)* |
-| `FCM_*` / `APNS_*` | Bedtime **push**. The app ships a local reminder already *(also needs push-registration code)* |
+| `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` + `EXPO_PUBLIC_GOOGLE_*` | Social sign-in — JWKS verification is implemented; keys are all that's missing. Can still launch **email-only** and skip these |
+| `FCM_*` / `APNS_*` | Bedtime **push**. The app ships a local reminder already *(server-side send transport is still a stub — see end)* |
 | `SHOPIFY_*` | Device-ownership badge only — optional for the subscription |
-| `EXPO_PUBLIC_SENTRY_DSN` | Crash/error monitoring (off if blank) |
+| `EXPO_PUBLIC_SENTRY_DSN` + `SENTRY_DSN` | Crash/error monitoring, app + server (off if blank) |
+| `CDN_BASE_URL` + `CDN_SIGNING_KEY` | **Not needed for v1** — all audio ships bundled in the binary. Only for `STREAMING_ENABLED=true` later (§7) |
 
 ### ⚪ Not needed
 Any third-party payment processor / Stripe / merchant-bank key.
@@ -99,8 +99,14 @@ Any third-party payment processor / Stripe / merchant-bank key.
 - **Push** — `FCM_SERVER_KEY`: firebase.google.com → add project (link the GCP project) → add
   Android app → **Project settings → Cloud Messaging**. *(New projects use FCM HTTP v1 / a
   service account instead of a legacy key — may need a small code change.)*
-- **Play RTDN**: GCP **Pub/Sub** → topic + push subscription to `https://<your-api>/webhooks/google`;
-  paste the topic in Play Console → **Monetization setup**.
+- **Play RTDN**: GCP **Pub/Sub** → topic + **push subscription** to `https://<your-api>/webhooks/google`;
+  paste the topic in Play Console → **Monetization setup**. On the subscription, enable
+  **authentication** (OIDC token) with a service account, then set on the server:
+  - `GOOGLE_PUBSUB_AUDIENCE` = the subscription's audience — by default the push endpoint URL
+    (`https://<your-api>/webhooks/google`) unless you set a custom audience.
+  - `GOOGLE_PUBSUB_SA_EMAIL` = that service account's email (e.g. `rtdn-push@<project>.iam.gserviceaccount.com`).
+    The webhook rejects tokens whose `email` claim doesn't match.
+  Without both, the Google webhook stays fail-closed (returns 503, never processes unverified events).
 
 ## 6. Shopify (device only — optional) — `SHOPIFY_*`
 - `SHOPIFY_SHOP` = `theglowcompany.myshopify.com`.
@@ -109,23 +115,34 @@ Any third-party payment processor / Stripe / merchant-bank key.
 - The app's **API secret key** = `SHOPIFY_WEBHOOK_SECRET`.
 - `SHOPIFY_BUNDLE_PRODUCT_IDS` = product/variant IDs of the device bundle that grants premium.
 
-## 7. Content CDN — `CDN_BASE_URL`, `CDN_SIGNING_KEY`
-- Easiest: **Bunny.net** → Pull/Storage Zone → enable **Token Authentication** → copy the key.
-- `CDN_BASE_URL` = zone URL; `CDN_SIGNING_KEY` = that token key.
+## 7. Content CDN — `CDN_BASE_URL`, `CDN_SIGNING_KEY` (post-v1 only)
+- **Skip this for launch.** v1 ships every track bundled in the app binary — nothing streams,
+  so no CDN account, keys, or cost. Revisit when the catalog outgrows the binary (~30+ tracks).
+- To turn streaming on later, set `STREAMING_ENABLED=true` **plus** both CDN vars. The server
+  fail-closes: with the flag on and either key missing, it refuses to boot in production.
+- Easiest provider: **Bunny.net** → Pull/Storage Zone → enable **Token Authentication** → copy the key.
+  `CDN_BASE_URL` = zone URL; `CDN_SIGNING_KEY` = that token key.
 - ⚠️ The signing scheme in `cdn.service.ts` must match the CDN you choose.
 
-## 8. Sentry — `EXPO_PUBLIC_SENTRY_DSN`
-- sentry.io → **Create project** (React Native) → copy the **DSN**. Blank = monitoring off.
+## 8. Sentry — `EXPO_PUBLIC_SENTRY_DSN` (app) + `SENTRY_DSN` (server)
+- sentry.io → **Create project** ×2 (React Native for the app, Node for the API) → copy each **DSN**.
+- Server: `SENTRY_DSN` as a Fly secret — the API captures unhandled 5xx errors automatically.
+- Blank = monitoring off (both are strict no-ops without a DSN).
 
 ---
 
-## Keys alone aren't enough — these also need code
-Even with the right keys, a few flows stay disabled until implemented (kept fail-closed for safety):
-- **Social sign-in** — real JWKS signature verification (`jose` / `google-auth-library`).
-- **Subscription webhooks** — Apple JWS / Google Pub/Sub OIDC verification before they process.
-- **Google receipt validation** — the Play Developer API client must be wired.
-- **Push** — the app must register a device token on sign-in.
-- **Migrations** — replace `synchronize` before pointing at prod Postgres.
+## What's implemented vs. what still needs code
+Most flows that used to be stubs are now **fully implemented and fail-closed** — real keys are
+the only missing piece:
+- ✅ **Social sign-in** — Apple + Google JWKS signature verification (`jose` / `google-auth-library`).
+- ✅ **Receipt validation** — App Store Server API (JWS, Apple root certs pinned) + Play
+  Developer API (`androidpublisher` v3), SKU-allowlisted, fail-closed.
+- ✅ **Subscription webhooks** — Apple JWS verification + Google Pub/Sub OIDC verification (§5).
+- ✅ **Migrations** — committed migrations run automatically on any Postgres connection;
+  `synchronize` is local-SQLite-dev only.
+- ✅ **Push registration** — the app registers device tokens on sign-in.
 
-Each of items 1–2 has a "cut for v1" path (email-only auth; rely on client re-validation) that
-removes the dependency entirely.
+Still needs code (kept as a safe no-op until then):
+- **Push send transport** — `push.service.ts` logs instead of sending. Needs FCM HTTP v1
+  (service-account JSON, not the legacy `FCM_SERVER_KEY`) and/or APNs token-based (.p8) sending.
+  Cuttable for v1: the app's local bedtime reminder already covers the core use case.

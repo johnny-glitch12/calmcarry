@@ -39,3 +39,28 @@ work (src/lib/push.ts) — no extra step.
 - The prod API is NOT live yet (empty DATABASE_URL etc.) — a device build will
   run in guest/local mode until the backend blockers are cleared. That's fine
   for the first feel-test.
+
+## Running locally in Xcode (no EAS, no cloud build)
+To open the native iOS project in Xcode and run on a simulator/your own device:
+```sh
+brew install cocoapods                 # once, if `pod` is missing
+npx expo prebuild -p ios --clean       # generates ios/ (gitignored) + pod install
+open ios/CalmCarry.xcworkspace         # then pick a target and hit Run
+```
+Prebuild flips the `ios`/`android` npm scripts to `expo run:*` — revert that
+(`git checkout package.json`) since this repo stays managed/EAS.
+
+**Required local-build override (or the build fails):** the `@sentry/react-native`
+plugin adds a source-map upload phase that errors locally ("An organization ID or
+slug is required") because there's no Sentry auth token on your machine. Create
+`ios/.xcode.env.local` (gitignored, survives prebuild) with:
+```sh
+export SENTRY_DISABLE_AUTO_UPLOAD=true
+```
+EAS/CI builds set a real Sentry token, so they still upload symbols — this only
+skips the upload for local builds. First device run also needs a Team under
+Signing & Capabilities (a free Apple ID works; 7-day expiry) and trusting the
+profile on-device (Settings → General → VPN & Device Management).
+
+Verified: `xcodebuild … -sdk iphonesimulator` produces a real CalmCarry.app
+(Mach-O arm64+x86_64) with this override in place.

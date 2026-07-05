@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import Animated, {
+  interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -11,12 +12,37 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, Card, FormField, PressableScale, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { Appear, AppText, Card, Crossfade, Dimmable, FormField, PressableScale, Reveal, Screen, SectionHeader, SelectionOverlay, StatusChip, SwapText } from '@/components';
 import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { setPendingMix } from '@/lib/mixShare';
-import { dur, ease, useTheme } from '@/theme';
+import { dur, ease, type as typeScale, useTheme } from '@/theme';
+
+/** Pressure-free filter chip — the selected fill EASES in (overlay) and the label
+ *  color interpolates, so tapping Latest/With a mix never hard-swaps. */
+function FilterChip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const p = useSharedValue(on ? 1 : 0);
+  useEffect(() => {
+    p.value = reduced ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: dur.press, easing: ease.press });
+  }, [on, reduced, p]);
+  const labelStyle = useAnimatedStyle(() => ({ color: interpolateColor(p.value, [0, 1], [c.muted, c.ctaText]) }));
+  return (
+    <PressableScale
+      onPress={onPress}
+      onPressIn={lightTap}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      scaleTo={0.96}
+      dimTo={0.9}
+      style={{ height: 44, paddingHorizontal: 16, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.line }}>
+      <SelectionOverlay active={on} style={{ borderRadius: 22, borderWidth: 1, borderColor: c.ctaBg, backgroundColor: c.ctaBg }} />
+      <Animated.Text style={[typeScale.meta, labelStyle]}>{label}</Animated.Text>
+    </PressableScale>
+  );
+}
 
 function ago(iso: string): string {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -102,29 +128,40 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
         </PressableScale>
       ) : null}
 
-      {/* footer — pending notice, or a one-way, COUNT-LESS acknowledgment */}
+      {/* footer — pending notice, or a one-way, COUNT-LESS acknowledgment. The two
+          crossfade so a post clearing moderation glides from "Pending review" to the
+          carry action instead of hard-swapping. */}
       {win.pending ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+        <Appear key="pending" enter={dur.sheet} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
           <Feather name="clock" size={14} color={c.accent} />
           <AppText variant="label" tone="muted">
             Pending review
           </AppText>
-        </View>
+        </Appear>
       ) : (
-        <PressableScale
-          onPress={carry}
-          accessibilityRole="button"
-          accessibilityState={{ selected: carried }}
-          accessibilityLabel={carried ? 'You carried this win' : 'Acknowledge this win'}
-          hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
-          style={{ alignSelf: 'flex-start', marginTop: 12 }}>
-          <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, reactStyle]}>
-            <Feather name="heart" size={14} color={carried ? c.textAccent : c.accent} />
-            <AppText variant="meta" style={{ color: carried ? c.textAccent : c.muted }}>
-              {carried ? 'You carried this' : 'Carried this with you'}
-            </AppText>
-          </Animated.View>
-        </PressableScale>
+        <Appear key="carry" enter={dur.sheet}>
+          <PressableScale
+            onPress={carry}
+            accessibilityRole="button"
+            accessibilityState={{ selected: carried }}
+            accessibilityLabel={carried ? 'You carried this win' : 'Acknowledge this win'}
+            hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
+            style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+            <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, reactStyle]}>
+              <Crossfade
+                style={{ width: 14, height: 14 }}
+                active={carried}
+                front={<Feather name="heart" size={14} color={c.textAccent} />}
+                back={<Feather name="heart" size={14} color={c.accent} />}
+              />
+              <SwapText trigger={carried ? 'y' : 'n'}>
+                <AppText variant="meta" style={{ color: carried ? c.textAccent : c.muted }}>
+                  {carried ? 'You carried this' : 'Carried this with you'}
+                </AppText>
+              </SwapText>
+            </Animated.View>
+          </PressableScale>
+        </Appear>
       )}
     </Card>
   );
@@ -221,10 +258,12 @@ export function CommunityScreen() {
     setNote(null);
     try {
       const saved = await api.createPost(token, text);
+      // keep the React key STABLE (tempKey) across reconciliation so the card updates
+      // IN PLACE (no force-remount flash); the footer pending→carry crossfades instead.
       setWins((w) =>
         w.map((win) =>
           win.key === tempKey
-            ? { key: saved.id, handle: saved.handle, text: saved.text, when: 'now', pending: saved.status !== 'approved' }
+            ? { key: tempKey, handle: saved.handle, text: saved.text, when: 'now', pending: saved.status !== 'approved' }
             : win,
         ),
       );
@@ -258,11 +297,13 @@ export function CommunityScreen() {
         <Card variant="panel" radius={18}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.accent }} />
-            <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
-              {presence && presence > 0
-                ? `${presence} quiet ${presence === 1 ? 'win' : 'wins'} shared by parents`
-                : 'A quiet, anonymous space to wind down together'}
-            </AppText>
+            <SwapText trigger={presence ?? -1} style={{ flex: 1 }}>
+              <AppText variant="cardTitle" tone="title">
+                {presence && presence > 0
+                  ? `${presence} quiet ${presence === 1 ? 'win' : 'wins'} shared by parents`
+                  : 'A quiet, anonymous space to wind down together'}
+              </AppText>
+            </SwapText>
           </View>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
             <StatusChip label="Anonymous" icon="eye-off" />
@@ -277,33 +318,9 @@ export function CommunityScreen() {
           {([
             { id: 'latest' as const, label: 'Latest' },
             { id: 'mix' as const, label: 'With a mix' },
-          ]).map((f) => {
-            const on = filter === f.id;
-            return (
-              <PressableScale
-                key={f.id}
-                onPress={() => setFilter(f.id)}
-                onPressIn={lightTap}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                scaleTo={0.96}
-                dimTo={0.9}
-                style={{
-                  height: 44,
-                  paddingHorizontal: 16,
-                  borderRadius: 22,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: on ? c.ctaBg : 'transparent',
-                  borderWidth: 1,
-                  borderColor: on ? c.ctaBg : c.line,
-                }}>
-                <AppText variant="meta" style={{ color: on ? c.ctaText : c.muted }}>
-                  {f.label}
-                </AppText>
-              </PressableScale>
-            );
-          })}
+          ]).map((f) => (
+            <FilterChip key={f.id} label={f.label} on={filter === f.id} onPress={() => setFilter(f.id)} />
+          ))}
         </View>
       </Reveal>
 
@@ -313,33 +330,43 @@ export function CommunityScreen() {
         <SectionHeader kicker="Wins wall" title="Tonight’s quiet victories" />
         <Animated.View style={[{ gap: 12 }, listStyle]}>
           {loading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
+            <Appear key="loading" enter={dur.sheet}>
+              <View style={{ gap: 12 }}>
+                <SkeletonCard />
+                <SkeletonCard />
+              </View>
+            </Appear>
           ) : visibleWins.length > 0 ? (
             visibleWins.map((w) => (
-              <WinCard key={w.key} win={w} onLoadMix={w.mix ? () => loadSharedMix(w.mix!.levels) : undefined} />
+              // per-card enter/exit so an optimistic share fades in at the top and a
+              // failed share rolls back with a fade, not a pop
+              <Appear key={w.key} enter={dur.sheet}>
+                <WinCard win={w} onLoadMix={w.mix ? () => loadSharedMix(w.mix!.levels) : undefined} />
+              </Appear>
             ))
           ) : error ? (
-            <Card variant="panel" style={{ alignItems: 'center', gap: 4 }}>
-              <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
-                We couldn’t load the wall just now.
-              </AppText>
-              <AppText variant="meta" tone="dim">
-                It will retry when you come back.
-              </AppText>
-            </Card>
+            <Appear key="error" enter={dur.sheet}>
+              <Card variant="panel" style={{ alignItems: 'center', gap: 4 }}>
+                <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
+                  We couldn’t load the wall just now.
+                </AppText>
+                <AppText variant="meta" tone="dim">
+                  It will retry when you come back.
+                </AppText>
+              </Card>
+            </Appear>
           ) : (
-            <Card variant="panel" padding={20} style={{ alignItems: 'center', gap: 6 }}>
-              <Feather name="moon" size={22} color={c.textAccent} />
-              <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
-                No wins shared yet tonight.
-              </AppText>
-              <AppText variant="meta" tone="dim" style={{ textAlign: 'center' }}>
-                Be the first: a small calm thing that went right.
-              </AppText>
-            </Card>
+            <Appear key="empty" enter={dur.sheet}>
+              <Card variant="panel" padding={20} style={{ alignItems: 'center', gap: 6 }}>
+                <Feather name="moon" size={22} color={c.textAccent} />
+                <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
+                  No wins shared yet tonight.
+                </AppText>
+                <AppText variant="meta" tone="dim" style={{ textAlign: 'center' }}>
+                  Be the first: a small calm thing that went right.
+                </AppText>
+              </Card>
+            </Appear>
           )}
         </Animated.View>
       </Reveal>
@@ -362,18 +389,22 @@ export function CommunityScreen() {
           accessibilityState={{ disabled: !draft.trim() }}
           disabled={!draft.trim()}
           dimTo={0.9}
-          style={{ alignSelf: 'flex-start', marginTop: 12, opacity: draft.trim() ? 1 : 0.45 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 13, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
-            <Feather name="send" size={15} color={c.textAccent} />
-            <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
-              Share anonymously
-            </AppText>
-          </View>
+          style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+          <Dimmable active={!!draft.trim()}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 13, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
+              <Feather name="send" size={15} color={c.textAccent} />
+              <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+                Share anonymously
+              </AppText>
+            </View>
+          </Dimmable>
         </PressableScale>
         {note ? (
-          <AppText variant="meta" style={{ color: c.dim, marginTop: 10 }}>
-            {note}
-          </AppText>
+          <Appear enter={dur.nav}>
+            <AppText variant="meta" style={{ color: c.dim, marginTop: 10 }}>
+              {note}
+            </AppText>
+          </Appear>
         ) : null}
       </Reveal>
 

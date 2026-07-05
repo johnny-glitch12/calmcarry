@@ -3,7 +3,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, View } from 'react-native';
 
-import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
+import { Appear, AppText, Crossfade, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
@@ -50,12 +50,20 @@ function PlanCard({
       dimTo={0.95}>
       <View
         style={{
+          position: 'relative',
+          overflow: 'hidden',
           borderRadius: 16,
           padding: 16,
-          backgroundColor: selected ? c.panelStrong : c.surface,
-          borderWidth: selected ? 2 : 1,
-          borderColor: selected ? c.accent : c.line,
+          // Resting look. borderWidth is CONSTANT (2) between states — the selected
+          // fill/border color eases in via the overlay, so there's no 1px shift.
+          backgroundColor: c.surface,
+          borderWidth: 2,
+          borderColor: c.line,
         }}>
+        <SelectionOverlay
+          active={selected}
+          style={{ borderRadius: 16, borderWidth: 2, borderColor: c.accent, backgroundColor: c.panelStrong }}
+        />
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
@@ -63,35 +71,49 @@ function PlanCard({
                 {p.label}
               </AppText>
               {note ? (
-                <AppText variant="caption" style={{ flexShrink: 1, color: c.textAccent, textTransform: 'none', letterSpacing: 0 }} numberOfLines={1}>
-                  {note}
-                </AppText>
+                <Appear>
+                  <AppText variant="caption" style={{ flexShrink: 1, color: c.textAccent, textTransform: 'none', letterSpacing: 0 }} numberOfLines={1}>
+                    {note}
+                  </AppText>
+                </Appear>
               ) : null}
             </View>
-            <AppText variant="label" tone="muted" style={{ marginTop: 4 }} numberOfLines={1}>
-              {sub}
-            </AppText>
+            <SwapText trigger={sub} style={{ marginTop: 4 }}>
+              <AppText variant="label" tone="muted" numberOfLines={1}>
+                {sub}
+              </AppText>
+            </SwapText>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
-              {price}
-            </AppText>
+            <SwapText trigger={price}>
+              <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
+                {price}
+              </AppText>
+            </SwapText>
             <AppText variant="label" tone="muted">
               {p.per}
             </AppText>
           </View>
           <View
             style={{
+              position: 'relative',
+              overflow: 'hidden',
               width: 22,
               height: 22,
               borderRadius: 11,
               borderWidth: 2,
-              borderColor: selected ? c.accent : c.line,
+              borderColor: c.line,
               marginLeft: 14,
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-            {selected ? <Feather name="check" size={13} color={c.accent} /> : null}
+            <SelectionOverlay active={selected} style={{ borderRadius: 11, borderWidth: 2, borderColor: c.accent }} />
+            <Crossfade
+              active={selected}
+              style={{ width: 13, height: 13 }}
+              front={<Feather name="check" size={13} color={c.accent} />}
+              back={null}
+            />
           </View>
         </View>
       </View>
@@ -271,29 +293,35 @@ export function CalmPlan() {
             </View>
           ))}
         </View>
-        <PrimaryButton
-          label={
-            isPremium
-              ? 'You’re premium ✓'
-              : plan === 'annual'
-                ? `Start your ${TRIAL_DAYS}-day free trial`
-                : `Start monthly at ${display('monthly').price}${PRICING.monthly.per}`
-          }
-          onPress={subscribe}
-          loading={busy}
-          disabled={isPremium}
-        />
+        <Appear key={`cta-${plan}`}>
+          <PrimaryButton
+            label={
+              isPremium
+                ? 'You’re premium ✓'
+                : plan === 'annual'
+                  ? `Start your ${TRIAL_DAYS}-day free trial`
+                  : `Start monthly at ${display('monthly').price}${PRICING.monthly.per}`
+            }
+            onPress={subscribe}
+            loading={busy}
+            disabled={isPremium}
+          />
+        </Appear>
         {note ? (
-          <AppText variant="label" style={{ color: brand.coral, textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
-            {note}
-          </AppText>
+          <Appear>
+            <AppText variant="label" style={{ color: brand.coral, textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
+              {note}
+            </AppText>
+          </Appear>
         ) : null}
         {/* required subscription disclosure */}
-        <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
-          {plan === 'annual'
-            ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
-            : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
-        </AppText>
+        <Appear key={`disclosure-${plan}`}>
+          <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
+            {plan === 'annual'
+              ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+              : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
+          </AppText>
+        </Appear>
         {/* the way out: a single, full-width quiet dismiss right under the button — not lost among the legal links */}
         <PressableScale onPress={close} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14 }}>
           <AppText variant="bodyMedium" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>

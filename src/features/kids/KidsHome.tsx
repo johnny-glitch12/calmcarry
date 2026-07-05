@@ -58,6 +58,10 @@ function KidStar({ earned, index, color }: { earned: boolean; index: number; col
       p.value = 1;
       return;
     }
+    // reset to 0 first so a star that becomes earned AFTER mount (a night earned
+    // on this session) replays the scale+fade count-in — which also softens the
+    // line→accent color prop swap landing at the same moment.
+    p.value = 0;
     p.value = withDelay(index * STAGGER, withTiming(1, { duration: dur.sheet, easing: ease.out }));
   }, [shouldAnimate, index, p]);
   const animStyle = useAnimatedStyle(() => ({

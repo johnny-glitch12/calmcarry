@@ -14,6 +14,7 @@ import { getVoice, setVoice, VOICES, type VoiceKey } from '@/lib/voice';
 import { dur, ease, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
+import { Crossfade, SelectionOverlay } from './anim';
 
 /**
  * VoiceRow — one selectable voice row. Owns its own animated press scale so the
@@ -131,11 +132,16 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
               gap: 14,
               padding: 16,
               borderRadius: 16,
-              backgroundColor: active ? c.panel : c.surface,
+              backgroundColor: c.surface,
               borderWidth: 1,
-              borderColor: active ? c.textAccent : c.line,
+              borderColor: c.line,
+              position: 'relative',
               ...c.shadow,
             }}>
+            <SelectionOverlay
+              active={active}
+              style={{ borderRadius: 16, borderWidth: 1, borderColor: c.textAccent, backgroundColor: c.panel }}
+            />
             <View
               style={{
                 width: 40,
@@ -143,9 +149,16 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
                 borderRadius: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: active ? c.textAccent : c.panel,
+                backgroundColor: c.panel,
+                overflow: 'hidden',
               }}>
-              <Feather name={active ? 'volume-2' : 'play'} size={18} color={active ? '#FFFFFF' : c.textAccent} />
+              <SelectionOverlay active={active} style={{ borderRadius: 20, backgroundColor: c.textAccent }} />
+              <Crossfade
+                active={active}
+                style={{ width: 18, height: 18 }}
+                front={<Feather name="volume-2" size={18} color="#FFFFFF" />}
+                back={<Feather name="play" size={18} color={c.textAccent} />}
+              />
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <AppText variant="bodyMedium" tone="title" numberOfLines={1}>
@@ -155,7 +168,12 @@ export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) 
                 {v.tag} · tap to hear
               </AppText>
             </View>
-            {active ? <Feather name="check" size={20} color={c.textAccent} /> : null}
+            <Crossfade
+              active={active}
+              style={{ width: 20, height: 20 }}
+              front={<Feather name="check" size={20} color={c.textAccent} />}
+              back={null}
+            />
           </VoiceRow>
         );
       })}

@@ -2,13 +2,14 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
+import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
 
-import { AppText, CoverCard, FormField, PressableScale, Reveal, Screen } from '@/components';
+import { AppText, CoverCard, FlowTransition, FormField, PressableScale, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
 import { PROGRAMS, TRACKS } from '@/content/library';
 import { lightTap } from '@/lib/haptics';
-import { useTheme } from '@/theme';
+import { dur, useTheme } from '@/theme';
 
 type Result = {
   id: string; // the content slug (for /unlock)
@@ -61,6 +62,10 @@ export function Search() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/sounds'));
 
+  // Exit fade for branches/rows that leave as the query changes — pairs with the
+  // Reveal entrance so a swap or reflow eases both ways instead of hard-cutting.
+  const exit = () => FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System);
+
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
@@ -87,57 +92,63 @@ export function Search() {
       </Reveal>
 
       {q.trim() === '' ? (
-        <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 16 }}>
-          <Feather name="search" size={28} color={c.dim} />
-          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
-            Find a soundscape, sleep tale, breathing session, or program.
-          </AppText>
-          {/* one-tap suggestions — typing in bed is the highest-effort thing we can ask */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
-            {SUGGESTIONS.map((term) => (
-              <PressableScale
-                key={term}
-                onPress={() => setQ(term)}
-                onPressIn={lightTap}
-                accessibilityRole="button"
-                accessibilityLabel={`Search ${term}`}
-                dimTo={0.95}>
-                <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage }}>
-                  <AppText variant="cardTitle" tone="title">
-                    {term}
-                  </AppText>
-                </View>
-              </PressableScale>
-            ))}
-          </View>
-        </Reveal>
+        <Animated.View exiting={exit()}>
+          <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 16 }}>
+            <Feather name="search" size={28} color={c.dim} />
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
+              Find a soundscape, sleep tale, breathing session, or program.
+            </AppText>
+            {/* one-tap suggestions — typing in bed is the highest-effort thing we can ask */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+              {SUGGESTIONS.map((term) => (
+                <PressableScale
+                  key={term}
+                  onPress={() => setQ(term)}
+                  onPressIn={lightTap}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Search ${term}`}
+                  dimTo={0.95}>
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage }}>
+                    <AppText variant="cardTitle" tone="title">
+                      {term}
+                    </AppText>
+                  </View>
+                </PressableScale>
+              ))}
+            </View>
+          </Reveal>
+        </Animated.View>
       ) : results.length === 0 ? (
-        <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
-          <AppText variant="h2" tone="title">
-            Nothing found
-          </AppText>
-          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
-            No results for “{q.trim()}”. Try “rain”, “ocean”, or “sleep”.
-          </AppText>
-        </Reveal>
+        <Animated.View exiting={exit()}>
+          <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 8 }}>
+            <AppText variant="h2" tone="title">
+              Nothing found
+            </AppText>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
+              No results for “{q.trim()}”. Try “rain”, “ocean”, or “sleep”.
+            </AppText>
+          </Reveal>
+        </Animated.View>
       ) : (
-        <View style={{ gap: 12 }}>
+        <FlowTransition style={{ gap: 12 }}>
           {results.map((r, i) => {
             const isLocked = !!r.locked && !isPremium;
             return (
-              <Reveal key={r.id} index={Math.min(i, 6)}>
-                <CoverCard
-                  title={r.title}
-                  subtitle={r.subtitle}
-                  meta={isLocked ? `${r.meta} · Premium` : r.meta}
-                  image={covers[r.cover]}
-                  locked={isLocked}
-                  onPress={() => router.push((isLocked ? `/unlock?id=${r.id}` : r.playHref) as Href)}
-                />
-              </Reveal>
+              <Animated.View key={r.id} exiting={exit()}>
+                <Reveal index={Math.min(i, 6)}>
+                  <CoverCard
+                    title={r.title}
+                    subtitle={r.subtitle}
+                    meta={isLocked ? `${r.meta} · Premium` : r.meta}
+                    image={covers[r.cover]}
+                    locked={isLocked}
+                    onPress={() => router.push((isLocked ? `/unlock?id=${r.id}` : r.playHref) as Href)}
+                  />
+                </Reveal>
+              </Animated.View>
             );
           })}
-        </View>
+        </FlowTransition>
       )}
     </Screen>
   );

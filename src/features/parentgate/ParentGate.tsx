@@ -3,9 +3,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
+import { Appear, AppText, GlowOrb, PressableScale, Reveal, Screen, SwapText } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import {
   authenticateBiometric,
@@ -30,8 +30,12 @@ function tap() {
 function Dot({ filled, error }: { filled: boolean; error: boolean }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
-  const color = error ? '#EF626C' : c.accent;
+  const rest = c.accent;
+  const err = '#EF626C';
   const f = useSharedValue(filled ? 1 : 0);
+  // error tint eases between accent (0) and coral (1) instead of snapping. Reduced
+  // motion keeps the instant swap — the error haptic already signals the miss.
+  const e = useSharedValue(error ? 1 : 0);
   useEffect(() => {
     f.value = reduced
       ? filled
@@ -41,21 +45,31 @@ function Dot({ filled, error }: { filled: boolean; error: boolean }) {
         ? withSpring(1, spring) // pop in when the digit lands
         : withTiming(0, { duration: dur.press, easing: ease.out }); // shrink out on delete
   }, [filled, reduced, f]);
-  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scale: f.value }], opacity: f.value }));
+  useEffect(() => {
+    e.value = reduced ? (error ? 1 : 0) : withTiming(error ? 1 : 0, { duration: dur.press, easing: ease.press });
+  }, [error, reduced, e]);
+  const ringStyle = useAnimatedStyle(() => ({ borderColor: interpolateColor(e.value, [0, 1], [rest, err]) }));
+  const fillStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: f.value }],
+    opacity: f.value,
+    backgroundColor: interpolateColor(e.value, [0, 1], [rest, err]),
+  }));
   return (
-    <View
-      style={{
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        borderWidth: 2,
-        borderColor: color,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-      }}>
-      <Animated.View style={[{ width: 12, height: 12, borderRadius: 6, backgroundColor: color }, fillStyle]} />
-    </View>
+    <Animated.View
+      style={[
+        {
+          width: 16,
+          height: 16,
+          borderRadius: 8,
+          borderWidth: 2,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        },
+        ringStyle,
+      ]}>
+      <Animated.View style={[{ width: 12, height: 12, borderRadius: 6 }, fillStyle]} />
+    </Animated.View>
   );
 }
 
@@ -86,6 +100,14 @@ export function ParentGate() {
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
 
   const [lockSeconds, setLockSeconds] = useState(0);
+  // one shared value drives the disabled dim for BOTH the keypad and the biometric
+  // row, so a lockout (and its expiry) eases them out/in together instead of snapping.
+  const locked = lockSeconds > 0;
+  const lockDim = useSharedValue(locked ? 0.4 : 1);
+  useEffect(() => {
+    lockDim.value = reduced ? (locked ? 0.4 : 1) : withTiming(locked ? 0.4 : 1, { duration: dur.press, easing: ease.press });
+  }, [locked, reduced, lockDim]);
+  const lockDimStyle = useAnimatedStyle(() => ({ opacity: lockDim.value }));
   const [bioAvailable, setBioAvailable] = useState(false);
   const bioTried = useRef(false);
   useEffect(() => {
@@ -245,26 +267,33 @@ export function ParentGate() {
           <Feather name="lock" size={22} color="#FFFFFF" />
         </GlowOrb>
         <Reveal index={0} style={{ alignItems: 'center', marginTop: 20 }}>
-          <AppText variant="h1" tone="title" style={{ textAlign: 'center' }}>
-            {title}
-          </AppText>
-          <AppText variant="body" tone="muted" style={{ textAlign: 'center', marginTop: 8, maxWidth: 300 }}>
-            {sub}
-          </AppText>
+          <SwapText trigger={phase} style={{ alignItems: 'center' }}>
+            <AppText variant="h1" tone="title" style={{ textAlign: 'center' }}>
+              {title}
+            </AppText>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', marginTop: 8, maxWidth: 300 }}>
+              {sub}
+            </AppText>
+          </SwapText>
         </Reveal>
 
         <Animated.View style={shakeStyle}>
           <Dots count={entry.length} error={error} />
         </Animated.View>
 
-        {lockSeconds > 0 ? (
-          <AppText variant="label" style={{ color: '#EF626C', marginTop: 16, textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
-            Too many tries. Try again in {lockSeconds}s.
-          </AppText>
-        ) : null}
+        {/* reserve the line's slot so the message fading in/out never shoves the keypad */}
+        <View style={{ height: 36, justifyContent: 'flex-end' }}>
+          {lockSeconds > 0 ? (
+            <Appear>
+              <AppText variant="label" style={{ color: '#EF626C', textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
+                Too many tries. Try again in {lockSeconds}s.
+              </AppText>
+            </Appear>
+          ) : null}
+        </View>
 
         {/* keypad */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: 264, marginTop: 40, justifyContent: 'center', opacity: lockSeconds > 0 ? 0.4 : 1 }}>
+        <Animated.View style={[{ flexDirection: 'row', flexWrap: 'wrap', width: 264, marginTop: 40, justifyContent: 'center' }, lockDimStyle]}>
           {KEYS.map((k, idx) => (
             <PressableScale
               key={idx}
@@ -282,25 +311,29 @@ export function ParentGate() {
               )}
             </PressableScale>
           ))}
-        </View>
+        </Animated.View>
 
         {/* biometric option (plan §13: "PIN or Face ID") — only when entering an existing
-            gate, and never for purchase/delete (those require the PIN specifically) */}
+            gate, and never for purchase/delete (those require the PIN specifically). It
+            resolves late (biometricAvailable is async), so Appear fades it in on mount
+            instead of letting it pop. The disabled dim shares the keypad's lockDim value. */}
         {phase === 'enter' && bioAvailable && !highConsequence ? (
-          <View style={{ opacity: lockSeconds > 0 ? 0.4 : 1 }}>
-            <PressableScale
-              onPress={tryBiometric}
-              disabled={lockSeconds > 0}
-              accessibilityRole="button"
-              accessibilityLabel="Unlock with Face ID or Touch ID"
-              dimTo={0.85}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, padding: 10 }}>
-              <Feather name="unlock" size={18} color={c.textAccent} />
-              <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
-                Use Face ID / Touch ID
-              </AppText>
-            </PressableScale>
-          </View>
+          <Appear>
+            <Animated.View style={lockDimStyle}>
+              <PressableScale
+                onPress={tryBiometric}
+                disabled={lockSeconds > 0}
+                accessibilityRole="button"
+                accessibilityLabel="Unlock with Face ID or Touch ID"
+                dimTo={0.85}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, padding: 10 }}>
+                <Feather name="unlock" size={18} color={c.textAccent} />
+                <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+                  Use Face ID / Touch ID
+                </AppText>
+              </PressableScale>
+            </Animated.View>
+          </Appear>
         ) : null}
       </View>
     </Screen>

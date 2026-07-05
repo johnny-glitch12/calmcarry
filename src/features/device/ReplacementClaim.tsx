@@ -1,13 +1,16 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { AppText, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { Appear, AppText, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
-import { brand, fonts, useTheme } from '@/theme';
+import { brand, dur, ease, fonts, useTheme } from '@/theme';
+
+const LABEL = { fontFamily: fonts.medium, fontSize: 13 } as const;
 
 type ApiDevice = { id: string; serial: string; model?: string };
 
@@ -15,29 +18,54 @@ const ISSUES = ["Won't power on", 'Battery life', 'Physical damage', 'Sound / au
 
 function IssueChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const p = useSharedValue(selected ? 1 : 0);
+  useEffect(() => {
+    p.value = reduced ? (selected ? 1 : 0) : withTiming(selected ? 1 : 0, { duration: dur.press, easing: ease.press });
+  }, [selected, reduced, p]);
+  const activeStyle = useAnimatedStyle(() => ({ opacity: p.value }));
+  const restStyle = useAnimatedStyle(() => ({ opacity: 1 - p.value }));
   return (
     <PressableScale
       onPress={onPress}
       onPressIn={lightTap}
       hitSlop={{ top: 4, bottom: 4 }}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
       scaleTo={0.96}
       dimTo={0.95}>
       <View
         style={{
+          position: 'relative',
+          overflow: 'hidden',
           paddingHorizontal: 14,
           height: 36,
           borderRadius: 18,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: selected ? c.accent : c.surface,
+          backgroundColor: c.surface,
           borderWidth: 1,
-          borderColor: selected ? c.accent : c.line,
+          borderColor: c.line,
         }}>
-        <AppText numberOfLines={1} style={{ fontFamily: fonts.medium, fontSize: 13, color: selected ? '#FFFFFF' : c.text }}>
-          {label}
-        </AppText>
+        <SelectionOverlay
+          active={selected}
+          style={{ borderRadius: 18, borderWidth: 1, borderColor: c.accent, backgroundColor: c.accent }}
+        />
+        {/* label color crossfades white↔text via two stacked layers — Crossfade isn't
+            usable here (it absolute-positions both children, collapsing this
+            content-sized chip's width), so mirror Segmented's shared-value pattern */}
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.Text numberOfLines={1} style={[LABEL, { color: c.text }, restStyle]}>
+            {label}
+          </Animated.Text>
+          <Animated.Text numberOfLines={1} style={[LABEL, { color: '#FFFFFF', position: 'absolute' }, activeStyle]}>
+            {label}
+          </Animated.Text>
+        </View>
       </View>
     </PressableScale>
   );
@@ -117,105 +145,114 @@ export function ReplacementClaim() {
     }
   };
 
-  if (done) {
-    return (
-      <Screen mode="light" scroll contentStyle={{ alignItems: 'center', paddingTop: 48 }}>
-        <GlowOrb size={132} reserveGlow burst>
-          <Feather name="check" size={40} color="#FFFFFF" />
-        </GlowOrb>
-        <Reveal index={0} style={{ alignItems: 'center', marginTop: 12 }}>
-          <AppText variant="h1" tone="title">
-            Claim submitted
-          </AppText>
-        </Reveal>
-        <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
-          <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300 }}>
-            Our support team will email you within 2 business days with next steps for your Glow Orb.
-          </AppText>
-        </Reveal>
-        <Reveal index={2} style={{ marginTop: 16 }}>
-          <StatusChip label={`Reference ${reference ?? ''}`} icon="file-text" confirm />
-        </Reveal>
-        <Reveal index={3} style={{ alignSelf: 'stretch', marginTop: 28 }}>
-          <PrimaryButton label="Done" onPress={back} />
-        </Reveal>
-      </Screen>
-    );
-  }
+  const deviceTitle = device?.model ?? 'CalmCarry · Glow Orb';
+  const deviceSubtitle = device
+    ? `${device.serial} · warranty active`
+    : deviceLoadFailed
+      ? 'We couldn’t check your device just now — try again in a moment'
+      : 'Register your device to file a claim';
 
   return (
-    <Screen mode="light" scroll>
-      <Reveal index={0}>
-        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
-          <Feather name="chevron-left" size={26} color={c.text} />
-        </PressableScale>
-        <AppText variant="caption" tone="muted">
-          Support
-        </AppText>
-        <AppText variant="h1" tone="title" style={{ marginTop: 6 }}>
-          Report an issue
-        </AppText>
-      </Reveal>
-
-      {/* device row */}
-      <Reveal index={1} style={{ marginTop: 20 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            padding: 14,
-            borderRadius: 16,
-            backgroundColor: c.panel,
-            borderWidth: 1,
-            borderColor: c.panelStrong,
-          }}>
-          <Feather name="box" size={18} color={c.textAccent} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText variant="cardTitle" tone="title" numberOfLines={1}>
-              {device?.model ?? 'CalmCarry · Glow Orb'}
+    <Screen mode="light" scroll contentStyle={done ? { alignItems: 'center', paddingTop: 48 } : undefined}>
+      {done ? (
+        <Appear key="done" style={{ alignItems: 'center', alignSelf: 'stretch' }}>
+          <GlowOrb size={132} reserveGlow burst>
+            <Feather name="check" size={40} color="#FFFFFF" />
+          </GlowOrb>
+          <Reveal index={0} style={{ alignItems: 'center', marginTop: 12 }}>
+            <AppText variant="h1" tone="title">
+              Claim submitted
             </AppText>
-            <AppText variant="label" tone="muted" numberOfLines={2}>
-              {device
-                ? `${device.serial} · warranty active`
-                : deviceLoadFailed
-                  ? 'We couldn’t check your device just now — try again in a moment'
-                  : 'Register your device to file a claim'}
+          </Reveal>
+          <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
+            <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300 }}>
+              Our support team will email you within 2 business days with next steps for your Glow Orb.
             </AppText>
-          </View>
-        </View>
-      </Reveal>
+          </Reveal>
+          <Reveal index={2} style={{ marginTop: 16 }}>
+            <StatusChip label={`Reference ${reference ?? ''}`} icon="file-text" confirm />
+          </Reveal>
+          <Reveal index={3} style={{ alignSelf: 'stretch', marginTop: 28 }}>
+            <PrimaryButton label="Done" onPress={back} />
+          </Reveal>
+        </Appear>
+      ) : (
+        <Appear key="form">
+          <Reveal index={0}>
+            <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
+              <Feather name="chevron-left" size={26} color={c.text} />
+            </PressableScale>
+            <AppText variant="caption" tone="muted">
+              Support
+            </AppText>
+            <AppText variant="h1" tone="title" style={{ marginTop: 6 }}>
+              Report an issue
+            </AppText>
+          </Reveal>
 
-      {/* issue type */}
-      <Reveal index={2} style={{ marginTop: 24 }}>
-        <AppText variant="label" tone="muted" style={{ marginBottom: 10 }}>
-          What went wrong?
-        </AppText>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {ISSUES.map((it) => (
-            <IssueChip key={it} label={it} selected={issue === it} onPress={() => setIssue(it)} />
-          ))}
-        </View>
-        {error ? (
-          <AppText variant="caption" style={{ color: brand.coral, marginTop: 8, textTransform: 'none' }}>
-            {error}
-          </AppText>
-        ) : null}
-      </Reveal>
+          {/* device row */}
+          <Reveal index={1} style={{ marginTop: 20 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                padding: 14,
+                borderRadius: 16,
+                backgroundColor: c.panel,
+                borderWidth: 1,
+                borderColor: c.panelStrong,
+              }}>
+              <Feather name="box" size={18} color={c.textAccent} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <SwapText trigger={deviceTitle}>
+                  <AppText variant="cardTitle" tone="title" numberOfLines={1}>
+                    {deviceTitle}
+                  </AppText>
+                </SwapText>
+                <SwapText trigger={deviceSubtitle}>
+                  <AppText variant="label" tone="muted" numberOfLines={2}>
+                    {deviceSubtitle}
+                  </AppText>
+                </SwapText>
+              </View>
+            </View>
+          </Reveal>
 
-      <Reveal index={3} style={{ marginTop: 24 }}>
-        <FormField
-          label="Describe the issue"
-          value={desc}
-          onChangeText={setDesc}
-          placeholder="Tell us what's happening…"
-          multiline
-        />
-      </Reveal>
+          {/* issue type */}
+          <Reveal index={2} style={{ marginTop: 24 }}>
+            <AppText variant="label" tone="muted" style={{ marginBottom: 10 }}>
+              What went wrong?
+            </AppText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {ISSUES.map((it) => (
+                <IssueChip key={it} label={it} selected={issue === it} onPress={() => setIssue(it)} />
+              ))}
+            </View>
+            {error ? (
+              <Appear>
+                <AppText variant="caption" style={{ color: brand.coral, marginTop: 8, textTransform: 'none' }}>
+                  {error}
+                </AppText>
+              </Appear>
+            ) : null}
+          </Reveal>
 
-      <Reveal index={4} style={{ marginTop: 28 }}>
-        <PrimaryButton label="Submit claim" onPress={submit} loading={busy} />
-      </Reveal>
+          <Reveal index={3} style={{ marginTop: 24 }}>
+            <FormField
+              label="Describe the issue"
+              value={desc}
+              onChangeText={setDesc}
+              placeholder="Tell us what's happening…"
+              multiline
+            />
+          </Reveal>
+
+          <Reveal index={4} style={{ marginTop: 28 }}>
+            <PrimaryButton label="Submit claim" onPress={submit} loading={busy} />
+          </Reveal>
+        </Appear>
+      )}
     </Screen>
   );
 }

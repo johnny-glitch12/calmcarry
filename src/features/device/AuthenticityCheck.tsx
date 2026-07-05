@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
-import { AppText, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { Appear, AppText, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { dur, ease, useTheme } from '@/theme';
@@ -74,7 +74,8 @@ export function AuthenticityCheck() {
 
   const run = useCallback(() => {
     setPhase('checking');
-    draw.value = 0;
+    // ease the drawn check away rather than snapping it (reduced-motion resets instantly)
+    draw.value = reduced ? 0 : withTiming(0, { duration: dur.exit, easing: ease.inOut });
     if (timer.current) clearTimeout(timer.current);
 
     const reveal = (dev: ApiDevice | null) => {
@@ -116,9 +117,11 @@ export function AuthenticityCheck() {
 
   return (
     <Screen mode="light" scroll tabBarSpacing contentStyle={{ alignItems: 'center', paddingTop: 24 }}>
-      <AppText variant="caption" tone="accent">
-        {authentic ? 'Registered' : checking ? 'Checking' : 'Not registered'}
-      </AppText>
+      <SwapText trigger={phase}>
+        <AppText variant="caption" tone="accent">
+          {authentic ? 'Registered' : checking ? 'Checking' : 'Not registered'}
+        </AppText>
+      </SwapText>
 
       {/* orb + check overlay — reserveGlow keeps the halo from bleeding onto the text */}
       <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
@@ -135,9 +138,11 @@ export function AuthenticityCheck() {
           </AppText>
         </Reveal>
       ) : checking ? (
-        <AppText variant="h1" tone="title" style={{ marginTop: 8 }}>
-          Checking your device…
-        </AppText>
+        <Appear style={{ alignItems: 'center', marginTop: 8 }}>
+          <AppText variant="h1" tone="title">
+            Checking your device…
+          </AppText>
+        </Appear>
       ) : (
         <Reveal index={0} style={{ alignItems: 'center', marginTop: 8 }}>
           <AppText variant="h1" tone="title" style={{ textAlign: 'center' }}>
@@ -147,7 +152,7 @@ export function AuthenticityCheck() {
       )}
 
       {authentic ? (
-        <>
+        <Appear key="authentic" style={{ alignSelf: 'stretch', alignItems: 'center' }}>
           <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300 }}>
               On file with The Glow Company · warranty &amp; replacement support active
@@ -188,9 +193,9 @@ export function AuthenticityCheck() {
           <Reveal index={4} style={{ alignSelf: 'stretch', marginTop: 20 }}>
             <PrimaryButton label="Check again" variant="secondary" onPress={run} />
           </Reveal>
-        </>
+        </Appear>
       ) : checking ? null : (
-        <>
+        <Appear key="unverified" style={{ alignSelf: 'stretch', alignItems: 'center' }}>
           <Reveal index={1} style={{ alignItems: 'center', marginTop: 10 }}>
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320 }}>
               {!token || token === 'local'
@@ -204,7 +209,7 @@ export function AuthenticityCheck() {
           <Reveal index={3} style={{ alignSelf: 'stretch', marginTop: 10 }}>
             <PrimaryButton label="Check again" variant="secondary" onPress={run} />
           </Reveal>
-        </>
+        </Appear>
       )}
     </Screen>
   );

@@ -8,6 +8,8 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
+  interpolateColor,
+  ReduceMotion,
   useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
@@ -19,7 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
-import { AppText, GlowOrb, Logo, PressableScale, PrimaryButton, Screen, VoicePicker } from '@/components';
+import { Appear, AppText, GlowOrb, Logo, PressableScale, PrimaryButton, Screen, VoicePicker } from '@/components';
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
@@ -155,12 +157,13 @@ function Dot({ active }: { active: boolean }) {
     const to = active ? 1 : DOT_DOT_SCALE;
     sx.value = reduced ? to : withTiming(to, { duration: dur.sheet, easing: ease.inOut });
   }, [active, reduced, sx]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scaleX: sx.value }] }));
-  return (
-    <Animated.View
-      style={[{ width: DOT_ACTIVE_W, height: 8, borderRadius: 4, backgroundColor: active ? c.accent : c.line }, style]}
-    />
-  );
+  // width AND tint ease on the same progress — the fill no longer snaps line↔accent
+  // in one frame while the pill morphs.
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scaleX: sx.value }],
+    backgroundColor: interpolateColor(sx.value, [DOT_DOT_SCALE, 1], [c.line, c.accent]),
+  }));
+  return <Animated.View style={[{ width: DOT_ACTIVE_W, height: 8, borderRadius: 4 }, style]} />;
 }
 
 const TICK_W = 34;
@@ -626,12 +629,20 @@ export function Onboarding() {
           style={{ marginBottom: 28, height: 220, alignItems: 'center', justifyContent: 'center' }}>
           <SlideArt art={slide.art} />
         </Animated.View>
-        <Animated.View key={`title-${i}`} entering={FadeInDown.duration(dur.screen)} style={{ alignItems: 'center' }}>
+        <Animated.View
+          key={`title-${i}`}
+          entering={FadeInDown.duration(dur.screen)}
+          exiting={FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System)}
+          style={{ alignItems: 'center' }}>
           <AppText variant="display" tone="title" style={{ textAlign: 'center' }}>
             {slide.title}
           </AppText>
         </Animated.View>
-        <Animated.View key={`body-${i}`} entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)} style={{ alignItems: 'center' }}>
+        <Animated.View
+          key={`body-${i}`}
+          entering={FadeInDown.duration(dur.screen).delay(1.5 * STAGGER)}
+          exiting={FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System)}
+          style={{ alignItems: 'center' }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 320, marginTop: 12 }}>
             {slide.body}
           </AppText>
@@ -645,23 +656,29 @@ export function Onboarding() {
         ))}
       </View>
 
-      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))} />
+      <Appear key={last ? 'go' : 'next'} enter={dur.nav}>
+        <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? setStage('quiz') : setI((v) => v + 1))} />
+      </Appear>
       {i > 0 ? (
-        <PressableScale
-          onPress={() => setI((v) => Math.max(0, v - 1))}
-          accessibilityRole="button"
-          dimTo={0.85}
-          style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
-          <AppText variant="body" tone="muted">
-            Back
-          </AppText>
-        </PressableScale>
+        <Appear key="back" enter={dur.nav}>
+          <PressableScale
+            onPress={() => setI((v) => Math.max(0, v - 1))}
+            accessibilityRole="button"
+            dimTo={0.85}
+            style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
+            <AppText variant="body" tone="muted">
+              Back
+            </AppText>
+          </PressableScale>
+        </Appear>
       ) : (
-        <PressableScale onPress={finish} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
-          <AppText variant="body" tone="muted">
-            I already have an account. <AppText variant="body" style={{ color: c.textAccent }}>Sign in</AppText>
-          </AppText>
-        </PressableScale>
+        <Appear key="signin" enter={dur.nav}>
+          <PressableScale onPress={finish} accessibilityRole="button" dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 4 }}>
+            <AppText variant="body" tone="muted">
+              I already have an account. <AppText variant="body" style={{ color: c.textAccent }}>Sign in</AppText>
+            </AppText>
+          </PressableScale>
+        </Appear>
       )}
     </Screen>
   );

@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { Appear, AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
@@ -99,20 +99,24 @@ function DeviceSummaryCard({
       <Card variant="surface" radius={20} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <GlowOrb size={56} reserveGlow aura={!!device} breathing={!!device} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <AppText variant="h3" tone="title" numberOfLines={2}>
-            {title}
-          </AppText>
-          <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={2}>
-            {subtitle}
-          </AppText>
+          <SwapText trigger={title}>
+            <AppText variant="h3" tone="title" numberOfLines={2}>
+              {title}
+            </AppText>
+          </SwapText>
+          <SwapText trigger={subtitle}>
+            <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={2}>
+              {subtitle}
+            </AppText>
+          </SwapText>
           {loading ? (
-            <View style={{ marginTop: 8, flexDirection: 'row' }}>
+            <Appear key="loading" style={{ marginTop: 8, flexDirection: 'row' }}>
               <ActivityIndicator size="small" color={c.accent} />
-            </View>
+            </Appear>
           ) : device ? (
-            <View style={{ marginTop: 8 }}>
-              <StatusChip label="Authentic" icon="shield" />
-            </View>
+            <Appear key="chip" style={{ marginTop: 8 }}>
+              <StatusChip label="Authentic" icon="shield" confirm />
+            </Appear>
           ) : null}
         </View>
         <Feather name="chevron-right" size={20} color={c.accent} />
@@ -197,19 +201,23 @@ export function DeviceHub() {
           {/* one row for the account's actual state — a registered device shows its
               registration; no device shows how to register (never both) */}
           {device ? (
-            <ActionRow
-              icon="shield"
-              title="Device registration"
-              subtitle="Confirm it's registered &amp; covered"
-              onPress={() => router.push('/authenticity')}
-            />
+            <Appear key="registered">
+              <ActionRow
+                icon="shield"
+                title="Device registration"
+                subtitle="Confirm it's registered &amp; covered"
+                onPress={() => router.push('/authenticity')}
+              />
+            </Appear>
           ) : (
-            <ActionRow
-              icon="plus-circle"
-              title="Register a device"
-              subtitle="Activate your 24-month warranty"
-              onPress={() => router.push('/register-device')}
-            />
+            <Appear key="unregistered">
+              <ActionRow
+                icon="plus-circle"
+                title="Register a device"
+                subtitle="Activate your 24-month warranty"
+                onPress={() => router.push('/register-device')}
+              />
+            </Appear>
           )}
           <ActionRow
             icon="tool"

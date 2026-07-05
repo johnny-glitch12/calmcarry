@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { AppText, Card, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
+import { Appear, AppText, Card, FlowTransition, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SectionHeader, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
@@ -125,89 +125,99 @@ export function Caregivers() {
 
       {/* loading / error states distinct from a genuinely empty household */}
       {live && !loaded ? (
-        <View style={{ paddingVertical: 44, alignItems: 'center' }}>
-          <ActivityIndicator color={c.accent} />
-        </View>
+        <Appear key="loading">
+          <View style={{ paddingVertical: 44, alignItems: 'center' }}>
+            <ActivityIndicator color={c.accent} />
+          </View>
+        </Appear>
       ) : error ? (
-        <Reveal index={1} style={{ marginTop: 22 }}>
-          <Card variant="panel" style={{ alignItems: 'center', gap: 8 }}>
-            <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
-              We couldn’t load your household just now.
-            </AppText>
-            <PressableScale
-              onPress={refresh}
-              onPressIn={lightTap}
-              accessibilityRole="button"
-              hitSlop={8}
-              dimTo={0.85}>
-              <AppText variant="bodyMedium" tone="accent">
-                Tap to retry
+        <Appear key="error">
+          <Reveal index={1} style={{ marginTop: 22 }}>
+            <Card variant="panel" style={{ alignItems: 'center', gap: 8 }}>
+              <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
+                We couldn’t load your household just now.
               </AppText>
-            </PressableScale>
-          </Card>
-        </Reveal>
+              <PressableScale
+                onPress={refresh}
+                onPressIn={lightTap}
+                accessibilityRole="button"
+                hitSlop={8}
+                dimTo={0.85}>
+                <AppText variant="bodyMedium" tone="accent">
+                  Tap to retry
+                </AppText>
+              </PressableScale>
+            </Card>
+          </Reveal>
+        </Appear>
       ) : memberOf ? (
-        <Reveal index={1} style={{ marginTop: 22 }}>
-          <Card variant="panel" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Feather name="home" size={18} color={c.textAccent} />
-            <AppText variant="cardTitle" tone="title" style={{ flex: 1, minWidth: 0 }} numberOfLines={2}>
-              You’re part of {memberOf.name}’s household
-            </AppText>
-            <StatusChip label="Shared" icon="users" />
-          </Card>
-        </Reveal>
+        <Appear key="memberOf">
+          <Reveal index={1} style={{ marginTop: 22 }}>
+            <Card variant="panel" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Feather name="home" size={18} color={c.textAccent} />
+              <AppText variant="cardTitle" tone="title" style={{ flex: 1, minWidth: 0 }} numberOfLines={2}>
+                You’re part of {memberOf.name}’s household
+              </AppText>
+              <StatusChip label="Shared" icon="users" />
+            </Card>
+          </Reveal>
+        </Appear>
       ) : (
-        <>
+        <Appear key="content">
           {/* invite */}
           <Reveal index={1} style={{ marginTop: 24 }}>
             <SectionHeader kicker="Add someone" title="Invite a caregiver" />
-            {inviteCode ? (
-              <Card variant="panel" style={{ alignItems: 'center', gap: 8 }}>
-                <AppText variant="meta" tone="muted">
-                  Share this code with them (valid 7 days):
-                </AppText>
-                <AppText variant="display" tone="title" numberOfLines={1} adjustsFontSizeToFit style={{ letterSpacing: 2 }}>
-                  {inviteCode}
-                </AppText>
-                <AppText variant="meta" tone="muted" style={{ textAlign: 'center' }}>
-                  They enter it under Profile → Family & devices → Caregivers → “Have a code”.
-                </AppText>
-              </Card>
-            ) : (
-              <PrimaryButton label="Create an invite code" onPress={invite} loading={busy} />
-            )}
+            <Appear key={inviteCode ?? 'button'}>
+              {inviteCode ? (
+                <Card variant="panel" style={{ alignItems: 'center', gap: 8 }}>
+                  <AppText variant="meta" tone="muted">
+                    Share this code with them (valid 7 days):
+                  </AppText>
+                  <AppText variant="display" tone="title" numberOfLines={1} adjustsFontSizeToFit style={{ letterSpacing: 2 }}>
+                    {inviteCode}
+                  </AppText>
+                  <AppText variant="meta" tone="muted" style={{ textAlign: 'center' }}>
+                    They enter it under Profile → Family & devices → Caregivers → “Have a code”.
+                  </AppText>
+                </Card>
+              ) : (
+                <PrimaryButton label="Create an invite code" onPress={invite} loading={busy} />
+              )}
+            </Appear>
           </Reveal>
 
           {/* current caregivers */}
           {caregivers.length > 0 ? (
             <Reveal index={2} style={{ marginTop: 28 }}>
               <SectionHeader kicker="In your household" title="Caregivers" />
-              <View style={{ gap: 12 }}>
+              <FlowTransition style={{ gap: 12 }}>
                 {caregivers.map((cg) => (
-                  <Card key={cg.id} variant="surface" padding={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <GlowOrb size={40} reserveGlow breathing={false} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <AppText variant="cardTitle" tone="title" numberOfLines={1}>
-                        {cg.name}
-                      </AppText>
-                      <AppText variant="label" tone="muted" numberOfLines={1}>
-                        {cg.email}
-                      </AppText>
-                    </View>
-                    <PressableScale
-                      onPress={() => remove(cg.id)}
-                      onPressIn={lightTap}
-                      hitSlop={10}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove ${cg.name}`}
-                      dimTo={0.85}>
-                      <AppText variant="label" style={{ color: brand.coral }}>
-                        Remove
-                      </AppText>
-                    </PressableScale>
-                  </Card>
+                  <Appear key={cg.id}>
+                    <Card variant="surface" padding={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <GlowOrb size={40} reserveGlow breathing={false} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <AppText variant="cardTitle" tone="title" numberOfLines={1}>
+                          {cg.name}
+                        </AppText>
+                        <AppText variant="label" tone="muted" numberOfLines={1}>
+                          {cg.email}
+                        </AppText>
+                      </View>
+                      <PressableScale
+                        onPress={() => remove(cg.id)}
+                        onPressIn={lightTap}
+                        hitSlop={10}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${cg.name}`}
+                        dimTo={0.85}>
+                        <AppText variant="label" style={{ color: brand.coral }}>
+                          Remove
+                        </AppText>
+                      </PressableScale>
+                    </Card>
+                  </Appear>
                 ))}
-              </View>
+              </FlowTransition>
             </Reveal>
           ) : null}
 
@@ -219,15 +229,15 @@ export function Caregivers() {
               <PrimaryButton label="Join household" variant="secondary" onPress={join} loading={busy} />
             </View>
           </Reveal>
-        </>
+        </Appear>
       )}
 
       {note ? (
-        <Reveal index={4} style={{ marginTop: 16 }}>
+        <Appear key={note} style={{ marginTop: 16 }}>
           <AppText variant="meta" style={{ color: brand.coral, textAlign: 'center' }}>
             {note}
           </AppText>
-        </Reveal>
+        </Appear>
       ) : null}
     </Screen>
   );

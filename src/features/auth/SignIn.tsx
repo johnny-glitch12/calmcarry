@@ -4,14 +4,53 @@ import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View, type GestureResponderEvent } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { AppText, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
+import { Appear, AppText, FlowTransition, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { PRIVACY_URL, TERMS_URL } from '@/content/store';
-import { brand, useTheme } from '@/theme';
+import { brand, dur, ease, useTheme } from '@/theme';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Animated AppText so an inline link can dim on press without a wrapping
+// Animated.View (which would break the flowing sentence out of its text line).
+const AnimatedAppText = Animated.createAnimatedComponent(AppText);
+
+/**
+ * InlineLink — a tappable word inside flowing prose (Terms / Privacy Policy).
+ * Mirrors PressableScale's press feedback (opacity dim to 0.85, dur.press,
+ * ease.press) but stays an inline Text node so it wraps with the sentence.
+ * Reduced-motion snaps (no animation), and the press itself always fires.
+ */
+function InlineLink({ label, url }: { label: string; url: string }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const opacity = useSharedValue(1);
+  const s = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const drive = (pressed: boolean) => {
+    if (reduced) return;
+    opacity.value = withTiming(pressed ? 0.85 : 1, { duration: dur.press, easing: ease.press });
+  };
+  return (
+    <AnimatedAppText
+      variant="caption"
+      style={[{ color: c.textAccent }, s]}
+      suppressHighlighting
+      accessibilityRole="link"
+      onPressIn={(_e: GestureResponderEvent) => drive(true)}
+      onPressOut={(_e: GestureResponderEvent) => drive(false)}
+      onPress={() => WebBrowser.openBrowserAsync(url)}>
+      {label}
+    </AnimatedAppText>
+  );
+}
 
 // PLACEHOLDER Google OAuth client ids — set the real ones from Google Cloud Console
 // via EXPO_PUBLIC_GOOGLE_* env. Apple needs no key here (uses the app's capability).
@@ -33,7 +72,10 @@ export function SignIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [appleAvailable, setAppleAvailable] = useState(false);
+  // Optimistically assume Apple sign-in on iOS so the social block is present on
+  // first paint — the async check below only ever narrows it, avoiding a layout
+  // shove that would push the email form down when it resolves.
+  const [appleAvailable, setAppleAvailable] = useState(Platform.OS === 'ios');
   const isSignup = mode === 'signup';
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -122,9 +164,11 @@ export function SignIn() {
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 24 }}>
         <GlowOrb size={84} reserveGlow aura />
         <Logo size="lg" tagline style={{ marginTop: 14 }} />
-        <AppText variant="body" tone="muted" style={{ marginTop: 10, textAlign: 'center' }}>
-          {isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}
-        </AppText>
+        <SwapText trigger={mode} style={{ marginTop: 10 }}>
+          <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
+            {isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}
+          </AppText>
+        </SwapText>
       </Reveal>
 
       {appleAvailable || googleConfigured ? (
@@ -158,55 +202,62 @@ export function SignIn() {
         </Reveal>
       ) : null}
 
-      <Reveal index={2} style={{ marginTop: 32, gap: 16 }}>
-        {isSignup ? (
-          <FormField label="Your name" value={name} onChangeText={setName} placeholder="First name" icon="user" autoComplete="name" />
-        ) : null}
-        <FormField
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          icon="mail"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-        />
-        <FormField
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          icon="lock"
-          autoCapitalize="none"
-          secureTextEntry
-          autoComplete={isSignup ? 'new-password' : 'current-password'}
-        />
-        {error ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Feather name="alert-circle" size={15} color={brand.coral} />
-            <AppText variant="label" style={{ color: brand.coral, textTransform: 'none', letterSpacing: 0 }}>
-              {error}
-            </AppText>
-          </View>
-        ) : null}
+      <Reveal index={2} style={{ marginTop: 32 }}>
+        <FlowTransition style={{ gap: 16 }}>
+          {isSignup ? (
+            <Appear>
+              <FormField label="Your name" value={name} onChangeText={setName} placeholder="First name" icon="user" autoComplete="name" />
+            </Appear>
+          ) : null}
+          <FormField
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            icon="mail"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+          />
+          <FormField
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            icon="lock"
+            autoCapitalize="none"
+            secureTextEntry
+            autoComplete={isSignup ? 'new-password' : 'current-password'}
+          />
+          {error ? (
+            <Appear>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Feather name="alert-circle" size={15} color={brand.coral} />
+                <AppText variant="label" style={{ color: brand.coral, textTransform: 'none', letterSpacing: 0 }}>
+                  {error}
+                </AppText>
+              </View>
+            </Appear>
+          ) : null}
+        </FlowTransition>
       </Reveal>
 
       <Reveal index={3} style={{ marginTop: 24 }}>
-        <PrimaryButton label={isSignup ? 'Create account' : 'Sign in'} onPress={submit} loading={busy} />
+        {/* CTA copy is mode-dependent; crossfade the button on toggle so the label
+            doesn't swap in a single frame (SwapText can't wrap PrimaryButton's
+            string `label`, so a keyed Appear carries the dip-and-swap). */}
+        <Appear key={mode}>
+          <PrimaryButton label={isSignup ? 'Create account' : 'Sign in'} onPress={submit} loading={busy} />
+        </Appear>
         {/* Terms + Privacy acceptance (App Store / Play requirement) — implicit via "by continuing" */}
         <AppText
           variant="caption"
           tone="muted"
           style={{ textAlign: 'center', marginTop: 14, textTransform: 'none', letterSpacing: 0, lineHeight: 17 }}>
           By continuing you agree to our{' '}
-          <AppText variant="caption" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}>
-            Terms
-          </AppText>
+          <InlineLink label="Terms" url={TERMS_URL} />
           {' and '}
-          <AppText variant="caption" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>
-            Privacy Policy
-          </AppText>
+          <InlineLink label="Privacy Policy" url={PRIVACY_URL} />
           .
         </AppText>
       </Reveal>
@@ -221,12 +272,14 @@ export function SignIn() {
           accessibilityRole="button"
           dimTo={0.85}
           style={{ paddingVertical: 4 }}>
-          <AppText variant="label" tone="muted">
-            {isSignup ? 'Already have an account? ' : 'New here? '}
-            <AppText variant="label" style={{ color: c.textAccent }}>
-              {isSignup ? 'Sign in' : 'Create an account'}
+          <SwapText trigger={mode}>
+            <AppText variant="label" tone="muted">
+              {isSignup ? 'Already have an account? ' : 'New here? '}
+              <AppText variant="label" style={{ color: c.textAccent }}>
+                {isSignup ? 'Sign in' : 'Create an account'}
+              </AppText>
             </AppText>
-          </AppText>
+          </SwapText>
         </PressableScale>
       </Reveal>
     </Screen>

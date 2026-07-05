@@ -2,9 +2,10 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
+import { Appear, AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { dur } from '@/theme';
 
 type Phase = 'checking' | 'owner' | 'none';
 
@@ -51,29 +52,35 @@ export function ClaimDevice() {
   return (
     <Screen scroll contentStyle={{ alignItems: 'center', paddingTop: 48 }}>
       <GlowOrb size={132} reserveGlow aura burst={phase === 'owner'}>
-        {phase === 'owner' ? <Feather name="check" size={40} color="#FFFFFF" /> : null}
+        {phase === 'owner' ? (
+          <Appear enter={dur.sheet}>
+            <Feather name="check" size={40} color="#FFFFFF" />
+          </Appear>
+        ) : null}
       </GlowOrb>
 
       {phase === 'checking' ? (
-        <Reveal index={0} style={{ alignItems: 'center', marginTop: 16 }}>
-          <AppText variant="h1" tone="title">
-            Looking for your Glow Orb…
-          </AppText>
-          <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
-            Checking your account for a Glow Company order.
-          </AppText>
-          <PressableScale
-            onPress={enter}
-            accessibilityRole="button"
-            dimTo={0.85}
-            style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 28 }}>
-            <AppText variant="body" tone="muted">
-              Not now
+        <Appear key={phase} style={{ alignSelf: 'stretch', alignItems: 'center' }}>
+          <Reveal index={0} style={{ alignItems: 'center', marginTop: 16 }}>
+            <AppText variant="h1" tone="title">
+              Looking for your Glow Orb…
             </AppText>
-          </PressableScale>
-        </Reveal>
+            <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
+              Checking your account for a Glow Company order.
+            </AppText>
+            <PressableScale
+              onPress={enter}
+              accessibilityRole="button"
+              dimTo={0.85}
+              style={{ alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center', marginTop: 28 }}>
+              <AppText variant="body" tone="muted">
+                Not now
+              </AppText>
+            </PressableScale>
+          </Reveal>
+        </Appear>
       ) : phase === 'owner' ? (
-        <>
+        <Appear key={phase} style={{ alignSelf: 'stretch', alignItems: 'center' }}>
           <Reveal index={0} style={{ alignItems: 'center', marginTop: 16 }}>
             <AppText variant="h1" tone="title">
               Found your Glow Orb
@@ -88,9 +95,9 @@ export function ClaimDevice() {
           <Reveal index={2} style={{ alignSelf: 'stretch', marginTop: 28 }}>
             <PrimaryButton label="Continue" onPress={enter} />
           </Reveal>
-        </>
+        </Appear>
       ) : (
-        <>
+        <Appear key={phase} style={{ alignSelf: 'stretch', alignItems: 'center' }}>
           <Reveal index={0} style={{ alignItems: 'center', marginTop: 16 }}>
             <AppText variant="h1" tone="title" style={{ textAlign: 'center' }}>
               Make it yours
@@ -112,7 +119,7 @@ export function ClaimDevice() {
               </AppText>
             </PressableScale>
           </Reveal>
-        </>
+        </Appear>
       )}
     </Screen>
   );

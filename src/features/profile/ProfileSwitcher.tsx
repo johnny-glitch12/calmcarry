@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
-import { AppText, PressableScale } from '@/components';
+import { AppText, Crossfade, PressableScale, SelectionOverlay } from '@/components';
 import { lightTap } from '@/lib/haptics';
 import { hasParentPin } from '@/lib/parentGate';
 import { useTheme } from '@/theme';
@@ -27,23 +27,51 @@ function Avatar({ profile, active, onPress }: { profile: Profile; active: boolea
           width: 52,
           height: 52,
           borderRadius: 26,
-          backgroundColor: active ? c.textAccent : c.panel,
+          backgroundColor: c.panel,
           borderWidth: 2,
-          borderColor: active ? c.textAccent : c.lineSage,
+          borderColor: c.lineSage,
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
         }}>
+        <SelectionOverlay
+          active={active}
+          style={{ borderRadius: 26, borderWidth: 2, borderColor: c.textAccent, backgroundColor: c.textAccent }}
+        />
         {profile.type === 'kids' ? (
-          <Feather name="smile" size={22} color={active ? '#FFFFFF' : c.textAccent} />
+          <Crossfade
+            active={active}
+            style={{ width: 22, height: 22 }}
+            front={<Feather name="smile" size={22} color="#FFFFFF" />}
+            back={<Feather name="smile" size={22} color={c.textAccent} />}
+          />
         ) : (
-          <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 20, color: active ? '#FFFFFF' : c.textAccent }}>
-            {initial}
-          </AppText>
+          <Crossfade
+            active={active}
+            style={{ width: 24, height: 24 }}
+            front={
+              <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 20, color: '#FFFFFF' }}>{initial}</AppText>
+            }
+            back={
+              <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 20, color: c.textAccent }}>{initial}</AppText>
+            }
+          />
         )}
       </View>
-      <AppText variant="label" tone={active ? 'title' : 'muted'} style={{ marginTop: 6 }} numberOfLines={1}>
-        {profile.name}
-      </AppText>
+      <Crossfade
+        active={active}
+        style={{ width: 64, height: 18, marginTop: 6 }}
+        front={
+          <AppText variant="label" tone="title" numberOfLines={1}>
+            {profile.name}
+          </AppText>
+        }
+        back={
+          <AppText variant="label" tone="muted" numberOfLines={1}>
+            {profile.name}
+          </AppText>
+        }
+      />
     </PressableScale>
   );
 }

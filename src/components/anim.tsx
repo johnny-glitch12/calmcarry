@@ -113,7 +113,10 @@ export function SwapText({
   const o = useSharedValue(1);
   const [shown, setShown] = useState<ReactNode>(children);
   const latest = useRef<ReactNode>(children);
-  latest.current = children;
+  // keep the ref current OUTSIDE render (writing during render trips react-hooks/refs)
+  useEffect(() => {
+    latest.current = children;
+  });
   const first = useRef(true);
   const commit = () => setShown(latest.current);
 

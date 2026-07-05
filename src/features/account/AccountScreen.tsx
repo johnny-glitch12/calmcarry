@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Share, Switch, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
+import { Appear, AppText, Card, Dimmable, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
@@ -60,9 +60,11 @@ function SettingRow({ icon, label, value, toggle, onToggle, onPress, last }: Row
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {value ? (
-            <AppText variant="label" tone="muted" numberOfLines={1}>
-              {value}
-            </AppText>
+            <SwapText trigger={value}>
+              <AppText variant="label" tone="muted" numberOfLines={1}>
+                {value}
+              </AppText>
+            </SwapText>
           ) : null}
           <Feather name="chevron-right" size={18} color={c.accent} />
         </View>
@@ -264,28 +266,34 @@ export function AccountScreen() {
             borderWidth: 1,
             borderColor: c.lineSage,
           }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Feather name="award" size={18} color={c.textAccent} />
-            <AppText variant="h3" tone="accent">
-              {isPremium ? 'CalmCarry Premium' : 'Free tier'}
+          {/* crossfade the whole card body when entitlement flips (purchase/restore),
+              so title/body/chip morph rather than hard-swapping behind the modal */}
+          <Appear key={isPremium ? 'premium' : 'free'} enter={dur.sheet}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Feather name="award" size={18} color={c.textAccent} />
+              <AppText variant="h3" tone="accent">
+                {isPremium ? 'CalmCarry Premium' : 'Free tier'}
+              </AppText>
+            </View>
+            <AppText variant="body" tone="text" style={{ marginTop: 6 }}>
+              {isPremium
+                ? 'Premium is on. You have the full library, programs and the whole sound machine, shared across your household.'
+                : 'Unlock the full library, programs and sound machine with CalmCarry Premium.'}
             </AppText>
-          </View>
-          <AppText variant="body" tone="text" style={{ marginTop: 6 }}>
-            {isPremium
-              ? 'Premium is on. You have the full library, programs and the whole sound machine, shared across your household.'
-              : 'Unlock the full library, programs and sound machine with CalmCarry Premium.'}
-          </AppText>
-          {isPremium && renewAt ? (
-            <AppText variant="meta" tone="muted" style={{ marginTop: 8 }}>
-              Renews {new Date(renewAt).toLocaleDateString()} · manage anytime, one tap
-            </AppText>
-          ) : null}
-          <View style={{ marginTop: 12 }}>
-            <StatusChip
-              label={isPremium ? 'Premium active' : 'Go Premium'}
-              icon={isPremium ? 'unlock' : 'lock'}
-            />
-          </View>
+            {isPremium && renewAt ? (
+              <Appear enter={dur.sheet}>
+                <AppText variant="meta" tone="muted" style={{ marginTop: 8 }}>
+                  Renews {new Date(renewAt).toLocaleDateString()} · manage anytime, one tap
+                </AppText>
+              </Appear>
+            ) : null}
+            <View style={{ marginTop: 12 }}>
+              <StatusChip
+                label={isPremium ? 'Premium active' : 'Go Premium'}
+                icon={isPremium ? 'unlock' : 'lock'}
+              />
+            </View>
+          </Appear>
         </View>
         </PressableScale>
       </Reveal>
@@ -321,7 +329,7 @@ export function AccountScreen() {
             <SettingRow icon="bell" label="Bedtime reminder" toggle={reminder} onToggle={toggleReminder} />
           ) : null}
           {remindersSupported && reminder ? (
-            <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: c.line, gap: 10 }}>
+            <Appear enter={dur.sheet} layout style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: c.line, gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                 <Feather name="clock" size={18} color={c.accent} />
                 <AppText variant="cardTitle" tone="title">
@@ -333,7 +341,7 @@ export function AccountScreen() {
                 value={reminderIdx}
                 onChange={pickReminderTime}
               />
-            </View>
+            </Appear>
           ) : null}
           <SettingRow icon="mic" label="Guided voice" value={voiceName} onPress={() => router.push('/voice' as Href)} />
           <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} last />
@@ -397,20 +405,23 @@ export function AccountScreen() {
           accessibilityRole="button"
           accessibilityLabel={confirmDelete ? 'Confirm permanent account deletion' : 'Delete account'}
           dimTo={0.6}
-          style={{ alignItems: 'center', paddingVertical: 12, opacity: deleting ? 0.5 : 1 }}>
-          {/* keyed crossfade so arm/disarm never hard-snaps — exit (dur.exit) faster than enter */}
-          <Animated.View
-            key={deleting ? 'deleting' : confirmDelete ? 'confirm' : 'idle'}
-            entering={FadeIn.duration(dur.press)}
-            exiting={FadeOut.duration(dur.press)}>
-            <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
-              {deleting
-                ? 'Deleting…'
-                : confirmDelete
-                  ? 'Tap again to permanently delete your account & data'
-                  : 'Delete account'}
-            </AppText>
-          </Animated.View>
+          style={{ alignItems: 'center', paddingVertical: 12 }}>
+          {/* busy dim eases (a static opacity here is overridden by PressableScale's own
+              animated opacity anyway); inner keyed crossfade so arm/disarm never hard-snaps */}
+          <Dimmable active={!deleting} dim={0.5}>
+            <Animated.View
+              key={deleting ? 'deleting' : confirmDelete ? 'confirm' : 'idle'}
+              entering={FadeIn.duration(dur.press)}
+              exiting={FadeOut.duration(dur.press)}>
+              <AppText variant="meta" style={{ color: confirmDelete ? brand.coral : c.dim }}>
+                {deleting
+                  ? 'Deleting…'
+                  : confirmDelete
+                    ? 'Tap again to permanently delete your account & data'
+                    : 'Delete account'}
+              </AppText>
+            </Animated.View>
+          </Dimmable>
         </PressableScale>
       </Reveal>
 

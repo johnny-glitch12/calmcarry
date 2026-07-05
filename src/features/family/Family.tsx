@@ -3,9 +3,9 @@ import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useState } from 'react';
 import { Switch, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, ReduceMotion } from 'react-native-reanimated';
 
-import { AppText, Card, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
+import { Appear, AppText, Card, FlowTransition, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SectionHeader, Segmented, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile, type AppMode, type Profile } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
@@ -135,11 +135,13 @@ export function Family() {
       <Reveal index={1} style={{ marginTop: 22 }}>
         <SectionHeader kicker="Who’s it for" title="Profiles" />
         <ProfileSwitcher onAdd={() => setAdding((v) => !v)} />
+        <FlowTransition>
         {adding ? (
-          <View style={{ marginTop: 16, gap: 12 }}>
+          <Appear layout style={{ marginTop: 16, gap: 12 }}>
             <FormField label="Name" value={newName} onChangeText={setNewName} placeholder="e.g. Mia" icon="user" />
             <Segmented options={['Adult', 'Kid']} value={newType === 'kids' ? 1 : 0} onChange={(i) => { setNewType(i === 1 ? 'kids' : 'adult'); setNeedConsent(false); }} />
             {needConsent ? (
+              <Appear key="consent">
               <Card variant="panel" style={{ gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="shield" size={16} color={c.textAccent} />
@@ -164,10 +166,13 @@ export function Family() {
                   <AppText variant="label" tone="muted">Cancel</AppText>
                 </PressableScale>
               </Card>
+              </Appear>
             ) : (
-              <PrimaryButton label="Add to household" onPress={submitAdd} />
+              <Appear key="add">
+                <PrimaryButton label="Add to household" onPress={submitAdd} />
+              </Appear>
             )}
-          </View>
+          </Appear>
         ) : null}
         <AppText variant="meta" tone="muted" style={{ marginTop: 14 }}>
           One subscription covers everyone. Each profile keeps its own picks.
@@ -179,8 +184,13 @@ export function Family() {
             {profiles
               .filter((p) => p.type === 'kids')
               .map((p) => (
-                // exit-before-remove: the row fades out instead of hard-unmounting on delete
-                <Animated.View key={p.id} exiting={FadeOut.duration(dur.exit)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                // exit-before-remove: the row fades out instead of hard-unmounting on delete;
+                // enter-on-add: a newly-added kid row fades in instead of popping
+                <Animated.View
+                  key={p.id}
+                  entering={FadeIn.duration(dur.sheet).reduceMotion(ReduceMotion.System)}
+                  exiting={FadeOut.duration(dur.exit)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Feather name="smile" size={14} color={c.muted} />
                   <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
                     {p.name}
@@ -209,44 +219,49 @@ export function Family() {
               ))}
           </View>
         ) : null}
+        </FlowTransition>
       </Reveal>
 
       <Reveal index={2} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Your orbs" title="Your devices" />
-        <View style={{ gap: 12 }}>
+        <FlowTransition style={{ gap: 12 }}>
           {devices.map((d) => (
-            <Card
-              key={d.id}
-              variant="surface"
-              padding={14}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <GlowOrb size={44} reserveGlow breathing={false} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <AppText variant="cardTitle" tone="title" numberOfLines={1}>
-                  {d.model ?? 'Glow Orb'}
-                </AppText>
-                <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
-                  {d.serial}
-                </AppText>
-              </View>
-              <StatusChip label="Registered" icon="check" />
-            </Card>
+            // focus-fetch loaded devices fade in instead of popping in
+            <Appear key={d.id}>
+              <Card
+                variant="surface"
+                padding={14}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <GlowOrb size={44} reserveGlow breathing={false} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText variant="cardTitle" tone="title" numberOfLines={1}>
+                    {d.model ?? 'Glow Orb'}
+                  </AppText>
+                  <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
+                    {d.serial}
+                  </AppText>
+                </View>
+                <StatusChip label="Registered" icon="check" />
+              </Card>
+            </Appear>
           ))}
           {devicesLoaded && devices.length === 0 ? (
-            <View
-              style={{
-                padding: 16,
-                borderRadius: 16,
-                backgroundColor: c.panel,
-                borderWidth: 1,
-                borderColor: c.panelStrong,
-              }}>
-              <AppText variant="meta" tone="muted">
-                {devicesError
-                  ? 'We couldn’t check your devices just now. Pull back in a moment — anything you’ve registered is safe.'
-                  : 'No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.'}
-              </AppText>
-            </View>
+            <Appear key={devicesError ? 'error' : 'empty'}>
+              <View
+                style={{
+                  padding: 16,
+                  borderRadius: 16,
+                  backgroundColor: c.panel,
+                  borderWidth: 1,
+                  borderColor: c.panelStrong,
+                }}>
+                <AppText variant="meta" tone="muted">
+                  {devicesError
+                    ? 'We couldn’t check your devices just now. Pull back in a moment — anything you’ve registered is safe.'
+                    : 'No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.'}
+                </AppText>
+              </View>
+            </Appear>
           ) : null}
           <PressableScale
             onPress={() => router.push('/register-device')}
@@ -285,7 +300,7 @@ export function Family() {
               </AppText>
             </AppText>
           </PressableScale>
-        </View>
+        </FlowTransition>
       </Reveal>
 
       <Reveal index={2} style={{ marginTop: 28 }}>

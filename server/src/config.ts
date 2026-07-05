@@ -12,7 +12,8 @@ export const config = {
   port: parseInt(process.env.PORT ?? '4000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
   jwtSecret: process.env.JWT_SECRET ?? 'calmcarry-dev-secret-change-me-in-production',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '30d',
+  // typed as an `ms`-style duration — @nestjs/jwt v11 requires StringValue, not string
+  jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as import('ms').StringValue,
   // file-based SQLite by default; set DATABASE_URL (Postgres) in production
   dbPath: process.env.DB_PATH ?? join(process.cwd(), 'data', 'calmcarry.sqlite'),
   databaseUrl: process.env.DATABASE_URL ?? '',

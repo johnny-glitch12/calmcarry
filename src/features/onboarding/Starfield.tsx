@@ -116,11 +116,31 @@ function StarDot({ s }: { s: Star }) {
 }
 
 export function Starfield() {
+  const reduced = useReducedMotion();
+  // the whole sky drifts gently — a slow, low-amplitude sway (X and Y on different
+  // long periods so it never looks like a straight slide). Twinkle rides on top.
+  const sx = useSharedValue(-6);
+  const sy = useSharedValue(-4);
+  useEffect(() => {
+    if (reduced) {
+      sx.value = 0;
+      sy.value = 0;
+      return;
+    }
+    sx.value = withRepeat(withTiming(6, { duration: 9000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    sy.value = withRepeat(withTiming(4, { duration: 13000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    return () => {
+      sx.value = 0;
+      sy.value = 0;
+    };
+  }, [reduced, sx, sy]);
+  const sway = useAnimatedStyle(() => ({ transform: [{ translateX: sx.value }, { translateY: sy.value }] }));
+
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, sway]}>
       {STARS.map((s, i) => (
         <StarDot key={i} s={s} />
       ))}
-    </View>
+    </Animated.View>
   );
 }

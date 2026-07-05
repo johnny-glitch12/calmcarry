@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Platform, Pressable, View, type ImageSourcePropType } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -11,6 +12,7 @@ import Animated, {
 import { dur, ease, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
+import { Appear } from './anim';
 
 type Props = {
   title: string;
@@ -29,9 +31,11 @@ type Props = {
  */
 export function LibraryCard({ title, subtitle, image, locked = false, size = 152, onPress }: Props) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
   const scale = useSharedValue(1);
   const cardStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const press = (to: number) => {
+    if (reduced) return;
     scale.value = withTiming(to, { duration: dur.press, easing: ease.press });
   };
 
@@ -60,10 +64,12 @@ export function LibraryCard({ title, subtitle, image, locked = false, size = 152
             source={image}
             style={{ width: size, height: size }}
             contentFit="cover"
+            transition={{ duration: dur.nav, effect: 'cross-dissolve' }}
             accessibilityIgnoresInvertColors
           />
           {locked ? (
-            <View
+            <Appear
+              enter={dur.nav}
               style={{
                 position: 'absolute',
                 top: 10,
@@ -76,7 +82,7 @@ export function LibraryCard({ title, subtitle, image, locked = false, size = 152
                 backgroundColor: 'rgba(14,24,23,0.55)',
               }}>
               <Feather name="lock" size={14} color="#FFFFFF" />
-            </View>
+            </Appear>
           ) : null}
         </View>
         <AppText variant="cardTitle" tone="title" numberOfLines={2} style={{ marginTop: 10 }}>

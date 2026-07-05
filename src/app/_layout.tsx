@@ -7,6 +7,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BrandSplash } from '@/components';
@@ -26,24 +33,49 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
  * Uses plain RN primitives + literal brand colours so it works even if the theme
  * or fonts were the thing that failed.
  */
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   captureError(error);
+  return <ErrorScreen retry={retry} />;
+}
+
+/**
+ * The retry screen fades in (a hard cut at a moment the app is already jarring
+ * would compound it) and its button answers the finger with a soft press-scale.
+ * Deliberately self-contained: only reanimated core + literal values, so it stays
+ * independent of the theme/fonts that may have been what failed.
+ */
+function ErrorScreen({ retry }: { retry: () => void }) {
+  const reduced = useReducedMotion();
+  const mount = useSharedValue(reduced ? 1 : 0);
+  const press = useSharedValue(1);
+  useEffect(() => {
+    if (!reduced) mount.value = withTiming(1, { duration: 460, easing: Easing.out(Easing.cubic) });
+  }, [reduced, mount]);
+  const fade = useAnimatedStyle(() => ({ opacity: mount.value }));
+  const btn = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
+  const drive = (to: number) => {
+    if (!reduced) press.value = withTiming(to, { duration: 150, easing: Easing.out(Easing.cubic) });
+  };
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#D3EDEA' }}>
+    <Animated.View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#D3EDEA' }, fade]}>
       <Text style={{ fontSize: 20, fontWeight: '600', color: '#485453', textAlign: 'center', marginBottom: 8 }}>
         Let’s take a breath
       </Text>
       <Text style={{ fontSize: 15, color: '#5C6968', textAlign: 'center', marginBottom: 28, lineHeight: 22, maxWidth: 300 }}>
         Something hiccuped on our end. Nothing you did. Let’s try that again.
       </Text>
-      <Pressable
+      <AnimatedPressable
         onPress={retry}
+        onPressIn={() => drive(0.96)}
+        onPressOut={() => drive(1)}
         accessibilityRole="button"
         accessibilityLabel="Try again"
-        style={{ backgroundColor: '#426768', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 8 }}>
+        style={[{ backgroundColor: '#426768', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 8 }, btn]}>
         <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>Try again</Text>
-      </Pressable>
-    </View>
+      </AnimatedPressable>
+    </Animated.View>
   );
 }
 

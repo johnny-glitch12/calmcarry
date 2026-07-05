@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { useEffect } from 'react';
 import { ActivityIndicator, Platform, Pressable, View, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -40,7 +41,21 @@ export function PrimaryButton({
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  // Disabled dim and the label↔spinner swap are animated so entering/leaving the
+  // disabled or busy state fades instead of snapping.
+  const dim = useSharedValue(disabled ? 0.45 : 1);
+  const l = useSharedValue(loading ? 1 : 0);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }], opacity: dim.value }));
+  const labelStyle = useAnimatedStyle(() => ({ opacity: 1 - l.value }));
+  const spinnerStyle = useAnimatedStyle(() => ({ opacity: l.value }));
+
+  useEffect(() => {
+    dim.value = reduced ? (disabled ? 0.45 : 1) : withTiming(disabled ? 0.45 : 1, { duration: dur.press, easing: ease.press });
+  }, [disabled, reduced, dim]);
+
+  useEffect(() => {
+    l.value = reduced ? (loading ? 1 : 0) : withTiming(loading ? 1 : 0, { duration: dur.exit, easing: ease.press });
+  }, [loading, reduced, l]);
 
   // Press IN dips quickly (eased); release SETTLES on a soft spring so the button
   // breathes back rather than snapping — a calmer, more soothing tap.
@@ -90,17 +105,17 @@ export function PrimaryButton({
             backgroundColor: p.bg,
             borderWidth: variant === 'secondary' ? 1 : 0,
             borderColor: p.border,
-            opacity: disabled ? 0.45 : 1,
           },
           variant === 'primary' ? c.shadow : null,
         ]}>
-        {loading ? (
+        <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, labelStyle]}>
+          <AppText style={[type.button, { color: p.fg }]}>{label}</AppText>
+        </Animated.View>
+        <Animated.View
+          pointerEvents="none"
+          style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }, spinnerStyle]}>
           <ActivityIndicator color={p.fg} />
-        ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <AppText style={[type.button, { color: p.fg }]}>{label}</AppText>
-          </View>
-        )}
+        </Animated.View>
       </Animated.View>
     </Pressable>
   );

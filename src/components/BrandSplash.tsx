@@ -24,6 +24,7 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
   const { c, isNight } = useTheme();
   const reduced = useReducedMotion();
   const fade = useSharedValue(1);
+  const press = useSharedValue(1); // finger-down feedback on the tap-to-skip
   const done = useRef(false);
 
   // A low, soothing nature bed (birdsong + soft stream) sets the vibe the moment
@@ -89,6 +90,11 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
   };
 
   const fadeStyle = useAnimatedStyle(() => ({ opacity: fade.value }));
+  const logoPress = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
+
+  const drivePress = (to: number) => {
+    if (!reduced && !done.current) press.value = withTiming(to, { duration: dur.press, easing: ease.press });
+  };
 
   // a barely-there vertical gradient for depth (calm, not flashy)
   const bg: [string, string] = isNight ? [c.bg, c.surface] : [c.surface, c.bg];
@@ -98,10 +104,14 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
       <LinearGradient colors={bg} style={StyleSheet.absoluteFill} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} />
       <Pressable
         onPress={finish}
+        onPressIn={() => drivePress(0.98)}
+        onPressOut={() => drivePress(1)}
         accessibilityRole="button"
         accessibilityLabel="CalmCarry. Skip intro"
         style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <AnimatedLogo size="lg" withOrb tagline onDone={finish} />
+        <Animated.View style={logoPress}>
+          <AnimatedLogo size="lg" withOrb tagline onDone={finish} />
+        </Animated.View>
       </Pressable>
     </Animated.View>
   );

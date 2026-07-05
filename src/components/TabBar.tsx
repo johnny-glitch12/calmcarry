@@ -3,6 +3,10 @@ import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  ReduceMotion,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -14,6 +18,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
 import { brand, dur, ease, fonts, night, spring, themes, useColorSchemePref } from '@/theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+// Tab slot resize + add/remove all move under the same nav-speed layout tween.
+const tabLayout = LinearTransition.duration(dur.nav).easing(ease.inOut).reduceMotion(ReduceMotion.System);
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.
@@ -82,7 +90,7 @@ function TabItem({
         : 0
       : focused
         ? withSpring(1, spring) // bloom in on select — gentle settle, no snappy pop
-        : 0; // instant clear on blur — no fade-out remnant in the shrunk slot
+        : withTiming(0, { duration: dur.exit, easing: ease.press }); // fade the pill out (slot resize is layout-tweened) instead of snapping
   }, [focused, reduced, t]);
 
   const onPressIn = () => {
@@ -104,19 +112,25 @@ function TabItem({
   }));
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: focused }}
+      // slot widens/narrows on selection, and tabs enter/leave (kids mode) — all
+      // layout-tweened so the strip re-flows smoothly instead of snapping.
+      layout={tabLayout}
+      entering={FadeIn.duration(dur.nav).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System)}
       style={
         focused
           ? { flexGrow: 1, flexShrink: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
           : { width: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 }
       }>
       <Animated.View
+        layout={tabLayout}
         style={[
           {
             flexDirection: 'row',
@@ -154,7 +168,7 @@ function TabItem({
           </Animated.Text>
         ) : null}
       </Animated.View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   TextInput,
   View,
@@ -17,6 +17,7 @@ import Animated, {
 import { brand, dur, ease, type as typeScale, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
+import { Appear, Crossfade } from './anim';
 
 type Props = {
   label?: string;
@@ -54,15 +55,21 @@ export function FormField({
   const reduced = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const f = useSharedValue(0);
+  // Error is its own animated axis so flipping into/out of the error state blends
+  // (line/accent ↔ coral) instead of the ring color snapping in one frame.
+  const err = useSharedValue(error ? 1 : 0);
 
-  const base = error ? brand.coral : c.line;
-  const active = error ? brand.coral : c.accent;
+  useEffect(() => {
+    err.value = reduced ? (error ? 1 : 0) : withTiming(error ? 1 : 0, { duration: dur.press, easing: ease.press });
+  }, [error, reduced, err]);
 
-  const ringStyle = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(f.value, [0, 1], [base, active]),
-  }));
+  const ringStyle = useAnimatedStyle(() => {
+    const focusColor = interpolateColor(f.value, [0, 1], [c.line, c.accent]);
+    return { borderColor: interpolateColor(err.value, [0, 1], [focusColor, brand.coral]) };
+  });
 
-  const iconColor = error ? brand.coral : focused ? c.accent : c.muted;
+  const iconActive = !!error || focused;
+  const iconActiveColor = error ? brand.coral : c.accent;
 
   return (
     <View>
@@ -85,7 +92,14 @@ export function FormField({
           },
           ringStyle,
         ]}>
-        {icon ? <Feather name={icon} size={18} color={iconColor} style={{ marginTop: multiline ? 16 : 0 }} /> : null}
+        {icon ? (
+          <Crossfade
+            style={{ width: 18, height: 18, marginTop: multiline ? 16 : 0 }}
+            active={iconActive}
+            front={<Feather name={icon} size={18} color={iconActiveColor} />}
+            back={<Feather name={icon} size={18} color={c.muted} />}
+          />
+        ) : null}
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -121,9 +135,11 @@ export function FormField({
       {error ? (
         // coral (#EF626C) is only ~2.77:1 on the cream surface (fails AA) — use a
         // darker red by day, the brighter coral by night where it clears contrast.
-        <AppText variant="caption" style={{ color: isNight ? brand.coral : '#B5303A', marginTop: 6, textTransform: 'none' }}>
-          {error}
-        </AppText>
+        <Appear enter={dur.nav}>
+          <AppText variant="caption" style={{ color: isNight ? brand.coral : '#B5303A', marginTop: 6, textTransform: 'none' }}>
+            {error}
+          </AppText>
+        </Appear>
       ) : null}
     </View>
   );

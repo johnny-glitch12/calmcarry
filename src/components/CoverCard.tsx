@@ -17,6 +17,7 @@ import Animated, {
 import { dur, ease, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
+import { Crossfade } from './anim';
 
 type Props = {
   title: string;
@@ -201,7 +202,12 @@ export function CoverCard({
             },
             playStyle,
           ]}>
-          <Feather name={locked ? 'lock' : 'play'} size={18} color={c.accent} style={{ marginLeft: locked ? 0 : 2 }} />
+          <Crossfade
+            style={{ width: 18, height: 18 }}
+            active={locked}
+            front={<Feather name="lock" size={18} color={c.accent} />}
+            back={<Feather name="play" size={18} color={c.accent} style={{ marginLeft: 2 }} />}
+          />
         </Animated.View>
       </Animated.View>
     </Pressable>

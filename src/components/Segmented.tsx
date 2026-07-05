@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LayoutChangeEvent, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -78,21 +78,26 @@ export function Segmented({ options, value, onChange }: Props) {
   const reduced = useReducedMotion();
   const [w, setW] = useState(0);
   const x = useSharedValue(0);
+  const first = useRef(true);
   const n = options.length;
   const pad = 4;
   const thumbW = w > 0 ? (w - pad * 2) / n : 0;
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    const width = e.nativeEvent.layout.width;
-    setW(width);
-    // place the thumb under the active segment immediately (no slide on first layout)
-    x.value = pad + value * ((width - pad * 2) / n);
-  };
+  const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
 
-  const moveTo = (i: number) => {
-    const to = pad + i * thumbW;
-    x.value = reduced ? to : withTiming(to, { duration: dur.sheet, easing: ease.out });
-  };
+  // The thumb tracks the controlled `value` — so it also glides back if a parent
+  // rejects/reverts the change (e.g. a cancelled parent gate), never desyncing
+  // from the labels. First placement (and reduced motion) snaps; later moves slide.
+  useEffect(() => {
+    if (thumbW <= 0) return;
+    const to = pad + value * thumbW;
+    if (first.current || reduced) {
+      x.value = to;
+      first.current = false;
+    } else {
+      x.value = withTiming(to, { duration: dur.sheet, easing: ease.out });
+    }
+  }, [value, thumbW, reduced, x]);
 
   const thumbStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
 
@@ -131,10 +136,7 @@ export function Segmented({ options, value, onChange }: Props) {
           active={i === value}
           activeColor={c.ctaText}
           mutedColor={c.muted}
-          onPress={() => {
-            onChange(i);
-            moveTo(i);
-          }}
+          onPress={() => onChange(i)}
         />
       ))}
     </View>

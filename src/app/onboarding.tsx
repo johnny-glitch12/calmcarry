@@ -1,5 +1,5 @@
-import { Onboarding } from '@/features/onboarding/Onboarding';
+import { OnboardingFunnel } from '@/features/onboarding/OnboardingFunnel';
 
 export default function OnboardingRoute() {
-  return <Onboarding />;
+  return <OnboardingFunnel />;
 }

@@ -3,7 +3,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import Animated, {
   FadeIn,
   ReduceMotion,
@@ -151,30 +151,35 @@ function FunnelShell({
   canContinue?: boolean;
 }) {
   const { c } = useTheme();
+  // No <Screen> here — the funnel renders ONE persistent Screen (stable dark
+  // background) and only this content cross-fades between steps, so page-to-page
+  // fades the content, never the whole screen (no bright flash).
   return (
-    <Screen mode="night" scroll contentStyle={{ paddingBottom: 120 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 2, paddingBottom: 18 }}>
-        <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12}>
-          <Feather name="chevron-left" size={26} color={c.text} />
-        </PressableScale>
-        <View style={{ flex: 1 }}>
-          <ProgressBar progress={progress} />
+    <View style={{ flex: 1 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 2, paddingBottom: 18 }}>
+          <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12}>
+            <Feather name="chevron-left" size={26} color={c.text} />
+          </PressableScale>
+          <View style={{ flex: 1 }}>
+            <ProgressBar progress={progress} />
+          </View>
         </View>
-      </View>
 
-      <Reveal>
-        {kicker ? <AppText style={[P.label, { color: c.textAccent, marginBottom: 8 }]}>{kicker}</AppText> : null}
-        <AppText style={[P.title, { color: c.text }]}>{title}</AppText>
-        {subtitle ? <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>{subtitle}</AppText> : null}
-      </Reveal>
+        <Reveal>
+          {kicker ? <AppText style={[P.label, { color: c.textAccent, marginBottom: 8 }]}>{kicker}</AppText> : null}
+          <AppText style={[P.title, { color: c.text }]}>{title}</AppText>
+          {subtitle ? <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>{subtitle}</AppText> : null}
+        </Reveal>
 
-      <View style={{ marginTop: 24, gap: 12 }}>{children}</View>
+        <View style={{ marginTop: 24, gap: 12 }}>{children}</View>
+      </ScrollView>
 
       {/* pinned footer */}
       <View style={{ position: 'absolute', left: 24, right: 24, bottom: 24 }}>
         <PrimaryButton label={continueLabel} onPress={onContinue} disabled={!canContinue} />
       </View>
-    </Screen>
+    </View>
   );
 }
 
@@ -291,7 +296,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   }, [ambient]);
 
   return (
-    <Screen mode="night" backdrop={<Starfield />} contentStyle={{ flex: 1, paddingBottom: 20 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 20 }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
         <Reveal>
           <AppText style={[P.label, { color: c.textAccent, textAlign: 'center', marginBottom: 6 }]}>CALMCARRY</AppText>
@@ -328,7 +333,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
         <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: c.line }} />
         <LegalLink label="Terms of Service" onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} />
       </View>
-    </Screen>
+    </View>
   );
 }
 
@@ -336,7 +341,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
 function TransformStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   return (
-    <Screen mode="night" contentStyle={{ flex: 1, paddingBottom: 20 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 20 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -360,7 +365,7 @@ function TransformStep({ onNext, onBack }: StepProps) {
       <Reveal index={4}>
         <PrimaryButton label="Continue" onPress={onNext} />
       </Reveal>
-    </Screen>
+    </View>
   );
 }
 
@@ -405,7 +410,7 @@ function ReassureStep({ onNext, onBack, answers }: StepProps) {
         ? { title: 'There’s room to feel more rested.', body: 'A few small, steady habits can move “okay” toward genuinely good. Let’s find yours.' }
         : { title: 'Let’s protect the good nights.', body: 'You’re already doing something right. We’ll help you keep it — and deepen it.' };
   return (
-    <Screen mode="night" contentStyle={{ flex: 1, paddingBottom: 24 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -425,7 +430,7 @@ function ReassureStep({ onNext, onBack, answers }: StepProps) {
       <Reveal index={3}>
         <PrimaryButton label="Continue" onPress={onNext} />
       </Reveal>
-    </Screen>
+    </View>
   );
 }
 
@@ -632,9 +637,14 @@ export function OnboardingFunnel() {
   const StepComponent = STEP_COMPONENTS[stepId];
   const progress = index / (STEPS.length - 1);
 
+  // ONE persistent Screen — the dark background + starfield stay put across steps.
+  // Only the keyed content cross-fades, so page-to-page fades the CONTENT (text,
+  // buttons), never the whole screen. No bright flash between pages.
   return (
-    <Appear key={stepId} enter={dur.nav} style={{ flex: 1 }}>
-      <StepComponent onNext={onNext} onBack={onBack} onSignIn={onSignIn} answers={answers} setAnswer={setAnswer} progress={progress} />
-    </Appear>
+    <Screen mode="night" backdrop={stepId === 'welcome' ? <Starfield /> : undefined} contentStyle={{ flex: 1, paddingHorizontal: 0 }}>
+      <Appear key={stepId} enter={dur.nav} style={{ flex: 1 }}>
+        <StepComponent onNext={onNext} onBack={onBack} onSignIn={onSignIn} answers={answers} setAnswer={setAnswer} progress={progress} />
+      </Appear>
+    </Screen>
   );
 }

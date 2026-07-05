@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, DragDismiss, PressableScale, ProgressRing, Screen } from '@/components';
+import { Appear, AppText, Crossfade, DragDismiss, PressableScale, ProgressRing, Screen, SelectionOverlay, SwapText } from '@/components';
 import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
@@ -487,14 +487,25 @@ export function Player() {
               paddingVertical: 12,
               paddingHorizontal: 13,
               borderRadius: 18,
+              overflow: 'hidden',
               borderWidth: 1,
-              borderColor: sleepMin ? 'rgba(143,201,190,0.55)' : 'rgba(157,183,177,0.28)',
-              backgroundColor: sleepMin ? 'rgba(143,201,190,0.12)' : 'transparent',
+              borderColor: 'rgba(157,183,177,0.28)',
             }}>
-            <Feather name="moon" size={14} color={sleepMin ? c.accent : c.text} />
-            <AppText variant="label" style={{ color: sleepMin ? c.textAccent : c.text }}>
-              {sleepMin ? `${sleepMin} min` : 'Sleep timer'}
-            </AppText>
+            <SelectionOverlay
+              active={!!sleepMin}
+              style={{ borderRadius: 18, borderWidth: 1, borderColor: 'rgba(143,201,190,0.55)', backgroundColor: 'rgba(143,201,190,0.12)' }}
+            />
+            <Crossfade
+              style={{ width: 14, height: 14 }}
+              active={!!sleepMin}
+              front={<Feather name="moon" size={14} color={c.accent} />}
+              back={<Feather name="moon" size={14} color={c.text} />}
+            />
+            <SwapText trigger={sleepMin}>
+              <AppText variant="label" style={{ color: sleepMin ? c.textAccent : c.text }}>
+                {sleepMin ? `${sleepMin} min` : 'Sleep timer'}
+              </AppText>
+            </SwapText>
           </PressableScale>
         </View>
 
@@ -560,10 +571,13 @@ export function Player() {
             {!reduced ? (
               // Sentence case, default tracking: the one piece of copy the user follows
               // continuously in the dark should be the easiest to read with tired eyes,
-              // not tracked-out all-caps micro type.
-              <AppText variant="label" tone="accent">
-                {phase === 'in' ? 'Breathe in' : 'Breathe out'}
-              </AppText>
+              // not tracked-out all-caps micro type. Crossfades between in/out so the
+              // caption breathes with the halo instead of hard-cutting each cycle.
+              <SwapText trigger={phase}>
+                <AppText variant="label" tone="accent">
+                  {phase === 'in' ? 'Breathe in' : 'Breathe out'}
+                </AppText>
+              </SwapText>
             ) : null}
           </View>
 
@@ -576,25 +590,29 @@ export function Player() {
 
           {/* rotating, sensation-honest device cue — or a calm load-failure + retry */}
           {loadFailed ? (
-            <PressableScale
-              onPress={retryLoad}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Couldn't load this session. Tap to try again."
-              dimTo={0.85}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, minHeight: 44 }}>
-              <Feather name="refresh-cw" size={13} color={c.accent} />
-              <AppText variant="caption" tone="dim">
-                Couldn’t load this session. Tap to try again.
-              </AppText>
-            </PressableScale>
+            <Appear key="fail" enter={dur.nav}>
+              <PressableScale
+                onPress={retryLoad}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Couldn't load this session. Tap to try again."
+                dimTo={0.85}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, minHeight: 44 }}>
+                <Feather name="refresh-cw" size={13} color={c.accent} />
+                <AppText variant="caption" tone="dim">
+                  Couldn’t load this session. Tap to try again.
+                </AppText>
+              </PressableScale>
+            </Appear>
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
+            <Appear key="cue" enter={dur.nav} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 18 }}>
               <Feather name="circle" size={10} color={c.accent} />
-              <AppText variant="caption" tone="dim">
-                {CUES[cueIdx]}
-              </AppText>
-            </View>
+              <SwapText trigger={cueIdx}>
+                <AppText variant="caption" tone="dim">
+                  {CUES[cueIdx]}
+                </AppText>
+              </SwapText>
+            </Appear>
           )}
         </View>
 
@@ -607,7 +625,12 @@ export function Player() {
             accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
             accessibilityState={{ selected: saved }}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-            <Feather name="heart" size={24} color={saved ? c.accent : c.text} style={saved ? undefined : { opacity: 0.9 }} />
+            <Crossfade
+              style={{ width: 24, height: 24 }}
+              active={saved}
+              front={<Feather name="heart" size={24} color={c.accent} />}
+              back={<Feather name="heart" size={24} color={c.text} style={{ opacity: 0.9 }} />}
+            />
           </PressableScale>
           <PlayPause paused={paused} onPress={toggle} />
           <View style={{ width: 44, height: 44 }} />

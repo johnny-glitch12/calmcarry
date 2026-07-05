@@ -69,6 +69,32 @@ export function FlowTransition({ children, style }: { children: ReactNode; style
 }
 
 /**
+ * Dimmable — eases opacity between full and a dimmed value when an enabled/busy
+ * state flips, so a control never snaps from active to disabled. Wrap the content
+ * INSIDE a PressableScale (whose own animated opacity would otherwise override a
+ * static dim on its style).
+ */
+export function Dimmable({
+  active,
+  dim = 0.45,
+  children,
+  style,
+}: {
+  active: boolean;
+  dim?: number;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const reduced = useReducedMotion();
+  const o = useSharedValue(active ? 1 : dim);
+  useEffect(() => {
+    o.value = reduced ? (active ? 1 : dim) : withTiming(active ? 1 : dim, { duration: dur.press, easing: ease.press });
+  }, [active, dim, reduced, o]);
+  const s = useAnimatedStyle(() => ({ opacity: o.value }));
+  return <Animated.View style={[style, s]}>{children}</Animated.View>;
+}
+
+/**
  * SwapText — when a displayed value changes, dip the current text to 0, swap it,
  * then ease the new text back in. No layout overlap (single node), so numbers,
  * prices, labels and status strings morph instead of teleporting. Pass `trigger`

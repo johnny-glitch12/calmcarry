@@ -15,7 +15,7 @@ export { StatusChip } from './StatusChip';
 export { SectionHeader } from './SectionHeader';
 export { TabBar } from './TabBar';
 export { Reveal } from './Reveal';
-export { Appear, FlowTransition, SwapText, SelectionOverlay, Crossfade } from './anim';
+export { Appear, FlowTransition, Dimmable, SwapText, SelectionOverlay, Crossfade } from './anim';
 export { ProgressRing } from './ProgressRing';
 export { Segmented } from './Segmented';
 export { FormField } from './FormField';

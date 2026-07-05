@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
+  Appear,
   AppText,
   Card,
   CoverCard,
@@ -24,6 +25,7 @@ import {
   Screen,
   SectionHeader,
   StatusChip,
+  SwapText,
 } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { KidsHome } from '@/features/kids/KidsHome';
@@ -80,6 +82,10 @@ function CalmNightStar({ earned, index, color }: { earned: boolean; index: numbe
       p.value = 1;
       return;
     }
+    // reset to 0 first so a star that becomes earned AFTER mount (a night earned
+    // on this session) replays the scale+fade count-in — which also softens the
+    // line→accent color prop swap landing at the same moment.
+    p.value = 0;
     p.value = withDelay(index * STAGGER, withTiming(1, { duration: dur.sheet, easing: ease.out }));
   }, [shouldAnimate, index, p]);
   const animStyle = useAnimatedStyle(() => ({
@@ -330,9 +336,11 @@ export function TonightScreen() {
       {/* status — device congruency + entitlement */}
       <Reveal index={1}>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          {feeling ? <StatusChip label={ARRIVAL_PERSONA[feeling]} icon="user" /> : null}
-          {verifiedOwner ? <StatusChip label="Registered owner" icon="shield" /> : null}
-          <StatusChip label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'lock'} />
+          {feeling ? <StatusChip confirm label={ARRIVAL_PERSONA[feeling]} icon="user" /> : null}
+          {verifiedOwner ? <StatusChip confirm label="Registered owner" icon="shield" /> : null}
+          {/* re-key on entitlement so the chip settles in (scale+fade) when a purchase
+              flips it, instead of the label/icon hard-swapping */}
+          <StatusChip key={isPremium ? 'unlocked' : 'free'} confirm label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'lock'} />
         </View>
       </Reveal>
 
@@ -345,9 +353,10 @@ export function TonightScreen() {
         </Reveal>
       ) : null}
 
-      {/* how CalmCarry works — newcomer intro */}
+      {/* how CalmCarry works — newcomer intro (fades in AND out — dismissing the
+          X should never hard-vanish the card) */}
       {!hiwDismissed ? (
-        <Reveal index={2}>
+        <Appear enter={dur.sheet}>
           <Card variant="panel" radius={18} style={{ marginTop: 18 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <AppText variant="caption" tone="accent">
@@ -364,7 +373,7 @@ export function TonightScreen() {
               Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down. The device does the rest.
             </AppText>
           </Card>
-        </Reveal>
+        </Appear>
       ) : null}
 
       {/* Always-free rescue — the honest answer to a 3 a.m. wake-up: one tap into a
@@ -378,11 +387,15 @@ export function TonightScreen() {
           rescue row above fades in first. */}
       <Reveal index={deepNight ? 5 : 3}>
         <View style={{ marginTop: 20 }}>
-          <RitualHero
-            trackId={heroId}
-            kicker={heroKicker}
-            onPress={() => router.push(`/player?id=${heroId}`)}
-          />
+          {/* keyed on the recommendation so switching profile on-screen crossfades the
+              personalized hero instead of hard-swapping its title/subtitle/kicker */}
+          <Appear key={`${heroId}:${heroKicker}`} enter={dur.nav}>
+            <RitualHero
+              trackId={heroId}
+              kicker={heroKicker}
+              onPress={() => router.push(`/player?id=${heroId}`)}
+            />
+          </Appear>
         </View>
       </Reveal>
 
@@ -402,7 +415,7 @@ export function TonightScreen() {
       {/* First-7-nights free starter arc — only for newcomers (0 calm nights), so it's
           an invitation, not clutter once the ritual is established. */}
       {nights === 0 ? (
-        <Reveal index={6}>
+        <Appear enter={dur.sheet}>
           <PressableScale
             onPress={() => router.push('/program?id=first-week' as Href)}
             onPressIn={lightTap}
@@ -424,13 +437,13 @@ export function TonightScreen() {
               A gentle, free week to find your wind-down, one short session a night.
             </AppText>
           </PressableScale>
-        </Reveal>
+        </Appear>
       ) : null}
 
       {/* gentle calm-nights progress — only once at least one night is earned, so
           it's an encouragement, never an empty "0/7" guilt-meter */}
       {nights > 0 ? (
-        <Reveal index={5}>
+        <Appear enter={dur.sheet}>
           <Card
             variant="panel"
             radius={18}
@@ -439,9 +452,11 @@ export function TonightScreen() {
               <AppText variant="caption" tone="accent">
                 Your calm nights
               </AppText>
-              <AppText variant="bodyMedium" tone="title" style={{ marginTop: 4 }}>
-                {nights} calm {nights === 1 ? 'night' : 'nights'} this week
-              </AppText>
+              <SwapText trigger={nights}>
+                <AppText variant="bodyMedium" tone="title" style={{ marginTop: 4 }}>
+                  {nights} calm {nights === 1 ? 'night' : 'nights'} this week
+                </AppText>
+              </SwapText>
               <View style={{ flexDirection: 'row', gap: 5, marginTop: 10 }}>
                 {Array.from({ length: CALM_NIGHTS_GOAL }).map((_, i) => (
                   <CalmNightStar key={i} earned={i < nights} index={i} color={i < nights ? c.accent : c.line} />
@@ -449,7 +464,7 @@ export function TonightScreen() {
               </View>
             </View>
           </Card>
-        </Reveal>
+        </Appear>
       ) : null}
 
       {/* new this month — fresh content (CMS-driven in production) */}

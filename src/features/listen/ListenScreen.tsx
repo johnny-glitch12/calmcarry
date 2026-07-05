@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { AppText, Card, PressableScale, Reveal, Screen, SectionHeader } from '@/components';
+import { Appear, AppText, Card, Crossfade, Dimmable, PressableScale, Reveal, Screen, SectionHeader, SelectionOverlay } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources, type AudioKey } from '@/content/audio';
@@ -60,6 +60,24 @@ type TimerState = { endAt: number; mins: number };
 const timerStateFor = (mins: number): TimerState => ({ endAt: Date.now() + mins * 60 * 1000, mins });
 
 
+// A single volume-level bar. The accent fill EASES in/out (opacity over a c.line
+// base) whenever this level is lit or dimmed — dragging the fader or tapping a bar
+// no longer hard-swaps the color (the PIN-dot class of jolt).
+function LevelBar({ lit }: { lit: boolean }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const p = useSharedValue(lit ? 1 : 0);
+  useEffect(() => {
+    p.value = reduced ? (lit ? 1 : 0) : withTiming(lit ? 1 : 0, { duration: dur.press, easing: ease.press });
+  }, [lit, reduced, p]);
+  const s = useAnimatedStyle(() => ({ opacity: p.value }));
+  return (
+    <View style={{ height: 12, borderRadius: 6, backgroundColor: c.line, overflow: 'hidden' }}>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: c.accent }, s]} />
+    </View>
+  );
+}
+
 function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   label: string;
   cover: CoverKey;
@@ -71,6 +89,13 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const on = level > 0;
+
+  // locked → unlocked (after a purchase) eases rather than snapping the scrim.
+  const l = useSharedValue(locked ? 1 : 0);
+  useEffect(() => {
+    l.value = reduced ? (locked ? 1 : 0) : withTiming(locked ? 1 : 0, { duration: dur.sheet, easing: ease.out });
+  }, [locked, reduced, l]);
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: 0.54 + 0.18 * l.value }));
 
   // Fader drag: slide across the volume strip to set the level continuously
   // (taps on the individual bars still work — the pan only activates after a
@@ -140,32 +165,39 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
             liftStyle,
           ]}>
           <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
-          {/* locked tiles carry a heavier scrim so tired eyes read them as dimmed/paywalled before committing a tap */}
-          <View style={{ flex: 1, backgroundColor: locked ? 'rgba(20,30,28,0.72)' : 'rgba(20,30,28,0.54)', padding: 12, justifyContent: 'space-between' }}>
+          {/* locked tiles carry a heavier scrim so tired eyes read them as dimmed/paywalled
+              before committing a tap — the darkening EASES when a purchase unlocks it */}
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgb(20,30,28)' }, scrimStyle]} />
+          <View style={{ flex: 1, padding: 12, justifyContent: 'space-between' }}>
             <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, overflow: 'hidden', backgroundColor: locked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
               {/* accent fill fades in behind the icon when active (opacity-only) */}
               {!locked ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: c.accent }, fillStyle]} /> : null}
               <Animated.View style={badgeStyle}>
-                {locked ? (
-                  <Feather name="lock" size={14} color="#FFFFFF" />
-                ) : (
-                  <View style={{ width: 14, height: 14 }}>
-                    <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, plusStyle]}>
-                      <Feather name="plus" size={14} color="#FFFFFF" />
-                    </Animated.View>
-                    <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, volStyle]}>
-                      <Feather name="volume-2" size={14} color="#FFFFFF" />
-                    </Animated.View>
-                  </View>
-                )}
+                <Crossfade
+                  style={{ width: 14, height: 14 }}
+                  active={!!locked}
+                  front={<Feather name="lock" size={14} color="#FFFFFF" />}
+                  back={
+                    <View style={{ width: 14, height: 14 }}>
+                      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, plusStyle]}>
+                        <Feather name="plus" size={14} color="#FFFFFF" />
+                      </Animated.View>
+                      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, volStyle]}>
+                        <Feather name="volume-2" size={14} color="#FFFFFF" />
+                      </Animated.View>
+                    </View>
+                  }
+                />
               </Animated.View>
             </View>
             <View>
               <AppText variant="cardTitle" style={{ color: '#FFFFFF' }}>{label}</AppText>
               {locked ? (
-                <AppText variant="meta" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-                  Premium
-                </AppText>
+                <Appear enter={dur.nav}>
+                  <AppText variant="meta" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                    Premium
+                  </AppText>
+                </Appear>
               ) : null}
             </View>
           </View>
@@ -200,7 +232,7 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
                 accessibilityRole="button"
                 accessibilityState={{ selected: on && level >= l, disabled: !on }}
                 accessibilityLabel={`${label} volume, level ${l}`}>
-                <View style={{ height: 12, borderRadius: 6, backgroundColor: on && level >= l ? c.accent : c.line }} />
+                <LevelBar lit={on && level >= l} />
               </PressableScale>
             ))}
           </Animated.View>
@@ -468,18 +500,16 @@ export function ListenScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}>
             {mixes.map((m, i) => (
-              <PressableScale
-                key={i}
-                onPress={() => loadMix(m)}
-                accessibilityRole="button"
-                dimTo={0.95}>
-                <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Feather name="disc" size={15} color={c.textAccent} />
-                  <AppText variant="cardTitle" tone="title">
-                    {m.name}
-                  </AppText>
-                </View>
-              </PressableScale>
+              <Appear key={i} enter={dur.sheet}>
+                <PressableScale onPress={() => loadMix(m)} accessibilityRole="button" dimTo={0.95}>
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Feather name="disc" size={15} color={c.textAccent} />
+                    <AppText variant="cardTitle" tone="title">
+                      {m.name}
+                    </AppText>
+                  </View>
+                </PressableScale>
+              </Appear>
             ))}
           </ScrollView>
         </Reveal>
@@ -524,7 +554,8 @@ export function ListenScreen() {
                 style={{ flex: 1 }}
                 scaleTo={0.98}
                 dimTo={0.95}>
-                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 14, backgroundColor: active ? c.panelStrong : c.surface, borderWidth: 1, borderColor: active ? c.accent : c.line }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 14, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
+                  <SelectionOverlay active={active} style={{ borderRadius: 14, borderWidth: 1, borderColor: c.accent, backgroundColor: c.panelStrong }} />
                   <AppText variant="cardTitle" tone="title">
                     {m === 0 ? 'Off' : `${m}`}
                   </AppText>
@@ -539,52 +570,60 @@ export function ListenScreen() {
             onPress={saveMix}
             disabled={!anyOn}
             accessibilityRole="button"
-            style={{ flex: 1, opacity: anyOn ? 1 : 0.45 }}
+            style={{ flex: 1 }}
             scaleTo={0.98}
             dimTo={0.95}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
-              <Feather name="bookmark" size={16} color={c.textAccent} />
-              <AppText variant="cardTitle" tone="title">
-                Save mix
-              </AppText>
-            </View>
+            <Dimmable active={anyOn}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
+                <Feather name="bookmark" size={16} color={c.textAccent} />
+                <AppText variant="cardTitle" tone="title">
+                  Save mix
+                </AppText>
+              </View>
+            </Dimmable>
           </PressableScale>
         </View>
 
         {/* Stop all — THE in-bed action: a full-width chip, above share, so silencing
             everything reads before the lesser share/save affordances */}
         {anyOn ? (
-          <PressableScale
-            onPress={stopAll}
-            accessibilityRole="button"
-            accessibilityLabel="Stop all sounds"
-            scaleTo={0.98}
-            dimTo={0.95}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
-            <Feather name="square" size={16} color={c.textAccent} />
-            <AppText variant="cardTitle" tone="title">
-              Stop all
-            </AppText>
-          </PressableScale>
+          <Appear enter={dur.sheet}>
+            <PressableScale
+              onPress={stopAll}
+              accessibilityRole="button"
+              accessibilityLabel="Stop all sounds"
+              scaleTo={0.98}
+              dimTo={0.95}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
+              <Feather name="square" size={16} color={c.textAccent} />
+              <AppText variant="cardTitle" tone="title">
+                Stop all
+              </AppText>
+            </PressableScale>
+          </Appear>
         ) : null}
 
         {anyOn && !kids && !!token && token !== 'local' ? (
-          <PressableScale
-            onPress={shareMix}
-            accessibilityRole="button"
-            accessibilityLabel="Share this mix anonymously to the community"
-            dimTo={0.9}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
-            <Feather name="share-2" size={16} color={c.textAccent} />
-            <AppText variant="cardTitle" tone="title">
-              Share this mix anonymously
-            </AppText>
-          </PressableScale>
+          <Appear enter={dur.sheet}>
+            <PressableScale
+              onPress={shareMix}
+              accessibilityRole="button"
+              accessibilityLabel="Share this mix anonymously to the community"
+              dimTo={0.9}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: c.line }}>
+              <Feather name="share-2" size={16} color={c.textAccent} />
+              <AppText variant="cardTitle" tone="title">
+                Share this mix anonymously
+              </AppText>
+            </PressableScale>
+          </Appear>
         ) : null}
         {shareNote ? (
-          <AppText variant="meta" tone="muted" style={{ textAlign: 'center', marginTop: 8 }}>
-            {shareNote}
-          </AppText>
+          <Appear enter={dur.nav}>
+            <AppText variant="meta" tone="muted" style={{ textAlign: 'center', marginTop: 8 }}>
+              {shareNote}
+            </AppText>
+          </Appear>
         ) : null}
       </Reveal>
 
@@ -616,7 +655,12 @@ export function ListenScreen() {
                       Lyric-free · {t.duration}
                     </AppText>
                   </View>
-                  <Feather name={locked ? 'lock' : 'play'} size={18} color={c.textAccent} />
+                  <Crossfade
+                    style={{ width: 18, height: 18 }}
+                    active={locked}
+                    front={<Feather name="lock" size={18} color={c.textAccent} />}
+                    back={<Feather name="play" size={18} color={c.textAccent} />}
+                  />
                 </Card>
               </PressableScale>
             );

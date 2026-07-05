@@ -1,4 +1,5 @@
 import './load-env'; // MUST be first — populates process.env before ./config reads it
+import * as Sentry from '@sentry/node';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -7,6 +8,12 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { config, integrations, isProd, nodeEnvIsInvalid, prodSecretGaps } from './config';
+
+// Error aggregation — a strict no-op until SENTRY_DSN is provisioned. Init before
+// anything else so even bootstrap failures after this line are captured.
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.NODE_ENV ?? 'development' });
+}
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');

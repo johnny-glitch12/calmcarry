@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import * as Sentry from '@sentry/node';
 
 /**
  * Global exception filter — logs unhandled 5xx errors (with stack) and method/path so
@@ -32,7 +33,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `${req?.method ?? ''} ${req?.originalUrl ?? req?.url ?? ''} → ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
-      // TODO: forward to Sentry/error aggregator here once SENTRY_DSN is provisioned.
+      // Sentry.init is DSN-gated in main.ts; without a DSN this is a no-op.
+      Sentry.captureException(exception, {
+        extra: { method: req?.method, path: req?.originalUrl ?? req?.url, status },
+      });
     }
 
     const body =

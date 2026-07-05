@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { FlyThrottlerGuard } from './common/fly-throttler.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config, isProd } from './config';
 import { ENTITIES } from './data-source';
@@ -69,6 +70,8 @@ import { UsersModule } from './users/users.module';
     RetentionModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  // FlyThrottlerGuard: rate-limit buckets keyed on Fly-Client-IP behind Fly's
+  // proxy (default socket-address tracking would bucket ALL clients together)
+  providers: [{ provide: APP_GUARD, useClass: FlyThrottlerGuard }],
 })
 export class AppModule {}

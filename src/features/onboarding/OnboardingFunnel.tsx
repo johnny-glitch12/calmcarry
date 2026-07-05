@@ -13,7 +13,7 @@ import { lightTap } from '@/lib/haptics';
 import { markOnboarded } from '@/lib/onboarding';
 import { dur, ease, fonts, useTheme } from '@/theme';
 
-import { FlickerBackground } from './FlickerBackground';
+import { Starfield } from './Starfield';
 
 // Poppins across the whole funnel (per the brief). Headlines use Poppins-Bold
 // rather than the app's Montserrat headings so the onboarding reads as one voice.
@@ -50,9 +50,9 @@ function LegalLink({ label, onPress }: { label: string; onPress: () => void }) {
 function WelcomeStep({ onNext, onSignIn }: StepProps) {
   const { c } = useTheme();
 
-  // A low, warm hearth bed under the firelight — sets the mood the instant the
-  // journey begins. Native autoplays; web stays silent until a gesture.
-  const ambient = useAudioPlayer(audioSources.fire);
+  // A soft, low night hum under the stars — sets the mood the instant the journey
+  // begins. Native autoplays; web stays silent until a gesture.
+  const ambient = useAudioPlayer(audioSources.drone);
   const vol = useRef(0);
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +85,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   }, [ambient]);
 
   return (
-    <Screen mode="night" backdrop={<FlickerBackground />} contentStyle={{ flex: 1, paddingBottom: 20 }}>
+    <Screen mode="night" backdrop={<Starfield />} contentStyle={{ flex: 1, paddingBottom: 20 }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
         <Reveal>
           <AppText style={[P.label, { color: c.textAccent, textAlign: 'center', marginBottom: 6 }]}>CALMCARRY</AppText>

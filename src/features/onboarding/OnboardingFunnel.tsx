@@ -216,7 +216,7 @@ function ChoiceRow({
           backgroundColor: c.surface,
         }}>
         <SelectionOverlay active={selected} style={{ borderRadius: 16, borderWidth: 1.5, borderColor: c.accent, backgroundColor: c.panelStrong }} />
-        {leading ? <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>{leading}</View> : null}
+        {leading ? <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>{leading}</View> : null}
         <View style={{ flex: 1 }}>
           <AppText style={[P.rowLabel, { color: c.text }]}>{label}</AppText>
           {hint ? <AppText style={[P.rowHint, { color: c.muted, marginTop: 2 }]}>{hint}</AppText> : null}
@@ -450,7 +450,17 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
           hint={g.hint}
           selected={goals.includes(g.key)}
           onPress={() => toggle(g.key)}
-          leading={GOAL_ICONS[g.key] ? <Image source={GOAL_ICONS[g.key]} style={{ width: 44, height: 44 }} contentFit="contain" /> : <IconChip icon={g.icon} />}
+          leading={
+            GOAL_ICONS[g.key] ? (
+              // the emblems carry generous margin, so zoom in inside a clipped box
+              // to crop the empty border and let the subject fill the slot
+              <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <Image source={GOAL_ICONS[g.key]} style={{ width: 82, height: 82 }} contentFit="contain" />
+              </View>
+            ) : (
+              <IconChip icon={g.icon} />
+            )
+          }
         />
       ))}
     </FunnelShell>

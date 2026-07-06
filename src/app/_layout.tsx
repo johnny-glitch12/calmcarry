@@ -5,7 +5,7 @@ import { useFonts } from 'expo-font';
 import { Redirect, Stack, usePathname, useRootNavigationState, useRouter, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -183,8 +183,9 @@ function RootNav() {
   return (
     <>
       <KidsGuard />
-      {/* default = a calm cross-fade between screens — nav duration (responsive), not the longer entrance glide */}
-      <Stack screenOptions={{ headerShown: false, animation: 'fade', animationDuration: dur.nav }}>
+      {/* default = a calm cross-fade between screens — unhurried (dur.modal) so a
+          scene change doesn't snap; still well short of a crawling glide */}
+      <Stack screenOptions={{ headerShown: false, animation: 'fade', animationDuration: dur.modal }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
       {/* wind-down rises like a player expanding from the mini-player (§4 stand-in).

@@ -74,7 +74,9 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   // top padding here (not via a SafeAreaView 'top' edge) so a screen's own
   // contentStyle.paddingTop can't accidentally erase the camera clearance.
   const insets = useSafeAreaInsets();
-  const topInset = Math.max(insets.top, 12) + 8;
+  // clear the notch / Dynamic Island AND leave a calm gap below it — +8 landed
+  // headings hard against the island on Dynamic-Island devices (read as "cut off").
+  const topInset = Math.max(insets.top, 12) + 16;
 
   const body = (
     <SafeAreaView style={{ flex: 1 }} edges={['left', 'right']}>

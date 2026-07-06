@@ -1,10 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -196,7 +195,7 @@ function FunnelShell({
   const insets = useSafeAreaInsets();
   // lift the pinned button clear of the home indicator (Screen only reserves
   // left/right insets, so the content area runs to the physical bottom edge)
-  const footerBottom = Math.max(insets.bottom, 16) + 10;
+  const footerBottom = Math.max(insets.bottom, 20) + 18;
   // No <Screen> here — the funnel renders ONE persistent Screen (stable dark
   // background) and only this content cross-fades between steps, so page-to-page
   // fades the content, never the whole screen (no bright flash).
@@ -310,7 +309,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
         <Reveal>
           <AppText style={[P.label, { color: c.textAccent, textAlign: 'center', marginBottom: 6 }]}>CALMCARRY</AppText>
@@ -356,7 +355,7 @@ function TransformStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -426,7 +425,7 @@ function ReassureStep({ onNext, onBack, answers }: StepProps) {
         : { title: 'Let’s protect the good nights.', body: 'You’re already doing something right. We’ll help you keep it — and deepen it.' };
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -807,41 +806,46 @@ function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 12 — SOUNDS (watercolour fireside + live sound-machine demo) */
+/** 12 — SOUNDS (framed watercolour fireside + live now-playing row) */
 function SoundsStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const padBottom = Math.max(insets.bottom, 20) + 8;
+  // Contained (not full-bleed) so it reads like the rest of the funnel: the whole
+  // hearth illustration is visible in a rounded frame, nothing overlaps/crops it,
+  // and the button gets real breathing room instead of being pinned to the edge.
   return (
-    <View style={{ flex: 1 }}>
-      <Image source={require('../../../assets/images/onboarding/fireplace.png')} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
-      {/* darken top (for the heading) + bottom (to seat the card & button), leaving
-          the warm fire glow to breathe through the middle */}
-      <LinearGradient
-        colors={['rgba(14,24,23,0.90)', 'rgba(14,24,23,0.30)', 'rgba(14,24,23,0.0)', 'rgba(14,24,23,0.42)', 'rgba(14,24,23,0.88)']}
-        locations={[0, 0.24, 0.5, 0.74, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: padBottom }}>
-        <BackChevron onBack={onBack} />
-        <View style={{ marginTop: 6 }}>
-          <Reveal>
-            <AppText style={[P.title, { color: c.text }]}>Drift off to your favourite sounds</AppText>
-          </Reveal>
-          <Reveal index={1}>
-            <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
-              A full sound machine, sleep stories, and lyric-free music — layer them and fall asleep faster.
-            </AppText>
-          </Reveal>
-        </View>
-        <View style={{ flex: 1 }} />
-        <Reveal index={2} style={{ marginBottom: 16 }}>
-          <SoundsDemo />
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+      <BackChevron onBack={onBack} />
+      <View style={{ marginTop: 6 }}>
+        <Reveal>
+          <AppText style={[P.title, { color: c.text }]}>Drift off to your favourite sounds</AppText>
         </Reveal>
-        <Reveal index={3}>
-          <PrimaryButton label="Continue" onPress={onNext} />
+        <Reveal index={1}>
+          <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
+            A full sound machine, sleep stories, and lyric-free music — layer them and fall asleep faster.
+          </AppText>
         </Reveal>
       </View>
+      <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+        <Reveal index={2}>
+          <View style={{ borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
+            <Image
+              source={require('../../../assets/images/onboarding/fireplace.png')}
+              style={{ width: '100%', aspectRatio: 1 }}
+              contentFit="cover"
+              contentPosition="bottom"
+              transition={{ duration: dur.sheet, effect: 'cross-dissolve' }}
+              accessibilityIgnoresInvertColors
+            />
+          </View>
+        </Reveal>
+        <Reveal index={3}>
+          <SoundsDemo />
+        </Reveal>
+      </View>
+      <Reveal index={4}>
+        <PrimaryButton label="Continue" onPress={onNext} />
+      </Reveal>
     </View>
   );
 }
@@ -851,7 +855,7 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
         <Reveal>
@@ -889,7 +893,7 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
   );
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Reveal>
@@ -925,7 +929,7 @@ function PricingStep({ onNext, onBack }: StepProps) {
   }, []);
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
         <Reveal>

@@ -877,7 +877,10 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 14 — TRIAL REMINDER (honest: a real reminder is scheduled on trial start) */
+/** 14 — TRIAL REMINDER. Honest framing: the reassurance rests on clear disclosure
+ *  + cancel-anytime (both real/store-guaranteed), NOT on a promised reminder — the
+ *  trial-ending notification is best-effort (needs OS permission) and is scheduled
+ *  on the real purchase later, so we never promise it here (ROSCA). */
 function TrialReminderStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const row = (icon: keyof typeof Feather.glyphMap, title: string, body: string, i: number) => (
@@ -901,11 +904,11 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.body, { color: c.muted, marginTop: 10, marginBottom: 28 }]}>
-            When you start your trial, we send a gentle reminder before it ends — so you’re never charged unexpectedly.
+            Your {TRIAL_DAYS}-day trial is completely free. It only becomes a paid plan if you keep it — cancel anytime in your Apple or Google account before it ends.
           </AppText>
         </Reveal>
         {row('unlock', 'Today', 'Full access to everything, free.', 2)}
-        {row('bell', `Day ${Math.max(1, TRIAL_DAYS - 1)}`, "A reminder that your trial's almost up.", 3)}
+        {row('bell', `Day ${Math.max(1, TRIAL_DAYS - 1)}`, 'If you allow notifications, we’ll try to remind you before it ends.', 3)}
         {row('calendar', `Day ${TRIAL_DAYS}`, 'Renews only if you keep it. Cancel anytime.', 4)}
       </View>
       <Reveal index={5}>

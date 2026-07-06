@@ -61,7 +61,7 @@ const P = {
 type Answers = {
   satisfaction?: number; // 1..5
   goals?: string[]; // help-with keys
-  hours?: number; // 4..8
+  hours?: number; // 4..8 in 0.25 (15-min) steps
   gender?: string;
   age?: string;
   source?: string;
@@ -513,10 +513,9 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
       <View style={{ alignItems: 'center', marginTop: 8 }}>
         <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ProgressRing progress={ring} size={200} strokeWidth={10} fill color={c.accent} trackColor={c.line} style={{ position: 'absolute' }} />
-          <SwapText trigger={value} style={{ alignItems: 'center' }}>
-            <AppText style={{ fontFamily: fonts.bold, fontSize: 52, lineHeight: 58, color: c.text, textAlign: 'center' }}>{value === 8 ? '8+' : value}</AppText>
-          </SwapText>
-          <AppText style={[P.label, { color: c.muted, textTransform: 'none', marginTop: 2 }]}>hours a night</AppText>
+          {/* live value (tracks the finger) — no dip-swap here, that would flicker while dragging */}
+          <AppText style={{ fontFamily: fonts.bold, fontSize: 40, lineHeight: 46, color: c.text, textAlign: 'center' }}>{value >= 8 ? '8h+' : formatHM(value)}</AppText>
+          <AppText style={[P.label, { color: c.muted, textTransform: 'none', marginTop: 2 }]}>a night</AppText>
         </View>
       </View>
       <View style={{ marginTop: 32 }}>
@@ -524,7 +523,7 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
           value={value}
           min={4}
           max={8}
-          step={1}
+          step={0.25}
           onChange={(v) => setAnswer('hours', v)}
           onTouch={() => { if (!touched) setAnswer('hours', value); }}
           minLabel="4h"
@@ -775,9 +774,8 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       onContinue={onNext}
       canContinue>
       <View style={{ alignItems: 'center', marginTop: 20 }}>
-        <SwapText trigger={goalHours} style={{ alignItems: 'center' }}>
-          <AppText style={[P.hero, { color: c.text, fontSize: 46, lineHeight: 54 }]}>{formatHM(goalHours)}</AppText>
-        </SwapText>
+        {/* live value (tracks the finger) — no dip-swap, that would flicker while dragging */}
+        <AppText style={[P.hero, { color: c.text, fontSize: 46, lineHeight: 54, textAlign: 'center' }]}>{formatHM(goalHours)}</AppText>
       </View>
       <View style={{ marginTop: 28 }}>
         <Slider value={goalHours} min={4} max={12} step={0.25} onChange={(v) => setAnswer('goalHours', v)} minLabel="4h" maxLabel="12h" />

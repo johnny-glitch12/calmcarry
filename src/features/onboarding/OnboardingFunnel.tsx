@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   FadeIn,
@@ -192,12 +193,16 @@ function FunnelShell({
   canContinue?: boolean;
 }) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  // lift the pinned button clear of the home indicator (Screen only reserves
+  // left/right insets, so the content area runs to the physical bottom edge)
+  const footerBottom = Math.max(insets.bottom, 16) + 10;
   // No <Screen> here — the funnel renders ONE persistent Screen (stable dark
   // background) and only this content cross-fades between steps, so page-to-page
   // fades the content, never the whole screen (no bright flash).
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: footerBottom + 96 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 2, paddingBottom: 18 }}>
           <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12}>
             <Feather name="chevron-left" size={26} color={c.text} />
@@ -216,8 +221,8 @@ function FunnelShell({
         <View style={{ marginTop: 24, gap: 12 }}>{children}</View>
       </ScrollView>
 
-      {/* pinned footer */}
-      <View style={{ position: 'absolute', left: 24, right: 24, bottom: 24 }}>
+      {/* pinned footer — sits above the home indicator */}
+      <View style={{ position: 'absolute', left: 24, right: 24, bottom: footerBottom }}>
         <PrimaryButton label={continueLabel} onPress={onContinue} disabled={!canContinue} />
       </View>
     </View>
@@ -298,46 +303,14 @@ function IconChip({ icon }: { icon: keyof typeof Feather.glyphMap }) {
 // steps
 // =====================================================================
 
-/** 1 — WELCOME: starlit, calming ambience, one gentle way forward. */
+/** 1 — WELCOME: starlit, calming ambience, one gentle way forward.
+ *  (The calming audio bed is owned by the funnel driver so it plays across every
+ *  step, not just here.) */
 function WelcomeStep({ onNext, onSignIn }: StepProps) {
   const { c } = useTheme();
-
-  // A soft, low night hum under the stars — sets the mood the instant the journey
-  // begins. Native autoplays; web stays silent until a gesture.
-  const ambient = useAudioPlayer(audioSources.drone);
-  const vol = useRef(0);
-  useEffect(() => {
-    let cancelled = false;
-    try {
-      ambient.loop = true;
-      ambient.volume = 0;
-      ambient.play();
-    } catch {
-      /* released / web */
-    }
-    const id = setInterval(() => {
-      if (cancelled) return;
-      vol.current = Math.min(0.2, vol.current + 0.02);
-      try {
-        ambient.volume = vol.current;
-      } catch {
-        /* released */
-      }
-      if (vol.current >= 0.2) clearInterval(id);
-    }, 90);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-      try {
-        ambient.pause();
-      } catch {
-        /* released */
-      }
-    };
-  }, [ambient]);
-
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 20 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
         <Reveal>
           <AppText style={[P.label, { color: c.textAccent, textAlign: 'center', marginBottom: 6 }]}>CALMCARRY</AppText>
@@ -381,8 +354,9 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
 /** 2 — TRANSFORM: you today vs. you in a week (the aspiration, honestly framed). */
 function TransformStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 20 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -450,8 +424,9 @@ function ReassureStep({ onNext, onBack, answers }: StepProps) {
       : s === 3
         ? { title: 'There’s room to feel more rested.', body: 'A few small, steady habits can move “okay” toward genuinely good. Let’s find yours.' }
         : { title: 'Let’s protect the good nights.', body: 'You’re already doing something right. We’ll help you keep it — and deepen it.' };
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -526,38 +501,35 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
     ring.value = reduced ? fillFor(value) : withTiming(fillFor(value), { duration: dur.sheet, easing: ease.out });
   }, [value, reduced, ring]);
 
-  const set = (v: number) => {
-    const clamped = Math.max(4, Math.min(8, v));
-    lightTap();
-    setAnswer('hours', clamped);
-  };
-
   return (
     <FunnelShell
       onBack={onBack}
       progress={progress}
       kicker="YOUR NIGHTS NOW"
       title="How many hours do you usually sleep?"
-      subtitle="A rough average is perfect."
+      subtitle="A rough average is perfect — drag to set it."
       onContinue={onNext}
       canContinue={touched}>
       <View style={{ alignItems: 'center', marginTop: 8 }}>
-        <View style={{ width: 220, height: 220, alignItems: 'center', justifyContent: 'center' }}>
-          <ProgressRing progress={ring} size={220} strokeWidth={10} fill color={c.accent} trackColor={c.line} style={{ position: 'absolute' }} />
-          <AppText style={{ fontFamily: fonts.bold, fontSize: 56, lineHeight: 62, color: c.text }}>{value === 8 ? '8+' : value}</AppText>
+        <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
+          <ProgressRing progress={ring} size={200} strokeWidth={10} fill color={c.accent} trackColor={c.line} style={{ position: 'absolute' }} />
+          <SwapText trigger={value} style={{ alignItems: 'center' }}>
+            <AppText style={{ fontFamily: fonts.bold, fontSize: 52, lineHeight: 58, color: c.text, textAlign: 'center' }}>{value === 8 ? '8+' : value}</AppText>
+          </SwapText>
           <AppText style={[P.label, { color: c.muted, textTransform: 'none', marginTop: 2 }]}>hours a night</AppText>
         </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 28, marginTop: 24 }}>
-          <PressableScale onPress={() => set(value - 1)} disabled={value <= 4} accessibilityRole="button" accessibilityLabel="Fewer hours" scaleTo={0.9}
-            style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', opacity: value <= 4 ? 0.4 : 1 }}>
-            <Feather name="minus" size={24} color={c.text} />
-          </PressableScale>
-          <PressableScale onPress={() => set(value + 1)} disabled={value >= 8} accessibilityRole="button" accessibilityLabel="More hours" scaleTo={0.9}
-            style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', opacity: value >= 8 ? 0.4 : 1 }}>
-            <Feather name="plus" size={24} color={c.text} />
-          </PressableScale>
-        </View>
+      </View>
+      <View style={{ marginTop: 32 }}>
+        <Slider
+          value={value}
+          min={4}
+          max={8}
+          step={1}
+          onChange={(v) => setAnswer('hours', v)}
+          onTouch={() => { if (!touched) setAnswer('hours', value); }}
+          minLabel="4h"
+          maxLabel="8h+"
+        />
       </View>
     </FunnelShell>
   );
@@ -632,49 +604,70 @@ function formatHM(h: number) {
   return mm === 0 ? `${hh}h` : `${hh}h ${mm}m`;
 }
 
-/** Sleep-goal slider — drag 4h→12h in 15-minute steps, with a haptic detent per step. */
-function SleepGoalSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+/** Generic drag slider — snaps to `step`, haptic detent per notch. The caller owns
+ *  the value display (the circle on hours, the big time on goal). Horizontal drag
+ *  drives it; vertical gestures stay with the scroll view. */
+function Slider({
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  onTouch,
+  minLabel,
+  maxLabel,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  /** fired when the user first grabs the track — lets a screen record the current
+   *  (possibly default) value so Continue enables even without a value change. */
+  onTouch?: () => void;
+  minLabel: string;
+  maxLabel: string;
+}) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
-  const MIN = 4;
-  const MAX = 12;
-  const STEP = 0.25;
   const width = useSharedValue(0);
-  const pct = (value - MIN) / (MAX - MIN);
+  const pct = (value - min) / (max - min);
   const fill = useSharedValue(pct);
   useEffect(() => {
-    fill.value = reduced ? pct : withTiming(pct, { duration: dur.press, easing: ease.press });
+    fill.value = reduced ? pct : withTiming(pct, { duration: dur.nav, easing: ease.out });
   }, [pct, reduced, fill]);
 
   const commit = (px: number) => {
     const w = width.value;
     if (w <= 0) return;
-    const raw = MIN + (Math.max(0, Math.min(w, px)) / w) * (MAX - MIN);
-    const snapped = Math.max(MIN, Math.min(MAX, Math.round(raw / STEP) * STEP));
+    const raw = min + (Math.max(0, Math.min(w, px)) / w) * (max - min);
+    const snapped = Math.max(min, Math.min(max, Math.round(raw / step) * step));
     if (snapped !== value) {
       lightTap();
       onChange(snapped);
     }
   };
-  // horizontal drag drives the slider; vertical stays with the scroll view
+  const begin = (px: number) => {
+    onTouch?.();
+    commit(px);
+  };
   const pan = Gesture.Pan()
     .activeOffsetX([-8, 8])
     .failOffsetY([-14, 14])
-    .onBegin((e) => runOnJS(commit)(e.x))
+    .onBegin((e) => runOnJS(begin)(e.x))
     .onUpdate((e) => runOnJS(commit)(e.x));
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
   const thumbStyle = useAnimatedStyle(() => ({ left: `${fill.value * 100}%` }));
 
   return (
-    <View style={{ marginTop: 12 }}>
-      <AppText style={[P.hero, { color: c.text, textAlign: 'center' }]}>{formatHM(value)}</AppText>
+    <View>
       <GestureDetector gesture={pan}>
         <View
           onLayout={(e) => {
             width.value = e.nativeEvent.layout.width;
           }}
-          style={{ height: 44, justifyContent: 'center', marginTop: 24 }}>
+          style={{ height: 44, justifyContent: 'center' }}>
           <View style={{ height: 8, borderRadius: 4, backgroundColor: c.line, overflow: 'hidden' }}>
             <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: c.accent }, fillStyle]} />
           </View>
@@ -685,8 +678,8 @@ function SleepGoalSlider({ value, onChange }: { value: number; onChange: (v: num
         </View>
       </GestureDetector>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-        <AppText style={[P.rowHint, { color: c.dim }]}>4h</AppText>
-        <AppText style={[P.rowHint, { color: c.dim }]}>12h</AppText>
+        <AppText style={[P.rowHint, { color: c.dim }]}>{minLabel}</AppText>
+        <AppText style={[P.rowHint, { color: c.dim }]}>{maxLabel}</AppText>
       </View>
     </View>
   );
@@ -733,7 +726,7 @@ function SoundsDemo() {
   }, []);
   const s = DEMO_SOUNDS[i];
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 18, backgroundColor: 'rgba(20,30,28,0.55)', borderWidth: 1, borderColor: c.lineSage }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 18, backgroundColor: 'rgba(14,22,21,0.78)', borderWidth: 1, borderColor: c.lineSage }}>
       <Appear key={s.cover} enter={dur.sheet} style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden' }}>
         <Image source={covers[s.cover]} style={{ width: 52, height: 52 }} contentFit="cover" />
       </Appear>
@@ -770,6 +763,8 @@ function BackChevron({ onBack }: { onBack: () => void }) {
 
 /** 10 — GOAL (sleep-target slider) */
 function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  const { c } = useTheme();
+  const goalHours = answers.goalHours ?? 8;
   return (
     <FunnelShell
       onBack={onBack}
@@ -779,7 +774,14 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       subtitle="Set the nightly target we'll gently help you build toward."
       onContinue={onNext}
       canContinue>
-      <SleepGoalSlider value={answers.goalHours ?? 8} onChange={(v) => setAnswer('goalHours', v)} />
+      <View style={{ alignItems: 'center', marginTop: 20 }}>
+        <SwapText trigger={goalHours} style={{ alignItems: 'center' }}>
+          <AppText style={[P.hero, { color: c.text, fontSize: 46, lineHeight: 54 }]}>{formatHM(goalHours)}</AppText>
+        </SwapText>
+      </View>
+      <View style={{ marginTop: 28 }}>
+        <Slider value={goalHours} min={4} max={12} step={0.25} onChange={(v) => setAnswer('goalHours', v)} minLabel="4h" maxLabel="12h" />
+      </View>
     </FunnelShell>
   );
 }
@@ -807,17 +809,24 @@ function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 12 — SOUNDS (fireplace bg + live sound-machine demo) */
+/** 12 — SOUNDS (watercolour fireside + live sound-machine demo) */
 function SoundsStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const padBottom = Math.max(insets.bottom, 20) + 8;
   return (
     <View style={{ flex: 1 }}>
       <Image source={require('../../../assets/images/onboarding/fireplace.png')} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
-      {/* darken the top for text; let the fire glow show through the lower ~25% */}
-      <LinearGradient colors={['rgba(14,24,23,0.92)', 'rgba(14,24,23,0.55)', 'rgba(14,24,23,0.0)']} locations={[0, 0.45, 0.8]} style={StyleSheet.absoluteFill} />
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+      {/* darken top (for the heading) + bottom (to seat the card & button), leaving
+          the warm fire glow to breathe through the middle */}
+      <LinearGradient
+        colors={['rgba(14,24,23,0.90)', 'rgba(14,24,23,0.30)', 'rgba(14,24,23,0.0)', 'rgba(14,24,23,0.42)', 'rgba(14,24,23,0.88)']}
+        locations={[0, 0.24, 0.5, 0.74, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: padBottom }}>
         <BackChevron onBack={onBack} />
-        <View style={{ flex: 1, justifyContent: 'center' }}>
+        <View style={{ marginTop: 6 }}>
           <Reveal>
             <AppText style={[P.title, { color: c.text }]}>Drift off to your favourite sounds</AppText>
           </Reveal>
@@ -827,6 +836,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
             </AppText>
           </Reveal>
         </View>
+        <View style={{ flex: 1 }} />
         <Reveal index={2} style={{ marginBottom: 16 }}>
           <SoundsDemo />
         </Reveal>
@@ -841,8 +851,9 @@ function SoundsStep({ onNext, onBack }: StepProps) {
 /** 13 — TRIAL FREE (informational) */
 function TrialFreeStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
         <Reveal>
@@ -878,8 +889,9 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
       </View>
     </Reveal>
   );
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Reveal>
@@ -913,8 +925,9 @@ function PricingStep({ onNext, onBack }: StepProps) {
   useEffect(() => {
     if (iapSupported) fetchLocalizedPrices().then((p) => p.annual && setAnnual(p.annual)).catch(() => {});
   }, []);
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
         <Reveal>
@@ -966,6 +979,42 @@ export function OnboardingFunnel() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
 
+  // A soft, low night-hum bed under the WHOLE funnel — sets and holds the mood
+  // from the first screen to the last, not just on Welcome. Native autoplays;
+  // web stays silent until a gesture. Fades in gently, pauses when the funnel
+  // unmounts (i.e. on the way to /auth).
+  const ambient = useAudioPlayer(audioSources.drone);
+  const vol = useRef(0);
+  useEffect(() => {
+    let cancelled = false;
+    try {
+      ambient.loop = true;
+      ambient.volume = 0;
+      ambient.play();
+    } catch {
+      /* released / web */
+    }
+    const id = setInterval(() => {
+      if (cancelled) return;
+      vol.current = Math.min(0.22, vol.current + 0.015);
+      try {
+        ambient.volume = vol.current;
+      } catch {
+        /* released */
+      }
+      if (vol.current >= 0.22) clearInterval(id);
+    }, 120);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      try {
+        ambient.pause();
+      } catch {
+        /* released */
+      }
+    };
+  }, [ambient]);
+
   const setAnswer = useCallback(<K extends keyof Answers>(k: K, v: Answers[K]) => {
     setAnswers((a) => ({ ...a, [k]: v }));
   }, []);
@@ -1006,10 +1055,12 @@ export function OnboardingFunnel() {
 
   // ONE persistent Screen — the dark background + starfield stay put across steps.
   // Only the keyed content cross-fades, so page-to-page fades the CONTENT (text,
-  // buttons), never the whole screen. No bright flash between pages.
+  // buttons), never the whole screen. No bright flash between pages. The fade is
+  // deliberately unhurried (a slow, soft dissolve) so nothing snaps at a sleepy
+  // brain — calmer than the app's standard nav transition.
   return (
     <Screen mode="night" backdrop={stepId === 'welcome' ? <Starfield /> : undefined} contentStyle={{ flex: 1, paddingHorizontal: 0 }}>
-      <Appear key={stepId} enter={dur.nav} style={{ flex: 1 }}>
+      <Appear key={stepId} enter={560} exit={340} style={{ flex: 1 }}>
         <StepComponent onNext={onNext} onBack={onBack} onSignIn={onSignIn} answers={answers} setAnswer={setAnswer} progress={progress} />
       </Appear>
     </Screen>

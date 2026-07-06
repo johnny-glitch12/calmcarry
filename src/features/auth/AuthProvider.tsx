@@ -40,11 +40,11 @@ const CALM: ApiEntitlement = { tier: 'calm_plan', status: 'active' };
 
 // Preview-only comp account — lets a reviewer explore the FULL premium app on the
 // gated preview build while the production database isn't provisioned yet. Enabled
-// ONLY when EXPO_PUBLIC_COMP_LOGIN is set, which the preview web export sets and a
-// real App Store / Play build never does — so this can't unlock premium in prod.
-// Also require web: the comp account only exists for the gated WEB preview, so even
-// if the flag ever leaked into a native store build it still can't unlock premium.
-const COMP_LOGIN = process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web';
+// ONLY for: (a) the gated WEB preview (EXPO_PUBLIC_COMP_LOGIN set on web), or
+// (b) a local DEV build (__DEV__ — Metro-served debug), so on-device testing works
+// while the backend is down. __DEV__ is ALWAYS false in a Release/App Store build,
+// so this can never unlock premium in a shipped binary.
+const COMP_LOGIN = (process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web') || __DEV__;
 const COMP_EMAIL = 'mason@theglowcompany.co';
 const COMP_PASSWORD = 'GlowOrb2026';
 

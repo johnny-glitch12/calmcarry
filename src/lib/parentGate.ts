@@ -21,13 +21,12 @@ const KEY = 'cc.parentPin';
 const MAX_FAILS = 5;
 const LOCK_MS = 60_000; // 1-minute cooldown after MAX_FAILS wrong tries
 
-// Preview-only known parent code so a reviewer can move in/out of Kids mode and
-// reach the gated areas without a per-device PIN setup. Enabled ONLY when
-// EXPO_PUBLIC_COMP_LOGIN is set (the preview web export sets it; a real store
-// build never does), so this can't weaken the gate in production.
-// Also require web: the demo code only exists for the gated WEB preview, so even if
-// the flag ever leaked into a native store build it can't weaken the real gate.
-const PREVIEW = process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web';
+// Preview/dev-only known parent code so a reviewer (web preview) or on-device
+// tester (local DEV build) can move in/out of Kids mode without a per-device PIN
+// setup. Enabled ONLY for the gated WEB preview OR a local DEV build (__DEV__,
+// which is ALWAYS false in a Release/App Store build) — so it can never weaken the
+// real gate in a shipped binary.
+const PREVIEW = (process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web') || __DEV__;
 const PREVIEW_PIN = '1379';
 
 type PinRecord = { hash: string; salt: string; fails: number; lockedUntil: number };

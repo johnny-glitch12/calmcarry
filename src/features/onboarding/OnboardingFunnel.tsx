@@ -1,15 +1,22 @@
 import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   FadeIn,
   ReduceMotion,
+  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -23,12 +30,15 @@ import {
   Reveal,
   Screen,
   SelectionOverlay,
+  SwapText,
 } from '@/components';
 import { audioSources } from '@/content/audio';
+import { covers, type CoverKey } from '@/content/covers';
 import { GOAL_ICONS } from '@/content/onboardingArt';
-import { PRIVACY_URL, TERMS_URL } from '@/content/store';
+import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS } from '@/content/store';
 import { useProfile, type Intent } from '@/features/profile/ProfileProvider';
 import { lightTap } from '@/lib/haptics';
+import { fetchLocalizedPrices, iapSupported } from '@/lib/iap';
 import { markOnboarded } from '@/lib/onboarding';
 import { setJSON } from '@/lib/store';
 import { dur, ease, fonts, useTheme } from '@/theme';
@@ -54,6 +64,8 @@ type Answers = {
   gender?: string;
   age?: string;
   source?: string;
+  goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
+  wearable?: string; // 'apple' | 'whoop'
 };
 
 type StepProps = {
@@ -66,8 +78,37 @@ type StepProps = {
 };
 
 // ---- the funnel's ordered steps (Wave 3/4 append slider, sync, sounds, trial, pricing) ----
-const STEPS = ['welcome', 'transform', 'satisfaction', 'reassure', 'help', 'hours', 'gender', 'age', 'source'] as const;
+const STEPS = [
+  'welcome',
+  'transform',
+  'satisfaction',
+  'reassure',
+  'help',
+  'hours',
+  'gender',
+  'age',
+  'source',
+  'goal',
+  'sync',
+  'sounds',
+  'trialFree',
+  'trialReminder',
+  'pricing',
+] as const;
 type StepId = (typeof STEPS)[number];
+
+const WEARABLES: { key: string; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { key: 'apple', label: 'Apple Watch', hint: 'Sleep & heart rate', icon: 'watch' },
+  { key: 'whoop', label: 'Whoop', hint: 'Recovery & sleep', icon: 'activity' },
+];
+
+// Cover art cycled through the sleep-sounds "now playing" demo (existing library art).
+const DEMO_SOUNDS: { cover: CoverKey; title: string; sub: string }[] = [
+  { cover: 'rainfall', title: 'Rainfall on Canvas', sub: 'Steady rain · distant thunder' },
+  { cover: 'fireside', title: 'Fireside', sub: 'A slow, crackling campfire' },
+  { cover: 'slowTide', title: 'Slow Tide', sub: 'Ocean swell · low drone' },
+  { cover: 'deepRest', title: 'Deep Rest', sub: 'A soft, grounding hum' },
+];
 
 const GOALS: { key: string; label: string; hint: string; intent: Intent; icon: keyof typeof Feather.glyphMap }[] = [
   { key: 'fall-asleep', label: 'Fall asleep faster', hint: 'Drift off without the tossing and turning', intent: 'sleep', icon: 'moon' },
@@ -581,6 +622,326 @@ function SourceStep({ onNext, onBack, answers, setAnswer, progress }: StepProps)
   );
 }
 
+// =====================================================================
+// Wave 3/4 widgets + steps
+// =====================================================================
+
+function formatHM(h: number) {
+  const hh = Math.floor(h);
+  const mm = Math.round((h - hh) * 60);
+  return mm === 0 ? `${hh}h` : `${hh}h ${mm}m`;
+}
+
+/** Sleep-goal slider — drag 4h→12h in 15-minute steps, with a haptic detent per step. */
+function SleepGoalSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const MIN = 4;
+  const MAX = 12;
+  const STEP = 0.25;
+  const width = useSharedValue(0);
+  const pct = (value - MIN) / (MAX - MIN);
+  const fill = useSharedValue(pct);
+  useEffect(() => {
+    fill.value = reduced ? pct : withTiming(pct, { duration: dur.press, easing: ease.press });
+  }, [pct, reduced, fill]);
+
+  const commit = (px: number) => {
+    const w = width.value;
+    if (w <= 0) return;
+    const raw = MIN + (Math.max(0, Math.min(w, px)) / w) * (MAX - MIN);
+    const snapped = Math.max(MIN, Math.min(MAX, Math.round(raw / STEP) * STEP));
+    if (snapped !== value) {
+      lightTap();
+      onChange(snapped);
+    }
+  };
+  // horizontal drag drives the slider; vertical stays with the scroll view
+  const pan = Gesture.Pan()
+    .activeOffsetX([-8, 8])
+    .failOffsetY([-14, 14])
+    .onBegin((e) => runOnJS(commit)(e.x))
+    .onUpdate((e) => runOnJS(commit)(e.x));
+
+  const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
+  const thumbStyle = useAnimatedStyle(() => ({ left: `${fill.value * 100}%` }));
+
+  return (
+    <View style={{ marginTop: 12 }}>
+      <AppText style={[P.hero, { color: c.text, textAlign: 'center' }]}>{formatHM(value)}</AppText>
+      <GestureDetector gesture={pan}>
+        <View
+          onLayout={(e) => {
+            width.value = e.nativeEvent.layout.width;
+          }}
+          style={{ height: 44, justifyContent: 'center', marginTop: 24 }}>
+          <View style={{ height: 8, borderRadius: 4, backgroundColor: c.line, overflow: 'hidden' }}>
+            <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: c.accent }, fillStyle]} />
+          </View>
+          <Animated.View
+            pointerEvents="none"
+            style={[{ position: 'absolute', width: 28, height: 28, borderRadius: 14, marginLeft: -14, backgroundColor: c.ctaBg, ...c.shadow }, thumbStyle]}
+          />
+        </View>
+      </GestureDetector>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+        <AppText style={[P.rowHint, { color: c.dim }]}>4h</AppText>
+        <AppText style={[P.rowHint, { color: c.dim }]}>12h</AppText>
+      </View>
+    </View>
+  );
+}
+
+/** One equalizer bar — height oscillates on a gentle loop, staggered by index. */
+function EqBar({ index }: { index: number }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const h = useSharedValue(0.35);
+  useEffect(() => {
+    if (reduced) {
+      h.value = 0.6;
+      return;
+    }
+    h.value = withDelay(
+      index * 110,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 520 + index * 40, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0.28, { duration: 460 + index * 30, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        true,
+      ),
+    );
+    return () => {
+      h.value = 0.35;
+    };
+  }, [reduced, h, index]);
+  const s = useAnimatedStyle(() => ({ height: `${h.value * 100}%` }));
+  return <Animated.View style={[{ width: 4, borderRadius: 2, backgroundColor: c.accent }, s]} />;
+}
+
+/** A "now playing" chip that cycles through library sounds with a live equalizer —
+ *  a taste of the sound machine on the sleep-sounds screen. */
+function SoundsDemo() {
+  const { c } = useTheme();
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    // cycle the featured sound every few seconds
+    const id = setInterval(() => setI((v) => (v + 1) % DEMO_SOUNDS.length), 3200);
+    return () => clearInterval(id);
+  }, []);
+  const s = DEMO_SOUNDS[i];
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 18, backgroundColor: 'rgba(20,30,28,0.55)', borderWidth: 1, borderColor: c.lineSage }}>
+      <Appear key={s.cover} enter={dur.sheet} style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden' }}>
+        <Image source={covers[s.cover]} style={{ width: 52, height: 52 }} contentFit="cover" />
+      </Appear>
+      <View style={{ flex: 1 }}>
+        <SwapText trigger={s.title}>
+          <AppText style={[P.rowLabel, { color: c.text }]} numberOfLines={1}>
+            {s.title}
+          </AppText>
+        </SwapText>
+        <SwapText trigger={s.sub}>
+          <AppText style={[P.rowHint, { color: c.muted }]} numberOfLines={1}>
+            {s.sub}
+          </AppText>
+        </SwapText>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 24, width: 46 }}>
+        {[0, 1, 2, 3, 4, 5].map((b) => (
+          <EqBar key={b} index={b} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** small reusable back chevron for the full-bleed steps */
+function BackChevron({ onBack }: { onBack: () => void }) {
+  const { c } = useTheme();
+  return (
+    <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
+      <Feather name="chevron-left" size={26} color={c.text} />
+    </PressableScale>
+  );
+}
+
+/** 10 — GOAL (sleep-target slider) */
+function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  return (
+    <FunnelShell
+      onBack={onBack}
+      progress={progress}
+      kicker="YOUR GOAL"
+      title="How much sleep do you want?"
+      subtitle="Set the nightly target we'll gently help you build toward."
+      onContinue={onNext}
+      canContinue>
+      <SleepGoalSlider value={answers.goalHours ?? 8} onChange={(v) => setAnswer('goalHours', v)} />
+    </FunnelShell>
+  );
+}
+
+/** 11 — SYNC (wearable — honest "coming soon") */
+function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  const { c } = useTheme();
+  return (
+    <FunnelShell
+      onBack={onBack}
+      progress={progress}
+      kicker="SMARTER INSIGHTS"
+      title="Connect a wearable?"
+      subtitle="Wearable sync is on our roadmap. Tell us what you use and we'll let you know the moment it's ready."
+      onContinue={onNext}
+      canContinue
+      continueLabel={answers.wearable ? 'Continue' : 'Skip'}>
+      {WEARABLES.map((w, idx) => (
+        <ChoiceRow key={w.key} index={idx} label={w.label} hint={w.hint} selected={answers.wearable === w.key} onPress={() => setAnswer('wearable', w.key)} leading={<IconChip icon={w.icon} />} />
+      ))}
+      <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
+        Coming soon — nothing connects yet.
+      </AppText>
+    </FunnelShell>
+  );
+}
+
+/** 12 — SOUNDS (fireplace bg + live sound-machine demo) */
+function SoundsStep({ onNext, onBack }: StepProps) {
+  const { c } = useTheme();
+  return (
+    <View style={{ flex: 1 }}>
+      <Image source={require('../../../assets/images/onboarding/fireplace.png')} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
+      {/* darken the top for text; let the fire glow show through the lower ~25% */}
+      <LinearGradient colors={['rgba(14,24,23,0.92)', 'rgba(14,24,23,0.55)', 'rgba(14,24,23,0.0)']} locations={[0, 0.45, 0.8]} style={StyleSheet.absoluteFill} />
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+        <BackChevron onBack={onBack} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Reveal>
+            <AppText style={[P.title, { color: c.text }]}>Drift off to your favourite sounds</AppText>
+          </Reveal>
+          <Reveal index={1}>
+            <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
+              A full sound machine, sleep stories, and lyric-free music — layer them and fall asleep faster.
+            </AppText>
+          </Reveal>
+        </View>
+        <Reveal index={2} style={{ marginBottom: 16 }}>
+          <SoundsDemo />
+        </Reveal>
+        <Reveal index={3}>
+          <PrimaryButton label="Continue" onPress={onNext} />
+        </Reveal>
+      </View>
+    </View>
+  );
+}
+
+/** 13 — TRIAL FREE (informational) */
+function TrialFreeStep({ onNext, onBack }: StepProps) {
+  const { c } = useTheme();
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+      <BackChevron onBack={onBack} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+        <Reveal>
+          <Image source={require('../../../assets/images/onboarding/trial-sleep.png')} style={{ width: 200, height: 200 }} contentFit="contain" accessibilityIgnoresInvertColors />
+        </Reveal>
+        <Reveal index={1}>
+          <AppText style={[P.title, { color: c.text, textAlign: 'center' }]}>Try it free for {TRIAL_DAYS} days</AppText>
+        </Reveal>
+        <Reveal index={2}>
+          <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>
+            Everyone gets {TRIAL_DAYS} days of CalmCarry Premium — the full library, programs, and sound machine. No commitment.
+          </AppText>
+        </Reveal>
+      </View>
+      <Reveal index={3}>
+        <PrimaryButton label="Continue" onPress={onNext} />
+      </Reveal>
+    </View>
+  );
+}
+
+/** 14 — TRIAL REMINDER (honest: a real reminder is scheduled on trial start) */
+function TrialReminderStep({ onNext, onBack }: StepProps) {
+  const { c } = useTheme();
+  const row = (icon: keyof typeof Feather.glyphMap, title: string, body: string, i: number) => (
+    <Reveal index={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: i === 0 ? 0 : 14 }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name={icon} size={18} color={c.textAccent} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText style={[P.rowLabel, { color: c.text }]}>{title}</AppText>
+        <AppText style={[P.rowHint, { color: c.muted, marginTop: 2 }]}>{body}</AppText>
+      </View>
+    </Reveal>
+  );
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+      <BackChevron onBack={onBack} />
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Reveal>
+          <AppText style={[P.title, { color: c.text }]}>No surprise charges</AppText>
+        </Reveal>
+        <Reveal index={1}>
+          <AppText style={[P.body, { color: c.muted, marginTop: 10, marginBottom: 28 }]}>
+            When you start your trial, we send a gentle reminder before it ends — so you’re never charged unexpectedly.
+          </AppText>
+        </Reveal>
+        {row('unlock', 'Today', 'Full access to everything, free.', 2)}
+        {row('bell', `Day ${Math.max(1, TRIAL_DAYS - 1)}`, "A reminder that your trial's almost up.", 3)}
+        {row('calendar', `Day ${TRIAL_DAYS}`, 'Renews only if you keep it. Cancel anytime.', 4)}
+      </View>
+      <Reveal index={5}>
+        <PrimaryButton label="Try it free" onPress={onNext} />
+      </Reveal>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 18, marginTop: 16 }}>
+        <LegalLink label="Privacy Policy" onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} />
+        <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: c.line }} />
+        <LegalLink label="Terms of Service" onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} />
+      </View>
+    </View>
+  );
+}
+
+/** 15 — PRICING (real store price, honest trial framing) */
+function PricingStep({ onNext, onBack }: StepProps) {
+  const { c } = useTheme();
+  const [annual, setAnnual] = useState<string>(PRICING.annual.price);
+  useEffect(() => {
+    if (iapSupported) fetchLocalizedPrices().then((p) => p.annual && setAnnual(p.annual)).catch(() => {});
+  }, []);
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+      <BackChevron onBack={onBack} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+        <Reveal>
+          <Image source={require('../../../assets/images/onboarding/pricing-orb.png')} style={{ width: 172, height: 172 }} contentFit="contain" accessibilityIgnoresInvertColors />
+        </Reveal>
+        <Reveal index={1}>
+          <AppText style={[P.hero, { color: c.text, textAlign: 'center' }]}>$0.00 today</AppText>
+        </Reveal>
+        <Reveal index={2}>
+          <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>
+            Free for {TRIAL_DAYS} days, then {annual}
+            {PRICING.annual.per}. Cancel anytime in your Apple or Google account settings.
+          </AppText>
+        </Reveal>
+      </View>
+      <Reveal index={3}>
+        <PrimaryButton label="Start my free trial" onPress={onNext} />
+      </Reveal>
+      <Reveal index={4} style={{ alignItems: 'center', marginTop: 12 }}>
+        <PressableScale onPress={onNext} accessibilityRole="button" dimTo={0.6} hitSlop={10}>
+          <AppText style={[P.body, { color: c.muted, fontSize: 15 }]}>Maybe later</AppText>
+        </PressableScale>
+      </Reveal>
+    </View>
+  );
+}
+
 const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   welcome: WelcomeStep,
   transform: TransformStep,
@@ -591,6 +952,12 @@ const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   gender: GenderStep,
   age: AgeStep,
   source: SourceStep,
+  goal: GoalStep,
+  sync: SyncStep,
+  sounds: SoundsStep,
+  trialFree: TrialFreeStep,
+  trialReminder: TrialReminderStep,
+  pricing: PricingStep,
 };
 
 export function OnboardingFunnel() {

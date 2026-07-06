@@ -979,11 +979,12 @@ export function OnboardingFunnel() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
 
-  // A soft, low night-hum bed under the WHOLE funnel — sets and holds the mood
-  // from the first screen to the last, not just on Welcome. Native autoplays;
-  // web stays silent until a gesture. Fades in gently, pauses when the funnel
-  // unmounts (i.e. on the way to /auth).
-  const ambient = useAudioPlayer(audioSources.drone);
+  // A soft NATURE bed under the WHOLE funnel — birdsong + a distant stream, not a
+  // synth hum (a tonal drone reads as "frequency"/machine, wrong for a calm app).
+  // Sets and holds the mood from the first screen to the last, not just on Welcome.
+  // Native autoplays; web stays silent until a gesture. Fades in gently, pauses
+  // when the funnel unmounts (i.e. on the way to /auth).
+  const ambient = useAudioPlayer(audioSources.forest);
   const vol = useRef(0);
   useEffect(() => {
     let cancelled = false;

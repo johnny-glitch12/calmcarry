@@ -423,6 +423,18 @@ export function AccountScreen() {
             </Animated.View>
           </Dimmable>
         </PressableScale>
+        {/* honest deletion terms — surfaced once the action is armed (GDPR 17(3)/CCPA):
+            permanent + immediate, and billing records may be retained where law requires */}
+        {confirmDelete && !deleting ? (
+          <Appear>
+            <AppText
+              variant="meta"
+              tone="dim"
+              style={{ textAlign: 'center', marginTop: 8, textTransform: 'none', letterSpacing: 0, lineHeight: 16, paddingHorizontal: 16 }}>
+              This is permanent and immediate — your profiles, sessions, and saved content are erased right away and can’t be recovered. Billing records may be kept where tax or fraud law requires.
+            </AppText>
+          </Appear>
+        ) : null}
       </Reveal>
 
       <Reveal index={6} style={{ marginTop: 8 }}>

@@ -65,9 +65,10 @@ function ActionRow({
 
 /** The on-screen "device twin" — its own component so useTheme() resolves to the
  *  Screen's theme (not the default-light context above it). Mirrors the physical
- *  Glow Orb for app↔device congruency. Data-driven: only shows a serial + Authentic
- *  badge when a real device is registered to this account (no Bluetooth, no sync —
- *  honest copy only). */
+ *  Glow Orb for app↔device congruency. Data-driven: only shows a serial + a
+ *  "Registered" badge when a real device is registered to this account — NOT
+ *  "Authentic"/"genuine" (there's no manufactured-serial registry to verify that;
+ *  registration ≠ authenticity). No Bluetooth, no sync — honest copy only. */
 function DeviceSummaryCard({
   device,
   loading,
@@ -115,7 +116,7 @@ function DeviceSummaryCard({
             </Appear>
           ) : device ? (
             <Appear key="chip" style={{ marginTop: 8 }}>
-              <StatusChip label="Authentic" icon="shield" confirm />
+              <StatusChip label="Registered & covered" icon="shield" confirm />
             </Appear>
           ) : null}
         </View>

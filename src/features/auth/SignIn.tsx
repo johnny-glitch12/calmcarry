@@ -14,6 +14,7 @@ import Animated, {
 
 import { Appear, AppText, FlowTransition, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { lightTap } from '@/lib/haptics';
 import { PRIVACY_URL, TERMS_URL } from '@/content/store';
 import { brand, dur, ease, useTheme } from '@/theme';
 
@@ -72,6 +73,9 @@ export function SignIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Age assurance for account creation (App Store 5.1.1 / Play): the account holder
+  // must confirm they're an adult. Child use happens via COPPA-consented kid profiles.
+  const [adult, setAdult] = useState(false);
   // Optimistically assume Apple sign-in on iOS so the social block is present on
   // first paint — the async check below only ever narrows it, avoiding a layout
   // shove that would push the email form down when it resolves.
@@ -131,6 +135,10 @@ export function SignIn() {
     if (busy) return;
     if (!email.trim() || !password || (isSignup && !name.trim())) {
       setError('Please fill in every field.');
+      return;
+    }
+    if (isSignup && !adult) {
+      setError('Please confirm you’re 18 or older to create an account.');
       return;
     }
     setBusy(true);
@@ -229,6 +237,36 @@ export function SignIn() {
             secureTextEntry
             autoComplete={isSignup ? 'new-password' : 'current-password'}
           />
+          {isSignup ? (
+            <Appear>
+              <PressableScale
+                onPress={() => {
+                  lightTap();
+                  setAdult((a) => !a);
+                }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: adult }}
+                accessibilityLabel="I am 18 years or older"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 2 }}>
+                <View
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 7,
+                    borderWidth: 1.5,
+                    borderColor: adult ? c.accent : c.line,
+                    backgroundColor: adult ? c.accent : 'transparent',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  {adult ? <Feather name="check" size={15} color={c.ctaText} /> : null}
+                </View>
+                <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0, flex: 1 }}>
+                  I’m 18 or older
+                </AppText>
+              </PressableScale>
+            </Appear>
+          ) : null}
           {error ? (
             <Appear>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

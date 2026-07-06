@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -37,7 +38,7 @@ import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
 import { getJSON, setJSON } from '@/lib/store';
-import { brand, dur, ease, STAGGER, useTheme } from '@/theme';
+import { dur, ease, STAGGER, useTheme } from '@/theme';
 
 const NEW_THIS_MONTH = ['gymnopedie', 'shoreline', 'spa'];
 
@@ -100,9 +101,10 @@ function CalmNightStar({ earned, index, color }: { earned: boolean; index: numbe
 }
 
 /** The hero ritual panel — personalised to the recommended track (the one
- *  "notice-first" element, §7). The orb is the Glow Orb device twin. */
+ *  "notice-first" element, §7). The track's own watercolour cover fills the card
+ *  as a warm backdrop under a left-dark scrim, with a clean play affordance. */
 function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: string; onPress: () => void }) {
-  const { c, isNight } = useTheme();
+  const { c } = useTheme();
   const track = TRACKS[trackId] ?? TRACKS['slow-tide'];
   return (
     <PressableScale
@@ -118,57 +120,51 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           overflow: 'hidden',
           borderWidth: 1,
           borderColor: c.lineSage,
+          minHeight: 158,
+          justifyContent: 'center',
           ...c.shadow,
         }}>
+        {/* the pick's own watercolour art as a warm backdrop — the hero is the first
+            thing the eye lands on, so it should feel like a place, not a flat panel */}
+        <Image
+          source={covers[track.cover]}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={{ duration: dur.sheet, effect: 'cross-dissolve' }}
+          accessibilityIgnoresInvertColors
+        />
+        {/* scrim: dark under the text on the left, easing to clear on the right so the
+            art keeps breathing behind the play button */}
         <LinearGradient
-          colors={isNight ? ['#1E302D', '#16302B'] : [brand.mint, brand.mintSoft]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <AppText variant="caption" tone="accent" numberOfLines={2}>
-                {kicker}
+          colors={['rgba(11,19,18,0.88)', 'rgba(11,19,18,0.58)', 'rgba(11,19,18,0.12)']}
+          locations={[0, 0.55, 1]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText variant="caption" numberOfLines={2} style={{ color: '#BFE6DC' }}>
+              {kicker}
+            </AppText>
+            <AppText variant="display" numberOfLines={2} style={{ color: '#F4F8F7', marginTop: 6, fontSize: 24, lineHeight: 29 }}>
+              {track.title}
+            </AppText>
+            <AppText variant="body" numberOfLines={2} style={{ color: 'rgba(244,248,247,0.86)', marginTop: 2 }}>
+              {track.subtitle}
+            </AppText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+              <Feather name="clock" size={13} color="#BFE6DC" />
+              <AppText variant="label" numberOfLines={1} style={{ flex: 1, minWidth: 0, color: '#BFE6DC' }}>
+                {track.duration} · rest it in your palm
               </AppText>
-              <AppText
-                variant="display"
-                tone="title"
-                numberOfLines={2}
-                style={{ color: c.textAccent, marginTop: 6, fontSize: 24, lineHeight: 29 }}>
-                {track.title}
-              </AppText>
-              <AppText variant="body" tone="text" numberOfLines={2} style={{ marginTop: 2 }}>
-                {track.subtitle}
-              </AppText>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
-                <Feather name="clock" size={13} color={c.textAccent} />
-                <AppText variant="label" numberOfLines={1} style={{ flex: 1, minWidth: 0, color: c.textAccent }}>
-                  {track.duration} · rest it in your palm
-                </AppText>
-              </View>
-            </View>
-            {/* orb + a clear, premium play affordance so the hero reads as "tap to begin" */}
-            <View style={{ width: 88, height: 88, alignItems: 'center', justifyContent: 'center' }}>
-              <GlowOrb size={88} aura />
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: -2,
-                  right: -2,
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: c.ctaBg,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 2,
-                  borderColor: isNight ? '#16302B' : brand.mint,
-                  ...c.shadow,
-                }}>
-                <Feather name="play" size={16} color={c.ctaText} style={{ marginLeft: 2 }} />
-              </View>
             </View>
           </View>
-        </LinearGradient>
+          {/* clean, premium play affordance so the hero reads as "tap to begin" */}
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: c.ctaBg, alignItems: 'center', justifyContent: 'center', ...c.shadow }}>
+            <Feather name="play" size={22} color={c.ctaText} style={{ marginLeft: 3 }} />
+          </View>
+        </View>
       </View>
     </PressableScale>
   );

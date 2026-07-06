@@ -22,7 +22,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
-import { TRACKS } from '@/content/library';
+import { TRACKS, WELLNESS_DISCLAIMER } from '@/content/library';
 import { track as logEvent } from '@/lib/analytics';
 import { resolveAudioSource } from '@/lib/audioSource';
 import { markCalmNightToday } from '@/lib/calmNights';
@@ -635,6 +635,17 @@ export function Player() {
           <PlayPause paused={paused} onPress={toggle} />
           <View style={{ width: 44, height: 44 }} />
         </View>
+
+        {/* Non-medical wellness disclaimer on GUIDED practices (FTC/TGA) — meditation
+            & breathing can read as health claims; soundscapes/music/noise/tales don't. */}
+        {track.category === 'meditation' || track.category === 'breathing' ? (
+          <AppText
+            variant="caption"
+            tone="dim"
+            style={{ textAlign: 'center', paddingHorizontal: 16, paddingBottom: 10, opacity: 0.7, fontSize: 11, lineHeight: 15, textTransform: 'none', letterSpacing: 0 }}>
+            {WELLNESS_DISCLAIMER}
+          </AppText>
+        ) : null}
       </View>
       </Screen>
     </DragDismiss>

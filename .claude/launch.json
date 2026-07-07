@@ -4,20 +4,24 @@
     {
       "name": "web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8081"
+      ],
       "port": 8081
-    },
-    {
-      "name": "web-verify",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8099"],
-      "port": 8099,
-      "autoPort": false
     },
     {
       "name": "site",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "calmcarry-preview", "-l", "8090"],
+      "runtimeArgs": [
+        "serve",
+        "calmcarry-preview",
+        "-l",
+        "8090"
+      ],
       "port": 8090
     }
   ]

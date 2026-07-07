@@ -20,6 +20,7 @@ import { Appear, AppText, Crossfade, DragDismiss, PressableScale, ProgressRing, 
 import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { SleepyStars } from '@/features/kids/SleepyStars';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS, WELLNESS_DISCLAIMER } from '@/content/library';
@@ -587,6 +588,16 @@ export function Player() {
           <AppText variant="body" tone="muted" style={{ marginTop: 4, textAlign: 'center' }}>
             {track.subtitle}
           </AppText>
+          {/* Mason: "more info next to audios" — what this is + when to reach for it */}
+          {track.about ? (
+            <AppText
+              variant="caption"
+              tone="dim"
+              numberOfLines={3}
+              style={{ marginTop: 8, textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 17, paddingHorizontal: 10 }}>
+              {track.about}
+            </AppText>
+          ) : null}
 
           {/* rotating, sensation-honest device cue — or a calm load-failure + retry */}
           {loadFailed ? (
@@ -647,6 +658,11 @@ export function Player() {
           </AppText>
         ) : null}
       </View>
+      {/* kids "game" layer (Mason): tap the sky over the artwork and soft stars
+          bloom + settle out — wind-down mechanics, audio untouched. Rendered LAST
+          (on top) but constrained to the art band, clear of the top bar and the
+          controls, so it never steals a real tap target. Adults never see it. */}
+      {mode === 'kids' ? <SleepyStars /> : null}
       </Screen>
     </DragDismiss>
   );

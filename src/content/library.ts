@@ -18,32 +18,52 @@ export type Track = {
   audio: AudioKey;
   /** paid — unlocked by the Calm Plan bundle (no in-app purchase) */
   locked?: boolean;
+  /** one honest sentence: what this is and when to reach for it (shown in the Player) */
+  about?: string;
 };
 
 export const TRACKS: Record<string, Track> = {
-  'slow-tide': { id: 'slow-tide', title: 'Slow Tide', subtitle: 'Ocean swell · low drone', cover: 'slowTide', duration: '20 min', category: 'soundscape', audio: 'ocean' },
-  rainfall: { id: 'rainfall', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', cover: 'rainfall', duration: '45 min', category: 'soundscape', audio: 'rain', locked: true },
-  forest: { id: 'forest', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', cover: 'forestStream', duration: 'loops', category: 'soundscape', audio: 'forest', locked: true },
-  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'guidedBox' },
-  'deep-rest': { id: 'deep-rest', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', cover: 'deepRest', duration: '4 min', category: 'meditation', audio: 'guidedRest', locked: true },
-  'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '4 min', category: 'meditation', audio: 'guidedLetGo', locked: true },
+  'slow-tide': { id: 'slow-tide', title: 'Slow Tide', subtitle: 'Ocean swell · low drone', cover: 'slowTide', duration: '20 min', category: 'soundscape', audio: 'ocean',
+    about: 'A real ocean recording with a slow, even swell. Good for drifting off, or any moment you want the room to feel bigger and quieter.' },
+  rainfall: { id: 'rainfall', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', cover: 'rainfall', duration: '45 min', category: 'soundscape', audio: 'rain', locked: true,
+    about: 'Steady, unhurried rain with far-off thunder. A favourite for masking street noise while you fall asleep.' },
+  forest: { id: 'forest', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', cover: 'forestStream', duration: 'loops', category: 'soundscape', audio: 'forest', locked: true,
+    about: 'Birdsong over a soft stream. Gentler and brighter than rain, suited to daytime resets as much as bedtime.' },
+  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'guidedBox',
+    about: 'A short guided rhythm: in for 4, hold 4, out 4, hold 4, with your Glow Orb in hand. Three minutes to settle a racing moment, day or night.' },
+  'deep-rest': { id: 'deep-rest', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', cover: 'deepRest', duration: '4 min', category: 'meditation', audio: 'guidedRest', locked: true,
+    about: 'A guided sweep of attention from head to toe that lets the body get heavy. Best lying down, lights low.' },
+  'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '4 min', category: 'meditation', audio: 'guidedLetGo', locked: true,
+    about: 'A short guided wind-down for evenings when the day will not stop replaying. Set the day down before sleep.' },
   // Honest until Glowco supplies real narration: this is a calm OCEAN soundscape for
   // little ones (it plays the ocean bed), NOT a 27-min narrated tale. Loops gently.
-  penguin: { id: 'penguin', title: 'Ocean for Little Ones', subtitle: 'Calm ocean waves · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean' },
-  spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'music', audio: 'piano', locked: true },
-  gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'music', audio: 'gymnopedie' },
-  shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'waves', locked: true },
-  fireside: { id: 'fireside', title: 'Fireside', subtitle: 'A slow, crackling campfire', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'fire', locked: true },
-  'dawn-chorus': { id: 'dawn-chorus', title: 'Dawn Chorus', subtitle: 'Birdsong · open woodland', cover: 'dawnWoods', duration: 'loops', category: 'soundscape', audio: 'birdsong', locked: true },
-  'brown-noise': { id: 'brown-noise', title: 'Brown Noise', subtitle: 'Deep, even masking', cover: 'brownNoise', duration: 'loops', category: 'noise', audio: 'brown' },
-  'pink-noise': { id: 'pink-noise', title: 'Pink Noise', subtitle: 'Soft, balanced hush', cover: 'pinkNoise', duration: 'loops', category: 'noise', audio: 'pink', locked: true },
-  'white-noise': { id: 'white-noise', title: 'White Noise', subtitle: 'Bright, steady cover', cover: 'whiteNoise', duration: 'loops', category: 'noise', audio: 'white', locked: true },
+  penguin: { id: 'penguin', title: 'Ocean for Little Ones', subtitle: 'Calm ocean waves · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean',
+    about: 'The same calm ocean, framed for small ears. Plays gently until you stop it; made for the Kids Mode bedtime.' },
+  spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'music', audio: 'piano', locked: true,
+    about: 'Soft, lyric-free piano. Background calm for reading, unwinding, or easing into the evening.' },
+  gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'music', audio: 'gymnopedie',
+    about: 'Satie’s slow, famous solo piano piece. Three unhurried minutes; a lovely way to start a wind-down.' },
+  shoreline: { id: 'shoreline', title: 'Shoreline', subtitle: 'Waves washing over rock', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'waves', locked: true,
+    about: 'Waves breaking close over rock, with more texture than Slow Tide. For when you want the sea near, not distant.' },
+  fireside: { id: 'fireside', title: 'Fireside', subtitle: 'A slow, crackling campfire', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'fire', locked: true,
+    about: 'A real campfire, recorded low and close. Warm company for evenings and slow conversations.' },
+  'dawn-chorus': { id: 'dawn-chorus', title: 'Dawn Chorus', subtitle: 'Birdsong · open woodland', cover: 'dawnWoods', duration: 'loops', category: 'soundscape', audio: 'birdsong', locked: true,
+    about: 'Early birdsong in open woodland. Brighter than the sleep beds; many use it for gentle mornings and daytime calm.' },
+  'brown-noise': { id: 'brown-noise', title: 'Brown Noise', subtitle: 'Deep, even masking', cover: 'brownNoise', duration: 'loops', category: 'noise', audio: 'brown',
+    about: 'The deepest of the noise colours: a low, even rumble. Strong at masking traffic, snoring, and hums.' },
+  'pink-noise': { id: 'pink-noise', title: 'Pink Noise', subtitle: 'Soft, balanced hush', cover: 'pinkNoise', duration: 'loops', category: 'noise', audio: 'pink', locked: true,
+    about: 'A balanced hush between white and brown: softer highs, fuller lows. A comfortable all-night masking bed.' },
+  'white-noise': { id: 'white-noise', title: 'White Noise', subtitle: 'Bright, steady cover', cover: 'whiteNoise', duration: 'loops', category: 'noise', audio: 'white', locked: true,
+    about: 'Every frequency at once: the brightest, most even cover. Best where sharp, sudden noises are the problem.' },
   // Generated in-house (mid-band emphasis ~ rustling leaves). Cover reuses the
   // forest art until a bespoke green-noise cover is produced.
-  'green-noise': { id: 'green-noise', title: 'Green Noise', subtitle: 'Mid-band hush · nature-like', cover: 'forestStream', duration: 'loops', category: 'noise', audio: 'green', locked: true },
+  'green-noise': { id: 'green-noise', title: 'Green Noise', subtitle: 'Mid-band hush · nature-like', cover: 'forestStream', duration: 'loops', category: 'noise', audio: 'green', locked: true,
+    about: 'Noise shaped toward the middle of hearing, closer to wind in leaves than static. A natural-feeling masking bed.' },
   // in-house blends of the real rain/fire/ocean recordings — honest one-tap scenes
-  'rain-fire': { id: 'rain-fire', title: 'Rain by the Fire', subtitle: 'Steady rain · a low crackle', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'rainFire', locked: true },
-  'rain-ocean': { id: 'rain-ocean', title: 'Rain over the Sea', subtitle: 'Rainfall · slow swell beneath', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'rainOcean', locked: true },
+  'rain-fire': { id: 'rain-fire', title: 'Rain by the Fire', subtitle: 'Steady rain · a low crackle', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'rainFire', locked: true,
+    about: 'Our blend of the real rain and campfire recordings: shelter and warmth in one scene.' },
+  'rain-ocean': { id: 'rain-ocean', title: 'Rain over the Sea', subtitle: 'Rainfall · slow swell beneath', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'rainOcean', locked: true,
+    about: 'Our blend of rainfall over a slow ocean swell: layered, deep, and steady for all-night play.' },
 };
 
 export type Program = {

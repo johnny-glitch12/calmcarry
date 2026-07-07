@@ -1040,14 +1040,16 @@ export function OnboardingFunnel() {
 
   const onNext = useCallback(() => {
     lightTap();
-    setIndex((i) => {
-      if (i >= STEPS.length - 1) {
-        finish(answers);
-        return i;
-      }
-      return i + 1;
-    });
-  }, [finish, answers]);
+    // finish() flips ProfileProvider state (setIntent) + navigates — run it in the
+    // event handler, NOT inside a setState updater. The updater executes during
+    // React's render phase, so calling another component's setState there triggers
+    // the "Cannot update a component while rendering a different component" warning.
+    if (index >= STEPS.length - 1) {
+      finish(answers);
+    } else {
+      setIndex((i) => i + 1);
+    }
+  }, [index, finish, answers]);
 
   const onBack = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const onSignIn = useCallback(() => {

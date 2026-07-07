@@ -485,7 +485,7 @@ export function Player() {
               alignItems: 'center',
               gap: 6,
               paddingVertical: 12,
-              paddingHorizontal: 13,
+              paddingHorizontal: 12,
               borderRadius: 18,
               overflow: 'hidden',
               borderWidth: 1,

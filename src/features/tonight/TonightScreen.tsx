@@ -143,6 +143,10 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           style={StyleSheet.absoluteFill}
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
+          {/* on-scrim text — intentionally lighter than the night SURFACE tokens: this
+              sits over the dark image scrim above, so it needs photo-overlay contrast,
+              not surface contrast (light-mint accent + near-white title). Kept as
+              literals rather than theme tokens because it's an image-overlay context. */}
           <View style={{ flex: 1, minWidth: 0 }}>
             <AppText variant="caption" numberOfLines={2} style={{ color: '#BFE6DC' }}>
               {kicker}
@@ -454,7 +458,7 @@ export function TonightScreen() {
                   {nights} calm {nights === 1 ? 'night' : 'nights'} this week
                 </AppText>
               </SwapText>
-              <View style={{ flexDirection: 'row', gap: 5, marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 4, marginTop: 10 }}>
                 {Array.from({ length: CALM_NIGHTS_GOAL }).map((_, i) => (
                   <CalmNightStar key={i} earned={i < nights} index={i} color={i < nights ? c.accent : c.line} />
                 ))}

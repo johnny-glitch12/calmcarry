@@ -41,7 +41,7 @@ export function WatchClip() {
         {src ? (
           <VideoView
             player={player}
-            style={{ width: '100%', height: 220, borderRadius: 16, backgroundColor: '#000' }}
+            style={{ width: '100%', height: 220, borderRadius: 16, backgroundColor: c.deep }}
             contentFit="contain"
             nativeControls
           />

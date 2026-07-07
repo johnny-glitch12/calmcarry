@@ -179,6 +179,13 @@ export function SignIn() {
             {isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}
           </AppText>
         </SwapText>
+        {/* device significance (Mason): the app exists FOR the Glow Orb */}
+        <AppText
+          variant="caption"
+          tone="dim"
+          style={{ textAlign: 'center', marginTop: 8, textTransform: 'none', letterSpacing: 0, lineHeight: 17, maxWidth: 300 }}>
+          Made for your Glow Orb: the app guides the wind-down, the device does the rest. Signing in registers it and keeps your calm plan across devices.
+        </AppText>
       </Reveal>
 
       {appleAvailable || googleConfigured ? (

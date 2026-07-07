@@ -24,6 +24,7 @@ import {
   Appear,
   AppText,
   Crossfade,
+  Logo,
   PressableScale,
   PrimaryButton,
   ProgressRing,
@@ -32,7 +33,7 @@ import {
   SelectionOverlay,
   SwapText,
 } from '@/components';
-import { audioSources } from '@/content/audio';
+import { audioSources, type AudioKey } from '@/content/audio';
 import { covers, type CoverKey } from '@/content/covers';
 import { GOAL_ICONS } from '@/content/onboardingArt';
 import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS } from '@/content/store';
@@ -66,6 +67,7 @@ type Answers = {
   source?: string;
   goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
   wearable?: string; // 'apple' | 'whoop'
+  moments?: string[]; // when they want help — day AND night use-cases, not just sleep
 };
 
 type StepProps = {
@@ -84,6 +86,7 @@ const STEPS = [
   'satisfaction',
   'reassure',
   'help',
+  'moments',
   'hours',
   'gender',
   'age',
@@ -103,11 +106,11 @@ const WEARABLES: { key: string; label: string; hint: string; icon: keyof typeof 
 ];
 
 // Cover art cycled through the sleep-sounds "now playing" demo (existing library art).
-const DEMO_SOUNDS: { cover: CoverKey; title: string; sub: string }[] = [
-  { cover: 'rainfall', title: 'Rainfall on Canvas', sub: 'Steady rain · distant thunder' },
-  { cover: 'fireside', title: 'Fireside', sub: 'A slow, crackling campfire' },
-  { cover: 'slowTide', title: 'Slow Tide', sub: 'Ocean swell · low drone' },
-  { cover: 'deepRest', title: 'Deep Rest', sub: 'A soft, grounding hum' },
+const DEMO_SOUNDS: { cover: CoverKey; title: string; sub: string; audio: AudioKey }[] = [
+  { cover: 'rainfall', title: 'Rainfall on Canvas', sub: 'Steady rain · distant thunder', audio: 'rain' },
+  { cover: 'fireside', title: 'Fireside', sub: 'A slow, crackling campfire', audio: 'fire' },
+  { cover: 'slowTide', title: 'Slow Tide', sub: 'Ocean swell · low drone', audio: 'waves' },
+  { cover: 'deepRest', title: 'Deep Rest', sub: 'A soft, grounding hum', audio: 'brown' },
 ];
 
 const GOALS: { key: string; label: string; hint: string; intent: Intent; icon: keyof typeof Feather.glyphMap }[] = [
@@ -115,7 +118,19 @@ const GOALS: { key: string; label: string; hint: string; intent: Intent; icon: k
   { key: 'stay-asleep', label: 'Stay asleep through the night', hint: 'Fewer 3am wake-ups', intent: 'sleep', icon: 'shield' },
   { key: 'wake-refreshed', label: 'Wake up refreshed', hint: 'Mornings that feel rested', intent: 'suggest', icon: 'sunrise' },
   { key: 'quiet-mind', label: 'Quiet a racing mind', hint: 'Settle the mental chatter', intent: 'reset', icon: 'wind' },
+  { key: 'calm-anxious', label: 'Calm anxious moments', hint: 'Settle stress spikes, day or night', intent: 'reset', icon: 'heart' },
   { key: 'routine', label: 'Build a bedtime routine', hint: 'A rhythm you can keep', intent: 'sleep', icon: 'repeat' },
+];
+
+// When they reach for calm (Mason: the Glow Orb isn't only a sleep device —
+// daytime resets and anxious moments are first-class use cases). Wellness-safe
+// wording: "anxious moments", never a treatment claim.
+const MOMENTS: { key: string; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { key: 'falling-asleep', label: 'Falling asleep', hint: 'The nightly wind-down', icon: 'moon' },
+  { key: 'night-wakes', label: 'Night wake-ups', hint: 'Getting back to sleep at 3am', icon: 'clock' },
+  { key: 'anxious-moments', label: 'Anxious moments', hint: 'When stress spikes during the day', icon: 'heart' },
+  { key: 'daytime-reset', label: 'A daytime reset', hint: 'Short calm breaks with your Glow Orb in hand', icon: 'sun' },
+  { key: 'wind-down', label: 'Evenings after a long day', hint: 'The bridge from busy to restful', icon: 'feather' },
 ];
 
 const SATISFACTION = [
@@ -128,7 +143,12 @@ const SATISFACTION = [
 
 const GENDERS = ['Female', 'Male', 'Non-binary', 'Other', 'Prefer not to say'];
 const AGES = ['18–24', '25–34', '35–44', '45–54', '55–64', '65+'];
+// Mason: surface Kids Mode right in the ages question. The account holder is
+// still the adult (18+ gate at signup); this records who the wind-downs are FOR
+// and points at the built-in Kids Mode.
+const CHILD_AGE = 'child';
 const SOURCES: { key: string; label: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { key: 'bought-device', label: 'I bought a CalmCarry device', icon: 'box' },
   { key: 'tiktok', label: 'TikTok', icon: 'music' },
   { key: 'instagram', label: 'Instagram', icon: 'instagram' },
   { key: 'youtube', label: 'YouTube', icon: 'youtube' },
@@ -311,8 +331,9 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   return (
     <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
-        <Reveal>
-          <AppText style={[P.label, { color: c.textAccent, textAlign: 'center', marginBottom: 6 }]}>CALMCARRY</AppText>
+        <Reveal style={{ alignItems: 'center' }}>
+          {/* the real brand lockup, not a plain-text kicker (Mason: logo above the headline) */}
+          <Logo size="lg" style={{ marginBottom: 18 }} />
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.hero, { color: c.text, textAlign: 'center' }]}>Welcome</AppText>
@@ -487,6 +508,35 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
+/** 5b — MOMENTS (day & night use-cases — the Orb isn't only for bedtime) */
+function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  const moments = answers.moments ?? [];
+  const toggle = (key: string) =>
+    setAnswer('moments', moments.includes(key) ? moments.filter((m) => m !== key) : [...moments, key]);
+  return (
+    <FunnelShell
+      onBack={onBack}
+      progress={progress}
+      kicker="DAY & NIGHT"
+      title="When do you want CalmCarry’s help?"
+      subtitle="Your Glow Orb isn’t only for bedtime. Pick every moment that fits."
+      onContinue={onNext}
+      canContinue={moments.length > 0}>
+      {MOMENTS.map((m, i) => (
+        <ChoiceRow
+          key={m.key}
+          index={i}
+          label={m.label}
+          hint={m.hint}
+          selected={moments.includes(m.key)}
+          onPress={() => toggle(m.key)}
+          leading={<IconChip icon={m.icon} />}
+        />
+      ))}
+    </FunnelShell>
+  );
+}
+
 /** 6 — HOURS (fill-circle stepper) */
 function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
@@ -556,20 +606,36 @@ function GenderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps)
   );
 }
 
-/** 8 — AGE */
+/** 8 — AGE (incl. "for my child" → points at the built-in Kids Mode) */
 function AgeStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  const { c } = useTheme();
   return (
     <FunnelShell
       onBack={onBack}
       progress={progress}
       kicker="A GENTLE QUESTION"
       title="As we age, our sleep needs change."
-      subtitle="Which range are you in?"
+      subtitle="Which range are you in? Or tell us if this is for a little one."
       onContinue={onNext}
       canContinue={!!answers.age}>
       {AGES.map((a, i) => (
         <ChoiceRow key={a} index={i} label={a} selected={answers.age === a} onPress={() => setAnswer('age', a)} />
       ))}
+      <ChoiceRow
+        index={AGES.length}
+        label="I’m setting up for my child"
+        hint="Kids Mode is built in: stories and gentle sounds behind a parent gate"
+        selected={answers.age === CHILD_AGE}
+        onPress={() => setAnswer('age', CHILD_AGE)}
+        leading={<IconChip icon="smile" />}
+      />
+      {answers.age === CHILD_AGE ? (
+        <Appear>
+          <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
+            You stay the account holder. Switch to Kids Mode any time from the Profile tab.
+          </AppText>
+        </Appear>
+      ) : null}
     </FunnelShell>
   );
 }
@@ -718,11 +784,35 @@ function SoundsDemo() {
   const { c } = useTheme();
   const [i, setI] = useState(0);
   useEffect(() => {
-    // cycle the featured sound every few seconds
-    const id = setInterval(() => setI((v) => (v + 1) % DEMO_SOUNDS.length), 3200);
+    // cycle the featured sound — 5s each so there's time to actually HEAR it
+    const id = setInterval(() => setI((v) => (v + 1) % DEMO_SOUNDS.length), 5000);
     return () => clearInterval(id);
   }, []);
   const s = DEMO_SOUNDS[i];
+
+  // Mason: don't just SHOW the demo — PLAY it. Each cycle swaps the real library
+  // sound in at a soft volume (the funnel ambient is paused on this step). Native
+  // autoplays; web stays silent until a gesture (same policy as the ambient).
+  const demo = useAudioPlayer(audioSources[DEMO_SOUNDS[0].audio]);
+  useEffect(() => {
+    try {
+      demo.replace(audioSources[s.audio]);
+      demo.loop = true;
+      demo.volume = 0.55;
+      demo.play();
+    } catch {
+      /* released / web autoplay */
+    }
+  }, [demo, s.audio]);
+  useEffect(() => {
+    return () => {
+      try {
+        demo.pause();
+      } catch {
+        /* released */
+      }
+    };
+  }, [demo]);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 18, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage }}>
       <Appear key={s.cover} enter={dur.sheet} style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden' }}>
@@ -966,6 +1056,7 @@ const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   satisfaction: SatisfactionStep,
   reassure: ReassureStep,
   help: HelpStep,
+  moments: MomentsStep,
   hours: HoursStep,
   gender: GenderStep,
   age: AgeStep,
@@ -1020,6 +1111,17 @@ export function OnboardingFunnel() {
       }
     };
   }, [ambient]);
+
+  // The sounds step plays REAL demo audio (SoundsDemo) — step the forest bed out
+  // of its way so the preview is clean, and bring it back on any other step.
+  useEffect(() => {
+    try {
+      if (STEPS[index] === 'sounds') ambient.pause();
+      else ambient.play();
+    } catch {
+      /* released / web autoplay */
+    }
+  }, [index, ambient]);
 
   const setAnswer = useCallback(<K extends keyof Answers>(k: K, v: Answers[K]) => {
     setAnswers((a) => ({ ...a, [k]: v }));

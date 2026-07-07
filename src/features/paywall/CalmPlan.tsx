@@ -67,7 +67,7 @@ function PlanCard({
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-              <AppText variant="h2" tone="title" style={{ fontSize: 18 }} numberOfLines={1}>
+              <AppText variant="h3" tone="title" numberOfLines={1}>
                 {p.label}
               </AppText>
               {note ? (

@@ -147,7 +147,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
             <AppText variant="caption" numberOfLines={2} style={{ color: '#BFE6DC' }}>
               {kicker}
             </AppText>
-            <AppText variant="display" numberOfLines={2} style={{ color: '#F4F8F7', marginTop: 6, fontSize: 24, lineHeight: 29 }}>
+            <AppText variant="display" numberOfLines={2} style={{ color: '#F4F8F7', marginTop: 6, fontSize: 24, lineHeight: 30 }}>
               {track.title}
             </AppText>
             <AppText variant="body" numberOfLines={2} style={{ color: 'rgba(244,248,247,0.86)', marginTop: 2 }}>

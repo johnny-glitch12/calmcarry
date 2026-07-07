@@ -195,7 +195,7 @@ function FunnelShell({
   const insets = useSafeAreaInsets();
   // lift the pinned button clear of the home indicator (Screen only reserves
   // left/right insets, so the content area runs to the physical bottom edge)
-  const footerBottom = Math.max(insets.bottom, 20) + 18;
+  const footerBottom = Math.max(insets.bottom, 24) + 30;
   // No <Screen> here — the funnel renders ONE persistent Screen (stable dark
   // background) and only this content cross-fades between steps, so page-to-page
   // fades the content, never the whole screen (no bright flash).
@@ -309,7 +309,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
         <Reveal>
           <AppText style={[P.label, { color: c.textAccent, textAlign: 'center', marginBottom: 6 }]}>CALMCARRY</AppText>
@@ -319,7 +319,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
         </Reveal>
         <Reveal index={2}>
           <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 300 }]}>
-            Let’s begin your journey to calmer, deeper nights — one gentle wind-down at a time.
+            Let’s begin your journey to calmer, deeper nights. One gentle wind-down at a time.
           </AppText>
         </Reveal>
       </View>
@@ -355,7 +355,7 @@ function TransformStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -403,7 +403,7 @@ function SatisfactionStep({ onNext, onBack, answers, setAnswer, progress }: Step
       progress={progress}
       kicker="ABOUT YOUR SLEEP"
       title="How satisfied are you with your sleep?"
-      subtitle="There are no wrong answers — this just helps us start in the right place."
+      subtitle="There are no wrong answers. This just helps us start in the right place."
       onContinue={onNext}
       canContinue={!!answers.satisfaction}>
       {SATISFACTION.map((s, i) => (
@@ -419,13 +419,13 @@ function ReassureStep({ onNext, onBack, answers }: StepProps) {
   const s = answers.satisfaction ?? 3;
   const msg =
     s <= 2
-      ? { title: 'You’re not alone — and you’re in the right place.', body: 'Rough nights wear on everything. We’ll help you build back toward rest, gently and at your pace.' }
+      ? { title: 'You’re not alone, and you’re in the right place.', body: 'Rough nights wear on everything. We’ll help you build back toward rest, gently and at your pace.' }
       : s === 3
         ? { title: 'There’s room to feel more rested.', body: 'A few small, steady habits can move “okay” toward genuinely good. Let’s find yours.' }
-        : { title: 'Let’s protect the good nights.', body: 'You’re already doing something right. We’ll help you keep it — and deepen it.' };
+        : { title: 'Let’s protect the good nights.', body: 'You’re already doing something right. We’ll help you keep it and deepen it.' };
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
@@ -459,7 +459,7 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       progress={progress}
       kicker="WHERE WE’LL FOCUS"
       title="What can we help you with?"
-      subtitle="Pick everything that fits — you can change this later."
+      subtitle="Pick everything that fits. You can change this later."
       onContinue={onNext}
       canContinue={goals.length > 0}>
       {GOALS.map((g, i) => (
@@ -506,7 +506,7 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
       progress={progress}
       kicker="YOUR NIGHTS NOW"
       title="How many hours do you usually sleep?"
-      subtitle="A rough average is perfect — drag to set it."
+      subtitle="A rough average is perfect. Drag to set it."
       onContinue={onNext}
       canContinue={touched}>
       <View style={{ alignItems: 'center', marginTop: 8 }}>
@@ -542,7 +542,7 @@ function GenderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps)
       progress={progress}
       kicker="A GENTLE QUESTION"
       title="Hormone levels can influence sleep patterns."
-      subtitle="Optional, and stored only on your device — it helps us tailor guidance."
+      subtitle="Optional, and stored only on your device. It helps us tailor guidance."
       onContinue={onNext}
       canContinue
       continueLabel={answers.gender ? 'Continue' : 'Skip'}>
@@ -724,7 +724,7 @@ function SoundsDemo() {
   }, []);
   const s = DEMO_SOUNDS[i];
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 18, backgroundColor: 'rgba(14,22,21,0.78)', borderWidth: 1, borderColor: c.lineSage }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 18, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage }}>
       <Appear key={s.cover} enter={dur.sheet} style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden' }}>
         <Image source={covers[s.cover]} style={{ width: 52, height: 52 }} contentFit="cover" />
       </Appear>
@@ -800,7 +800,7 @@ function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
         <ChoiceRow key={w.key} index={idx} label={w.label} hint={w.hint} selected={answers.wearable === w.key} onPress={() => setAnswer('wearable', w.key)} leading={<IconChip icon={w.icon} />} />
       ))}
       <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
-        Coming soon — nothing connects yet.
+        Coming soon. Nothing connects yet.
       </AppText>
     </FunnelShell>
   );
@@ -814,7 +814,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
   // hearth illustration is visible in a rounded frame, nothing overlaps/crops it,
   // and the button gets real breathing room instead of being pinned to the edge.
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <BackChevron onBack={onBack} />
       <View style={{ marginTop: 6 }}>
         <Reveal>
@@ -822,7 +822,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
-            A full sound machine, sleep stories, and lyric-free music — layer them and fall asleep faster.
+            A full sound machine, sleep stories, and lyric-free music. Layer them and fall asleep faster.
           </AppText>
         </Reveal>
       </View>
@@ -855,7 +855,7 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
         <Reveal>
@@ -866,7 +866,7 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={2}>
           <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>
-            Everyone gets {TRIAL_DAYS} days of CalmCarry Premium — the full library, programs, and sound machine. No commitment.
+            Everyone gets {TRIAL_DAYS} days of CalmCarry Premium. The full library, programs, and sound machine. No commitment.
           </AppText>
         </Reveal>
       </View>
@@ -896,7 +896,7 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
   );
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Reveal>
@@ -904,7 +904,7 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.body, { color: c.muted, marginTop: 10, marginBottom: 28 }]}>
-            Your {TRIAL_DAYS}-day trial is completely free. It only becomes a paid plan if you keep it — cancel anytime in your Apple or Google account before it ends.
+            Your {TRIAL_DAYS}-day trial is completely free. It only becomes a paid plan if you keep it. Cancel anytime in your Apple or Google account before it ends.
           </AppText>
         </Reveal>
         {row('unlock', 'Today', 'Full access to everything, free.', 2)}
@@ -932,7 +932,7 @@ function PricingStep({ onNext, onBack }: StepProps) {
   }, []);
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 18 }}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <BackChevron onBack={onBack} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
         <Reveal>

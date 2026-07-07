@@ -489,7 +489,7 @@ export function Player() {
               borderRadius: 18,
               overflow: 'hidden',
               borderWidth: 1,
-              borderColor: 'rgba(157,183,177,0.28)',
+              borderColor: c.lineSage,
             }}>
             <SelectionOverlay
               active={!!sleepMin}
@@ -642,7 +642,7 @@ export function Player() {
           <AppText
             variant="caption"
             tone="dim"
-            style={{ textAlign: 'center', paddingHorizontal: 16, paddingBottom: 10, opacity: 0.7, fontSize: 11, lineHeight: 15, textTransform: 'none', letterSpacing: 0 }}>
+            style={{ textAlign: 'center', paddingHorizontal: 16, paddingBottom: 10, fontSize: 11, lineHeight: 15, textTransform: 'none', letterSpacing: 0 }}>
             {WELLNESS_DISCLAIMER}
           </AppText>
         ) : null}

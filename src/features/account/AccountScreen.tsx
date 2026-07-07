@@ -394,7 +394,7 @@ export function AccountScreen() {
             variant="meta"
             tone="dim"
             style={{ textAlign: 'center', marginTop: 6, textTransform: 'none', letterSpacing: 0, lineHeight: 16, paddingHorizontal: 12 }}>
-            Deleting your account won’t cancel your subscription — cancel that in your Apple or Google account settings.
+            Deleting your account won’t cancel your subscription. Cancel that in your Apple or Google account settings.
           </AppText>
         ) : null}
         {/* Account & data deletion — required by App Store 5.1.1(v) + COPPA/GDPR */}
@@ -431,7 +431,7 @@ export function AccountScreen() {
               variant="meta"
               tone="dim"
               style={{ textAlign: 'center', marginTop: 8, textTransform: 'none', letterSpacing: 0, lineHeight: 16, paddingHorizontal: 16 }}>
-              This is permanent and immediate — your profiles, sessions, and saved content are erased right away and can’t be recovered. Billing records may be kept where tax or fraud law requires.
+              This is permanent and immediate. Your profiles, sessions, and saved content are erased right away and can’t be recovered. Billing records may be kept where tax or fraud law requires.
             </AppText>
           </Appear>
         ) : null}

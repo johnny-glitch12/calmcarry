@@ -122,7 +122,7 @@ export function KidsHome() {
             <AppText variant="caption" tone="accent">
               Bedtime
             </AppText>
-            <AppText style={{ fontFamily: fonts.display, fontSize: 34, color: c.textAccent, marginTop: 4 }}>
+            <AppText style={{ fontFamily: fonts.display, fontSize: 34, lineHeight: 40, color: c.textAccent, marginTop: 4 }}>
               Hi {firstName}!
             </AppText>
           </View>
@@ -145,7 +145,7 @@ export function KidsHome() {
               <AppText variant="caption" tone="accent">
                 Tonight’s calm
               </AppText>
-              <AppText style={{ fontFamily: fonts.display, fontSize: 26, color: c.textAccent, marginTop: 4 }}>
+              <AppText style={{ fontFamily: fonts.display, fontSize: 26, lineHeight: 32, color: c.textAccent, marginTop: 4 }}>
                 {story.title}
               </AppText>
               <View
@@ -160,7 +160,7 @@ export function KidsHome() {
                   backgroundColor: c.ctaBg,
                 }}>
                 <Feather name="play" size={22} color={c.ctaText} />
-                <AppText style={{ fontFamily: fonts.display, fontSize: 18, color: c.ctaText }}>
+                <AppText style={{ fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: c.ctaText }}>
                   Start
                 </AppText>
               </View>
@@ -201,7 +201,7 @@ export function KidsHome() {
 
       {/* big calm-sound buttons */}
       <Reveal index={4} style={{ marginTop: 28 }}>
-        <AppText style={{ fontFamily: fonts.display, fontSize: 22, color: c.textAccent, marginBottom: 14 }}>
+        <AppText style={{ fontFamily: fonts.display, fontSize: 22, lineHeight: 28, color: c.textAccent, marginBottom: 14 }}>
           Pick a calm sound
         </AppText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 }}>

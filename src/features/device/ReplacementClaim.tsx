@@ -149,7 +149,7 @@ export function ReplacementClaim() {
   const deviceSubtitle = device
     ? `${device.serial} · warranty active`
     : deviceLoadFailed
-      ? 'We couldn’t check your device just now — try again in a moment'
+      ? 'We couldn’t check your device just now. Try again in a moment'
       : 'Register your device to file a claim';
 
   return (

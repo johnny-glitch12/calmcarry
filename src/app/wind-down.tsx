@@ -56,7 +56,7 @@ function ControlButton({
         borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(143,201,190,0.12)',
+        backgroundColor: c.panelStrong,
         borderWidth: 1,
         borderColor: c.lineSage,
       }}>
@@ -92,7 +92,7 @@ function PlayPauseButton({ paused, onPress }: { paused: boolean; onPress: () => 
         borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(143,201,190,0.12)',
+        backgroundColor: c.panelStrong,
         borderWidth: 1,
         borderColor: c.lineSage,
       }}>

@@ -391,7 +391,7 @@ export function CommunityScreen() {
           dimTo={0.9}
           style={{ alignSelf: 'flex-start', marginTop: 12 }}>
           <Dimmable active={!!draft.trim()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 13, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 12, backgroundColor: c.panelStrong, borderWidth: 1, borderColor: c.accent }}>
               <Feather name="send" size={15} color={c.textAccent} />
               <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
                 Share anonymously

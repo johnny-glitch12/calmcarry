@@ -257,7 +257,7 @@ export function Family() {
                 }}>
                 <AppText variant="meta" tone="muted">
                   {devicesError
-                    ? 'We couldn’t check your devices just now. Pull back in a moment — anything you’ve registered is safe.'
+                    ? 'We couldn’t check your devices just now. Pull back in a moment. Anything you’ve registered is safe.'
                     : 'No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.'}
                 </AppText>
               </View>
@@ -343,6 +343,7 @@ export function Family() {
           onPress={() => router.push('/caregivers' as Href)}
           onPressIn={lightTap}
           accessibilityRole="button"
+          accessibilityLabel="Caregivers: share with a partner or grandparent"
           scaleTo={0.98}
           dimTo={0.95}>
           <View

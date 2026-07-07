@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Appear, AppText, FlowTransition, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen, SwapText } from '@/components';
+import { Appear, AppText, Crossfade, FlowTransition, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { lightTap } from '@/lib/haptics';
 import { PRIVACY_URL, TERMS_URL } from '@/content/store';
@@ -246,20 +246,28 @@ export function SignIn() {
                 }}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: adult }}
-                accessibilityLabel="I am 18 years or older"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 2 }}>
+                accessibilityLabel="I’m 18 or older"
+                hitSlop={8}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
+                {/* box fill + check both EASE in on toggle (motion doctrine — no hard snap) */}
                 <View
                   style={{
                     width: 24,
                     height: 24,
-                    borderRadius: 7,
+                    borderRadius: 8,
                     borderWidth: 1.5,
-                    borderColor: adult ? c.accent : c.line,
-                    backgroundColor: adult ? c.accent : 'transparent',
+                    borderColor: c.line,
+                    overflow: 'hidden',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                  {adult ? <Feather name="check" size={15} color={c.ctaText} /> : null}
+                  <SelectionOverlay active={adult} style={{ borderRadius: 8, backgroundColor: c.accent }} />
+                  <Crossfade
+                    style={{ width: 15, height: 15 }}
+                    active={adult}
+                    front={<Feather name="check" size={15} color={c.ctaText} />}
+                    back={<View />}
+                  />
                 </View>
                 <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0, flex: 1 }}>
                   I’m 18 or older

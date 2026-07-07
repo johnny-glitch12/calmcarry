@@ -27,7 +27,7 @@ export function WatchClip() {
     <Screen mode="night" scroll>
       <Reveal index={0}>
         <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 16 }}>
-          <Feather name="chevron-left" size={26} color="#9DB7B1" />
+          <Feather name="chevron-left" size={26} color={c.text} />
         </PressableScale>
         <AppText variant="caption" tone="accent">
           {article.kicker}

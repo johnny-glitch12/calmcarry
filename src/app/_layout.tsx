@@ -14,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { BrandSplash } from '@/components';
 import { AuthProvider } from '@/features/auth/AuthProvider';
@@ -86,7 +86,7 @@ export default function RootLayout() {
         <RootTheme>
           <AuthProvider>
             <ProfileProvider>
-              <SafeAreaProvider>
+              <SafeAreaProvider initialMetrics={initialWindowMetrics}>
                 <RootNav />
               </SafeAreaProvider>
             </ProfileProvider>

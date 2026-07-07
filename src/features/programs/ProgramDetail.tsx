@@ -89,13 +89,14 @@ export function ProgramDetail() {
           <Appear key="locked">
             <PrimaryButton label="Unlock with Premium" onPress={() => router.push(`/unlock?id=${program.id}` as Href)} />
           </Appear>
-        ) : done !== null ? (
-          // key on the label so a load/focus-return change (0→N nights, night N→N+1)
-          // crossfades the whole button instead of hard-swapping the label text
+        ) : (
+          // Render immediately using the default (doneList = []) so there's no empty
+          // gap while the local completion state loads; key on the label so the real
+          // value (0→N nights, night N→N+1) crossfades in instead of hard-swapping.
           <Appear key={ctaLabel}>
             <PrimaryButton label={ctaLabel} onPress={() => open(nextStep.day, nextStep.trackId)} />
           </Appear>
-        ) : null}
+        )}
       </Reveal>
 
       <Reveal index={2} style={{ marginTop: 32 }}>
@@ -199,11 +200,11 @@ function StepRow({
         <Card variant="surface" padding={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <DayBadge day={step.day} isDone={isDone} />
           <View style={{ flex: 1 }}>
-            <AppText variant="cardTitle" tone="title">
+            <AppText variant="cardTitle" tone="title" numberOfLines={2}>
               {step.title}
             </AppText>
             {t ? (
-              <AppText variant="label" tone="muted" style={{ marginTop: 2 }}>
+              <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
                 {t.title} · {t.duration}
               </AppText>
             ) : null}

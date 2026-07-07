@@ -97,7 +97,7 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
         </AppText>
       </View>
 
-      <AppText variant="body" tone="text">
+      <AppText variant="body" tone="text" numberOfLines={10}>
         {win.text}
       </AppText>
 

@@ -191,7 +191,7 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
               </Animated.View>
             </View>
             <View>
-              <AppText variant="cardTitle" style={{ color: '#FFFFFF' }}>{label}</AppText>
+              <AppText variant="cardTitle" style={{ color: '#FFFFFF' }} numberOfLines={2}>{label}</AppText>
               {locked ? (
                 <Appear enter={dur.nav}>
                   <AppText variant="meta" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
@@ -504,7 +504,7 @@ export function ListenScreen() {
                 <PressableScale onPress={() => loadMix(m)} accessibilityRole="button" dimTo={0.95}>
                   <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSage, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Feather name="disc" size={15} color={c.textAccent} />
-                    <AppText variant="cardTitle" tone="title">
+                    <AppText variant="cardTitle" tone="title" numberOfLines={1}>
                       {m.name}
                     </AppText>
                   </View>
@@ -620,7 +620,7 @@ export function ListenScreen() {
         ) : null}
         {shareNote ? (
           <Appear enter={dur.nav}>
-            <AppText variant="meta" tone="muted" style={{ textAlign: 'center', marginTop: 8 }}>
+            <AppText variant="meta" tone="muted" style={{ textAlign: 'center', marginTop: 8 }} numberOfLines={2}>
               {shareNote}
             </AppText>
           </Appear>

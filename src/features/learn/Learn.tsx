@@ -38,7 +38,7 @@ export function LearnList() {
                 <Image source={covers[a.cover]} style={{ width: 60, height: 60, borderRadius: 16 }} contentFit="cover" accessibilityIgnoresInvertColors />
               ) : null}
               <View style={{ flex: 1 }}>
-                <AppText variant="caption" tone="accent">
+                <AppText variant="caption" tone="accent" numberOfLines={1}>
                   {a.kicker}
                 </AppText>
                 <AppText variant="bodyMedium" tone="title" style={{ fontSize: 16, marginTop: 3 }} numberOfLines={2}>

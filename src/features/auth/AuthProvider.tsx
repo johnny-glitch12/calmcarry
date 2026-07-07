@@ -146,7 +146,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     // Preview comp account → a local premium session (no backend needed). Gated by
     // EXPO_PUBLIC_COMP_LOGIN so it only exists in the preview build, never in prod.
-    if (COMP_LOGIN && email.trim().toLowerCase() === COMP_EMAIL && password === COMP_PASSWORD) {
+    // trim the comp password too (dev-only path) so a stray autocomplete/paste
+    // space doesn't silently drop the tester through to the offline backend.
+    if (COMP_LOGIN && email.trim().toLowerCase() === COMP_EMAIL && password.trim() === COMP_PASSWORD) {
       const u: ApiUser = { email: COMP_EMAIL, name: 'Mason' };
       setToken('local');
       setUser(u);

@@ -164,7 +164,9 @@ export function SignIn() {
   };
 
   return (
-    <Screen mode="light" scroll contentStyle={{ paddingTop: 8 }}>
+    {/* auth is a MODAL — modal presentation reports a small top inset, so add explicit
+        top padding here or the close-X + orb sit cramped against the sheet's top edge */}
+    <Screen mode="light" scroll contentStyle={{ paddingTop: 28 }}>
       <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85} style={{ alignSelf: 'flex-start' }}>
         <Feather name="x" size={24} color={c.text} />
       </PressableScale>

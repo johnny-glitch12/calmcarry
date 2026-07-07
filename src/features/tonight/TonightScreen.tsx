@@ -322,7 +322,8 @@ export function TonightScreen() {
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Logo size="sm" />
-          <GlowOrb size={40} breathing={false} />
+          {/* reserveGlow so the 1.6x halo can't clip against the screen top-right corner */}
+          <GlowOrb size={40} breathing={false} reserveGlow />
         </View>
         <AppText variant="h1" tone="title" style={{ marginTop: 18 }}>
           {kids ? `Bedtime, ${firstName}` : `${greeting(hour)}, ${firstName}`}

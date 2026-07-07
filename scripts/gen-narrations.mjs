@@ -43,7 +43,7 @@ const SESSIONS = [
   },
 ];
 
-const SETTINGS = { stability: 0.7, similarity_boost: 0.8, style: 0.08, use_speaker_boost: true };
+const SETTINGS = { stability: 0.45, similarity_boost: 0.75, style: 0.28, use_speaker_boost: true }; // 0.7/0.08 read monotone ("robotic" per Mason); this keeps calm but human
 
 async function main() {
   const outDir = process.argv[2] || './narration-out';

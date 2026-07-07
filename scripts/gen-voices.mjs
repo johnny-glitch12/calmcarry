@@ -45,7 +45,7 @@ const PERSONAS = [
 ];
 
 // Calm delivery: high stability (even pacing), low style exaggeration.
-const VOICE_SETTINGS = { stability: 0.62, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true };
+const VOICE_SETTINGS = { stability: 0.42, similarity_boost: 0.75, style: 0.32, use_speaker_boost: true }; // lower stability + more style = natural rise-and-fall (0.62/0.15 read flat/robotic)
 const MODEL = 'eleven_multilingual_v2';
 
 async function main() {

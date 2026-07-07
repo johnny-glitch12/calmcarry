@@ -13,7 +13,11 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        freezeOnBlur: true,
+        // freezeOnBlur is deliberately OFF: combined with the custom fade
+        // transitionSpec it can leave the INCOMING scene frozen (blank) on native
+        // after the tab switches — reported as "Listen not loading" in kids mode
+        // (Listen is the heaviest first mount, so the freeze race shows there
+        // first). The sound machine must keep living across tab switches anyway.
         animation: 'fade',
         transitionSpec: { animation: 'timing', config: { duration: dur.modal } },
       }}

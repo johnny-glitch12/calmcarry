@@ -17,7 +17,7 @@ import Animated, {
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { BrandSplash } from '@/components';
-import { AuthProvider } from '@/features/auth/AuthProvider';
+import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { ProfileProvider, useProfile } from '@/features/profile/ProfileProvider';
 import { startAnalytics, track } from '@/lib/analytics';
 import { captureError, initMonitoring } from '@/lib/monitoring';
@@ -124,6 +124,11 @@ function KidsGuard() {
   return null;
 }
 
+// DEMO TOGGLE (demo-testing only): when true, anyone NOT signed in lands on the
+// onboarding questions on EVERY launch; a signed-in session skips straight to the
+// app. Set to false before shipping to restore normal "show onboarding once".
+const DEMO_FORCE_ONBOARDING = true;
+
 function RootNav() {
   // Load Feather's glyph font through expo-font (not @expo/vector-icons' own web
   // loader, which doesn't respect the export base path) so icons render in the
@@ -137,6 +142,7 @@ function RootNav() {
   const router = useRouter();
   const navState = useRootNavigationState();
   const didRedirect = useRef(false);
+  const { status: authStatus } = useAuth();
 
   useEffect(() => {
     getOnboarded().then(setOnboarded);
@@ -161,20 +167,28 @@ function RootNav() {
   // On web (SSR/preview) render as soon as fonts are ready so HTML isn't blank.
   const ready =
     (fontsLoaded || fontError) &&
-    (Platform.OS === 'web' || (onboarded !== null && schemeHydrated && profileHydrated));
+    (Platform.OS === 'web' || (onboarded !== null && schemeHydrated && profileHydrated && authStatus !== 'loading'));
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
-  // first run → onboarding, exactly once, after the navigator mounts
+  // Launch routing, once, after the navigator mounts.
   useEffect(() => {
     if (!navState?.key || didRedirect.current) return;
+    if (DEMO_FORCE_ONBOARDING) {
+      // DEMO: not signed in → onboarding questions every launch; signed in → app.
+      if (authStatus === 'loading') return; // wait until the session state is known
+      didRedirect.current = true;
+      if (authStatus === 'guest') router.replace('/onboarding');
+      return;
+    }
+    // normal: first run only
     if (onboarded === false) {
       didRedirect.current = true;
       router.replace('/onboarding');
     }
-  }, [navState?.key, onboarded, router]);
+  }, [navState?.key, authStatus, onboarded, router]);
 
   if (!ready) {
     return null;

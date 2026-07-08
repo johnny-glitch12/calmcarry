@@ -43,7 +43,7 @@ export function SoundsLibrary() {
   const router = useRouter();
   const { c } = useTheme();
   const { isPremium } = useAuth();
-  const { mode } = useProfile();
+  const { mode, recommendedTrackIds } = useProfile();
   const kids = mode === 'kids';
   const rails = kids ? KIDS_RAILS : ADULT_RAILS;
 
@@ -71,6 +71,11 @@ export function SoundsLibrary() {
   // is dropped from the moment rails below. A rail left with ONE item doesn't
   // render as a lonely one-card "rail"; it becomes a full-width editorial card.
   const seen = new Set<string>([...(!kids ? saved : []), ...(!kids ? recent : [])]);
+  // "Picked for you" — the recommender's top picks (survey answers + tonight's
+  // check-in + favourites + time of day), deduped against the personal rails.
+  // Its picks join `seen` so the moment rails below never repeat them.
+  const forYou = kids ? [] : recommendedTrackIds.filter((id) => !seen.has(id)).slice(0, 8);
+  forYou.forEach((id) => seen.add(id));
 
   // rails snap card-by-card, like flipping through a deck (card 152 + gap 14)
   const SNAP = 152 + 14;
@@ -164,6 +169,7 @@ export function SoundsLibrary() {
       {/* personal rails first — your saved sessions + where you left off (adults) */}
       {!kids ? dynamicRail('saved', 'Saved', 'Your saved sessions', saved) : null}
       {!kids ? dynamicRail('recent', 'Recently played', 'Pick up where you left off', recent) : null}
+      {!kids ? dynamicRail('foryou', 'For you', 'Picked for you', forYou) : null}
 
       {/* track rails — the moment-based sections (Quick calm / Wind down & sleep / Music & sounds) */}
       {rails.map((rail, i) => {

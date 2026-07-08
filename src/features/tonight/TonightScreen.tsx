@@ -178,7 +178,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
 export function TonightScreen() {
   const router = useRouter();
   const { user, isPremium, token } = useAuth();
-  const { mode, intent, feeling, recommendedTrackId, recommendedTrackIds, needsCheckIn, dismissCheckIn, profiles } = useProfile();
+  const { mode, intent, feeling, recommendedTrackId, recommendedTrackIds, recommendationReason, needsCheckIn, dismissCheckIn, profiles } = useProfile();
   const { c } = useTheme();
 
   // real ownership badge — only shown if the purchase email matches a Glow order.
@@ -277,7 +277,9 @@ export function TonightScreen() {
 
   // Warmer kicker when we know how they're arriving (this session only), else the
   // intent reason, else a neutral default.
-  const heroKicker = feeling ? FEELING_MAP[feeling].line : intent ? INTENT_REASON[intent] : "Tonight's ritual";
+  // why THIS pick, honestly: tonight's check-in line wins; else the recommender's
+  // personal reason (favourites / survey answers); else the intent; else neutral.
+  const heroKicker = feeling ? FEELING_MAP[feeling].line : (recommendationReason ?? (intent ? INTENT_REASON[intent] : "Tonight's ritual"));
   // the next-best matches after the hero pick — ranked to the check-in answer
   const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
   // free 3 a.m. rescue — copy adapts to the hour but always lands on a free track

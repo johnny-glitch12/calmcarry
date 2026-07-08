@@ -14,9 +14,10 @@ import { setAnalyticsMode } from '@/lib/analytics';
 import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
 import { clearCoppaConsent } from '@/lib/consent';
+import { getFavorites } from '@/lib/favorites';
 import { clearRecents, getRecents } from '@/lib/recents';
 import { TRACKS } from '@/content/library';
-import { recommendTracks } from '@/lib/recommend';
+import { explainRecommendation, recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
 
 export type AppMode = 'adult' | 'kids';
@@ -91,6 +92,8 @@ type ProfileValue = {
   recommendedTrackId: string;
   /** ranked picks matching the check-in answer (top = recommendedTrackId) */
   recommendedTrackIds: string[];
+  /** honest one-line reason for the hero pick (null when nothing personal to say) */
+  recommendationReason: string | null;
 };
 
 const fallback: Profile = DEFAULT_PROFILES[0];
@@ -112,6 +115,7 @@ const ProfileContext = createContext<ProfileValue>({
   dismissCheckIn: () => {},
   recommendedTrackId: 'slow-tide',
   recommendedTrackIds: ['slow-tide'],
+  recommendationReason: null,
 });
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
@@ -124,6 +128,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // recently-played track ids — read once per app open so the recommendation is
   // stable within a session but fresh each open (local-only, never a server profile).
   const [recents, setRecents] = useState<string[]>([]);
+  // taste + survey signals for the recommender: saved favourites, and the
+  // onboarding answers (goals = what we can help with, moments = when they want
+  // help). All local-only, loaded with the rest of the hydrate.
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [surveyGoals, setSurveyGoals] = useState<string[]>([]);
+  const [surveyMoments, setSurveyMoments] = useState<string[]>([]);
   const { token, user, isPremium } = useAuth();
 
   // keep latest in refs so setMode/setActiveProfile/addProfile read fresh values.
@@ -163,6 +173,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       // NOTE: `feeling` is intentionally NOT persisted — the nightly check-in is
       // forward-looking and must never become a stored mood log (build plan §3/§14).
       setRecents(await getRecents());
+      setFavorites(await getFavorites());
+      const survey = await getJSON<{ goals?: string[]; moments?: string[] }>('cc.onboarding', {});
+      setSurveyGoals(Array.isArray(survey.goals) ? survey.goals : []);
+      setSurveyMoments(Array.isArray(survey.moments) ? survey.moments : []);
       const now = Date.now();
       setNeedsCheckIn(prevOpen == null || now - prevOpen > CHECKIN_GAP_MS);
       setJSON(KEYS.lastOpen, now);
@@ -305,10 +319,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // RANKED recommendations matching the check-in answer (feeling × intent ×
   // time-of-day × mode). recommendedTrackId is the top pick; recommendedTrackIds
   // powers a "tailored tonight" set. See lib/recommend.
-  const recommendedTrackIds = useMemo(
-    () => recommendTracks({ feeling, intent, mode, hour: new Date().getHours(), recentIds: recents }),
-    [mode, intent, feeling, recents]
+  const recoAnswer = useMemo(
+    () => ({
+      feeling,
+      intent,
+      mode,
+      hour: new Date().getHours(),
+      recentIds: recents,
+      favoriteIds: favorites,
+      goals: surveyGoals,
+      moments: surveyMoments,
+    }),
+    [feeling, intent, mode, recents, favorites, surveyGoals, surveyMoments]
   );
+  const recommendedTrackIds = useMemo(() => recommendTracks(recoAnswer), [recoAnswer]);
   // The HERO / "Begin wind-down" CTA must be free-PLAYABLE for a free, non-kids user —
   // the core nightly loop can't dead-end at a paywall (that's the BetterSleep tease we
   // exist to avoid). Locked picks still sit in recommendedTrackIds for the labelled
@@ -317,6 +341,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (mode === 'kids' || isPremium) return recommendedTrackIds[0];
     return recommendedTrackIds.find((id) => !TRACKS[id]?.locked) ?? recommendedTrackIds[0];
   }, [recommendedTrackIds, mode, isPremium]);
+  // honest one-liner for WHY the hero pick is suggested (null → generic kicker)
+  const recommendationReason = useMemo(
+    () => explainRecommendation(recommendedTrackId, recoAnswer),
+    [recommendedTrackId, recoAnswer]
+  );
 
   const value = useMemo<ProfileValue>(
     () => ({
@@ -336,8 +365,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       dismissCheckIn,
       recommendedTrackId,
       recommendedTrackIds,
+      recommendationReason,
     }),
-    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds]
+    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds, recommendationReason]
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

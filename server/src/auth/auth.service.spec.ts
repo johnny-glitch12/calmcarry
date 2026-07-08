@@ -182,6 +182,22 @@ describe('AuthService account security', () => {
     await expect(svc.refresh('a'.repeat(64))).rejects.toThrow(UnauthorizedException);
   });
 
+  it('change-password verifies the current password and ends every other session', async () => {
+    const { svc, owners } = makeFixture();
+    const first = await svc.register('mum@example.com', 'old-password-1', 'Ada');
+    const ownerId = [...owners.keys()][0];
+    await expect(svc.changePassword(ownerId, 'wrong-guess', 'new-password-1')).rejects.toThrow(
+      UnauthorizedException,
+    );
+    const changed = await svc.changePassword(ownerId, 'old-password-1', 'new-password-1');
+    expect(changed.refreshToken).toHaveLength(64);
+    await expect(svc.login('mum@example.com', 'new-password-1')).resolves.toBeTruthy();
+    await expect(svc.login('mum@example.com', 'old-password-1')).rejects.toThrow(UnauthorizedException);
+    // the pre-change session is dead; the fresh pair from the change works
+    await expect(svc.refresh(first.refreshToken)).rejects.toThrow(UnauthorizedException);
+    await expect(svc.refresh(changed.refreshToken)).resolves.toBeTruthy();
+  });
+
   it('logout revokes the refresh token and stays idempotent', async () => {
     const { svc } = makeFixture();
     const r = await svc.register('mum@example.com', 'sleepy-nights-8', 'Ada');

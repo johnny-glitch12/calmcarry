@@ -273,8 +273,9 @@ export function ListenScreen() {
   const players: Record<SoundKey, ReturnType<typeof useAudioPlayer>> = { rain, ocean, brown, drone, pink, white, fire, birdsong, green };
 
   useEffect(() => {
-    // all-night background playback with the screen off (build plan §12)
-    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
+    // all-night background playback with the screen off (build plan §12).
+    // doNotMix is also what makes lock-screen controls work (expo-audio v56).
+    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => {});
     (Object.values(players) as ReturnType<typeof useAudioPlayer>[]).forEach((p) => (p.loop = true));
     getJSON<SavedMix[]>('cc.mixes', []).then(setMixes);
     // restore a still-running sleep timer (survives a tab freeze / remount)
@@ -320,6 +321,68 @@ export function ListenScreen() {
   }, [levels]);
 
   const anyOn = (Object.values(levels) as number[]).some((v) => v > 0);
+
+  // Lock-screen session for the mixer. ONE anchor player (the first active sound)
+  // carries the OS session: on Android that's what keeps background audio alive
+  // past ~3 minutes (expo-audio v56), and it gives the lock screen a real pause.
+  // isLiveStream hides the seek bar — these are endless loops, not tracks.
+  const anchorRef = useRef<SoundKey | null>(null);
+  useEffect(() => {
+    const first = (Object.keys(players) as SoundKey[]).find((k) => levels[k] > 0) ?? null;
+    const prev = anchorRef.current;
+    if (prev && prev !== first) {
+      try {
+        players[prev].clearLockScreenControls();
+      } catch {
+        /* released */
+      }
+    }
+    anchorRef.current = first;
+    if (first && first !== prev) {
+      try {
+        players[first].setActiveForLockScreen(
+          true,
+          { title: 'Sound machine', artist: 'CalmCarry' },
+          { showSeekBackward: false, showSeekForward: false, isLiveStream: true },
+        );
+      } catch {
+        /* platform without lock-screen support */
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levels]);
+
+  // release the lock-screen session when the mixer unmounts
+  useEffect(
+    () => () => {
+      const a = anchorRef.current;
+      if (!a) return;
+      try {
+        players[a].clearLockScreenControls();
+      } catch {
+        /* released */
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  // A lock-screen pause only reaches the anchor player — notice it and let the
+  // whole mix follow with the usual gentle fade, so the UI and the ear agree.
+  useEffect(() => {
+    if (!anyOn) return;
+    const id = setInterval(() => {
+      const a = anchorRef.current;
+      if (!a) return;
+      try {
+        if (levelsRef.current[a] > 0 && !players[a].playing) fadeAndStop();
+      } catch {
+        /* released */
+      }
+    }, 2000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anyOn]);
 
   const toggle = (k: SoundKey) => {
     lightTap();

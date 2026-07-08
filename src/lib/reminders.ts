@@ -26,7 +26,22 @@ export const REMINDER_TIMES = [
   { hour: 23, minute: 0, label: '11:00 PM' },
 ] as const;
 
+// Android 8+ requires a channel; without one our reminders land in an unnamed
+// "Miscellaneous" bucket the user can't manage. One calm, named channel for all
+// three reminders (they're the same kind of gentle nudge — no need to fragment).
+const CHANNEL_ID = 'reminders';
+async function ensureAndroidChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+    name: 'Gentle reminders',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 150], // one soft pulse — never an alarm buzz
+    sound: 'default',
+  }).catch(() => {});
+}
+
 async function ensurePermission(): Promise<boolean> {
+  await ensureAndroidChannel();
   const current = await Notifications.getPermissionsAsync();
   if (current.status === 'granted') return true;
   const asked = await Notifications.requestPermissionsAsync();
@@ -51,7 +66,7 @@ export async function setBedtimeReminder(
     await Notifications.scheduleNotificationAsync({
       identifier: BEDTIME_ID,
       content: { title: 'A gentle nudge', body: 'Time to wind down with CalmCarry.' },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
     });
     return true;
   } catch {
@@ -79,7 +94,7 @@ export async function scheduleTrialEndingReminder(trialDays: number, priceLabel:
         title: 'Your free trial is ending soon',
         body: `After the trial, CalmCarry Premium continues at ${priceLabel} unless you cancel. You can cancel anytime in one tap.`,
       },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt, channelId: CHANNEL_ID },
     });
   } catch {
     /* best-effort */
@@ -113,7 +128,7 @@ export async function setWeeklyRecapReminder(enabled: boolean): Promise<boolean>
         body: 'Take a quiet look back at the nights you wound down this week.',
       },
       // Sunday 7pm local — after the weekend, before the wind-down hour
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0 },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0, channelId: CHANNEL_ID },
     });
     return true;
   } catch {

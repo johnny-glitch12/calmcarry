@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Image as RNImage, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   Extrapolation,
@@ -126,8 +126,31 @@ export default function WindDownScreen() {
   // ambient bed: the recommended track, looping, plays through the wind-down ritual
   const audio = useAudioPlayer(audioSources[track.audio]);
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
+    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => {});
   }, []);
+  // Lock-screen presence for the ritual: the phone is face-down/locked during a
+  // wind-down, and on Android an active lock-screen session is what keeps
+  // background audio alive past ~3 minutes (expo-audio v56 docs).
+  useEffect(() => {
+    if (lockedForUser) return; // redirecting to the paywall — never announce paid audio
+    try {
+      const art = RNImage.resolveAssetSource(covers[track.cover])?.uri;
+      audio.setActiveForLockScreen(
+        true,
+        { title: track.title, artist: 'CalmCarry', ...(art ? { artworkUrl: art } : {}) },
+        { showSeekBackward: false, showSeekForward: false },
+      );
+    } catch {
+      /* platform without lock-screen support */
+    }
+    return () => {
+      try {
+        audio.clearLockScreenControls();
+      } catch {
+        /* released */
+      }
+    };
+  }, [audio, track.title, track.cover, lockedForUser]);
   // locked premium track + free user → straight to the paywall (no audio plays)
   useEffect(() => {
     if (lockedForUser) router.replace(`/unlock?id=${track.id}` as Href);

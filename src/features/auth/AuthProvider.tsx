@@ -30,6 +30,9 @@ type AuthValue = {
   /** Sign in with a verified Apple/Google identity token (backend creates/resumes the account) */
   socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** change password while signed in — adopts the fresh session pair the server
+   *  returns (it revokes every other device's refresh token) */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   /** unlock premium. DEMO stand-in for an Apple/Google IAP — production validates
    *  the store receipt server-side before setting the entitlement. */
   activatePremium: () => Promise<void>;
@@ -59,6 +62,7 @@ const AuthContext = createContext<AuthValue>({
   register: async () => {},
   socialSignIn: async () => {},
   signOut: async () => {},
+  changePassword: async () => {},
   activatePremium: async () => {},
 });
 
@@ -250,6 +254,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement)]);
   }, []);
 
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      if (!token || token === 'local') throw new Error('offline');
+      const r = await api.changePassword(token, currentPassword, newPassword);
+      // adopt the fresh pair — every previous refresh token (all devices) is now revoked
+      setToken(r.token);
+      await secureSet(KEYS.token, r.token);
+      if (r.refreshToken) await secureSet(KEYS.refresh, r.refreshToken);
+    },
+    [token],
+  );
+
   const activatePremium = useCallback(async () => {
     setEntitlement(CALM);
     await setJSON(KEYS.entitlement, CALM);
@@ -267,9 +283,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       socialSignIn,
       signOut,
+      changePassword,
       activatePremium,
     }),
-    [status, user, token, entitlement, backendUp, signIn, register, socialSignIn, signOut, activatePremium]
+    [status, user, token, entitlement, backendUp, signIn, register, socialSignIn, signOut, changePassword, activatePremium]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -13,7 +13,7 @@ import { Throttle } from '@nestjs/throttler';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
-import { ForgotPasswordDto, RefreshDto, ResetPasswordDto, VerifyEmailDto } from './dto/account-security.dto';
+import { ChangePasswordDto, ForgotPasswordDto, RefreshDto, ResetPasswordDto, VerifyEmailDto } from './dto/account-security.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { SocialLoginDto } from './dto/social-login.dto';
@@ -56,6 +56,15 @@ export class AuthController {
   @HttpCode(200)
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.email, dto.code, dto.newPassword);
+  }
+
+  // Change password (signed in): verify current, set new, revoke all other sessions.
+  @UseGuards(JwtAuthGuard)
+  @Throttle(CREDENTIAL_THROTTLE)
+  @Post('auth/password/change')
+  @HttpCode(200)
+  changePassword(@CurrentUser() user: JwtPayload, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.sub, dto.currentPassword, dto.newPassword);
   }
 
   // Rotating refresh: trade a live refresh token for a fresh access+refresh pair.

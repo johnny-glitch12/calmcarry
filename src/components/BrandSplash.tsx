@@ -1,7 +1,7 @@
 import { useAudioPlayer } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   runOnJS,
   useAnimatedStyle,

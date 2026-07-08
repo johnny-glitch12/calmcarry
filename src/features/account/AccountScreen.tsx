@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Share, Switch, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { Appear, AppText, Card, Dimmable, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip, SwapText } from '@/components';
+import { Appear, AppText, Card, Dimmable, FormField, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
@@ -105,12 +105,169 @@ function Group({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Email-verification nudge (soft gate; nothing is blocked on it). One tap emails
+ *  a 6-digit code, the field appears inline, success thanks and fades away. Only
+ *  rendered for real signed-in accounts whose email is unverified. */
+function VerifyEmailCard({ token, onDone }: { token: string; onDone: () => void }) {
+  const { c } = useTheme();
+  const [step, setStep] = useState<'offer' | 'code' | 'done'>('offer');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const send = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.sendEmailVerification(token);
+      setStep('code');
+    } catch {
+      setError('We couldn’t send the code just now. Try again in a moment.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirm = async () => {
+    if (busy) return;
+    if (code.trim().length !== 6) {
+      setError('Enter the 6-digit code from the email.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api.verifyEmail(token, code.trim());
+      setStep('done');
+      setTimeout(onDone, 1600); // a beat to read the thank-you, then fade out
+    } catch {
+      setError('That code doesn’t look right. Check the email and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Animated.View entering={FadeIn.duration(dur.sheet)} exiting={FadeOut.duration(dur.sheet)}>
+      <Card variant="surface" radius={18}>
+        <Appear key={step} enter={dur.sheet}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Feather name={step === 'done' ? 'check-circle' : 'mail'} size={16} color={c.textAccent} />
+            <AppText variant="cardTitle" tone="title" style={{ flex: 1 }}>
+              {step === 'done' ? 'Email verified. Thank you.' : 'Verify your email'}
+            </AppText>
+          </View>
+          {step !== 'done' ? (
+            <AppText variant="caption" tone="muted" style={{ marginTop: 6, textTransform: 'none', letterSpacing: 0, lineHeight: 18 }}>
+              {step === 'offer'
+                ? 'A quick code keeps your account recoverable if you ever forget your password.'
+                : 'We emailed you a 6-digit code. It expires in 15 minutes.'}
+            </AppText>
+          ) : null}
+          {step === 'code' ? (
+            <View style={{ marginTop: 12 }}>
+              <FormField
+                label="6-digit code"
+                value={code}
+                onChangeText={setCode}
+                placeholder="123456"
+                icon="hash"
+                keyboardType="number-pad"
+                autoCapitalize="none"
+                autoComplete="one-time-code"
+              />
+            </View>
+          ) : null}
+          {error ? (
+            <Appear>
+              <AppText variant="label" style={{ color: brand.coral, textTransform: 'none', letterSpacing: 0, marginTop: 8 }}>
+                {error}
+              </AppText>
+            </Appear>
+          ) : null}
+          {step !== 'done' ? (
+            <PressableScale
+              onPress={step === 'offer' ? send : confirm}
+              onPressIn={lightTap}
+              disabled={busy}
+              accessibilityRole="button"
+              dimTo={0.9}
+              scaleTo={0.98}
+              style={{
+                marginTop: 12,
+                alignSelf: 'flex-start',
+                paddingHorizontal: 16,
+                minHeight: 44,
+                justifyContent: 'center',
+                borderRadius: 12,
+                backgroundColor: c.panel,
+                borderWidth: 1,
+                borderColor: c.lineSage,
+                opacity: busy ? 0.6 : 1,
+              }}>
+              <AppText variant="bodyMedium" tone="accent">
+                {step === 'offer' ? 'Email me a code' : 'Confirm'}
+              </AppText>
+            </PressableScale>
+          ) : null}
+        </Appear>
+      </Card>
+    </Animated.View>
+  );
+}
+
 export function AccountScreen() {
   const router = useRouter();
   const { c } = useTheme();
-  const { user, isPremium, token, signOut } = useAuth();
+  const { user, isPremium, token, signOut, changePassword } = useAuth();
   const { mode, setMode } = useProfile();
   const [reminder, setReminder] = useState(false);
+  // email-verification nudge — only when the backend confirms the email is unverified
+  const [needsVerify, setNeedsVerify] = useState(false);
+  useEffect(() => {
+    // guest/local sessions never render the card (see the render gate), so no reset needed
+    if (!token || token === 'local') return;
+    let alive = true;
+    api
+      .me(token)
+      .then((r) => alive && setNeedsVerify(r.user.emailVerified === false))
+      .catch(() => {
+        /* offline — no nudge */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+  // change-password (signed-in) — inline expandable row state
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNext, setPwNext] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const onChangePassword = async () => {
+    if (pwBusy) return;
+    if (pwNext.length < 8) {
+      setPwMsg({ text: 'New password needs at least 8 characters.', ok: false });
+      return;
+    }
+    setPwBusy(true);
+    setPwMsg(null);
+    try {
+      await changePassword(pwCurrent, pwNext);
+      setPwCurrent('');
+      setPwNext('');
+      setPwMsg({ text: 'Password updated. Other devices were signed out.', ok: true });
+      setTimeout(() => {
+        setPwOpen(false);
+        setPwMsg(null);
+      }, 1800);
+    } catch {
+      setPwMsg({ text: 'That current password doesn’t look right.', ok: false });
+    } finally {
+      setPwBusy(false);
+    }
+  };
   const [voiceName, setVoiceName] = useState('Maya');
   useFocusEffect(
     useCallback(() => {
@@ -254,6 +411,13 @@ export function AccountScreen() {
         </View>
       </Reveal>
 
+      {/* email verification nudge — real accounts only, and only while unverified */}
+      {needsVerify && token && token !== 'local' ? (
+        <Reveal index={1} style={{ marginTop: 16 }}>
+          <VerifyEmailCard token={token} onDone={() => setNeedsVerify(false)} />
+        </Reveal>
+      ) : null}
+
       {/* entitlement */}
       <Reveal index={1} style={{ marginTop: 24 }}>
         {/* For premium users the card is not a link — an accidental brush shouldn't eject them to
@@ -381,6 +545,71 @@ export function AccountScreen() {
           <SettingRow icon="users" label="Family & devices" onPress={() => router.push('/family')} />
           <SettingRow icon="sliders" label="Notifications" value="System settings" onPress={() => Linking.openSettings().catch(() => {})} />
           <SettingRow icon="shield" label="Your data & privacy" onPress={() => router.push('/privacy' as Href)} />
+          {token && token !== 'local' ? (
+            <SettingRow
+              icon="key"
+              label="Change password"
+              onPress={() => {
+                setPwOpen((o) => !o);
+                setPwMsg(null);
+              }}
+            />
+          ) : null}
+          {token && token !== 'local' && pwOpen ? (
+            <Appear enter={dur.sheet} layout style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: c.line, gap: 12 }}>
+              <FormField
+                label="Current password"
+                value={pwCurrent}
+                onChangeText={setPwCurrent}
+                placeholder="••••••••"
+                icon="lock"
+                autoCapitalize="none"
+                secureTextEntry
+                autoComplete="current-password"
+              />
+              <FormField
+                label="New password"
+                value={pwNext}
+                onChangeText={setPwNext}
+                placeholder="••••••••"
+                icon="lock"
+                autoCapitalize="none"
+                secureTextEntry
+                autoComplete="new-password"
+              />
+              {pwMsg ? (
+                <Appear>
+                  <AppText
+                    variant="label"
+                    style={{ color: pwMsg.ok ? c.textAccent : brand.coral, textTransform: 'none', letterSpacing: 0 }}>
+                    {pwMsg.text}
+                  </AppText>
+                </Appear>
+              ) : null}
+              <PressableScale
+                onPress={onChangePassword}
+                onPressIn={lightTap}
+                disabled={pwBusy}
+                accessibilityRole="button"
+                dimTo={0.9}
+                scaleTo={0.98}
+                style={{
+                  alignSelf: 'flex-start',
+                  paddingHorizontal: 16,
+                  minHeight: 44,
+                  justifyContent: 'center',
+                  borderRadius: 12,
+                  backgroundColor: c.panel,
+                  borderWidth: 1,
+                  borderColor: c.lineSage,
+                  opacity: pwBusy ? 0.6 : 1,
+                }}>
+                <AppText variant="bodyMedium" tone="accent">
+                  Update password
+                </AppText>
+              </PressableScale>
+            </Appear>
+          ) : null}
           {token && token !== 'local' ? (
             <SettingRow icon="download" label="Export my data" onPress={onExport} />
           ) : null}

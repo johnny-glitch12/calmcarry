@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports -- React Native bundles static assets via require() */
 import { type AudioSource } from 'expo-audio';
 
 /**

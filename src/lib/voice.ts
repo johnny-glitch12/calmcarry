@@ -38,3 +38,15 @@ export async function setVoice(v: VoiceKey): Promise<void> {
     /* best-effort */
   }
 }
+
+/** The raw stored choice, or null if the user never picked one — prefs sync uses
+ *  this to tell "chose the default" apart from "never chose" before adopting a
+ *  value from another device. */
+export async function getStoredVoice(): Promise<VoiceKey | null> {
+  try {
+    const v = await AsyncStorage.getItem(KEY);
+    return v && VOICES.some((x) => x.key === v) ? (v as VoiceKey) : null;
+  } catch {
+    return null;
+  }
+}

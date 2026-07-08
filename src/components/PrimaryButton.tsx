@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { ActivityIndicator, Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,

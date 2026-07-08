@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image as RNImage, StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -104,10 +104,36 @@ export function Player() {
   const completedRef = useRef(false); // session_complete fired once
 
   // allow playback in silent mode + keep playing with the screen off / app backgrounded
-  // (sleep apps must run all night — build plan §12)
+  // (sleep apps must run all night — build plan §12). doNotMix: our audio is the
+  // primary sound AND lock-screen controls require it (expo-audio v56 docs).
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
+    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => {});
   }, []);
+
+  // Lock-screen presence: title + artwork + play/pause with the phone locked —
+  // exactly when a sleep app is used. ALSO load-bearing on Android: without an
+  // active lock-screen session, background playback is cut after ~3 minutes
+  // (expo-audio v56 docs). Remote pause flips the player's own state, which
+  // useAudioPlayerStatus already mirrors into the UI.
+  useEffect(() => {
+    try {
+      const art = RNImage.resolveAssetSource(covers[track.cover])?.uri;
+      player.setActiveForLockScreen(
+        true,
+        { title: track.title, artist: 'CalmCarry', ...(art ? { artworkUrl: art } : {}) },
+        { showSeekBackward: false, showSeekForward: false },
+      );
+    } catch {
+      /* platform without lock-screen support — playback itself is unaffected */
+    }
+    return () => {
+      try {
+        player.clearLockScreenControls();
+      } catch {
+        /* player already released */
+      }
+    };
+  }, [player, track.title, track.cover]);
 
   // Loop ONLY ambient soundscapes. Guided sessions, sleep tales and breathing
   // exercises must play once and end gently (§6 "gentle end") — never restart.

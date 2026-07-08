@@ -42,7 +42,7 @@ async function req<T>(path: string, opts: RequestInit = {}, token?: string | nul
   }
 }
 
-export type ApiUser = { id?: string; email: string; name: string };
+export type ApiUser = { id?: string; email: string; name: string; emailVerified?: boolean };
 export type ApiEntitlement = { tier: 'free' | 'calm_plan'; status: 'active' | 'revoked' };
 
 export const api = {
@@ -73,6 +73,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, code, newPassword }),
     }),
+  // Change password while signed in (server revokes every other session)
+  changePassword: (token: string, currentPassword: string, newPassword: string) =>
+    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/password/change', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }, token),
   // Rotating session refresh + server-side logout (revokes the refresh token)
   refresh: (refreshToken: string) =>
     req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/refresh', {

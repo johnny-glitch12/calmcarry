@@ -135,6 +135,18 @@ export class AuthService {
     return this.buildAuthResult(owner);
   }
 
+  /** Change password for a signed-in account: verify the current password, set
+   *  the new one, and revoke EVERY refresh token (other devices must re-login).
+   *  Returns a fresh session pair so the calling device stays signed in. */
+  async changePassword(ownerId: string, currentPassword: string, newPassword: string): Promise<AuthResult> {
+    const owner = await this.usersService.findById(ownerId);
+    const ok = owner && (await bcrypt.compare(currentPassword, owner.passwordHash));
+    if (!owner || !ok) throw new UnauthorizedException('Invalid credentials');
+    await this.usersService.setPassword(owner.id, await bcrypt.hash(newPassword, 10));
+    await this.refreshTokens.delete({ ownerId: owner.id });
+    return this.buildAuthResult(owner);
+  }
+
   // ---- email verification (soft gate: nothing is hard-blocked on it) ----
 
   async sendEmailVerification(ownerId: string): Promise<{ ok: true }> {

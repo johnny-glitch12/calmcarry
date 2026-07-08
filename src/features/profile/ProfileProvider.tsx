@@ -15,7 +15,9 @@ import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
 import { clearCoppaConsent } from '@/lib/consent';
 import { getFavorites, replaceFavorites } from '@/lib/favorites';
+import { getStoredSleepGoalHours, setSleepGoalHours } from '@/lib/sleepGoal';
 import { getTrackWins } from '@/lib/trackWins';
+import { getStoredVoice, setVoice, VOICES, type VoiceKey } from '@/lib/voice';
 import { clearRecents, getRecents } from '@/lib/recents';
 import { TRACKS } from '@/content/library';
 import { explainRecommendation, recommendTracks } from '@/lib/recommend';
@@ -243,7 +245,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           const survey = await getJSON<Record<string, unknown>>('cc.onboarding', {});
           await setJSON('cc.onboarding', { ...survey, goals, moments });
         }
-        await api.putPrefs(token, { goals, moments, favorites: favs });
+        // voice + sleep goal: adopt the server value only when this device holds
+        // NO explicit choice (a stored default is still a choice; never clobber it)
+        const [storedVoice, storedGoal] = await Promise.all([getStoredVoice(), getStoredSleepGoalHours()]);
+        const sVoice = typeof server.voice === 'string' && VOICES.some((v) => v.key === server.voice) ? (server.voice as VoiceKey) : null;
+        const sGoal = typeof server.sleepGoalHours === 'number' ? server.sleepGoalHours : null;
+        if (!storedVoice && sVoice) await setVoice(sVoice);
+        if (storedGoal == null && sGoal != null) await setSleepGoalHours(sGoal);
+        const push: Record<string, unknown> = { goals, moments, favorites: favs };
+        if (storedVoice) push.voice = storedVoice;
+        if (storedGoal != null) push.sleepGoalHours = storedGoal;
+        await api.putPrefs(token, push);
       } catch {
         /* offline — purely best-effort */
       }

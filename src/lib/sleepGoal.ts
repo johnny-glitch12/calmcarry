@@ -19,3 +19,10 @@ export async function getSleepGoalHours(): Promise<number> {
 export async function setSleepGoalHours(hours: number): Promise<void> {
   await setJSON(KEY, clamp(hours));
 }
+
+/** The stored value, or null if never set — prefs sync uses this to tell the
+ *  default apart from an explicit choice before adopting another device's goal. */
+export async function getStoredSleepGoalHours(): Promise<number | null> {
+  const v = await getJSON<number | null>(KEY, null);
+  return typeof v === 'number' ? clamp(v) : null;
+}

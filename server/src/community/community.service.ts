@@ -76,6 +76,20 @@ export class CommunityService {
     return { ...this.toPublic(post), status: post.status };
   }
 
+  /** Member report (App Store UGC 1.2): any member can flag a post. Thresholds
+   *  act immediately and quietly: 2 reports re-hold the post for review (it
+   *  leaves the feed), 4 reject it outright. Idempotence is not tracked per
+   *  reporter (anonymous wall, no user graph) — the thresholds absorb noise. */
+  async report(postId: string): Promise<{ ok: true }> {
+    const post = await this.repo.findOne({ where: { id: postId } });
+    if (!post) return { ok: true }; // nothing to reveal about what exists
+    post.reportsCount += 1;
+    if (post.reportsCount >= 4) post.status = 'rejected';
+    else if (post.reportsCount >= 2) post.status = 'pending';
+    await this.repo.save(post);
+    return { ok: true };
+  }
+
   /** real count of approved wins shared by the community (no fabricated number) */
   async presence(): Promise<number> {
     return this.repo.count({ where: { status: 'approved' } });

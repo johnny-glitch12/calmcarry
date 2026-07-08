@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { HouseholdService } from '../household/household.service';
 import {
+  AuthCode,
   CaregiverInvite,
   CaregiverLink,
   CommunityPost,
@@ -11,6 +12,7 @@ import {
   Owner,
   Profile,
   PushToken,
+  RefreshToken,
   SavedMix,
   SessionLog,
   WarrantyClaim,
@@ -41,6 +43,8 @@ export class UsersService {
       await m.delete(CommunityPost, { ownerId });
       await m.delete(SessionLog, { ownerId });
       await m.delete(PushToken, { ownerId });
+      await m.delete(AuthCode, { ownerId });
+      await m.delete(RefreshToken, { ownerId });
       // Household links: clear both directions so no caregiver is left inheriting a
       // deleted owner's entitlement, and no dangling link points at a gone account.
       // If this owner was a household primary, its caregivers fall back to their own
@@ -54,9 +58,47 @@ export class UsersService {
     });
   }
 
+  /** Replace the password hash (password reset). */
+  async setPassword(ownerId: string, passwordHash: string): Promise<void> {
+    await this.ownerRepo.update({ id: ownerId }, { passwordHash });
+  }
+
+  /** Mark the account's email as verified (soft gate). */
+  async setEmailVerified(ownerId: string): Promise<void> {
+    await this.ownerRepo.update({ id: ownerId }, { emailVerified: true });
+  }
+
   /** Store/clear the Apple refresh token used to revoke the user's tokens on deletion. */
   async setAppleRefreshToken(ownerId: string, token: string | null): Promise<void> {
     await this.ownerRepo.update({ id: ownerId }, { appleRefreshToken: token });
+  }
+
+  // Cross-device preference sync. STRICT allow-list — anything not listed here is
+  // silently dropped, so the client can never turn this into a general data store.
+  // Deliberately absent: mood/feeling (build plan §3/§14 — never a stored mood log).
+  private static readonly PREF_KEYS = ['goals', 'moments', 'favorites', 'sleepGoalHours', 'voice'] as const;
+
+  async getPrefs(ownerId: string): Promise<Record<string, unknown>> {
+    const owner = await this.ownerRepo.findOne({ where: { id: ownerId } });
+    return owner?.prefs ?? {};
+  }
+
+  /** Merge allow-listed prefs (last write wins per key). Returns the stored set. */
+  async setPrefs(ownerId: string, raw: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const clean: Record<string, unknown> = {};
+    for (const k of UsersService.PREF_KEYS) {
+      const v = raw[k];
+      if (v === undefined) continue;
+      // keep values small + JSON-simple: arrays of short strings, or primitives
+      if (Array.isArray(v)) clean[k] = v.filter((x) => typeof x === 'string' && x.length <= 64).slice(0, 100);
+      else if (typeof v === 'string' && v.length <= 64) clean[k] = v;
+      else if (typeof v === 'number' || typeof v === 'boolean') clean[k] = v;
+    }
+    const owner = await this.ownerRepo.findOne({ where: { id: ownerId } });
+    if (!owner) return {};
+    owner.prefs = { ...(owner.prefs ?? {}), ...clean };
+    await this.ownerRepo.save(owner);
+    return owner.prefs;
   }
 
   /** GDPR/UK-GDPR/AU-APP12 data-access export — the account's own data as JSON
@@ -78,6 +120,7 @@ export class UsersService {
     return {
       exportedAt: new Date().toISOString(),
       account: { id: owner.id, email: owner.email, name: owner.name, createdAt: owner.createdAt },
+      prefs: owner.prefs ?? {},
       profiles,
       devices,
       entitlements,

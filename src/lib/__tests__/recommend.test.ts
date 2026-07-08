@@ -42,6 +42,16 @@ describe('recommend', () => {
     expect(ids.indexOf('box-breathing')).toBeLessThan(ids.indexOf('spa'));
   });
 
+  it('tracks that carried completed wind-downs rank higher (worked-before)', () => {
+    const plain = recommendTracks(base);
+    const learned = recommendTracks({ ...base, workedBefore: { fireside: 3 } });
+    expect(learned.indexOf('fireside')).toBeLessThan(plain.indexOf('fireside'));
+    expect(learned.indexOf('fireside')).toBeLessThan(5);
+    // ...but a direct feeling/intent match still outranks a worked-before track
+    const withFeeling = recommendTracks({ ...base, feeling: 'racing', intent: 'reset', workedBefore: { spa: 9 } });
+    expect(withFeeling.indexOf('box-breathing')).toBeLessThan(withFeeling.indexOf('spa'));
+  });
+
   it('explains honestly and only from real signals', () => {
     expect(explainRecommendation('fireside', { ...base, favoriteIds: ['fireside'] })).toMatch(/favourite/i);
     expect(

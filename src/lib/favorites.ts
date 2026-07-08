@@ -16,6 +16,11 @@ export async function isFavorite(id: string): Promise<boolean> {
   return (await getFavorites()).includes(id);
 }
 
+/** Replace the whole list (cross-device prefs sync adopting the merged set). */
+export async function replaceFavorites(ids: string[]): Promise<void> {
+  await setJSON(KEY, ids);
+}
+
 /** Toggle a track's saved state. Returns the resulting state (true = now saved). */
 export async function toggleFavorite(id: string): Promise<boolean> {
   const list = await getFavorites();

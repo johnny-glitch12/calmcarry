@@ -4,6 +4,7 @@ import { DataSource, type DataSourceOptions } from 'typeorm';
 import { config } from './config';
 import {
   AnalyticsEvent,
+  AuthCode,
   CaregiverInvite,
   CaregiverLink,
   CommunityPost,
@@ -14,6 +15,7 @@ import {
   Profile,
   Program,
   PushToken,
+  RefreshToken,
   SavedMix,
   SessionLog,
   WarrantyClaim,
@@ -36,6 +38,8 @@ export const ENTITIES = [
   AnalyticsEvent,
   CaregiverLink,
   CaregiverInvite,
+  AuthCode,
+  RefreshToken,
 ];
 
 // Used ONLY by the TypeORM CLI (migration:generate / run / revert). The runtime

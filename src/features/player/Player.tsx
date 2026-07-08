@@ -32,6 +32,7 @@ import { markProgramStepDone } from '@/lib/programs';
 import { pushRecent } from '@/lib/recents';
 import { logSession } from '@/lib/sessions';
 import { getJSON, setJSON } from '@/lib/store';
+import { recordTrackWin } from '@/lib/trackWins';
 import { dur, ease, useTheme } from '@/theme';
 
 // Sleep / auto-stop timer options (minutes; 0 = off). Soundscapes otherwise loop
@@ -329,6 +330,9 @@ export function Player() {
       completedRef.current = true;
       const durationSec = startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : undefined;
       const completed = reachedEnd || (durationSec ?? 0) >= 60;
+      // a completed wind-down is the honest "it worked" — remember it so the
+      // recommender can lean toward tracks that carried this household before
+      if (completed) void recordTrackWin(track.id);
       getJSON('cc.firstSessionDone', false).then((done) => {
         logEvent('session_complete', {
           contentId: track.id,

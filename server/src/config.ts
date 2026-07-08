@@ -13,7 +13,7 @@ export const config = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   jwtSecret: process.env.JWT_SECRET ?? 'calmcarry-dev-secret-change-me-in-production',
   // typed as an `ms`-style duration — @nestjs/jwt v11 requires StringValue, not string
-  jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as import('ms').StringValue,
+  jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '7d') as import('ms').StringValue, // short-lived access; /auth/refresh rotates a 60d refresh token
   // file-based SQLite by default; set DATABASE_URL (Postgres) in production
   dbPath: process.env.DB_PATH ?? join(process.cwd(), 'data', 'calmcarry.sqlite'),
   databaseUrl: process.env.DATABASE_URL ?? '',
@@ -69,11 +69,20 @@ export const config = {
   },
 
   // ---- Push notifications (APNs + FCM) ----
+  // ---- transactional mail (password reset / email verification) ----
+  // Dev-safe: without SMTP_URL the MailService logs the message instead of sending.
+  mail: {
+    smtpUrl: process.env.SMTP_URL ?? '', // PLACEHOLDER e.g. smtps://user:pass@smtp.host:465
+    from: process.env.MAIL_FROM ?? 'CalmCarry <no-reply@theglowcompany.co>',
+  },
   push: {
     fcmServerKey: process.env.FCM_SERVER_KEY ?? '', // PLACEHOLDER
     apnsKeyId: process.env.APNS_KEY_ID ?? '', // PLACEHOLDER
     apnsTeamId: process.env.APNS_TEAM_ID ?? '', // PLACEHOLDER
     apnsKeyP8: process.env.APNS_KEY_P8 ?? '', // PLACEHOLDER (the .p8 contents)
+    apnsTopic: process.env.APNS_TOPIC ?? 'co.theglowcompany.calmcarry', // bundle id
+    apnsSandbox: process.env.APNS_SANDBOX === '1', // dev builds use api.sandbox.push.apple.com
+    firebaseServiceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '', // PLACEHOLDER (FCM v1)
   },
 
   // guards the CMS write endpoints (content publishing)
@@ -117,7 +126,8 @@ export const integrations = {
   googleIap: !!config.google.playServiceAccountJson,
   shopify: !!(config.shopify.shop && config.shopify.adminToken),
   cdn: !!(config.cdn.baseUrl && config.cdn.signingKey),
-  push: !!(config.push.fcmServerKey || config.push.apnsKeyP8),
+  push: !!(config.push.firebaseServiceAccountJson || config.push.apnsKeyP8),
+  mail: !!config.mail.smtpUrl,
 };
 
 /** In dev (no prod keys) we simulate success so the app runs without credentials. */

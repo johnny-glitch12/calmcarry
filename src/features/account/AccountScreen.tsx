@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
-import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
+import { REMINDER_TIMES, remindersSupported, setBedtimeReminder, setWeeklyRecapReminder } from '@/lib/reminders';
 import { getVoice, voiceByKey } from '@/lib/voice';
 import { clearAll, getJSON, setJSON } from '@/lib/store';
 import { brand, dur, useTheme } from '@/theme';
@@ -118,6 +118,7 @@ export function AccountScreen() {
     }, []),
   );
   const [reminderIdx, setReminderIdx] = useState(1); // default 9:30 PM
+  const [recap, setRecap] = useState(false);
   const [pushOn, setPushOn] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -129,6 +130,7 @@ export function AccountScreen() {
     (async () => {
       setReminder(await getJSON('cc.reminder', false));
       setReminderIdx(await getJSON('cc.reminderTimeIdx', 1));
+      setRecap(await getJSON('cc.weeklyRecap', false));
       setPushOn(await hasPushOptIn());
       setAutoplay(await getJSON('cc.autoplay', true));
     })();
@@ -155,6 +157,12 @@ export function AccountScreen() {
     const scheduled = await setBedtimeReminder(v, t.hour, t.minute);
     setReminder(scheduled);
     setJSON('cc.reminder', scheduled);
+  };
+  // weekly recap — same honesty rule: ON only if one is actually scheduled
+  const toggleRecap = async (v: boolean) => {
+    const scheduled = await setWeeklyRecapReminder(v);
+    setRecap(scheduled);
+    setJSON('cc.weeklyRecap', scheduled);
   };
   // let the user pick their wind-down time from a visible list (no blind tap-to-cycle);
   // reschedule live if the reminder is on
@@ -342,6 +350,10 @@ export function AccountScreen() {
                 onChange={pickReminderTime}
               />
             </Appear>
+          ) : null}
+          {/* weekly recap — one Sunday-evening note pointing at the calm-nights card */}
+          {remindersSupported ? (
+            <SettingRow icon="calendar" label="Weekly calm recap" toggle={recap} onToggle={toggleRecap} />
           ) : null}
           <SettingRow icon="mic" label="Guided voice" value={voiceName} onPress={() => router.push('/voice' as Href)} />
           <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} last />

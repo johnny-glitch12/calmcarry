@@ -14,7 +14,8 @@ import { setAnalyticsMode } from '@/lib/analytics';
 import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
 import { clearCoppaConsent } from '@/lib/consent';
-import { getFavorites } from '@/lib/favorites';
+import { getFavorites, replaceFavorites } from '@/lib/favorites';
+import { getTrackWins } from '@/lib/trackWins';
 import { clearRecents, getRecents } from '@/lib/recents';
 import { TRACKS } from '@/content/library';
 import { explainRecommendation, recommendTracks } from '@/lib/recommend';
@@ -134,6 +135,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [surveyGoals, setSurveyGoals] = useState<string[]>([]);
   const [surveyMoments, setSurveyMoments] = useState<string[]>([]);
+  // completed wind-downs per track — the behavioural "it worked" signal (read once
+  // per open, like recents, so recommendations stay stable within a session)
+  const [trackWins, setTrackWins] = useState<Record<string, number>>({});
   const { token, user, isPremium } = useAuth();
 
   // keep latest in refs so setMode/setActiveProfile/addProfile read fresh values.
@@ -174,6 +178,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       // forward-looking and must never become a stored mood log (build plan §3/§14).
       setRecents(await getRecents());
       setFavorites(await getFavorites());
+      setTrackWins(await getTrackWins());
       const survey = await getJSON<{ goals?: string[]; moments?: string[] }>('cc.onboarding', {});
       setSurveyGoals(Array.isArray(survey.goals) ? survey.goals : []);
       setSurveyMoments(Array.isArray(survey.moments) ? survey.moments : []);
@@ -207,6 +212,48 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return () => {
       alive = false;
     };
+  }, [hydrated, token]);
+
+  // Cross-device prefs sync — ONE best-effort reconcile per sign-in/app open.
+  // Local answers win; the server fills gaps; favourites merge as a union (losing
+  // a save is worse than gaining one). The merged set is pushed back so the next
+  // device sees it. Feeling is NEVER synced (build plan §3/§14) and the server
+  // allow-list would drop it anyway.
+  useEffect(() => {
+    if (!hydrated || !token || token === 'local') return;
+    let alive = true;
+    (async () => {
+      try {
+        const server = await api.getPrefs(token);
+        if (!alive) return;
+        const sGoals = Array.isArray(server.goals) ? (server.goals as string[]) : [];
+        const sMoments = Array.isArray(server.moments) ? (server.moments as string[]) : [];
+        const sFavs = Array.isArray(server.favorites) ? (server.favorites as string[]) : [];
+        const goals = surveyGoals.length ? surveyGoals : sGoals;
+        const moments = surveyMoments.length ? surveyMoments : sMoments;
+        const favs = Array.from(new Set([...favorites, ...sFavs]));
+        if (!surveyGoals.length && sGoals.length) setSurveyGoals(sGoals);
+        if (!surveyMoments.length && sMoments.length) setSurveyMoments(sMoments);
+        if (favs.length !== favorites.length) {
+          setFavorites(favs);
+          await replaceFavorites(favs);
+        }
+        // persist adopted survey answers so the next open doesn't need the server
+        if ((!surveyGoals.length && sGoals.length) || (!surveyMoments.length && sMoments.length)) {
+          const survey = await getJSON<Record<string, unknown>>('cc.onboarding', {});
+          await setJSON('cc.onboarding', { ...survey, goals, moments });
+        }
+        await api.putPrefs(token, { goals, moments, favorites: favs });
+      } catch {
+        /* offline — purely best-effort */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // one reconcile per session: keyed on sign-in only, reading the hydrate-time
+    // local values (a mid-session favourite lands on the next open's reconcile)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, token]);
 
   // When the signed-in ACCOUNT changes (sign-out, or switching users), wipe the
@@ -329,8 +376,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       favoriteIds: favorites,
       goals: surveyGoals,
       moments: surveyMoments,
+      workedBefore: trackWins,
     }),
-    [feeling, intent, mode, recents, favorites, surveyGoals, surveyMoments]
+    [feeling, intent, mode, recents, favorites, surveyGoals, surveyMoments, trackWins]
   );
   const recommendedTrackIds = useMemo(() => recommendTracks(recoAnswer), [recoAnswer]);
   // The HERO / "Begin wind-down" CTA must be free-PLAYABLE for a free, non-kids user —

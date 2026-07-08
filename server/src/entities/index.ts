@@ -12,3 +12,5 @@ export * from './push-token.entity';
 export * from './analytics-event.entity';
 export * from './caregiver-link.entity';
 export * from './caregiver-invite.entity';
+export * from './auth-code.entity';
+export * from './refresh-token.entity';

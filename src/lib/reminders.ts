@@ -91,3 +91,32 @@ export async function clearTrialEndingReminder(): Promise<void> {
   if (!supported) return;
   await Notifications.cancelScheduledNotificationAsync(TRIAL_ID).catch(() => {});
 }
+
+const RECAP_ID = 'cc-weekly-recap';
+
+/**
+ * Weekly calm recap — one gentle Sunday-evening note pointing back at the app
+ * (the calm-nights card shows the real week; the notification itself makes no
+ * claims, since local notifications can't know the count at fire time). Opt-in,
+ * separately cancellable, and returns whether one is actually scheduled.
+ */
+export async function setWeeklyRecapReminder(enabled: boolean): Promise<boolean> {
+  if (!supported) return false;
+  try {
+    await Notifications.cancelScheduledNotificationAsync(RECAP_ID).catch(() => {});
+    if (!enabled) return false;
+    if (!(await ensurePermission())) return false;
+    await Notifications.scheduleNotificationAsync({
+      identifier: RECAP_ID,
+      content: {
+        title: 'Your calm week',
+        body: 'Take a quiet look back at the nights you wound down this week.',
+      },
+      // Sunday 7pm local — after the weekend, before the wind-down hour
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0 },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}

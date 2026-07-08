@@ -50,26 +50,54 @@ export const api = {
   platformNote: Platform.OS,
   health: () => req<{ ok: boolean }>('/health'),
   login: (email: string, password: string) =>
-    req<{ token: string; user: ApiUser }>('/auth/login', {
+    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
   register: (email: string, password: string, name: string) =>
-    req<{ token: string; user: ApiUser }>('/auth/register', {
+    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     }),
   // Sign in with Apple / Google — backend verifies the identity token (§6/§8)
   social: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) =>
-    req<{ token: string; user: ApiUser }>('/auth/social', {
+    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/social', {
       method: 'POST',
       body: JSON.stringify({ provider, idToken, authorizationCode }),
     }),
+  // Password reset (emailed 6-digit code; server never reveals whether an email exists)
+  forgotPassword: (email: string) =>
+    req<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/password/reset', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword }),
+    }),
+  // Rotating session refresh + server-side logout (revokes the refresh token)
+  refresh: (refreshToken: string) =>
+    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }),
+  logout: (refreshToken: string) =>
+    req<{ ok: boolean }>('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }),
+  // Email verification (soft gate)
+  sendEmailVerification: (token: string) =>
+    req<{ ok: boolean }>('/auth/email/send-verification', { method: 'POST' }, token),
+  verifyEmail: (token: string, code: string) =>
+    req<{ ok: boolean; emailVerified: boolean }>('/auth/email/verify', { method: 'POST', body: JSON.stringify({ code }) }, token),
+  // App Store UGC 1.2 — report an objectionable community post
+  communityReport: (token: string, postId: string) =>
+    req<{ ok: boolean }>('/community/report', { method: 'POST', body: JSON.stringify({ postId }) }, token),
   me: (token: string) => req<{ user: ApiUser; entitlement: ApiEntitlement }>('/me', {}, token),
   // permanent account + data deletion (Apple 5.1.1(v) / COPPA / GDPR)
   deleteAccount: (token: string) => req<{ ok: boolean; deleted: boolean }>('/me', { method: 'DELETE' }, token),
   // GDPR/UK-GDPR/AU-APP12 data-access export (the caller's own data as JSON)
   exportMe: (token: string) => req<Record<string, unknown>>('/me/export', {}, token),
+  // cross-device preference sync — allow-listed keys only; feeling is NEVER synced
+  getPrefs: (token: string) => req<Record<string, unknown>>('/me/prefs', {}, token),
+  putPrefs: (token: string, prefs: Record<string, unknown>) =>
+    req<Record<string, unknown>>('/me/prefs', { method: 'PUT', body: JSON.stringify(prefs) }, token),
   content: () => req<{ tracks: unknown[]; programs: unknown[]; newThisMonth?: string[] }>('/content'),
   devices: (token: string) => req<unknown[]>('/devices', {}, token),
   registerDevice: (token: string, data: { serial: string; purchaseDate?: string; retailer?: string }) =>

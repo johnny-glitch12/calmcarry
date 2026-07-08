@@ -23,10 +23,21 @@ export class Owner {
   @Column()
   name: string;
 
+  // email-verification state (soft gate: verified accounts get the badge/banner
+  // cleared; nothing is hard-blocked on it for a sleep app)
+  @Column({ default: false })
+  emailVerified: boolean;
+
   // Sign in with Apple refresh token — kept ONLY so we can call Apple's /auth/revoke
   // when this account is deleted (Apple's account-deletion requirement). Never exported.
   @Column({ type: 'text', nullable: true })
   appleRefreshToken: string | null;
+
+  // Cross-device preference sync (allow-listed keys only, enforced in UsersService).
+  // NEVER holds mood/feeling — the nightly check-in must not become a stored mood
+  // log anywhere, server included (build plan §3/§14).
+  @Column({ type: 'simple-json', nullable: true })
+  prefs: Record<string, unknown> | null;
 
   @CreateDateColumn()
   createdAt: Date;

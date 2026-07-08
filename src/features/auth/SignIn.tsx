@@ -15,6 +15,7 @@ import Animated, {
 
 import { Appear, AppText, Crossfade, FlowTransition, FormField, Logo, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { PRIVACY_URL, TERMS_URL } from '@/content/store';
 import { brand, dur, ease, useTheme } from '@/theme';
@@ -69,6 +70,10 @@ export function SignIn() {
   const router = useRouter();
   const { signIn, register, socialSignIn } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  // forgot-password sub-flow (emailed 6-digit code -> new password -> signed in)
+  const [forgot, setForgot] = useState<null | 'email' | 'code'>(null);
+  const [fpCode, setFpCode] = useState('');
+  const [fpNew, setFpNew] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -164,6 +169,43 @@ export function SignIn() {
     }
   };
 
+  // forgot-password: email a 6-digit code, then trade code + new password for a
+  // session (the server signs the user in; we reuse signIn for the provider state)
+  const submitForgot = async () => {
+    if (busy) return;
+    setError(null);
+    if (forgot === 'email') {
+      if (!email.trim()) {
+        setError('Enter your email first.');
+        return;
+      }
+      setBusy(true);
+      try {
+        await api.forgotPassword(email.trim());
+        setForgot('code');
+      } catch {
+        setError('We couldn’t send the code just now. Try again in a moment.');
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    if (fpCode.trim().length !== 6 || fpNew.length < 8) {
+      setError('Enter the 6-digit code and a new password of at least 8 characters.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.resetPassword(email.trim(), fpCode.trim(), fpNew);
+      await signIn(email.trim(), fpNew);
+      router.replace('/');
+    } catch {
+      setError('That code doesn’t look right. Check the email and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // auth is a MODAL — modal presentation reports a small top inset, so add explicit
   // top padding or the close-X + orb sit cramped against the sheet's top edge.
   return (
@@ -182,9 +224,9 @@ export function SignIn() {
           accessibilityIgnoresInvertColors
         />
         <Logo size="lg" tagline style={{ marginTop: 8 }} />
-        <SwapText trigger={mode} style={{ marginTop: 10 }}>
+        <SwapText trigger={forgot ?? mode} style={{ marginTop: 10 }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
-            {isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}
+            {forgot ? 'Reset your password' : isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}
           </AppText>
         </SwapText>
         {/* device significance (Mason): the app exists FOR the Glow Orb */}
@@ -229,7 +271,7 @@ export function SignIn() {
 
       <Reveal index={2} style={{ marginTop: 32 }}>
         <FlowTransition style={{ gap: 16 }}>
-          {isSignup ? (
+          {isSignup && forgot === null ? (
             <Appear>
               <FormField label="Your name" value={name} onChangeText={setName} placeholder="First name" icon="user" autoComplete="name" />
             </Appear>
@@ -244,16 +286,62 @@ export function SignIn() {
             autoCapitalize="none"
             autoComplete="email"
           />
-          <FormField
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            icon="lock"
-            autoCapitalize="none"
-            secureTextEntry
-            autoComplete={isSignup ? 'new-password' : 'current-password'}
-          />
+          {forgot === null ? (
+            <FormField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              icon="lock"
+              autoCapitalize="none"
+              secureTextEntry
+              autoComplete={isSignup ? 'new-password' : 'current-password'}
+            />
+          ) : null}
+          {forgot === 'code' ? (
+            <Appear>
+              <View style={{ gap: 16 }}>
+                <AppText variant="caption" tone="muted" style={{ textTransform: 'none', letterSpacing: 0, lineHeight: 18 }}>
+                  If that email has an account, a 6-digit code is on its way. It expires in 15 minutes.
+                </AppText>
+                <FormField
+                  label="6-digit code"
+                  value={fpCode}
+                  onChangeText={setFpCode}
+                  placeholder="123456"
+                  icon="hash"
+                  keyboardType="number-pad"
+                  autoCapitalize="none"
+                  autoComplete="one-time-code"
+                />
+                <FormField
+                  label="New password"
+                  value={fpNew}
+                  onChangeText={setFpNew}
+                  placeholder="••••••••"
+                  icon="lock"
+                  autoCapitalize="none"
+                  secureTextEntry
+                  autoComplete="new-password"
+                />
+              </View>
+            </Appear>
+          ) : null}
+          {!isSignup && forgot === null ? (
+            <PressableScale
+              onPress={() => {
+                setForgot('email');
+                setError(null);
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+              accessibilityRole="button"
+              dimTo={0.85}
+              style={{ alignSelf: 'flex-start' }}>
+              <AppText variant="label" style={{ color: c.textAccent }}>
+                Forgot password?
+              </AppText>
+            </PressableScale>
+          ) : null}
           {isSignup ? (
             <Appear>
               <PressableScale
@@ -309,8 +397,12 @@ export function SignIn() {
         {/* CTA copy is mode-dependent; crossfade the button on toggle so the label
             doesn't swap in a single frame (SwapText can't wrap PrimaryButton's
             string `label`, so a keyed Appear carries the dip-and-swap). */}
-        <Appear key={mode}>
-          <PrimaryButton label={isSignup ? 'Create account' : 'Sign in'} onPress={submit} loading={busy} />
+        <Appear key={forgot ?? mode}>
+          <PrimaryButton
+            label={forgot === 'email' ? 'Email me a code' : forgot === 'code' ? 'Set new password' : isSignup ? 'Create account' : 'Sign in'}
+            onPress={forgot ? submitForgot : submit}
+            loading={busy}
+          />
         </Appear>
         {/* Terms + Privacy acceptance (App Store / Play requirement) — implicit via "by continuing" */}
         <AppText
@@ -328,18 +420,24 @@ export function SignIn() {
       <Reveal index={4} style={{ alignItems: 'center', marginTop: 24 }}>
         <PressableScale
           onPress={() => {
-            setMode(isSignup ? 'signin' : 'signup');
+            if (forgot) {
+              setForgot(null);
+              setFpCode('');
+              setFpNew('');
+            } else {
+              setMode(isSignup ? 'signin' : 'signup');
+            }
             setError(null);
           }}
           hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
           accessibilityRole="button"
           dimTo={0.85}
           style={{ paddingVertical: 4 }}>
-          <SwapText trigger={mode}>
+          <SwapText trigger={forgot ?? mode}>
             <AppText variant="label" tone="muted">
-              {isSignup ? 'Already have an account? ' : 'New here? '}
+              {forgot ? '' : isSignup ? 'Already have an account? ' : 'New here? '}
               <AppText variant="label" style={{ color: c.textAccent }}>
-                {isSignup ? 'Sign in' : 'Create an account'}
+                {forgot ? 'Back to sign in' : isSignup ? 'Sign in' : 'Create an account'}
               </AppText>
             </AppText>
           </SwapText>

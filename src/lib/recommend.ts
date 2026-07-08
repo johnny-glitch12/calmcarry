@@ -9,9 +9,10 @@ import type { AppMode, Feeling, Intent } from '@/features/profile/ProfileProvide
  * CMS-ready (Glowco's library just ships the same tags per track).
  *
  * Signal weights (strongest first): feeling/intent match (+3 each) > favourite
- * (+2.5) > goal/moment affinities (+1.5) > taste-by-category (+0.75/fav cat,
- * capped) > time-of-day fit (+1) > recency nudge (max +1.5). Nothing below a
- * direct feeling match can hijack the top slot.
+ * (+2.5) > worked-before (completed wind-downs, max +2.1) > goal/moment
+ * affinities (+1.5) > taste-by-category (+0.75/fav cat, capped) > time-of-day
+ * fit (+1) > recency nudge (max +1.5). Nothing below a direct feeling match can
+ * hijack the top slot.
  */
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -135,6 +136,8 @@ export type Answer = {
   goals?: string[];
   /** onboarding survey: when they want help (MOMENTS keys) */
   moments?: string[];
+  /** completed wind-downs per track (cc.trackWins) — behavioural "it worked" signal */
+  workedBefore?: Record<string, number>;
 };
 
 function scoreOne(id: string, answer: Answer, part: TimeOfDay, favCats: Map<string, number>): number {
@@ -149,6 +152,8 @@ function scoreOne(id: string, answer: Answer, part: TimeOfDay, favCats: Map<stri
   if (answer.intent && t.category === INTENT_CATEGORY[answer.intent]) s += 1;
   // taste: direct favourite, plus a capped same-category affinity from all favourites
   if (answer.favoriteIds?.includes(id)) s += 2.5;
+  // wind-downs this track carried to the end — strong, but a tonight-feeling match still wins
+  s += Math.min(answer.workedBefore?.[id] ?? 0, 3) * 0.7;
   s += Math.min((favCats.get(t.category) ?? 0) * 0.75, 1.5);
   // the survey: goals + moments → category boosts (time-gated where it matters)
   for (const g of answer.goals ?? []) {
@@ -189,6 +194,7 @@ export function explainRecommendation(id: string, answer: Answer): string | null
   if (!t) return null;
   const part = timeOfDay(answer.hour);
   if (answer.favoriteIds?.includes(id)) return 'One of your saved favourites';
+  if ((answer.workedBefore?.[id] ?? 0) >= 2) return 'It’s carried you to the end of a wind-down before';
   if ((answer.recentIds ?? []).slice(0, 3).includes(id)) return 'Pick up where you left off';
   if (part === 'night' && answer.moments?.includes('night-wakes') && t.category === 'noise')
     return 'Steady masking for the night wake-ups you mentioned';

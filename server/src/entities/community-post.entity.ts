@@ -27,6 +27,10 @@ export class CommunityPost {
   @Column({ type: 'text', default: 'pending' })
   status: ModerationStatus;
 
+  /** member reports (App Store UGC 1.2): thresholds re-hold / remove the post */
+  @Column({ type: 'int', default: 0 })
+  reportsCount: number;
+
   /** optional shared sound-machine mix — anonymous (carries no PII). null for an
    *  ordinary text win. Sanitised on write: only known sound keys, levels 1–3. */
   @Column({ type: 'simple-json', nullable: true })

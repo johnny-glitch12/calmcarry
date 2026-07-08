@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /** Tiny typed AsyncStorage helpers for local persistence / offline fallback. */
 export const KEYS = {
   token: 'cc.token',
+  refresh: 'cc.refresh',
   user: 'cc.user',
   entitlement: 'cc.entitlement',
   devices: 'cc.devices',

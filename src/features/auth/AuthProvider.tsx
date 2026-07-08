@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const { token: t, user: u } = await api.login(email, password);
+      const { token: t, refreshToken: rt, user: u } = await api.login(email, password);
       let ent: ApiEntitlement = FREE;
       try {
         ent = (await api.me(t)).entitlement;
@@ -174,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus('authed');
       track('sign_in');
       await Promise.all([secureSet(KEYS.token, t), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, ent)]);
+      if (rt) await secureSet(KEYS.refresh, rt);
     } catch (e) {
       // wrong credentials → surface to the UI (do NOT log in)
       const status = (e as { status?: number })?.status;
@@ -192,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (email: string, password: string, name: string) => {
     try {
-      const { token: t, user: u } = await api.register(email, password, name);
+      const { token: t, refreshToken: rt, user: u } = await api.register(email, password, name);
       setToken(t);
       setUser(u);
       setEntitlement(FREE); // new accounts start free
@@ -200,6 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus('authed');
       track('sign_up');
       await Promise.all([secureSet(KEYS.token, t), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, FREE)]);
+      if (rt) await secureSet(KEYS.refresh, rt);
     } catch (e) {
       const status = (e as { status?: number })?.status;
       if (status === 409 || status === 400) throw e; // email taken / invalid
@@ -215,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const socialSignIn = useCallback(async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => {
     // backend verifies the token, creates/resumes the household, returns our JWT
-    const { token: t, user: u } = await api.social(provider, idToken, authorizationCode);
+    const { token: t, refreshToken: rt, user: u } = await api.social(provider, idToken, authorizationCode);
     let ent: ApiEntitlement = FREE;
     try {
       ent = (await api.me(t)).entitlement;
@@ -229,15 +231,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authed');
     track('sign_in', { method: provider });
     await Promise.all([secureSet(KEYS.token, t), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, ent)]);
+    if (rt) await secureSet(KEYS.refresh, rt);
   }, []);
 
   const signOut = useCallback(async () => {
+    // revoke the refresh token server-side (real logout, not just local) — best-effort
+    try {
+      const rt = await secureGet(KEYS.refresh);
+      if (rt) api.logout(rt).catch(() => {});
+    } catch {
+      /* secure store unavailable — still clear locally */
+    }
     clearAudioSourceCache(); // drop any signed CDN URLs so the next account re-resolves cleanly
     setToken(null);
     setUser(null);
     setEntitlement(FREE);
     setStatus('guest');
-    await Promise.all([secureDelete(KEYS.token), remove(KEYS.user, KEYS.entitlement)]);
+    await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement)]);
   }, []);
 
   const activatePremium = useCallback(async () => {

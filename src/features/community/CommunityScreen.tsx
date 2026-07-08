@@ -17,7 +17,7 @@ import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { setPendingMix } from '@/lib/mixShare';
-import { dur, ease, type as typeScale, useTheme } from '@/theme';
+import { brand, dur, ease, type as typeScale, useTheme } from '@/theme';
 
 /** Pressure-free filter chip — the selected fill EASES in (overlay) and the label
  *  color interpolates, so tapping Latest/With a mix never hard-swaps. */
@@ -62,13 +62,26 @@ type Win = { key: string; handle: string; text: string; when: string; pending?: 
 /** A single feed card. Anonymous handle + soft moon glyph, the win, an optional
  *  "Load this mix" card, and a count-less, one-way "Carried this with you" tap that
  *  acknowledges without a leaderboard. No reply/DM/share-message — wins are one-way. */
-function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
+function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => void; onReport?: () => Promise<unknown> }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const soundCount = win.mix ? Object.keys(win.mix.levels).length : 0;
   const [carried, setCarried] = useState(false);
+  // App Store UGC 1.2: a report mechanism on every post. Two-tap (arm → confirm)
+  // so a stray touch can't file one; 'done' is terminal for this card.
+  const [report, setReport] = useState<'idle' | 'armed' | 'done'>('idle');
   const scale = useSharedValue(1);
   const reactStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const flag = () => {
+    if (report === 'idle') {
+      setReport('armed');
+      return;
+    }
+    if (report !== 'armed') return;
+    setReport('done'); // optimistic — the server accepts reports without acknowledging post existence
+    onReport?.().catch(() => {});
+  };
 
   const carry = () => {
     if (carried) return; // one-way, idempotent — no toggle-off, no count
@@ -139,14 +152,14 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
           </AppText>
         </Appear>
       ) : (
-        <Appear key="carry" enter={dur.sheet}>
+        <Appear key="carry" enter={dur.sheet} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
           <PressableScale
             onPress={carry}
             accessibilityRole="button"
             accessibilityState={{ selected: carried }}
             accessibilityLabel={carried ? 'You carried this win' : 'Acknowledge this win'}
             hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
-            style={{ alignSelf: 'flex-start', marginTop: 12 }}>
+            style={{ alignSelf: 'flex-start' }}>
             <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, reactStyle]}>
               <Crossfade
                 style={{ width: 14, height: 14 }}
@@ -161,6 +174,28 @@ function WinCard({ win, onLoadMix }: { win: Win; onLoadMix?: () => void }) {
               </SwapText>
             </Animated.View>
           </PressableScale>
+          {/* quiet report affordance, right-aligned so it never competes with the win */}
+          {onReport ? (
+            <PressableScale
+              onPress={flag}
+              disabled={report === 'done'}
+              accessibilityRole="button"
+              accessibilityLabel={report === 'done' ? 'Post reported' : report === 'armed' ? 'Confirm report' : 'Report this post'}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }}
+              dimTo={0.85}
+              style={{ marginLeft: 'auto' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Feather name="flag" size={13} color={report === 'armed' ? brand.coral : report === 'done' ? c.textAccent : c.dim} />
+                <SwapText trigger={report}>
+                  <AppText
+                    variant="meta"
+                    style={{ color: report === 'armed' ? brand.coral : report === 'done' ? c.textAccent : c.dim }}>
+                    {report === 'done' ? 'Reported' : report === 'armed' ? 'Report?' : 'Report'}
+                  </AppText>
+                </SwapText>
+              </View>
+            </PressableScale>
+          ) : null}
         </Appear>
       )}
     </Card>
@@ -341,7 +376,13 @@ export function CommunityScreen() {
               // per-card enter/exit so an optimistic share fades in at the top and a
               // failed share rolls back with a fade, not a pop
               <Appear key={w.key} enter={dur.sheet}>
-                <WinCard win={w} onLoadMix={w.mix ? () => loadSharedMix(w.mix!.levels) : undefined} />
+                <WinCard
+                  win={w}
+                  onLoadMix={w.mix ? () => loadSharedMix(w.mix!.levels) : undefined}
+                  // only real backend posts are reportable (temp- keys are your own
+                  // optimistic share still reconciling; comp/offline has no backend)
+                  onReport={token && token !== 'local' && !w.key.startsWith('temp-') ? () => api.communityReport(token, w.key) : undefined}
+                />
               </Appear>
             ))
           ) : error ? (

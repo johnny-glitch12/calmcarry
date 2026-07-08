@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { IsObject, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard, JwtPayload } from '../auth/jwt-auth.guard';
@@ -15,6 +15,13 @@ class CreatePostDto {
   @IsOptional()
   @IsObject()
   mix?: Record<string, unknown>;
+}
+
+class ReportPostDto {
+  @IsString()
+  @MinLength(8)
+  @MaxLength(64)
+  postId: string;
 }
 
 /** Adults-only, anonymous-by-default wins wall. The client gates this to adult profiles. */
@@ -35,5 +42,12 @@ export class CommunityController {
   @Post('posts')
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreatePostDto) {
     return this.community.create(user.sub, dto.text, dto.mix);
+  }
+
+  // App Store UGC 1.2: members can report objectionable content. Always 200.
+  @Post('report')
+  @HttpCode(200)
+  report(@Body() dto: ReportPostDto) {
+    return this.community.report(dto.postId);
   }
 }

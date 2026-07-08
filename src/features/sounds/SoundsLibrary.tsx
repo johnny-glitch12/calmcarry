@@ -24,14 +24,18 @@ type Rail = { kicker: string; title: string; ids: string[] };
 const ADULT_RAILS: Rail[] = [
   { kicker: '', title: 'Quick calm', ids: ['box-breathing'] },
   { kicker: 'Tonight', title: 'Wind down & sleep', ids: ['deep-rest', 'letting-go', 'penguin', 'slow-tide'] },
-  { kicker: '', title: 'Soundscapes', ids: ['dawn-chorus', 'shoreline', 'fireside', 'rainfall', 'forest', 'rain-fire', 'rain-ocean', 'rain-forest', 'beach-fire'] },
-  { kicker: '', title: 'Music', ids: ['gymnopedie', 'spa', 'rain-piano'] },
-  { kicker: '', title: 'Noise & masking', ids: ['brown-noise', 'pink-noise', 'white-noise', 'green-noise', 'fan'] },
+  { kicker: '', title: 'Rain', ids: ['rainfall', 'rain-window', 'rain-tent', 'rain-heavy', 'rain-distant', 'rain-forest', 'rain-fire', 'rain-ocean'] },
+  { kicker: '', title: 'Soundscapes', ids: ['dawn-chorus', 'shoreline', 'fireside', 'forest', 'beach-fire', 'the-cabin', 'forest-campfire', 'storm-rolling', 'shore-morning', 'deep-swell', 'sea-dunes', 'forest-dusk', 'birds-far', 'embers', 'fireside-hush'] },
+  { kicker: '', title: 'Wind & air', ids: ['soft-wind', 'leaf-wind', 'mountain-wind', 'winter-wind'] },
+  { kicker: '', title: 'Music', ids: ['gymnopedie', 'spa', 'rain-piano', 'piano-fire', 'piano-sea', 'piano-birds', 'gymnopedie-rain'] },
+  { kicker: '', title: 'Fans & hums', ids: ['fan', 'ceiling-fan', 'desk-fan', 'airplane-cabin', 'night-train', 'ac-hum', 'night-drive', 'tumble-dryer'] },
+  { kicker: '', title: 'Noise & masking', ids: ['brown-noise', 'deep-brown', 'pink-noise', 'warm-pink', 'white-noise', 'soft-white', 'green-noise'] },
+  { kicker: '', title: 'For little ones', ids: ['womb', 'heartbeat', 'shush', 'penguin'] },
 ];
 
 const KIDS_RAILS: Rail[] = [
-  { kicker: 'Bedtime', title: 'Calm for little ones', ids: ['penguin'] },
-  { kicker: 'Calm sounds', title: 'Drift off', ids: ['forest', 'rainfall', 'slow-tide'] },
+  { kicker: 'Bedtime', title: 'Calm for little ones', ids: ['penguin', 'womb', 'heartbeat', 'shush'] },
+  { kicker: 'Calm sounds', title: 'Drift off', ids: ['forest', 'rainfall', 'slow-tide', 'rain-tent', 'night-drive'] },
   { kicker: 'Wind down', title: 'Calm breathing', ids: ['box-breathing'] },
 ];
 

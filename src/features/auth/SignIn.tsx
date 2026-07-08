@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { Image } from 'expo-image';
 import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,7 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Appear, AppText, Crossfade, FlowTransition, FormField, GlowOrb, Logo, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
+import { Appear, AppText, Crossfade, FlowTransition, FormField, Logo, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { lightTap } from '@/lib/haptics';
 import { PRIVACY_URL, TERMS_URL } from '@/content/store';
@@ -172,8 +173,15 @@ export function SignIn() {
       </PressableScale>
 
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 24 }}>
-        <GlowOrb size={84} reserveGlow aura />
-        <Logo size="lg" tagline style={{ marginTop: 14 }} />
+        {/* the device itself (Mason: show the Glow Orb on login) — the watercolour
+            hands-cradling-the-orb illustration, same art language as the covers */}
+        <Image
+          source={require('../../../assets/images/onboarding/pricing-orb.png')}
+          style={{ width: 180, height: 150, marginBottom: -8 }}
+          contentFit="contain"
+          accessibilityIgnoresInvertColors
+        />
+        <Logo size="lg" tagline style={{ marginTop: 8 }} />
         <SwapText trigger={mode} style={{ marginTop: 10 }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
             {isSignup ? 'Create your CalmCarry account' : 'Sign in to your CalmCarry account'}

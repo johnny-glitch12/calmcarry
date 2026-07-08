@@ -9,6 +9,7 @@ import { type AudioSource } from 'expo-audio';
 export type AudioKey =
   | 'ocean' | 'rain' | 'forest' | 'drone' | 'piano' | 'gymnopedie' | 'fire' | 'waves'
   | 'birdsong' | 'brown' | 'pink' | 'white' | 'green' | 'rainFire' | 'rainOcean'
+  | 'rainForest' | 'beachFire' | 'rainPiano' | 'fan'
   | 'guidedBox' | 'guidedRest' | 'guidedLetGo'
   | 'voiceMaya' | 'voiceOrion' | 'voiceLuna';
 
@@ -30,6 +31,11 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   // honest one-tap scenes mixed with ffmpeg; loudness-normalized loop beds.
   rainFire: require('../../assets/audio/rain-fire.mp3'),
   rainOcean: require('../../assets/audio/rain-ocean.mp3'),
+  rainForest: require('../../assets/audio/rain-forest.mp3'),
+  beachFire: require('../../assets/audio/beach-fire.mp3'),
+  rainPiano: require('../../assets/audio/rain-piano.mp3'),
+  // in-house synthesized box-fan hum (brown noise band-shaped + slow 1Hz wobble)
+  fan: require('../../assets/audio/fan.mp3'),
 
   // Voiced guided sessions — narration mixed over a soft ambient bed (replaces the
   // old silent drone). Synthesized VO for now; Glowco can swap in human recordings.
@@ -44,4 +50,4 @@ export const audioSources: Record<AudioKey, AudioSource> = {
 
 /** Required attribution for the CC BY tracks (shown in Account). */
 export const AUDIO_CREDITS =
-  'Attribution (CC BY 3.0): “Prelude in C” by Kevin MacLeod (incompetech.com); “Campfire” by Glaneur de sons; “Water on Rocks” by Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white / green noise beds are generated in-house (royalty-free). Guided-session narration and the bedtime-voice previews are AI-generated (synthesized) voice, pending human recordings.';
+  'Attribution (CC BY 3.0): “Prelude in C” by Kevin MacLeod (incompetech.com); “Campfire” by Glaneur de sons; “Water on Rocks” by Dsw4 (Wikimedia Commons). “Gymnopédie No. 1” (Erik Satie), the dawn birdsong, and the rain / ocean / forest / drone ambiences are CC0 / public domain. The brown / pink / white / green noise beds and the fan hum are generated in-house (royalty-free), and the blended scenes (rain + fire / sea / forest / piano) are in-house mixes of the recordings credited above. Guided-session narration and the bedtime-voice previews are AI-generated (synthesized) voice, pending human recordings.';

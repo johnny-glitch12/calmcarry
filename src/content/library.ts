@@ -64,6 +64,16 @@ export const TRACKS: Record<string, Track> = {
     about: 'Our blend of the real rain and campfire recordings: shelter and warmth in one scene.' },
   'rain-ocean': { id: 'rain-ocean', title: 'Rain over the Sea', subtitle: 'Rainfall · slow swell beneath', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'rainOcean', locked: true,
     about: 'Our blend of rainfall over a slow ocean swell: layered, deep, and steady for all-night play.' },
+  // new in-house blends + one generated bed (2026-07). Covers reuse existing art
+  // until bespoke covers are produced (same precedent as green-noise/rain-fire).
+  'rain-forest': { id: 'rain-forest', title: 'Rain in the Forest', subtitle: 'Rainfall through the leaves', cover: 'forestStream', duration: 'loops', category: 'soundscape', audio: 'rainForest', locked: true,
+    about: 'Our blend of the real rain and forest recordings: rainfall with birdsong and a soft stream beneath. Sheltered and green.' },
+  'beach-fire': { id: 'beach-fire', title: 'Beach Bonfire', subtitle: 'Waves · a close crackle', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'beachFire', locked: true,
+    about: 'Our blend of the shoreline and campfire recordings: a small fire close by, the sea a little further out.' },
+  'rain-piano': { id: 'rain-piano', title: 'Piano in the Rain', subtitle: 'Soft keys · steady rain', cover: 'rainfall', duration: 'loops', category: 'music', audio: 'rainPiano', locked: true,
+    about: 'Soft solo piano over the real rain recording. Music forward, weather behind; a gentle way to end the evening.' },
+  fan: { id: 'fan', title: 'Soft Fan', subtitle: 'A steady box-fan hum', cover: 'brownNoise', duration: 'loops', category: 'noise', audio: 'fan', locked: true,
+    about: 'A fan hum shaped in-house from brown noise, with the slow wobble of real blades. For everyone who cannot sleep without one.' },
 };
 
 export type Program = {

@@ -41,7 +41,7 @@ import { lightTap } from '@/lib/haptics';
 import { getJSON, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
 
-const NEW_THIS_MONTH = ['gymnopedie', 'shoreline', 'spa'];
+const NEW_THIS_MONTH = ['rain-piano', 'beach-fire', 'rain-forest', 'fan'];
 
 // The always-free one-tap rescue track (never locked) — the honest 3 a.m. answer:
 // no sign-in, no paywall, no quiz, just a gentle drift back to sleep.

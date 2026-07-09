@@ -18,12 +18,4 @@ export class LogsService {
     const log = this.logRepo.create({ ownerId, contentId, deviceId });
     return this.logRepo.save(log);
   }
-
-  listForOwner(ownerId: string): Promise<SessionLog[]> {
-    return this.logRepo.find({
-      where: { ownerId },
-      order: { startedAt: 'DESC' },
-      take: 200, // bound the result set — no unbounded reads
-    });
-  }
 }

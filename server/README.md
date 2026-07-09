@@ -65,8 +65,7 @@ npm run seed
 | GET    | `/devices`            | Bearer | `Device[]` with their warranty claims |
 | POST   | `/devices`            | Bearer | `{ serial, purchaseDate?, retailer? }` → `Device` (warranty `active`, 24mo) |
 | POST   | `/devices/:id/claims` | Bearer | `{ type, description }` → `WarrantyClaim` (`submitted`, reference `GC-CLM-####`) |
-| POST   | `/logs`               | Bearer | `{ contentId?, deviceId?, settledRating? }` → `SessionLog` |
-| GET    | `/logs`               | Bearer | `SessionLog[]` for the current owner (convenience) |
+| POST   | `/logs`               | Bearer | `{ contentId?, deviceId? }` → `SessionLog` (write-only; no mood/settle rating) |
 
 Authenticated routes expect an `Authorization: Bearer <token>` header.
 

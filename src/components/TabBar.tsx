@@ -22,9 +22,10 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // Tab selection POPS (Mason). The slot widths still snap in one frame — no
 // stretching/morphing — but the pill itself lands with a fast, punchy scale-in
 // and ONE small overshoot bounce, like a button that's happy you picked it.
-// Duration-capped spring: bounce peaks early, everything is DONE at 300ms
-// (a physics spring's micro-oscillation tail rang on past 600ms).
-const POP_SPRING = { duration: 300, dampingRatio: 0.55 } as const;
+// Duration-capped spring: bounce peaks early, everything is DONE at 380ms
+// (a physics spring's micro-oscillation tail rang on past 600ms). Tuned live
+// with Mason: 300 read as too quick, 380 keeps the pop but lets it breathe.
+const POP_SPRING = { duration: 380, dampingRatio: 0.55 } as const;
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.

@@ -9,7 +9,6 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,11 +16,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { setTourTarget } from '@/lib/tourTargets';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
-import { brand, dur, ease, fonts, night, spring, themes, useColorSchemePref } from '@/theme';
+import { brand, dur, ease, fonts, night, themes, useColorSchemePref } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-// Tab slot resize + add/remove all move under the same nav-speed layout tween.
-const tabLayout = LinearTransition.duration(dur.nav).easing(ease.inOut).reduceMotion(ReduceMotion.System);
+// ONE clock for the whole tab-select gesture: slot reflow, pill bloom, icon and
+// label all land together, just after the 190ms scene swap. The old mix (700ms
+// soft spring on the pill + 260ms slot tween + 200ms fade) smeared the tap.
+const TAB_SELECT_MS = 210;
+const tabLayout = LinearTransition.duration(TAB_SELECT_MS).easing(ease.out).reduceMotion(ReduceMotion.System);
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.
@@ -53,10 +55,10 @@ const TABS: Record<string, { label: string; night?: boolean }> = {
 /**
  * A single tab in the floating-pill bar. The ACTIVE tab is a solid sage-filled
  * pill with its icon + label inline; INACTIVE tabs are a muted icon only.
- * Selection is REACTIVE: the focus value springs IN (a little overshoot) so the
- * pill blooms and the icon "pops" + lifts, the white icon/label crossfade in, and
- * a tap presses the whole tab down (scale) then springs back — with a light haptic.
- * Everything animates IN PLACE (scale / opacity / tiny vertical lift); nothing
+ * Selection is REACTIVE and lands as ONE gesture: pill bloom, icon, label and
+ * slot reflow share a single fast ease-out clock (TAB_SELECT_MS), so the tap
+ * answers immediately and settles together — with a light haptic.
+ * Everything animates IN PLACE (scale / opacity); nothing
  * translates horizontally between tabs (§4: no sliding indicator). On blur it clears
  * instantly so the shrinking slot leaves no remnant. Honors reduced motion (instant,
  * no pop, no press-scale).
@@ -83,7 +85,7 @@ function TabItem({
 }) {
   const Icon = TAB_ICONS[route as keyof typeof TAB_ICONS] ?? HomeIcon;
   const reduced = useReducedMotion();
-  const t = useSharedValue(focused ? 1 : 0); // focus progress (gentle spring settle)
+  const t = useSharedValue(focused ? 1 : 0); // focus progress (single-clock ease-out)
   const press = useSharedValue(1); // tap press-scale
 
   // report this tab's window rect for the hands-on tour spotlight. Re-measured
@@ -106,22 +108,24 @@ function TabItem({
         ? 1
         : 0
       : focused
-        ? withSpring(1, spring) // bloom in on select — gentle settle, no snappy pop
-        : withTiming(0, { duration: dur.exit, easing: ease.press }); // fade the pill out (slot resize is layout-tweened) instead of snapping
+        ? withTiming(1, { duration: TAB_SELECT_MS, easing: ease.out }) // bloom in ON THE SAME CLOCK as the slot reflow
+        : withTiming(0, { duration: dur.press, easing: ease.press }); // clear fast — the incoming pill is the star
   }, [focused, reduced, t]);
 
   const onPressIn = () => {
-    if (!reduced) press.value = withTiming(0.92, { duration: dur.press, easing: ease.press });
+    if (!reduced) press.value = withTiming(0.94, { duration: dur.press, easing: ease.press });
   };
   const onPressOut = () => {
-    press.value = reduced ? 1 : withSpring(1, spring);
+    // timed release, not the soft spring — a lingering wobble on top of the
+    // pill bloom read as jitter
+    press.value = reduced ? 1 : withTiming(1, { duration: dur.press, easing: ease.press });
   };
 
-  // opacity is clamped defensively; the gentle spring settles toward 1 without
-  // overshoot, so the bloom reads as a soft settle. Press scales the whole tab.
+  // opacity is clamped defensively. Press scales the whole tab; the icon keeps
+  // only a whisper of growth (the old pop + lift + bloom + reflow was noise).
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
-  const fillStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1), transform: [{ scale: 0.9 + t.value * 0.1 }] }));
-  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + t.value * 0.07 }, { translateY: -t.value }] }));
+  const fillStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1), transform: [{ scale: 0.94 + t.value * 0.06 }] }));
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + t.value * 0.04 }] }));
   const overlayStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1) }));
   const labelStyle = useAnimatedStyle(() => ({
     opacity: Math.min(t.value, 1),

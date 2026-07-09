@@ -5,11 +5,13 @@ import { dur } from '@/theme';
 
 export default function TabsLayout() {
   return (
-    // Tab switches cross-FADE (opacity only) — never a hard cut and never a
-    // full-screen slide. An instant scene swap is a jolt to a settling brain; a
-    // soft, unhurried dissolve (dur.modal) lets the eye follow the change. Each
-    // screen still does its subtle one-time entrance the first time it's opened
-    // (Reveal), so this only softens the switch itself — no re-staggering, no slop.
+    // Tab switches cross-fade FAST (dur.tab) with an OVERLAP curve — never a hard
+    // cut, but never a laggy dissolve either. The built-in 'fade' preset makes
+    // both scenes half-transparent at the midpoint, so the dark root bled through
+    // as a visible dim-blink; this interpolator holds each scene fully opaque
+    // through the middle (combined coverage never drops), so the new tab simply
+    // materializes over the old one. Each screen still does its one-time entrance
+    // on first open (Reveal) — this only shapes the switch itself.
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -19,7 +21,17 @@ export default function TabsLayout() {
         // (Listen is the heaviest first mount, so the freeze race shows there
         // first). The sound machine must keep living across tab switches anyway.
         animation: 'fade',
-        transitionSpec: { animation: 'timing', config: { duration: dur.modal } },
+        transitionSpec: { animation: 'timing', config: { duration: dur.tab } },
+        sceneStyleInterpolator: ({ current }) => ({
+          sceneStyle: {
+            // progress: 0 = focused, ±1 = adjacent. Full opacity by 45% of the
+            // way in/out → the two scenes overlap opaque mid-switch (no dip).
+            opacity: current.progress.interpolate({
+              inputRange: [-1, -0.55, 0, 0.55, 1],
+              outputRange: [0, 1, 1, 1, 0],
+            }),
+          },
+        }),
       }}
       tabBar={(props) => <TabBar {...props} />}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />

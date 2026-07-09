@@ -39,6 +39,7 @@ export const spring = {
 
 export const dur = {
   press: 150, // tap feedback — instant-feeling (100–160ms band)
+  tab: 190, // tab switch — answers the finger; softness comes from the overlap fade, not length
   exit: 200, // leaving states (fade-outs, dismissals) — always quicker than arrival
   nav: 260, // route / tab transition — quick + clean, not a showy glide
   sheet: 300,

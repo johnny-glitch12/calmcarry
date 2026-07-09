@@ -20,8 +20,8 @@ import { brand, dur, ease, fonts, night, themes, useColorSchemePref } from '@/th
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // ONE clock for the whole tab-select gesture: slot reflow, pill bloom, icon and
-// label all land together, just after the 190ms scene swap. The old mix (700ms
-// soft spring on the pill + 260ms slot tween + 200ms fade) smeared the tap.
+// label all land together (the scene itself switches instantly). The old mix
+// (700ms soft spring + 260ms slot tween + 200ms fade) smeared the tap.
 const TAB_SELECT_MS = 210;
 const tabLayout = LinearTransition.duration(TAB_SELECT_MS).easing(ease.out).reduceMotion(ReduceMotion.System);
 

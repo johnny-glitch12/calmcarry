@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brand, ThemeProvider, themes, useColorSchemePref, type ThemeMode } from '@/theme';
+import { brand, CONTENT_MAX, ThemeProvider, themes, useColorSchemePref, useResponsive, type ThemeMode } from '@/theme';
 
 type Props = {
   /** 'night' = forced night; 'day' = forced light (KIDS daytime only); 'light' =
@@ -20,6 +20,10 @@ type Props = {
   backdrop?: ReactNode;
   /** bottom inset so content clears the floating tab bar */
   tabBarSpacing?: boolean;
+  /** grid-heavy screens (Library, Listen, Community) get the WIDER content frame
+   *  so tile grids have room for extra columns on tablets; default is the narrow
+   *  reading/form column. Both are centered on wide screens. */
+  wide?: boolean;
 };
 
 /** A soft, STATIC pool of light for atmospheric depth (§3) — sage at night, a
@@ -60,14 +64,23 @@ function DriftBlob({ size, color, top, left, opacity = 0.1 }: {
  * with drifting sage blobs on night (DESIGN_SYSTEM §3). Gradients are
  * background-only, never on every card (§7).
  */
-export function Screen({ mode = 'light', scroll, children, contentStyle, overlay, backdrop, tabBarSpacing }: Props) {
+export function Screen({ mode = 'light', scroll, children, contentStyle, overlay, backdrop, tabBarSpacing, wide }: Props) {
   // Sleep screens force 'night'; everything else is ADAPTIVE — follows the
   // user's appearance preference (light by day, or dark when dark mode is on).
   const { effective } = useColorSchemePref();
   const resolved: ThemeMode = mode === 'night' ? 'night' : mode === 'day' ? 'light' : effective;
   const c = themes[resolved];
   const isNight = resolved === 'night';
+  const { isTablet, gutter } = useResponsive();
   const padBottom = tabBarSpacing ? 108 : 24;
+  const padH = isTablet ? gutter : 24;
+  // TABLET: cap the content column and centre it so text/cards never edge-stretch
+  // on a wide screen (the Calm/Headspace pattern), instead of a phone layout
+  // spanning an iPad. Grid screens get the wider frame. Phones are unaffected
+  // (their width is always below the cap). alignSelf centres the column; the
+  // atmospheric gradient + any backdrop still fill the whole screen behind it.
+  const columnMax = wide ? CONTENT_MAX.wide : CONTENT_MAX.column;
+  const columnStyle: ViewStyle = { width: '100%', maxWidth: columnMax, alignSelf: 'center' };
 
   // Top clearance: the real device inset (notch / Dynamic Island / camera) plus a
   // calm floor so no-notch devices and in-browser views still breathe. We own the
@@ -90,13 +103,14 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
             contentContainerStyle={[
-              { paddingHorizontal: 24, paddingTop: 0, paddingBottom: padBottom },
+              { paddingHorizontal: padH, paddingTop: 0, paddingBottom: padBottom },
+              columnStyle,
               contentStyle,
             ]}>
             {children}
           </ScrollView>
         ) : (
-          <View style={[{ flex: 1, paddingHorizontal: 24, paddingTop: 0 }, contentStyle]}>
+          <View style={[{ flex: 1, paddingHorizontal: padH, paddingTop: 0 }, columnStyle, contentStyle]}>
             {children}
           </View>
         )}

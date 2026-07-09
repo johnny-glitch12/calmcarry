@@ -25,7 +25,7 @@ import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { takePendingMix } from '@/lib/mixShare';
 import { getJSON, remove, setJSON } from '@/lib/store';
-import { dur, ease, spring, useTheme } from '@/theme';
+import { dur, ease, spring, useResponsive, useTheme } from '@/theme';
 
 // Lyric-free instrumental music (build plan §6/§7 — Listen = Music + Sound machine).
 // CMS-extensible; the sound machine below handles ambient sounds.
@@ -152,8 +152,13 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const volStyle = useAnimatedStyle(() => ({ opacity: a.value }));
   const barsStyle = useAnimatedStyle(() => ({ opacity: 0.3 + 0.7 * a.value }));
 
+  // tile width follows the responsive column count (2 phone / 3 tablet / 4 wide);
+  // the ~3%/side slack leaves the row's space-between gaps
+  const cols = useResponsive().gridColumns;
+  const tileWidth = cols >= 4 ? '23%' : cols === 3 ? '31%' : '47%';
+
   return (
-    <View style={{ width: '47%' }}>
+    <View style={{ width: tileWidth }}>
       <PressableScale
         onPress={onToggle}
         accessibilityRole="button"
@@ -542,7 +547,7 @@ export function ListenScreen() {
   };
 
   return (
-    <Screen mode="night" scroll tabBarSpacing contentStyle={{ paddingHorizontal: 0 }}>
+    <Screen mode="night" scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24 }}>
         <AppText variant="caption" tone="muted">
           Listen

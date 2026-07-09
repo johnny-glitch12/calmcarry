@@ -4,3 +4,4 @@ export { fonts, fontMap, type } from './typography';
 export { ease, spring, dur, PRESS_SCALE, STAGGER } from './motion';
 export { ThemeProvider, useTheme } from './ThemeContext';
 export { ColorSchemeProvider, useColorSchemePref, type SchemePref } from './ColorScheme';
+export { useResponsive, BP, CONTENT_MAX, type Responsive } from './responsive';

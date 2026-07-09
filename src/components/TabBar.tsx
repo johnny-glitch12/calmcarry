@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { setTourTarget } from '@/lib/tourTargets';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
-import { brand, dur, ease, fonts, night, themes, useColorSchemePref } from '@/theme';
+import { brand, dur, ease, fonts, night, themes, useColorSchemePref, useResponsive } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // Tab selection POPS (Mason). The slot widths still snap in one frame — no
@@ -218,20 +218,35 @@ export function TabBar({ state, navigation }: TabBarProps) {
   // solid, card-grade surface: elevated tone on night, white by day — the bar
   // must read clearly over any content (and under the tour scrim)
   const barBg = dark ? night.elevated : '#FFFFFF';
+  // TABLET: don't let the pill bar stretch the full width of an iPad — cap it and
+  // centre it (matches the centred content column). Phones stay edge-to-edge with
+  // 16pt margins. alignSelf centres within the absolute-positioned full-width slot.
+  const { isTablet } = useResponsive();
 
   return (
+    // full-width positioner that CENTRES the bar — a pinned left/right box can't
+    // centre itself, so the cap + centring lives here (16pt side padding = the
+    // phone margin; on tablet the bar caps below the available width and centres)
     <View
+      pointerEvents="box-none"
       style={{
         position: 'absolute',
-        left: 16,
-        right: 16,
+        left: 0,
+        right: 0,
         bottom: Math.max(insets.bottom, 12),
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: t.lineSage,
-        ...t.shadow,
+        paddingHorizontal: 16,
+        alignItems: 'center',
       }}>
+      <View
+        style={{
+          width: '100%',
+          ...(isTablet ? { maxWidth: 460 } : null),
+          borderRadius: 24,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: t.lineSage,
+          ...t.shadow,
+        }}>
       <View
         style={{
           flexDirection: 'row',
@@ -275,6 +290,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
               />
             );
           })}
+      </View>
       </View>
     </View>
   );

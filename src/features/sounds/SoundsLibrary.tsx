@@ -126,7 +126,7 @@ export function SoundsLibrary() {
   };
 
   return (
-    <Screen mode={kids ? 'night' : 'light'} scroll tabBarSpacing contentStyle={{ paddingHorizontal: 0 }}>
+    <Screen mode={kids ? 'night' : 'light'} scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24, marginBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <View>

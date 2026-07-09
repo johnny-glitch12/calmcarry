@@ -293,7 +293,7 @@ export function TonightScreen() {
   // intent reason, else a neutral default.
   // why THIS pick, honestly: tonight's check-in line wins; else the recommender's
   // personal reason (favourites / survey answers); else the intent; else neutral.
-  const heroKicker = feeling ? FEELING_MAP[feeling].line : (recommendationReason ?? (intent ? INTENT_REASON[intent] : "Tonight's ritual"));
+  const heroKicker = feeling ? FEELING_MAP[feeling].line : (recommendationReason ?? (intent ? INTENT_REASON[intent] : "Tonight’s ritual"));
   // the next-best matches after the hero pick — ranked to the check-in answer
   const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
   // free 3 a.m. rescue — copy adapts to the hour but always lands on a free track

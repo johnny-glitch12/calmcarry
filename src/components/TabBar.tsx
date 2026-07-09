@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -194,10 +193,11 @@ function TabItem({
 }
 
 /**
- * TabBar — frosted floating bar. The active tab is a solid sage pill (icon +
- * label), inactive tabs are muted icons. Crossfade only — no sliding indicator
- * (DESIGN_SYSTEM §4). Selecting a new tab fires a light haptic. Web gets a
- * near-opaque fallback fill since BlurView is a no-op on web.
+ * TabBar — SOLID floating bar (was frosted glass; the translucent blur read as
+ * mush over busy content and all but vanished under the tour scrim — Mason: "we
+ * can't see it and neither would the consumer"). The active tab is a solid sage
+ * pill (icon + label), inactive tabs are muted icons. Crossfade only — no
+ * sliding indicator (DESIGN_SYSTEM §4). Selecting a new tab fires a light haptic.
  */
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
@@ -214,10 +214,9 @@ export function TabBar({ state, navigation }: TabBarProps) {
   // whereas #15302B on sage is ~5.5:1. (Night already shipped a light-sage pill.)
   const pillBg = dark ? t.ctaBg : brand.sage;
   const pillContent = dark ? t.ctaText : night.ctaText;
-  // BlurView renders transparent on web → use a near-opaque fallback there so the
-  // floating bar stays legible over scrolling content.
-  const web = Platform.OS === 'web';
-  const barBg = dark ? (web ? 'rgba(21,35,31,0.96)' : 'rgba(21,35,31,0.72)') : web ? 'rgba(244,243,237,0.96)' : 'rgba(244,243,237,0.72)';
+  // solid, card-grade surface: elevated tone on night, white by day — the bar
+  // must read clearly over any content (and under the tour scrim)
+  const barBg = dark ? night.elevated : '#FFFFFF';
 
   return (
     <View
@@ -232,9 +231,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
         borderColor: t.lineSage,
         ...t.shadow,
       }}>
-      <BlurView
-        intensity={20}
-        tint={dark ? 'dark' : 'light'}
+      <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -277,7 +274,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
               />
             );
           })}
-      </BlurView>
+      </View>
     </View>
   );
 }

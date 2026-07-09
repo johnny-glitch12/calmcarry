@@ -54,6 +54,7 @@ const STEPS: Step[] = [
 ];
 
 const SCRIM = 'rgba(11,19,18,0.78)';
+const SCRIM_B = 1200; // giant border that paints the scrim with a rounded cutout
 const PAD = 6; // breathing room between the target and the spotlight edge
 
 export function HandsOnTour({ onDone }: { onDone: () => void }) {
@@ -79,13 +80,27 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
   if (!step) return null;
 
   const raw = getTourTarget(step.target);
+  // Tab targets get a clean CIRCLE centred on the icon, sized to sit INSIDE the
+  // pill bar (the raw slot + padding is taller than the bar, so a rect ring poked
+  // past its rounded edges). The hero keeps a rounded rect matched to its card.
+  const isTab = step.target.startsWith('tab-');
+  const CIRCLE = 54;
   const rect = raw
-    ? {
-        x: Math.max(0, raw.x - PAD),
-        y: Math.max(0, raw.y - PAD),
-        w: Math.min(W, raw.width + PAD * 2),
-        h: raw.height + PAD * 2,
-      }
+    ? isTab
+      ? {
+          x: raw.x + raw.width / 2 - CIRCLE / 2,
+          y: raw.y + raw.height / 2 - CIRCLE / 2,
+          w: CIRCLE,
+          h: CIRCLE,
+          r: CIRCLE / 2,
+        }
+      : {
+          x: Math.max(0, raw.x - PAD),
+          y: Math.max(0, raw.y - PAD),
+          w: Math.min(W, raw.width + PAD * 2),
+          h: raw.height + PAD * 2,
+          r: 24, // hero card radius 20 + the spotlight's breathing room
+        }
     : null;
   const interactive = step.advance.startsWith('/');
 
@@ -103,15 +118,29 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
       {rect ? (
         <>
-          {/* scrim in four slabs around the spotlight hole — everywhere else absorbs
-              the tap, so during a hands-on step the ONLY tappable thing is the real
-              control (plus Skip). Pressables (not plain Views) so touches are eaten. */}
-          <Pressable style={[{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y }, block]} />
-          <Pressable style={[{ position: 'absolute', top: rect.y + rect.h, left: 0, right: 0, bottom: 0 }, block]} />
-          <Pressable style={[{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.h }, block]} />
-          <Pressable
-            style={[{ position: 'absolute', top: rect.y, left: rect.x + rect.w, right: 0, height: rect.h }, block]}
+          {/* the scrim is painted by ONE giant-border view whose inner edge is the
+              ROUNDED spotlight cutout — four flat slabs left the hole's corners
+              un-dimmed (a bright square peeking out behind a circular ring). */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: rect.y - SCRIM_B,
+              left: rect.x - SCRIM_B,
+              width: rect.w + SCRIM_B * 2,
+              height: rect.h + SCRIM_B * 2,
+              borderWidth: SCRIM_B,
+              borderColor: SCRIM,
+              borderRadius: SCRIM_B + rect.r,
+              backgroundColor: 'transparent',
+            }}
           />
+          {/* invisible touch-absorbing slabs around the hole — during a hands-on
+              step the ONLY tappable thing is the real control (plus the card). */}
+          <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y }} />
+          <Pressable style={{ position: 'absolute', top: rect.y + rect.h, left: 0, right: 0, bottom: 0 }} />
+          <Pressable style={{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.h }} />
+          <Pressable style={{ position: 'absolute', top: rect.y, left: rect.x + rect.w, right: 0, height: rect.h }} />
           {/* look-only steps keep the hole visible but not tappable */}
           {!interactive ? (
             <Pressable style={{ position: 'absolute', top: rect.y, left: rect.x, width: rect.w, height: rect.h }} />
@@ -125,7 +154,7 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
               left: rect.x,
               width: rect.w,
               height: rect.h,
-              borderRadius: 22,
+              borderRadius: rect.r,
               borderWidth: 2,
               borderColor: c.accent,
               ...c.shadow,

@@ -66,7 +66,37 @@ export const night = {
   },
 } as const;
 
-export type ThemeMode = 'light' | 'night';
+export type ThemeMode = 'light' | 'night' | 'kids';
+
+// KIDS "cozy dusk" — the kids surface used to just borrow the adult light/night
+// palette (clinical cream bg + a near-black card slab = not a kid's bedtime).
+// This is its own warm-dusk identity, still on-brand eucalyptus: a deepening
+// dusky teal-green sky, warm off-white text, cozy elevated cards (never black),
+// a warm PEACH call-to-action + peach-tinted panels, and a soft peach glow
+// (added behind the mascot on KidsHome). Warm, snug, magical — clearly bedtime.
+export const kidsDusk = {
+  deep: '#152A26', // floor / scrim
+  base: '#1B302C', // screen base
+  elevated: '#33514B', // cozy cards (warm mid-dusk, not a black slab)
+  title: '#F2F5ED', // warm off-white
+  text: '#CBD8D1',
+  muted: '#A8BCB4', // readable warm secondary on dusk
+  dim: '#95ABA3',
+  line: 'rgba(255,255,255,0.09)',
+  lineSage: 'rgba(143,201,190,0.32)',
+  glow: '#8FC9BE',
+  peach: '#F1C7A3', // the warmth — CTA, stars, the mascot's halo
+  ctaBg: '#F1C7A3', // Start button: soft peach, inviting for a child
+  ctaText: '#1B302C',
+  washGradient: ['#2E4A44', '#1B302C'] as const,
+  shadow: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+} as const;
 
 /** Shared shape so primitives can read the same keys in either theme. */
 export type ThemeColors = {
@@ -140,5 +170,26 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     danger: brand.coral, // bright coral clears contrast on the dark base
     washGradient: night.washGradient,
     shadow: night.shadow,
+  },
+  kids: {
+    bg: kidsDusk.base,
+    wash: '#2E4A44',
+    surface: kidsDusk.elevated,
+    title: kidsDusk.title,
+    text: kidsDusk.text,
+    muted: kidsDusk.muted,
+    dim: kidsDusk.dim,
+    line: kidsDusk.line,
+    lineSage: kidsDusk.lineSage,
+    ctaBg: kidsDusk.ctaBg,
+    ctaText: kidsDusk.ctaText,
+    accent: kidsDusk.glow,
+    textAccent: '#9AD6C4', // warm luminous sage — headings/kickers pop on dusk
+    panel: 'rgba(241,199,163,0.12)', // peach-tinted soft panel (the stars card) — warmth
+    panelStrong: 'rgba(241,199,163,0.18)',
+    orb: kidsDusk.glow,
+    danger: brand.coral,
+    washGradient: kidsDusk.washGradient,
+    shadow: kidsDusk.shadow,
   },
 };

@@ -68,9 +68,15 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   // Sleep screens force 'night'; everything else is ADAPTIVE — follows the
   // user's appearance preference (light by day, or dark when dark mode is on).
   const { effective } = useColorSchemePref();
-  const resolved: ThemeMode = mode === 'night' ? 'night' : mode === 'day' ? 'light' : effective;
+  const resolved: ThemeMode =
+    mode === 'night' ? 'night' : mode === 'kids' ? 'kids' : mode === 'day' ? 'light' : effective;
   const c = themes[resolved];
   const isNight = resolved === 'night';
+  const isKids = resolved === 'kids';
+  // kids "cozy dusk" is a dark surface (its own warm gradient) — treat it like
+  // night for the gradient + light status bar, but paint a WARM peach+sage
+  // ambient glow instead of the cold night blobs.
+  const isDark = isNight || isKids;
   const { isTablet, gutter } = useResponsive();
   const padBottom = tabBarSpacing ? 108 : 24;
   const padH = isTablet ? gutter : 24;
@@ -121,14 +127,22 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   return (
     <ThemeProvider mode={resolved}>
       <View style={{ flex: 1, backgroundColor: c.bg }}>
-        <StatusBar style={isNight ? 'light' : 'dark'} />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         {/* atmospheric background */}
         <LinearGradient
-          colors={isNight ? c.washGradient : [c.wash, c.bg]}
-          locations={isNight ? [0, 1] : [0, 0.38]}
+          colors={isDark ? c.washGradient : [c.wash, c.bg]}
+          locations={isDark ? [0, 1] : [0, 0.38]}
           style={StyleSheet.absoluteFill}
         />
-        {isNight ? (
+        {isKids ? (
+          // warm cozy-dusk glow — a soft peach halo up top + a gentle sage pool,
+          // so the kids sky feels warm and lit, not a flat dark panel
+          <>
+            <DriftBlob size={340} color="#F1C7A3" top={-120} left={-40} opacity={0.13} />
+            <DriftBlob size={240} color="#8FC9BE" top={300} left={200} opacity={0.08} />
+            <DriftBlob size={180} color="#F1C7A3" top={560} left={-60} opacity={0.06} />
+          </>
+        ) : isNight ? (
           <>
             <DriftBlob size={260} color="#8FC9BE" top={-40} left={-60} />
             <DriftBlob size={200} color="#6FB4A8" top={320} left={220} />

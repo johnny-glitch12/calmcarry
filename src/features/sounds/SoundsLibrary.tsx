@@ -12,7 +12,7 @@ import { LEARN, PROGRAMS, TRACKS, type Track } from '@/content/library';
 import { getFavorites } from '@/lib/favorites';
 import { lightTap } from '@/lib/haptics';
 import { getRecents } from '@/lib/recents';
-import { dur, ease, useTheme } from '@/theme';
+import { dur, ease, themes, useTheme } from '@/theme';
 
 type Rail = { kicker: string; title: string; ids: string[] };
 
@@ -41,10 +41,15 @@ const KIDS_RAILS: Rail[] = [
 
 export function SoundsLibrary() {
   const router = useRouter();
-  const { c } = useTheme();
+  const { c: ambientC } = useTheme();
   const { isPremium } = useAuth();
   const { mode, recommendedTrackIds } = useProfile();
   const kids = mode === 'kids';
+  // in kids mode this screen forces "cozy dusk" (<Screen mode="kids">); read that
+  // palette DIRECTLY since this body runs above its own Screen's provider (an
+  // ambient useTheme() here returns the app's light/night appearance, not kids).
+  // Adult mode is adaptive, so it keeps the ambient theme.
+  const c = kids ? themes.kids : ambientC;
   const rails = kids ? KIDS_RAILS : ADULT_RAILS;
 
   // saved + recently-played (local), refreshed on focus so a just-saved/played
@@ -126,7 +131,7 @@ export function SoundsLibrary() {
   };
 
   return (
-    <Screen mode={kids ? 'night' : 'light'} scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
+    <Screen mode={kids ? 'kids' : 'light'} scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24, marginBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <View>

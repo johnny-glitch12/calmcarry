@@ -29,7 +29,9 @@ export function ThemeProvider({
   children: ReactNode;
 }) {
   const value = useMemo<ThemeValue>(
-    () => ({ mode, isNight: mode === 'night', c: themes[mode] }),
+    // kids "cozy dusk" is a DARK surface too, so dark-aware components (off-track
+    // switch fills, error tints, etc.) should treat it like night
+    () => ({ mode, isNight: mode === 'night' || mode === 'kids', c: themes[mode] }),
     [mode]
   );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -18,7 +18,7 @@ import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
-import { dur, ease, fonts, STAGGER, useTheme } from '@/theme';
+import { dur, ease, fonts, kidsDusk, STAGGER, themes, useTheme } from '@/theme';
 
 // Big, friendly, calm sounds a child can pick on their own.
 const KID_SOUNDS = ['forest', 'rainfall', 'slow-tide'];
@@ -93,7 +93,13 @@ function Stars({ count }: { count: number }) {
 
 export function KidsHome() {
   const router = useRouter();
-  const { c } = useTheme();
+  // KidsHome ALWAYS renders in "cozy dusk". Read the kids theme DIRECTLY, not via
+  // useTheme() — this component body runs ABOVE its own <Screen>'s ThemeProvider,
+  // so an ambient useTheme() would hand back the app's light/night appearance and
+  // paint the content in the wrong palette (the child cards were rendering night
+  // tokens under a kids gradient). Child components below (rendered inside <Screen
+  // mode="kids">) still resolve kids via their own useTheme().
+  const c = themes.kids;
   const { user } = useAuth();
   const { activeProfile } = useProfile();
   const [nights, setNights] = useState(0);
@@ -101,12 +107,6 @@ export function KidsHome() {
   // name — that's the whole point of named profiles
   const profileName = activeProfile?.type === 'kids' ? activeProfile.name : null;
   const firstName = (profileName ?? user?.name ?? '').split(' ')[0] || 'friend';
-
-  // This is the bedtime screen — from evening on, a child (or parent) reopens it in a
-  // dark room, so dim to the night palette instead of a full light-mode blast. Kept
-  // light through the day so early-evening play keeps its bright, friendly identity.
-  // Same time-of-day mechanism the adult flow uses (TonightScreen), bedtime-earlier cutoff.
-  const evening = useMemo(() => new Date().getHours() >= 19, []);
 
   // real count — earned by actually doing calm sessions (see markCalmNightToday).
   // Refetch on focus so a star appears right after a session, not only on first mount.
@@ -119,7 +119,8 @@ export function KidsHome() {
   const story = TRACKS['penguin'] ?? TRACKS['slow-tide'];
 
   return (
-    <Screen mode={evening ? 'night' : 'day'} scroll tabBarSpacing>
+    // "cozy dusk" — its own warm bedtime palette (not the adult light/night themes)
+    <Screen mode="kids" scroll tabBarSpacing>
       {/* greeting + grown-up lock */}
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -174,9 +175,14 @@ export function KidsHome() {
         </PressableScale>
       </Reveal>
 
-      {/* bear companion */}
+      {/* bear companion, cradled in a soft peach glow so it feels warm + lit
+          against the dusk (layered low-opacity circles fake a radial halo) */}
       <Reveal index={2} style={{ alignItems: 'center', marginTop: 22 }}>
-        <BearMascot size={150} />
+        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <View pointerEvents="none" style={{ position: 'absolute', width: 260, height: 260, borderRadius: 130, backgroundColor: kidsDusk.peach, opacity: 0.1 }} />
+          <View pointerEvents="none" style={{ position: 'absolute', width: 190, height: 190, borderRadius: 95, backgroundColor: kidsDusk.peach, opacity: 0.12 }} />
+          <BearMascot size={150} />
+        </View>
         <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center' }}>
           Bramble’s getting sleepy too. Ready to wind down?
         </AppText>

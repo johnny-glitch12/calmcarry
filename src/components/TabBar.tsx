@@ -207,17 +207,19 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const kids = mode === 'kids';
   // the focused route may force night (e.g. the Listen/sleep screen) regardless of
   // the user's appearance preference; match it so the bar stays dark on that screen.
-  const dark = effective === 'night' || Boolean(TABS[state.routes[state.index]?.name]?.night);
-  const t = themes[dark ? 'night' : effective];
+  // Kids mode paints its own warm "cozy dusk" — the bar follows so it's not a light
+  // strip under a dusk screen.
+  const dark = kids || effective === 'night' || Boolean(TABS[state.routes[state.index]?.name]?.night);
+  const t = themes[kids ? 'kids' : dark ? 'night' : effective];
   const inactive = t.muted;
   // active pill = brand SAGE in BOTH themes (matching the reference), with dark
   // eucalyptus content so the label clears WCAG AA — white-on-sage is only 2.75:1,
   // whereas #15302B on sage is ~5.5:1. (Night already shipped a light-sage pill.)
   const pillBg = dark ? t.ctaBg : brand.sage;
   const pillContent = dark ? t.ctaText : night.ctaText;
-  // solid, card-grade surface: elevated tone on night, white by day — the bar
+  // solid, card-grade surface: kids dusk / night elevated / white by day — the bar
   // must read clearly over any content (and under the tour scrim)
-  const barBg = dark ? night.elevated : '#FFFFFF';
+  const barBg = kids ? t.surface : dark ? night.elevated : '#FFFFFF';
   // TABLET: don't let the pill bar stretch the full width of an iPad — cap it and
   // centre it (matches the centred content column). Phones stay edge-to-edge with
   // 16pt margins. alignSelf centres within the absolute-positioned full-width slot.

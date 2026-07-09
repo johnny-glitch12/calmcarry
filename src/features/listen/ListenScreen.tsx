@@ -25,7 +25,7 @@ import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { takePendingMix } from '@/lib/mixShare';
 import { getJSON, remove, setJSON } from '@/lib/store';
-import { dur, ease, spring, useResponsive, useTheme } from '@/theme';
+import { dur, ease, spring, themes, useResponsive, useTheme } from '@/theme';
 
 // Lyric-free instrumental music (build plan §6/§7 — Listen = Music + Sound machine).
 // CMS-extensible; the sound machine below handles ambient sounds.
@@ -246,11 +246,16 @@ function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
 }
 
 export function ListenScreen() {
-  const { c } = useTheme();
+  const { c: ambientC } = useTheme();
   const router = useRouter();
   const { isPremium, token } = useAuth();
   const { mode } = useProfile();
   const kids = mode === 'kids';
+  // kids mode forces "cozy dusk" (<Screen mode="kids">); read that palette DIRECTLY
+  // — this body runs above its own Screen's provider, so an ambient useTheme() would
+  // return the app's light/night appearance and mis-paint the content. Adult mode
+  // keeps its ambient (night-forced) theme.
+  const c = kids ? themes.kids : ambientC;
   // responsive sound grid: measure the grid width, fit exactly `gridCols` uniform
   // tiles with a fixed gap (2 phone / 3 tablet / 4 wide) — every row symmetrical
   const { gridColumns: gridCols } = useResponsive();
@@ -549,7 +554,7 @@ export function ListenScreen() {
   };
 
   return (
-    <Screen mode="night" scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
+    <Screen mode={kids ? 'kids' : 'night'} scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24 }}>
         <AppText variant="caption" tone="muted">
           Listen

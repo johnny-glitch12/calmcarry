@@ -220,7 +220,8 @@ function VerifyEmailCard({ token, onDone }: { token: string; onDone: () => void 
 export function AccountScreen() {
   const router = useRouter();
   const { c } = useTheme();
-  const { user, isPremium, token, signOut, changePassword } = useAuth();
+  const { user, isPremium, token, status, signOut, changePassword } = useAuth();
+  const isGuest = status === 'guest' || !token;
   const { mode, setMode } = useProfile();
   const [reminder, setReminder] = useState(false);
   // email-verification nudge — only when the backend confirms the email is unverified
@@ -277,6 +278,8 @@ export function AccountScreen() {
   const [reminderIdx, setReminderIdx] = useState(1); // default 9:30 PM
   const [recap, setRecap] = useState(false);
   const [pushOn, setPushOn] = useState(false);
+  // true when an enable attempt failed because OS notification permission is off
+  const [notifDenied, setNotifDenied] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -314,12 +317,15 @@ export function AccountScreen() {
     const scheduled = await setBedtimeReminder(v, t.hour, t.minute);
     setReminder(scheduled);
     setJSON('cc.reminder', scheduled);
+    // the toggle snapping back with no words is a dead end — say WHY it stayed off
+    setNotifDenied(v && !scheduled);
   };
   // weekly recap — same honesty rule: ON only if one is actually scheduled
   const toggleRecap = async (v: boolean) => {
     const scheduled = await setWeeklyRecapReminder(v);
     setRecap(scheduled);
     setJSON('cc.weeklyRecap', scheduled);
+    setNotifDenied(v && !scheduled);
   };
   // let the user pick their wind-down time from a visible list (no blind tap-to-cycle);
   // reschedule live if the reminder is on
@@ -396,19 +402,30 @@ export function AccountScreen() {
 
   return (
     <Screen mode="light" scroll tabBarSpacing>
-      {/* profile */}
+      {/* profile — for guests the whole header is the sign-in affordance (before
+          this, "Sign in to sync your account" was dead text and the only path to
+          /auth was the coral Sign out button) */}
       <Reveal index={0}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-          <GlowOrb size={56} reserveGlow breathing={false} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText variant="h1Compact" tone="title" numberOfLines={1}>
-              {user?.name ?? 'Welcome'}
-            </AppText>
-            <AppText variant="label" tone="muted" style={{ marginTop: 2 }} numberOfLines={1}>
-              {user?.email ?? 'Sign in to sync your account'}
-            </AppText>
+        <PressableScale
+          onPress={isGuest ? () => router.push('/auth' as Href) : undefined}
+          disabled={!isGuest}
+          accessibilityRole={isGuest ? 'button' : undefined}
+          accessibilityLabel={isGuest ? 'Sign in to your account' : undefined}
+          scaleTo={isGuest ? 0.99 : 1}
+          dimTo={isGuest ? 0.9 : 1}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <GlowOrb size={56} reserveGlow breathing={false} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="h1Compact" tone="title" numberOfLines={1}>
+                {user?.name ?? 'Welcome'}
+              </AppText>
+              <AppText variant="label" tone={isGuest ? 'accent' : 'muted'} style={{ marginTop: 2 }} numberOfLines={1}>
+                {user?.email ?? 'Sign in to sync your account'}
+              </AppText>
+            </View>
+            {isGuest ? <Feather name="chevron-right" size={18} color={c.accent} /> : null}
           </View>
-        </View>
+        </PressableScale>
       </Reveal>
 
       {/* email verification nudge — real accounts only, and only while unverified */}
@@ -473,7 +490,7 @@ export function AccountScreen() {
       {/* mode — NIGHT-FIRST: the adult app is the night theme by identity (no theme
           picker); only the kids surface keeps a soft daytime look */}
       <Reveal index={2} style={{ marginTop: 28 }}>
-        <SectionHeader kicker="Who's it for" title="Mode" />
+        <SectionHeader kicker="Who’s it for" title="Mode" />
         <AppText variant="label" tone="muted" style={{ marginBottom: 10, textTransform: 'none', letterSpacing: 0 }}>
           Kids mode shows bedtime stories and gentle sounds.
         </AppText>
@@ -518,6 +535,19 @@ export function AccountScreen() {
           {/* weekly recap — one Sunday-evening note pointing at the calm-nights card */}
           {remindersSupported ? (
             <SettingRow icon="calendar" label="Weekly calm recap" toggle={recap} onToggle={toggleRecap} />
+          ) : null}
+          {notifDenied ? (
+            <Appear enter={dur.sheet}>
+              <PressableScale
+                onPress={() => Linking.openSettings().catch(() => {})}
+                accessibilityRole="button"
+                dimTo={0.9}
+                style={{ paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.line }}>
+                <AppText variant="meta" tone="muted" accessibilityLiveRegion="polite">
+                  Notifications are turned off for CalmCarry in your phone’s settings. Tap here to open them.
+                </AppText>
+              </PressableScale>
+            </Appear>
           ) : null}
           <SettingRow icon="mic" label="Guided voice" value={voiceName} onPress={() => router.push('/voice' as Href)} />
           <SettingRow icon="play-circle" label="Autoplay sounds" toggle={autoplay} onToggle={toggleAutoplay} last />
@@ -619,14 +649,16 @@ export function AccountScreen() {
       </Reveal>
 
       <Reveal index={5} style={{ marginTop: 24 }}>
+        {/* guests get a real Sign in action here — not a coral "Sign out" that
+            confusingly happens to route to auth */}
         <PressableScale
-          onPress={onSignOut}
+          onPress={isGuest ? () => router.push('/auth' as Href) : onSignOut}
           onPressIn={lightTap}
           accessibilityRole="button"
           dimTo={0.6}
           style={{ alignItems: 'center', paddingVertical: 14 }}>
-          <AppText variant="bodyMedium" style={{ color: brand.coral }}>
-            Sign out
+          <AppText variant="bodyMedium" style={isGuest ? { color: c.textAccent } : { color: brand.coral }}>
+            {isGuest ? 'Sign in' : 'Sign out'}
           </AppText>
         </PressableScale>
         {/* up-front (not buried in the confirm step): deleting the account does NOT cancel the store subscription */}

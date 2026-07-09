@@ -91,6 +91,8 @@ export type ThemeColors = {
   panelStrong: string;
   /** orb fill/glow color */
   orb: string;
+  /** error/destructive text+icons — AA-safe per theme (coral fails AA on cream) */
+  danger: string;
   washGradient: readonly [string, string];
   shadow: object;
 };
@@ -113,6 +115,8 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     panel: brand.mintSoft,
     panelStrong: brand.mint,
     orb: brand.sage,
+    // brand coral is only ~2.77:1 on cream — darkened red clears WCAG AA by day
+    danger: '#B5303A',
     washGradient: light.washGradient,
     shadow: light.shadow,
   },
@@ -133,7 +137,8 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     panel: 'rgba(143,201,190,0.08)',
     panelStrong: 'rgba(143,201,190,0.14)',
     orb: night.glow,
-    washGradient: ['#162422', '#0E1817'],
+    danger: brand.coral, // bright coral clears contrast on the dark base
+    washGradient: night.washGradient,
     shadow: night.shadow,
   },
 };

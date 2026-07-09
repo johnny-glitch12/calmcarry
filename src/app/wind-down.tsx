@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Image as RNImage, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   Extrapolation,
@@ -23,7 +24,7 @@ import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
-import { dur, ease, useTheme } from '@/theme';
+import { dur, ease, night, useTheme } from '@/theme';
 
 /** Default wind-down session: 20 minutes (DESIGN_SYSTEM hero copy). */
 const SESSION_MS = 20 * 60 * 1000;
@@ -109,6 +110,7 @@ function PlayPauseButton({ paused, onPress }: { paused: boolean; onPress: () => 
 export default function WindDownScreen() {
   const router = useRouter();
   const reduced = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const [paused, setPaused] = useState(false);
 
   const { isPremium } = useAuth();
@@ -366,7 +368,7 @@ export default function WindDownScreen() {
       overlay={
         <Animated.View
           pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: '#0E1817' }, scrimStyle]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: night.deep }, scrimStyle]}
         />
       }>
       {/* tap anywhere to wake the controls back up */}
@@ -410,8 +412,9 @@ export default function WindDownScreen() {
             </Animated.View>
           </Animated.View>
 
-          {/* controls — pause persists; it's the one control that survives the idle fade */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 24 }}>
+          {/* controls — pause persists; it's the one control that survives the idle fade.
+              bottom inset folded in: Screen only reserves left/right edges */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: Math.max(insets.bottom, 12) + 12 }}>
             <PlayPauseButton paused={paused} onPress={togglePause} />
           </View>
         </View>

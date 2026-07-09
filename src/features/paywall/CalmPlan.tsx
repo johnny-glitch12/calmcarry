@@ -162,6 +162,14 @@ export function CalmPlan() {
   // On web / dev (no native store) we fall back to a dev grant for testing.
   const subscribe = async () => {
     if (busy || isPremium) return;
+    // Signed-out (or local-fallback) session in a production build: no purchase
+    // branch can run, so say the honest thing and route to sign-in instead of the
+    // "couldn't complete the purchase, try again" lie that can never succeed.
+    if (!live && !__DEV__) {
+      setNote('Sign in first so your plan follows your account.');
+      router.push('/auth' as Href);
+      return;
+    }
     // Child safety (COPPA): when a parent PIN exists, a grown-up must pass the gate
     // (PIN entry, intent-scoped) before any purchase. The gate returns here; the
     // 'purchase'-scoped verify window lets the retap through.

@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { AppText, Crossfade, PressableScale, SelectionOverlay } from '@/components';
 import { lightTap } from '@/lib/haptics';
 import { hasParentPin } from '@/lib/parentGate';
-import { useTheme } from '@/theme';
+import { fonts, useTheme } from '@/theme';
 
 import { useProfile, type Profile } from './ProfileProvider';
 
@@ -50,10 +50,10 @@ function Avatar({ profile, active, onPress }: { profile: Profile; active: boolea
             active={active}
             style={{ width: 24, height: 24 }}
             front={
-              <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 20, color: '#FFFFFF' }}>{initial}</AppText>
+              <AppText style={{ fontFamily: fonts.display, fontSize: 20, color: '#FFFFFF' }}>{initial}</AppText>
             }
             back={
-              <AppText style={{ fontFamily: 'Montserrat_700Bold', fontSize: 20, color: c.textAccent }}>{initial}</AppText>
+              <AppText style={{ fontFamily: fonts.display, fontSize: 20, color: c.textAccent }}>{initial}</AppText>
             }
           />
         )}

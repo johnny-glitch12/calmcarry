@@ -43,7 +43,20 @@ export async function hasPushOptIn(): Promise<boolean> {
 export async function setPushOptIn(enabled: boolean, jwt: string | null): Promise<boolean> {
   if (!pushSupported) return false;
   if (!enabled) {
+    // opt-OUT must reach the server too — a locally-flipped flag with the token
+    // still enabled server-side means pushes keep arriving (phantom toggle).
     await setJSON(GRANT_KEY, false);
+    if (jwt && jwt !== 'local') {
+      try {
+        const id = projectId();
+        if (id) {
+          const { data: deviceToken } = await Notifications.getExpoPushTokenAsync({ projectId: id });
+          await api.unregisterPush(jwt, deviceToken);
+        }
+      } catch {
+        /* best-effort — the local flag is already off */
+      }
+    }
     return false;
   }
   if (!jwt || jwt === 'local') return false; // registration needs a backend account

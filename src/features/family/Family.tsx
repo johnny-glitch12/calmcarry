@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
-import { brand, dur, useTheme } from '@/theme';
+import { dur, useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
 
@@ -22,7 +22,7 @@ export function Family() {
   const { c, isNight } = useTheme();
   const router = useRouter();
   const { token } = useAuth();
-  const { mode, setMode, addProfile, removeProfile, profiles } = useProfile();
+  const { mode, setMode, addProfile, renameProfile, removeProfile, profiles } = useProfile();
 
   // real registered devices for this account (no hardcoded household). Refetched on
   // focus so a device just registered on /register-device shows up on return.
@@ -66,6 +66,18 @@ export function Family() {
   const [newType, setNewType] = useState<AppMode>('kids');
   const [needConsent, setNeedConsent] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  // rename-in-place — a typo fix must not require delete + recreate (that would
+  // discard the server profile id the household sync keys on)
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const startRename = (p: Profile) => {
+    setRenamingId(p.id);
+    setRenameValue(p.name);
+  };
+  const commitRename = () => {
+    if (renamingId && renameValue.trim()) renameProfile(renamingId, renameValue);
+    setRenamingId(null);
+  };
 
   // COPPA: a parent can delete a child's profile + data any time, behind the gate.
   const onRemove = async (p: Profile) => {
@@ -192,9 +204,43 @@ export function Family() {
                   exiting={FadeOut.duration(dur.exit)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Feather name="smile" size={14} color={c.muted} />
-                  <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
-                    {p.name}
-                  </AppText>
+                  {renamingId === p.id ? (
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{ flex: 1 }}>
+                        <FormField value={renameValue} onChangeText={setRenameValue} placeholder="Name" icon="user" />
+                      </View>
+                      <PressableScale
+                        onPress={commitRename}
+                        onPressIn={lightTap}
+                        hitSlop={12}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Save name for ${p.name}`}
+                        dimTo={0.85}
+                        style={{ paddingVertical: 12 }}>
+                        <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+                          Save
+                        </AppText>
+                      </PressableScale>
+                    </View>
+                  ) : (
+                    <AppText variant="meta" tone="muted" style={{ flex: 1 }}>
+                      {p.name}
+                    </AppText>
+                  )}
+                  {renamingId === p.id ? null : (
+                    <PressableScale
+                      onPress={() => startRename(p)}
+                      onPressIn={lightTap}
+                      hitSlop={12}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Rename ${p.name}`}
+                      dimTo={0.85}
+                      style={{ paddingVertical: 12 }}>
+                      <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+                        Rename
+                      </AppText>
+                    </PressableScale>
+                  )}
                   <PressableScale
                     onPress={() => onRemove(p)}
                     onPressIn={lightTap}
@@ -210,7 +256,7 @@ export function Family() {
                       exiting={FadeOut.duration(dur.press)}>
                       <AppText
                         variant="bodyMedium"
-                        style={{ color: confirmRemoveId === p.id ? brand.coral : c.textAccent }}>
+                        style={{ color: confirmRemoveId === p.id ? c.danger : c.textAccent }}>
                         {confirmRemoveId === p.id ? 'Tap to confirm' : 'Remove'}
                       </AppText>
                     </Animated.View>

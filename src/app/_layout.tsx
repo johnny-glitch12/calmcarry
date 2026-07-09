@@ -27,6 +27,23 @@ import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } 
 initMonitoring(); // native: Sentry (gated on a real DSN); web: no-op
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Foreground delivery: expo-notifications' default shows NOTHING while the app is
+// open — silently dropping the bedtime nudge for anyone already browsing, and the
+// honesty-critical trial-ending reminder. A quiet banner; no sound, no badge.
+if (Platform.OS !== 'web') {
+  // require here keeps expo-notifications off the web bundle path
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate: keeps expo-notifications off the web bundle
+  const Notifications = require('expo-notifications') as typeof import('expo-notifications');
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
+
 /**
  * App-wide error boundary (expo-router). A render crash anywhere shows this calm
  * retry screen instead of a white screen, and reports the error to monitoring.

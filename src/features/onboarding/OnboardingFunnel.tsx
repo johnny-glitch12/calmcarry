@@ -3,7 +3,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { BackHandler, Linking, ScrollView, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -68,6 +68,7 @@ type Answers = {
   goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
   wearable?: string; // 'apple' | 'whoop'
   moments?: string[]; // when they want help — day AND night use-cases, not just sleep
+  wantsTrial?: boolean; // tapped "Start my free trial" on the pricing step
 };
 
 type StepProps = {
@@ -340,7 +341,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
         </Reveal>
         <Reveal index={2}>
           <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 300 }]}>
-            Let’s begin your journey to calmer, deeper nights. One gentle wind-down at a time.
+            Calmer, deeper nights. One gentle wind-down at a time.
           </AppText>
         </Reveal>
       </View>
@@ -577,6 +578,7 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
           onTouch={() => { if (!touched) setAnswer('hours', value); }}
           minLabel="4h"
           maxLabel="8h+"
+          valueText={value >= 8 ? '8 hours or more' : formatHM(value)}
         />
       </View>
     </FunnelShell>
@@ -680,6 +682,7 @@ function Slider({
   onTouch,
   minLabel,
   maxLabel,
+  valueText,
 }: {
   value: number;
   min: number;
@@ -691,6 +694,8 @@ function Slider({
   onTouch?: () => void;
   minLabel: string;
   maxLabel: string;
+  /** spoken form of the current value for screen readers (defaults to the number) */
+  valueText?: string;
 }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
@@ -724,6 +729,15 @@ function Slider({
   const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
   const thumbStyle = useAnimatedStyle(() => ({ left: `${fill.value * 100}%` }));
 
+  // Screen readers can't pan: expose the slider as an adjustable so VoiceOver /
+  // TalkBack swipe-up/down steps the value. This also counts as "touched", so the
+  // step's Continue gate opens for assistive-tech users (they were hard-stuck).
+  const adjust = (direction: 1 | -1) => {
+    onTouch?.();
+    const next = Math.max(min, Math.min(max, value + direction * step));
+    if (next !== value) onChange(next);
+  };
+
   return (
     <View>
       <GestureDetector gesture={pan}>
@@ -731,6 +745,12 @@ function Slider({
           onLayout={(e) => {
             width.value = e.nativeEvent.layout.width;
           }}
+          accessible
+          accessibilityRole="adjustable"
+          accessibilityLabel="Hours"
+          accessibilityValue={{ min, max, now: value, text: valueText }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(e) => adjust(e.nativeEvent.actionName === 'increment' ? 1 : -1)}
           style={{ height: 44, justifyContent: 'center' }}>
           <View style={{ height: 8, borderRadius: 4, backgroundColor: c.line, overflow: 'hidden' }}>
             <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: c.accent }, fillStyle]} />
@@ -859,7 +879,7 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       progress={progress}
       kicker="YOUR GOAL"
       title="How much sleep do you want?"
-      subtitle="Set the nightly target we'll gently help you build toward."
+      subtitle="Set the nightly target we’ll gently help you build toward."
       onContinue={onNext}
       canContinue>
       <View style={{ alignItems: 'center', marginTop: 20 }}>
@@ -867,7 +887,7 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
         <AppText style={[P.hero, { color: c.text, fontSize: 46, lineHeight: 54, textAlign: 'center' }]}>{formatHM(goalHours)}</AppText>
       </View>
       <View style={{ marginTop: 28 }}>
-        <Slider value={goalHours} min={4} max={12} step={0.25} onChange={(v) => setAnswer('goalHours', v)} minLabel="4h" maxLabel="12h" />
+        <Slider value={goalHours} min={4} max={12} step={0.25} onChange={(v) => setAnswer('goalHours', v)} minLabel="4h" maxLabel="12h" valueText={formatHM(goalHours)} />
       </View>
     </FunnelShell>
   );
@@ -882,7 +902,7 @@ function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       progress={progress}
       kicker="SMARTER INSIGHTS"
       title="Connect a wearable?"
-      subtitle="Wearable sync is on our roadmap. Tell us what you use and we'll let you know the moment it's ready."
+      subtitle="Wearable sync is on our roadmap. Tell us what you use and we’ll let you know the moment it’s ready."
       onContinue={onNext}
       canContinue
       continueLabel={answers.wearable ? 'Continue' : 'Skip'}>
@@ -1014,7 +1034,7 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
 }
 
 /** 15 — PRICING (real store price, honest trial framing) */
-function PricingStep({ onNext, onBack }: StepProps) {
+function PricingStep({ onNext, onBack, setAnswer }: StepProps) {
   const { c } = useTheme();
   const [annual, setAnnual] = useState<string>(PRICING.annual.price);
   useEffect(() => {
@@ -1039,7 +1059,15 @@ function PricingStep({ onNext, onBack }: StepProps) {
         </Reveal>
       </View>
       <Reveal index={3}>
-        <PrimaryButton label="Start my free trial" onPress={onNext} />
+        {/* the tap is a real promise — remember it so Home can actually OFFER the
+            trial after sign-in (before this, both buttons were silently identical) */}
+        <PrimaryButton
+          label="Start my free trial"
+          onPress={() => {
+            setAnswer('wantsTrial', true);
+            onNext();
+          }}
+        />
       </Reveal>
       <Reveal index={4} style={{ alignItems: 'center', marginTop: 12 }}>
         <PressableScale onPress={onNext} accessibilityRole="button" dimTo={0.6} hitSlop={10}>
@@ -1131,6 +1159,9 @@ export function OnboardingFunnel() {
     (final: Answers) => {
       // persist the survey (on-device) + map the first chosen goal to a personalization intent
       setJSON('cc.onboarding', final);
+      // "Start my free trial" must lead to the trial: Home consumes this flag once
+      // (after sign-in) and opens the Calm Plan sheet where the store trial starts.
+      if (final.wantsTrial) setJSON('cc.pendingTrial', true);
       const firstGoal = final.goals?.[0];
       const intent = GOALS.find((g) => g.key === firstGoal)?.intent;
       if (intent) setIntent(intent);
@@ -1158,6 +1189,24 @@ export function OnboardingFunnel() {
     markOnboarded();
     router.replace('/auth');
   }, [router]);
+
+  // Android hardware/gesture back steps BACK through the funnel (same as the
+  // on-screen chevrons) instead of dropping the user out of first-run entirely.
+  // On the welcome step the default (leave/minimize) is the right behaviour.
+  const indexRef = useRef(index);
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (indexRef.current > 0) {
+        setIndex((i) => Math.max(0, i - 1));
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, []);
 
   const stepId = STEPS[index];
   const StepComponent = STEP_COMPONENTS[stepId];

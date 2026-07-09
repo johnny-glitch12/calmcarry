@@ -24,6 +24,13 @@ export class NotificationsService {
     return { ok: true };
   }
 
+  /** Opt-out: disable this device's token so no remote push ever targets it again.
+   *  Idempotent, and scoped to the caller's own account (can't disable others'). */
+  async unregister(ownerId: string, token: string): Promise<{ ok: true }> {
+    await this.repo.update({ ownerId, token }, { enabled: false });
+    return { ok: true };
+  }
+
   async sendTest(ownerId: string): Promise<{ sent: number; tokens: number }> {
     const tokens = await this.repo.find({ where: { ownerId, enabled: true } });
     const results = await Promise.all(

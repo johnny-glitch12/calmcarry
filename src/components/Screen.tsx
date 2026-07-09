@@ -110,7 +110,7 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
         <StatusBar style={isNight ? 'light' : 'dark'} />
         {/* atmospheric background */}
         <LinearGradient
-          colors={isNight ? ['#162422', '#0E1817'] : [c.wash, c.bg]}
+          colors={isNight ? c.washGradient : [c.wash, c.bg]}
           locations={isNight ? [0, 1] : [0, 0.38]}
           style={StyleSheet.absoluteFill}
         />

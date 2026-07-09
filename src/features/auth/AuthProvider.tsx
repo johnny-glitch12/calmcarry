@@ -115,8 +115,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setBackendUp(true);
           setJSON(KEYS.user, me.user);
           setJSON(KEYS.entitlement, me.entitlement);
-        } catch {
-          /* offline — keep cached session */
+        } catch (e) {
+          // Expired access token (7d) + a stored refresh token (60d) → rotate and
+          // retry ONCE, so a returning user never sits on a dead session where
+          // every authed call silently 401s. Network errors (no .status) still
+          // mean offline — keep the cached session untouched.
+          const status = (e as { status?: number })?.status;
+          if (status === 401 && savedToken !== 'local') {
+            try {
+              const rt = await secureGet(KEYS.refresh);
+              if (!rt) throw e;
+              const rotated = await api.refresh(rt);
+              if (!alive) return;
+              setToken(rotated.token);
+              await secureSet(KEYS.token, rotated.token);
+              if (rotated.refreshToken) await secureSet(KEYS.refresh, rotated.refreshToken);
+              const me = await api.me(rotated.token);
+              if (!alive) return;
+              setUser(me.user);
+              setEntitlement(me.entitlement);
+              setBackendUp(true);
+              setJSON(KEYS.user, me.user);
+              setJSON(KEYS.entitlement, me.entitlement);
+            } catch {
+              // the refresh token is dead too — this is a real signed-out state,
+              // not offline; clear the session instead of faking "signed in"
+              if (!alive) return;
+              setToken(null);
+              setUser(null);
+              setEntitlement(FREE);
+              setStatus('guest');
+              await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement)]);
+            }
+          }
+          /* otherwise offline — keep cached session */
         }
       } else {
         setStatus('guest');

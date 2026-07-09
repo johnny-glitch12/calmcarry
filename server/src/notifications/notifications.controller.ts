@@ -15,6 +15,13 @@ class RegisterTokenDto {
   platform: PushPlatform;
 }
 
+class UnregisterTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(512)
+  token: string;
+}
+
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
@@ -23,6 +30,13 @@ export class NotificationsController {
   @Post('register')
   register(@CurrentUser() user: JwtPayload, @Body() dto: RegisterTokenDto) {
     return this.notifications.register(user.sub, dto.token, dto.platform);
+  }
+
+  // Opt-OUT parity: the toggle-off must reach the server, or the token stays
+  // enabled and the user keeps receiving pushes they turned off.
+  @Post('unregister')
+  unregister(@CurrentUser() user: JwtPayload, @Body() dto: UnregisterTokenDto) {
+    return this.notifications.unregister(user.sub, dto.token);
   }
 
   @Post('test')

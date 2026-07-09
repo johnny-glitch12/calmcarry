@@ -98,7 +98,11 @@ export function PrimaryButton({
         style={[
           animStyle,
           {
-            height: 56,
+            // minHeight, not height: at large accessibility text sizes the label
+            // grows and a fixed box would clip it (Android clips by default)
+            minHeight: 56,
+            paddingVertical: 14,
+            paddingHorizontal: 16,
             borderRadius: 8, // build plan §16: buttons are full-width, 8px corners
             alignItems: 'center',
             justifyContent: 'center',

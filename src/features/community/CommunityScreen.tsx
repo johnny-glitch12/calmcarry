@@ -286,7 +286,12 @@ export function CommunityScreen() {
   // and tell the user on failure — never leave a fake "live" card that didn't save.
   const share = async () => {
     const text = draft.trim();
-    if (!text || !token) return;
+    if (!text) return;
+    // guests: say why instead of silently doing nothing (the old no-op even haptic-tapped)
+    if (!token) {
+      setNote('Sign in to share your win with other parents.');
+      return;
+    }
     const tempKey = `temp-${Date.now()}`;
     setWins((w) => [{ key: tempKey, handle: 'A CalmCarry parent', text, when: 'now', pending: true }, ...w]);
     setDraft('');
@@ -304,6 +309,8 @@ export function CommunityScreen() {
       );
     } catch {
       setWins((w) => w.filter((win) => win.key !== tempKey));
+      // give the words back — "try again" must not mean retyping a whole win at bedtime
+      setDraft(text);
       setNote('Couldn’t share that just now. Please try again.');
     }
   };
@@ -394,6 +401,27 @@ export function CommunityScreen() {
                 <AppText variant="meta" tone="dim">
                   It will retry when you come back.
                 </AppText>
+              </Card>
+            </Appear>
+          ) : !token ? (
+            // guests never fetched the wall — an honest sign-in prompt, not a
+            // false "no wins shared yet" claim about content we never loaded
+            <Appear key="guest" enter={dur.sheet}>
+              <Card variant="panel" padding={20} style={{ alignItems: 'center', gap: 6 }}>
+                <Feather name="moon" size={22} color={c.textAccent} />
+                <AppText variant="body" tone="muted" style={{ textAlign: 'center' }}>
+                  Sign in to read tonight’s wins from other parents.
+                </AppText>
+                <PressableScale
+                  onPress={() => router.push('/auth' as Href)}
+                  accessibilityRole="button"
+                  dimTo={0.85}
+                  hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+                  style={{ marginTop: 4 }}>
+                  <AppText variant="bodyMedium" style={{ color: c.textAccent }}>
+                    Sign in
+                  </AppText>
+                </PressableScale>
               </Card>
             </Appear>
           ) : (

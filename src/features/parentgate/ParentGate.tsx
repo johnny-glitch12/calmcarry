@@ -31,7 +31,7 @@ function Dot({ filled, error }: { filled: boolean; error: boolean }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const rest = c.accent;
-  const err = '#EF626C';
+  const err = c.danger;
   const f = useSharedValue(filled ? 1 : 0);
   // error tint eases between accent (0) and coral (1) instead of snapping. Reduced
   // motion keeps the instant swap — the error haptic already signals the miss.
@@ -258,7 +258,7 @@ export function ParentGate() {
     <Screen mode="night" contentStyle={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
         <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85}>
-          <Feather name="x" size={24} color="#9DB7B1" />
+          <Feather name="x" size={24} color={c.text} />
         </PressableScale>
       </View>
 
@@ -285,7 +285,7 @@ export function ParentGate() {
         <View style={{ height: 36, justifyContent: 'flex-end' }}>
           {lockSeconds > 0 ? (
             <Appear>
-              <AppText variant="label" style={{ color: '#EF626C', textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
+              <AppText variant="label" accessibilityLiveRegion="polite" style={{ color: c.danger, textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
                 Too many tries. Try again in {lockSeconds}s.
               </AppText>
             </Appear>

@@ -13,9 +13,15 @@ export function LearnList() {
   const { c } = useTheme();
   const router = useRouter();
   const items = Object.values(LEARN);
+  // pushed stack screen: standard back chevron (edge-swipe alone isn't discoverable),
+  // and no tabBarSpacing — the tab bar never renders on stack routes
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   return (
-    <Screen mode="light" scroll tabBarSpacing>
+    <Screen mode="light" scroll>
       <Reveal index={0}>
+        <PressableScale onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.85} style={{ marginBottom: 8 }}>
+          <Feather name="chevron-left" size={26} color={c.text} />
+        </PressableScale>
         <AppText variant="caption" tone="muted">
           Learn
         </AppText>

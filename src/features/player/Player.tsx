@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image as RNImage, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -89,6 +90,7 @@ export function Player() {
   // Player is always night mode, so `c` resolves to the night theme — read the
   // palette from tokens instead of hardcoding the night hex throughout.
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
   const track = (id && TRACKS[id]) || TRACKS['slow-tide'];
   // Locked premium tracks give a free user a short PREVIEW, then route to the paywall
@@ -657,8 +659,10 @@ export function Player() {
           )}
         </View>
 
-        {/* controls — heart (save) · play/pause · matching spacer keeps play centered */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: 28 }}>
+        {/* controls — heart (save) · play/pause · matching spacer keeps play centered.
+            Screen reserves only left/right insets, so fold in the bottom inset here or
+            the play button sits under the Android nav bar / iOS home indicator. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: Math.max(insets.bottom, 12) + 16 }}>
           <PressableScale
             onPress={onToggleSave}
             hitSlop={12}
@@ -683,7 +687,7 @@ export function Player() {
           <AppText
             variant="caption"
             tone="dim"
-            style={{ textAlign: 'center', paddingHorizontal: 16, paddingBottom: 10, fontSize: 11, lineHeight: 15, textTransform: 'none', letterSpacing: 0 }}>
+            style={{ textAlign: 'center', paddingHorizontal: 16, paddingBottom: Math.max(insets.bottom, 10), fontSize: 11, lineHeight: 15, textTransform: 'none', letterSpacing: 0 }}>
             {WELLNESS_DISCLAIMER}
           </AppText>
         ) : null}

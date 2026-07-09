@@ -206,7 +206,7 @@ export function DeviceHub() {
               <ActionRow
                 icon="shield"
                 title="Device registration"
-                subtitle="Confirm it's registered &amp; covered"
+                subtitle="Confirm it’s registered &amp; covered"
                 onPress={() => router.push('/authenticity')}
               />
             </Appear>

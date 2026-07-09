@@ -136,6 +136,8 @@ export const api = {
     req<{ id: string; name: string; type: 'adult' | 'kids'; isPrimary: boolean }[]>('/profiles', {}, token),
   createProfile: (token: string, data: { name: string; type: 'adult' | 'kids'; ageBand?: string }) =>
     req<unknown>('/profiles', { method: 'POST', body: JSON.stringify(data) }, token),
+  updateProfile: (token: string, id: string, data: { name?: string; ageBand?: string }) =>
+    req<unknown>(`/profiles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
   deleteProfile: (token: string, id: string) =>
     req<unknown>(`/profiles/${id}`, { method: 'DELETE' }, token),
 
@@ -177,6 +179,9 @@ export const api = {
   // ---- push reminders ----
   registerPush: (token: string, data: { token: string; platform: 'ios' | 'android' | 'web' }) =>
     req<{ ok: boolean }>('/notifications/register', { method: 'POST', body: JSON.stringify(data) }, token),
+  // opt-out parity: disable this device's token server-side (no more pushes to it)
+  unregisterPush: (token: string, deviceToken: string) =>
+    req<{ ok: boolean }>('/notifications/unregister', { method: 'POST', body: JSON.stringify({ token: deviceToken }) }, token),
 
   // ---- signed CDN url for an item's audio ----
   signedUrl: (token: string, id: string) =>

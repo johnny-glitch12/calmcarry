@@ -102,7 +102,11 @@ export function CoverCard({
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }}
       onPressOut={() => press(1)}
-      accessibilityRole="button">
+      accessibilityRole="button"
+      // the lock glyph is visual-only — say it, so a screen-reader user isn't
+      // surprised by the paywall (mirrors LibraryCard's label)
+      accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ''}${locked ? ', locked' : ''}`}
+      accessibilityHint={locked ? 'Opens unlock options' : undefined}>
       <Animated.View
         style={[
           animStyle,

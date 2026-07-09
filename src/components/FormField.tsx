@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
+  AccessibilityInfo,
   TextInput,
   View,
   type KeyboardTypeOptions,
@@ -14,7 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { brand, dur, ease, type as typeScale, useTheme } from '@/theme';
+import { dur, ease, type as typeScale, useTheme } from '@/theme';
 
 import { AppText } from './AppText';
 import { Appear, Crossfade } from './anim';
@@ -51,25 +52,32 @@ export function FormField({
   autoComplete,
   secureTextEntry,
 }: Props) {
-  const { c, isNight } = useTheme();
+  const { c } = useTheme();
   const reduced = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const f = useSharedValue(0);
   // Error is its own animated axis so flipping into/out of the error state blends
-  // (line/accent ↔ coral) instead of the ring color snapping in one frame.
+  // (line/accent ↔ danger) instead of the ring color snapping in one frame.
   const err = useSharedValue(error ? 1 : 0);
 
   useEffect(() => {
     err.value = reduced ? (error ? 1 : 0) : withTiming(error ? 1 : 0, { duration: dur.press, easing: ease.press });
   }, [error, reduced, err]);
 
+  // iOS has no live regions — announce the error when it lands so a screen-reader
+  // user hears WHY the submit didn't go through (Android uses the live region below)
+  useEffect(() => {
+    if (error) AccessibilityInfo.announceForAccessibility(error);
+  }, [error]);
+
+  const danger = c.danger;
   const ringStyle = useAnimatedStyle(() => {
     const focusColor = interpolateColor(f.value, [0, 1], [c.line, c.accent]);
-    return { borderColor: interpolateColor(err.value, [0, 1], [focusColor, brand.coral]) };
+    return { borderColor: interpolateColor(err.value, [0, 1], [focusColor, danger]) };
   });
 
   const iconActive = !!error || focused;
-  const iconActiveColor = error ? brand.coral : c.accent;
+  const iconActiveColor = error ? c.danger : c.accent;
 
   return (
     <View>
@@ -136,7 +144,10 @@ export function FormField({
         // coral (#EF626C) is only ~2.77:1 on the cream surface (fails AA) — use a
         // darker red by day, the brighter coral by night where it clears contrast.
         <Appear enter={dur.nav}>
-          <AppText variant="caption" style={{ color: isNight ? brand.coral : '#B5303A', marginTop: 6, textTransform: 'none' }}>
+          <AppText
+            variant="caption"
+            accessibilityLiveRegion="polite"
+            style={{ color: c.danger, marginTop: 6, textTransform: 'none' }}>
             {error}
           </AppText>
         </Appear>

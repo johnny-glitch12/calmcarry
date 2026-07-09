@@ -160,6 +160,7 @@ function TabItem({
         {focused ? (
           <Animated.Text
             numberOfLines={1}
+            maxFontSizeMultiplier={1.35}
             style={[
               { fontFamily: fonts.medium, fontSize: 13, letterSpacing: 0.2, lineHeight: 16, color: pillContent },
               labelStyle,

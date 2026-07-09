@@ -38,7 +38,7 @@ import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
-import { getJSON, setJSON } from '@/lib/store';
+import { getJSON, remove, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
 
 const NEW_THIS_MONTH = ['rain-piano', 'beach-fire', 'rain-forest', 'fan'];
@@ -69,7 +69,7 @@ const INTENT_REASON: Record<Intent, string> = {
   sleep: 'To wind down for sleep',
   reset: 'A quick reset',
   sounds: 'Calm sounds for right now',
-  suggest: "Tonight's pick for you",
+  suggest: 'Tonight’s pick for you',
 };
 
 /** A single calm-nights star. Earned stars gently scale + fade in one after
@@ -177,7 +177,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
 
 export function TonightScreen() {
   const router = useRouter();
-  const { user, isPremium, token } = useAuth();
+  const { user, isPremium, token, status } = useAuth();
   const { mode, intent, feeling, recommendedTrackId, recommendedTrackIds, recommendationReason, needsCheckIn, dismissCheckIn, profiles } = useProfile();
   const { c } = useTheme();
 
@@ -199,7 +199,9 @@ export function TonightScreen() {
   );
   const hour = useMemo(() => new Date().getHours(), []);
   const kids = mode === 'kids';
-  const firstName = (user?.name ?? '').split(' ')[0] || 'there';
+  // no name (guest / withheld) → drop the clause entirely; "Good evening, there"
+  // reads like template output
+  const firstName = (user?.name ?? '').split(' ')[0];
 
   // Night flags drive dimming + the honest 3 a.m. rescue copy. Declared up here so the
   // check-in guard below can suppress the survey during the small hours.
@@ -220,6 +222,24 @@ export function TonightScreen() {
       router.push('/survey' as Href);
     }
   }, [needsCheckIn, kids, lateNight, router, dismissCheckIn]);
+
+  // "Start my free trial" in the funnel is a promise: once the user is signed in,
+  // open the Calm Plan sheet ONCE so the store trial is actually offered. Before
+  // this, that tap and "Maybe later" were silently identical. Never for kids.
+  const trialOffered = useRef(false);
+  useEffect(() => {
+    if (status !== 'authed' || isPremium || kids || trialOffered.current) return;
+    let alive = true;
+    getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
+      if (!alive || !pending || trialOffered.current) return;
+      trialOffered.current = true;
+      remove('cc.pendingTrial');
+      router.push('/unlock' as Href);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [status, isPremium, kids, router]);
 
   // gentle, non-failable "calm nights" progress — earned by real sessions, shown
   // to adults too (kids get the playful stars on KidsHome). Refreshed on focus.
@@ -347,7 +367,13 @@ export function TonightScreen() {
           <GlowOrb size={40} breathing={false} reserveGlow />
         </View>
         <AppText variant="h1" tone="title" style={{ marginTop: 18 }}>
-          {kids ? `Bedtime, ${firstName}` : `${greeting(hour)}, ${firstName}`}
+          {kids
+            ? firstName
+              ? `Bedtime, ${firstName}`
+              : 'Bedtime'
+            : firstName
+              ? `${greeting(hour)}, ${firstName}`
+              : greeting(hour)}
         </AppText>
       </Reveal>
 
@@ -522,6 +548,9 @@ export function TonightScreen() {
             {moreIds.map((id) => {
               const t = TRACKS[id];
               if (!t) return null;
+              // same anti-bait rule as the hero: a locked pick must WEAR its lock
+              // and lead to the paywall, never to a 60s preview that fades mid-drift
+              const isLocked = !!t.locked && !isPremium && !kids;
               return (
                 <CoverCard
                   key={id}
@@ -529,7 +558,8 @@ export function TonightScreen() {
                   subtitle={t.subtitle}
                   meta={t.duration}
                   image={covers[t.cover]}
-                  onPress={() => router.push(`/player?id=${id}`)}
+                  locked={isLocked}
+                  onPress={() => router.push(isLocked ? `/unlock?id=${id}` : `/player?id=${id}`)}
                 />
               );
             })}

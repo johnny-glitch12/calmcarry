@@ -5,7 +5,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { Platform, View, type GestureResponderEvent } from 'react-native';
+import { AccessibilityInfo, Platform, View, type GestureResponderEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -18,7 +18,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { PRIVACY_URL, TERMS_URL } from '@/content/store';
-import { brand, dur, ease, useTheme } from '@/theme';
+import { dur, ease, useTheme } from '@/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -44,7 +44,9 @@ function InlineLink({ label, url }: { label: string; url: string }) {
   return (
     <AnimatedAppText
       variant="caption"
-      style={[{ color: c.textAccent }, s]}
+      // caption uppercases; inside a flowing sentence the links must match the
+      // sentence case around them (was rendering "TERMS and PRIVACY POLICY")
+      style={[{ color: c.textAccent, textTransform: 'none', letterSpacing: 0 }, s]}
       suppressHighlighting
       accessibilityRole="link"
       onPressIn={(_e: GestureResponderEvent) => drive(true)}
@@ -79,6 +81,10 @@ export function SignIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // iOS has no live regions — announce auth errors so screen-reader users hear them
+  useEffect(() => {
+    if (error) AccessibilityInfo.announceForAccessibility(error);
+  }, [error]);
   // Age assurance for account creation (App Store 5.1.1 / Play): the account holder
   // must confirm they're an adult. Child use happens via COPPA-consented kid profiles.
   const [adult, setAdult] = useState(false);
@@ -181,11 +187,15 @@ export function SignIn() {
       }
       setBusy(true);
       try {
+        console.log('[probe] forgot: calling api');
         await api.forgotPassword(email.trim());
+        console.log('[probe] forgot: resolved');
         setForgot('code');
-      } catch {
+      } catch (e) {
+        console.log('[probe] forgot: caught', String(e));
         setError('We couldn’t send the code just now. Try again in a moment.');
       } finally {
+        console.log('[probe] forgot: finally');
         setBusy(false);
       }
       return;
@@ -251,7 +261,7 @@ export function SignIn() {
           ) : null}
           {googleConfigured ? (
             <PressableScale onPress={() => googlePrompt()} accessibilityRole="button" disabled={busy} accessibilityLabel="Continue with Google">
-              <View style={{ height: 52, borderRadius: 8, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <View style={{ minHeight: 52, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                 <Feather name="chrome" size={18} color={c.text} />
                 <AppText variant="bodyMedium" tone="title">
                   Continue with Google
@@ -382,9 +392,9 @@ export function SignIn() {
           ) : null}
           {error ? (
             <Appear>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Feather name="alert-circle" size={15} color={brand.coral} />
-                <AppText variant="label" style={{ color: brand.coral, textTransform: 'none', letterSpacing: 0 }}>
+              <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Feather name="alert-circle" size={15} color={c.danger} />
+                <AppText variant="label" style={{ color: c.danger, textTransform: 'none', letterSpacing: 0 }}>
                   {error}
                 </AppText>
               </View>

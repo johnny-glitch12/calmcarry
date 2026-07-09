@@ -64,13 +64,16 @@ function sanitizeProfiles(raw: unknown): Profile[] {
  */
 export type Feeling = 'racing' | 'cant-switch-off' | 'wired-tired' | 'wound-up' | 'heavy-day' | 'quiet';
 
-export const FEELING_MAP: Record<Feeling, { intent: Intent; track: string; line: string }> = {
-  racing: { intent: 'reset', track: 'box-breathing', line: 'Let’s slow the spin.' },
-  'cant-switch-off': { intent: 'sleep', track: 'deep-rest', line: 'We’ll help you set the day down.' },
-  'wired-tired': { intent: 'sleep', track: 'slow-tide', line: 'Tired body, busy mind. Let’s settle both.' },
-  'wound-up': { intent: 'reset', track: 'box-breathing', line: 'A few slow breaths to unwind.' },
-  'heavy-day': { intent: 'sleep', track: 'deep-rest', line: 'Somewhere soft to land.' },
-  quiet: { intent: 'sounds', track: 'slow-tide', line: 'Just some calm to rest in.' },
+// freeTrack: the anti-bait fallback — where a FREE user lands when the primary
+// pick is premium-locked (a preview that fades into the paywall mid-drift is the
+// exact BetterSleep move this app exists to avoid).
+export const FEELING_MAP: Record<Feeling, { intent: Intent; track: string; freeTrack: string; line: string }> = {
+  racing: { intent: 'reset', track: 'box-breathing', freeTrack: 'box-breathing', line: 'Let’s slow the spin.' },
+  'cant-switch-off': { intent: 'sleep', track: 'deep-rest', freeTrack: 'slow-tide', line: 'We’ll help you set the day down.' },
+  'wired-tired': { intent: 'sleep', track: 'slow-tide', freeTrack: 'slow-tide', line: 'Tired body, busy mind. Let’s settle both.' },
+  'wound-up': { intent: 'reset', track: 'box-breathing', freeTrack: 'box-breathing', line: 'A few slow breaths to unwind.' },
+  'heavy-day': { intent: 'sleep', track: 'deep-rest', freeTrack: 'gymnopedie', line: 'Somewhere soft to land.' },
+  quiet: { intent: 'sounds', track: 'slow-tide', freeTrack: 'slow-tide', line: 'Just some calm to rest in.' },
 };
 
 type ProfileValue = {
@@ -80,6 +83,7 @@ type ProfileValue = {
   activeProfile: Profile;
   setActiveProfile: (id: string) => void;
   addProfile: (name: string, type: AppMode) => void;
+  renameProfile: (id: string, name: string) => void;
   removeProfile: (id: string) => void;
   /** the active profile's type — drives kids vs adult content everywhere */
   mode: AppMode;
@@ -107,6 +111,7 @@ const ProfileContext = createContext<ProfileValue>({
   activeProfile: fallback,
   setActiveProfile: () => {},
   addProfile: () => {},
+  renameProfile: () => {},
   removeProfile: () => {},
   mode: 'adult',
   setMode: () => {},
@@ -327,6 +332,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (t && t !== 'local') api.createProfile(t, { name: profile.name, type }).catch(() => {});
   }, []);
 
+  // Rename a profile in place (fixing a typo must NOT require delete+recreate,
+  // which would discard the server-side profile id the household sync keys on).
+  const renameProfile = useCallback((id: string, name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setProfiles((prev) => {
+      const next = prev.map((p) => (p.id === id ? { ...p, name: clean } : p));
+      setJSON(KEYS.profiles, next);
+      return next;
+    });
+    const t = tokenRef.current;
+    if (t && t !== 'local') api.updateProfile(t, id, { name: clean }).catch(() => {});
+  }, []);
+
   // Remove a profile + its data (COPPA: a parent can delete a child's profile any
   // time). Refuses to remove the last adult / the only profile; switches away if
   // the removed one was active.
@@ -414,6 +433,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       activeProfile,
       setActiveProfile,
       addProfile,
+      renameProfile,
       removeProfile,
       mode,
       setMode,
@@ -427,7 +447,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       recommendedTrackIds,
       recommendationReason,
     }),
-    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds, recommendationReason]
+    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, renameProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds, recommendationReason]
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

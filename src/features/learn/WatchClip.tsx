@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import { AppText, PressableScale, Reveal, Screen } from '@/components';
@@ -22,6 +23,13 @@ export function WatchClip() {
   });
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/learn'));
+
+  // No video on file → land on the ARTICLE that exists instead of a "coming soon"
+  // panel (only reachable via deep link today; in-app entry points gate on videoUrl,
+  // and "coming soon" is exactly the promised-feature copy the app bans).
+  useEffect(() => {
+    if (!src) router.replace(`/learn-article?id=${article.id}` as Href);
+  }, [src, article.id, router]);
 
   return (
     <Screen mode="night" scroll>

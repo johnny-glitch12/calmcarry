@@ -4,7 +4,9 @@ import * as Haptics from 'expo-haptics';
 import { Platform, View } from 'react-native';
 
 import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
+import { TRACKS } from '@/content/library';
 import { useTheme } from '@/theme';
 
 // "How are you arriving tonight?" SAFE WORDS ONLY (build plan §3/§14):
@@ -115,15 +117,21 @@ function CheckInBody({ onFeeling, onSkip }: { onFeeling: (f: Feeling) => void; o
 
 export function MoodSurvey() {
   const router = useRouter();
-  const { setFeeling, dismissCheckIn } = useProfile();
+  const { setFeeling, dismissCheckIn, mode } = useProfile();
+  const { isPremium } = useAuth();
 
   // One tap: record the feeling (which also seeds the matching intent) AND start
   // the tailored session. Answering IS starting — the user never lands back on Home
-  // to hunt for a sound. FEELING_MAP carries the track we'd reach for.
+  // to hunt for a sound. FEELING_MAP carries the track we'd reach for — but the
+  // same anti-bait rule as the Home hero applies: a free user answering the
+  // check-in must land on a track that PLAYS, never on a 60s preview that fades
+  // into the paywall mid-drift. FEELING_MAP carries a free fallback for that.
   const pickFeeling = (f: Feeling) => {
     setFeeling(f);
     dismissCheckIn();
-    router.replace(`/player?id=${FEELING_MAP[f].track}`);
+    const pick = FEELING_MAP[f];
+    const locked = !!TRACKS[pick.track]?.locked && !isPremium && mode !== 'kids';
+    router.replace(`/player?id=${locked ? pick.freeTrack : pick.track}`);
   };
   const skip = () => {
     dismissCheckIn();

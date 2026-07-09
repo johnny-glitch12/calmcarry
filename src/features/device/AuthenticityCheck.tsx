@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -11,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
-import { Appear, AppText, GlowOrb, PrimaryButton, Reveal, Screen, StatusChip, SwapText } from '@/components';
+import { Appear, AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { dur, ease, useTheme } from '@/theme';
@@ -116,7 +117,19 @@ export function AuthenticityCheck() {
   const checking = phase === 'checking';
 
   return (
-    <Screen mode="light" scroll tabBarSpacing contentStyle={{ alignItems: 'center', paddingTop: 24 }}>
+    <Screen mode="light" scroll contentStyle={{ paddingTop: 24 }}>
+      {/* pushed stack screen: a visible way out (during "checking" there were zero
+          actionable controls). Content stays centered via the inner wrapper. */}
+      <PressableScale
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        dimTo={0.85}
+        style={{ alignSelf: 'flex-start', marginBottom: 8 }}>
+        <Feather name="chevron-left" size={26} color={c.text} />
+      </PressableScale>
+      <View style={{ alignItems: 'center' }}>
       <SwapText trigger={phase}>
         <AppText variant="caption" tone="accent">
           {authentic ? 'Registered' : checking ? 'Checking' : 'Not registered'}
@@ -211,6 +224,7 @@ export function AuthenticityCheck() {
           </Reveal>
         </Appear>
       )}
+      </View>
     </Screen>
   );
 }

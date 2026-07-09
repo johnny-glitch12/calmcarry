@@ -13,6 +13,7 @@ import Animated, {
 
 import { AppText, BearMascot, PressableScale, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useProfile } from '@/features/profile/ProfileProvider';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
@@ -94,8 +95,12 @@ export function KidsHome() {
   const router = useRouter();
   const { c } = useTheme();
   const { user } = useAuth();
+  const { activeProfile } = useProfile();
   const [nights, setNights] = useState(0);
-  const firstName = (user?.name ?? '').split(' ')[0] || 'friend';
+  // greet the CHILD on the active kid profile ("Mia"), not the parent's account
+  // name — that's the whole point of named profiles
+  const profileName = activeProfile?.type === 'kids' ? activeProfile.name : null;
+  const firstName = (profileName ?? user?.name ?? '').split(' ')[0] || 'friend';
 
   // This is the bedtime screen — from evening on, a child (or parent) reopens it in a
   // dark room, so dim to the night palette instead of a full light-mode blast. Kept

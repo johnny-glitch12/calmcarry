@@ -61,3 +61,7 @@ calmcarry-preview/
 
 # Vercel local link
 .vercel
+
+# scratch output from scripts/gen-voices.mjs + gen-narrations.mjs (bundled copies live in assets/audio)
+voice-out/
+narration-out/

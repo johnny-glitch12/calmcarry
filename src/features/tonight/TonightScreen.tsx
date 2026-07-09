@@ -30,7 +30,7 @@ import {
 } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { KidsHome } from '@/features/kids/KidsHome';
-import { FirstRunTour } from '@/features/tonight/FirstRunTour';
+import { setTourTarget } from '@/lib/tourTargets';
 import { FEELING_MAP, useProfile, type Feeling, type Intent } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
 import { covers } from '@/content/covers';
@@ -272,17 +272,11 @@ export function TonightScreen() {
     };
   }, []);
 
-  // "how CalmCarry works" intro for newcomers (dismissible, persisted)
-  // one-time quick tour (Mason): shows once on the first Home landing, then never
-  const [tourPending, setTourPending] = useState(false);
-  useEffect(() => {
-    getJSON('cc.tourDone', false).then((done) => setTourPending(!done));
-  }, []);
-  const finishTour = () => {
-    setTourPending(false);
-    setJSON('cc.tourDone', true);
-  };
+  // the one-time hands-on tour lives at the TABS layout (it spotlights the tab
+  // bar itself); Home only contributes the hero's measured rect via heroRef.
+  const heroRef = useRef<View>(null);
 
+  // "how CalmCarry works" intro for newcomers (dismissible, persisted)
   const [hiwDismissed, setHiwDismissed] = useState(false);
   useEffect(() => {
     getJSON('cc.hiwDismissed', false).then(setHiwDismissed);
@@ -354,11 +348,7 @@ export function TonightScreen() {
   );
 
   return (
-    <Screen
-      mode={lateNight ? 'night' : 'light'}
-      scroll
-      tabBarSpacing
-      overlay={tourPending ? <FirstRunTour onDone={finishTour} /> : undefined}>
+    <Screen mode={lateNight ? 'night' : 'light'} scroll tabBarSpacing>
       {/* brand header */}
       <Reveal index={0}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -430,7 +420,18 @@ export function TonightScreen() {
           into a mid-drift paywall). Demoted one Reveal index in the deep night so the
           rescue row above fades in first. */}
       <Reveal index={deepNight ? 5 : 3}>
-        <View style={{ marginTop: 20 }}>
+        <View
+          ref={heroRef}
+          style={{ marginTop: 20 }}
+          onLayout={() => {
+            // register the hero's window rect for the hands-on tour spotlight —
+            // measured after the entrance settles so the rect isn't mid-flight
+            setTimeout(() => {
+              heroRef.current?.measureInWindow?.((x, y, width, height) => {
+                if (width > 0 && height > 0) setTourTarget('home-hero', { x, y, width, height });
+              });
+            }, 700);
+          }}>
           {/* keyed on the recommendation so switching profile on-screen crossfades the
               personalized hero instead of hard-swapping its title/subtitle/kicker */}
           <Appear key={`${heroId}:${heroKicker}`} enter={dur.nav}>

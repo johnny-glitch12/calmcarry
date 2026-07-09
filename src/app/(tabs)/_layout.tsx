@@ -1,17 +1,55 @@
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 
 import { TabBar } from '@/components';
+import { useProfile } from '@/features/profile/ProfileProvider';
+import { HandsOnTour } from '@/features/tour/HandsOnTour';
+import { getJSON, setJSON } from '@/lib/store';
 import { dur } from '@/theme';
+
+/** One-time hands-on walkthrough (Mason). Lives HERE — above the scenes AND the
+ *  tab bar — because its spotlight points at the real tab pills and the user
+ *  advances by actually tapping them. Starts on the first Home landing (where
+ *  the hero target exists), adults only, persisted like the old card tour. */
+function TourGate() {
+  const { hydrated, mode } = useProfile();
+  const pathname = usePathname();
+  // idle → (first Home landing, flag unset) → active → done. Once active it stays
+  // mounted across the tab taps the tour asks for; 'done' never re-enters.
+  const [phase, setPhase] = useState<'idle' | 'active' | 'done'>('idle');
+  useEffect(() => {
+    if (phase !== 'idle' || !hydrated || mode === 'kids' || pathname !== '/') return;
+    let alive = true;
+    getJSON('cc.tourDone', false).then((done) => {
+      if (!alive) return;
+      setPhase((p) => (p === 'idle' ? (done ? 'done' : 'active') : p));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [phase, hydrated, mode, pathname]);
+  if (phase !== 'active') return null;
+  return (
+    <HandsOnTour
+      onDone={() => {
+        setPhase('done');
+        setJSON('cc.tourDone', true);
+      }}
+    />
+  );
+}
 
 export default function TabsLayout() {
   return (
-    // Tab switches cross-fade FAST (dur.tab) with an OVERLAP curve — never a hard
+    <View style={{ flex: 1 }}>
+    {/* Tab switches cross-fade FAST (dur.tab) with an OVERLAP curve — never a hard
     // cut, but never a laggy dissolve either. The built-in 'fade' preset makes
     // both scenes half-transparent at the midpoint, so the dark root bled through
     // as a visible dim-blink; this interpolator holds each scene fully opaque
     // through the middle (combined coverage never drops), so the new tab simply
     // materializes over the old one. Each screen still does its one-time entrance
-    // on first open (Reveal) — this only shapes the switch itself.
+    // on first open (Reveal) — this only shapes the switch itself. */}
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -40,5 +78,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="community" options={{ title: 'Community' }} />
       <Tabs.Screen name="you" options={{ title: 'Profile' }} />
     </Tabs>
+    <TourGate />
+    </View>
   );
 }

@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -16,6 +16,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { setTourTarget } from '@/lib/tourTargets';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
 import { brand, dur, ease, fonts, night, spring, themes, useColorSchemePref } from '@/theme';
 
@@ -63,6 +64,7 @@ const TABS: Record<string, { label: string; night?: boolean }> = {
  */
 function TabItem({
   focused,
+  focusedRoute,
   route,
   label,
   onPress,
@@ -71,6 +73,8 @@ function TabItem({
   pillContent,
 }: {
   focused: boolean;
+  /** the currently focused route — ANY focus change shifts every slot */
+  focusedRoute: string;
   route: string;
   label: string;
   onPress: () => void;
@@ -82,6 +86,20 @@ function TabItem({
   const reduced = useReducedMotion();
   const t = useSharedValue(focused ? 1 : 0); // focus progress (gentle spring settle)
   const press = useSharedValue(1); // tap press-scale
+
+  // report this tab's window rect for the hands-on tour spotlight. Re-measured
+  // when ANY tab's focus changes (the expanding pill shifts every sibling slot,
+  // and web's onLayout only fires on SIZE changes, not position) — after the
+  // layout tween has settled.
+  const itemRef = useRef<View>(null);
+  const measure = useCallback(() => {
+    setTimeout(() => {
+      itemRef.current?.measureInWindow?.((x, y, width, height) => {
+        if (width > 0 && height > 0) setTourTarget(`tab-${route}`, { x, y, width, height });
+      });
+    }, 340);
+  }, [route]);
+  useEffect(measure, [focusedRoute, measure]);
 
   useEffect(() => {
     t.value = reduced
@@ -113,6 +131,8 @@ function TabItem({
 
   return (
     <AnimatedPressable
+      ref={itemRef as never}
+      onLayout={measure}
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -247,6 +267,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
               <TabItem
                 key={route.key}
                 focused={focused}
+                focusedRoute={state.routes[state.index]?.name ?? ''}
                 route={route.name}
                 label={meta.label}
                 inactive={inactive}

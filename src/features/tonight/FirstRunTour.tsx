@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear, AppText, PressableScale, PrimaryButton } from '@/components';
 import { dur, useTheme } from '@/theme';
@@ -24,15 +25,21 @@ const STEPS = [
 
 export function FirstRunTour({ onDone }: { onDone: () => void }) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
   const [i, setI] = useState(0);
   const last = i === STEPS.length - 1;
   const step = STEPS[i];
+  // The tour renders INSIDE the tab scene, so the floating tab bar always draws
+  // on top of it. Clear the pill entirely (its bottom offset + height + a gap):
+  // the card floats above the bar instead of the bar cutting through Skip. The
+  // bar staying visible is deliberate — step 3 points at the Profile tab.
+  const tabBarClearance = Math.max(insets.bottom, 12) + 64 + 16;
   return (
     <View
       style={[
         StyleSheet.absoluteFill,
         // literal scrim (image/overlay context): dim the app behind the tour card
-        { backgroundColor: 'rgba(11,19,18,0.74)', justifyContent: 'flex-end', padding: 20, paddingBottom: 44 },
+        { backgroundColor: 'rgba(11,19,18,0.74)', justifyContent: 'flex-end', padding: 20, paddingBottom: tabBarClearance },
       ]}>
       <Appear key={i} enter={dur.sheet} exit={dur.exit}>
         <View style={{ borderRadius: 20, padding: 20, backgroundColor: c.bg, borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>

@@ -269,6 +269,21 @@ export function SignIn() {
               </View>
             </PressableScale>
           ) : null}
+          {/* Age affirmation for social sign-in: the email path has an explicit
+              18+ checkbox before it creates an account; Apple/Google create one in
+              one tap, so the same affirmation must be visible here (App Store 5.1.1 /
+              Play age assurance — the account holder is an adult; kids use COPPA
+              profiles under them). */}
+          <AppText
+            variant="caption"
+            tone="muted"
+            style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 17 }}>
+            By continuing with Apple or Google you confirm you’re 18 or older and agree to our{' '}
+            <InlineLink label="Terms" url={TERMS_URL} />
+            {' and '}
+            <InlineLink label="Privacy Policy" url={PRIVACY_URL} />
+            .
+          </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
             <AppText variant="label" tone="muted">

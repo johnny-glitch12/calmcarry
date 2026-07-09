@@ -143,8 +143,8 @@ function KidsGuard() {
 
 // DEMO TOGGLE (demo-testing only): when true, anyone NOT signed in lands on the
 // onboarding questions on EVERY launch; a signed-in session skips straight to the
-// app. Set to false before shipping to restore normal "show onboarding once".
-const DEMO_FORCE_ONBOARDING = true;
+// app. FALSE for shipping builds — guests see onboarding once, then the app.
+const DEMO_FORCE_ONBOARDING = false;
 
 function RootNav() {
   // Load Feather's glyph font through expo-font (not @expo/vector-icons' own web

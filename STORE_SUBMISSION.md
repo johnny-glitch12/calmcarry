@@ -14,7 +14,7 @@ the rest needs the Glow Company's developer accounts + a few real URLs.
 - [x] App icon, adaptive icon, splash (mint `#D3EDEA`) in `assets/images/`
 - [x] `eas.json` with development / preview / production profiles
 - [x] Wellness disclaimer in-app (About screen + Learn articles) — App Review wants this for wellness apps
-- [x] No IAP: physical Glow Orb + digital bundle both via external web (compliant — Apple 3.1.5a physical, entitlement-on-sign-in for digital)
+- [x] IAP: the **premium subscription is in-app** (StoreKit / Play Billing) — SKUs `calmcarry.premium.monthly` / `calmcarry.premium.annual` with a 3-day intro trial, server-validated (App Store Server API + Play Developer API, fail-closed, SKU-allowlisted). The **physical Glow Orb** is bought on the web store (Apple 3.1.5a physical goods) — that stays external.
 
 ## 3. Fill in before submitting (placeholders today)
 - [ ] Real store/product URL in `src/content/store.ts` → `DEVICE_CHECKOUT_URL` (currently `theglowcompany.co/products/calmcarry-glow-orb`)
@@ -28,9 +28,16 @@ the rest needs the Glow Company's developer accounts + a few real URLs.
 - [ ] Age rating questionnaire — note **Kids mode** exists → answer the kids/COPPA questions (we collect no ad IDs, minimal data; "Made for Kids" is optional — only if marketing to children)
 
 ## 5. App privacy / data safety answers
-- Data collected: **account email/name** only (via Glow sign-in); listen logs tied to account.
-- **No tracking**, no ads, no third-party analytics SDKs currently.
-- Audio plays in silent mode (already configured).
+File these ACCURATELY (a stale/optimistic label is itself a 5.1.1(v) reject). All are
+"App Functionality," none used for tracking, no cross-app/IDFA tracking, no ads:
+- **Contact info** — account email + name (via Apple/Google/email sign-in).
+- **Identifiers** — account/user id.
+- **Usage data / product interaction** — first-party funnel events (our own backend
+  via `api.trackEvents`, not a third-party ad SDK). Excluded entirely in Kids mode.
+- **Diagnostics / crash + performance** — ONLY if Sentry is enabled (`EXPO_PUBLIC_SENTRY_DSN`
+  / `SENTRY_DSN` set). Sentry is a third-party SDK; if you ship with it on, declare this.
+  Also excluded in Kids mode. If you leave the DSN blank, do not declare Diagnostics.
+- No ads, no data sold, no tracking across apps/sites. Audio plays in silent mode.
 
 ## 6. Build & submit commands
 ```bash
@@ -43,7 +50,31 @@ npx eas submit -p android        # needs Play service-account JSON
 ```
 
 ## 7. Backend before production
-- The local NestJS+SQLite server is a stand-in. Production needs the Shopify
-  Customer-Account-API login + order-webhook → entitlement service, a hosted DB,
-  and a signed-URL audio CDN (Phase 1–2 backend per the build plan).
-- Point `src/lib/api.ts` `API_BASE` at the deployed backend URL.
+- The NestJS server is real (IAP validation, store webhooks, push, auth, retention
+  purge — all implemented, fail-closed). Production runs it on **Fly.io** with
+  **Postgres** (`DATABASE_URL`); local dev uses SQLite. See `server/DEPLOY.md`.
+- Provision: Fly app + secrets, a Postgres (Neon/Fly), and DNS+TLS for the API host.
+- The app points at `https://api.theglowcompany.co` via the EAS `production` build env
+  (`eas.json`), not a hardcoded `API_BASE` — set that host live before the store build.
+- Audio ships bundled in the binary for v1; the signed-URL CDN is post-v1 (`STREAMING_ENABLED`).
+
+## 8. App Review notes (paste into ASC "App Review Information" / Play "Review notes")
+The dev/web comp login does NOT work in a store build — you MUST create a real demo
+account on the production backend first (sign up in the shipped build once the API is
+live), then fill the credentials below.
+
+> **Demo account:** `<email>` / `<password>` (created on api.theglowcompany.co)
+>
+> **The physical "Glow Orb" device is NOT required to review the app.** On the
+> device-registration screen you can tap "Continue" / "Not now" to skip it and reach
+> the full app; every screen is reviewable without hardware.
+>
+> **Subscription:** premium is an auto-renewable in-app subscription (StoreKit / Play
+> Billing) with a 3-day free introductory trial on the annual plan. There is no
+> external/alternative purchase path for the digital subscription. The physical Glow
+> Orb device is sold separately on our web store (physical goods, per 3.1.5(a)).
+>
+> **Kids mode** is used by a child under the adult account holder, gated by a
+> biometric parent gate. The account holder confirms they are 18+. We do not enroll
+> in "Made for Kids" / "Designed for Families"; analytics and crash reporting are
+> disabled entirely while a kid profile is active.

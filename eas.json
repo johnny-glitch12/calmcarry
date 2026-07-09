@@ -20,13 +20,15 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://api.theglowcompany.co"
+        "EXPO_PUBLIC_API_BASE": "https://api.theglowcompany.co",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://api.theglowcompany.co"
+        "EXPO_PUBLIC_API_BASE": "https://api.theglowcompany.co",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },

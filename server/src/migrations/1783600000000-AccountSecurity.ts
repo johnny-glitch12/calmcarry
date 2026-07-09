@@ -14,7 +14,10 @@ export class AccountSecurity1783600000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     const ts = process.env.DATABASE_URL ? 'TIMESTAMP' : 'datetime';
     const now = process.env.DATABASE_URL ? 'now()' : "datetime('now')";
-    await queryRunner.query(`ALTER TABLE "owners" ADD "emailVerified" boolean NOT NULL DEFAULT (0)`);
+    // boolean default MUST be `false`, not `(0)`: Postgres rejects integer 0 as a
+    // boolean default (SQLite silently coerces it, which is why dev never caught it
+    // and a fresh prod Postgres would crash-loop on boot). Matches Init.ts.
+    await queryRunner.query(`ALTER TABLE "owners" ADD "emailVerified" boolean NOT NULL DEFAULT false`);
     await queryRunner.query(`ALTER TABLE "community_posts" ADD "reportsCount" integer NOT NULL DEFAULT (0)`);
     await queryRunner.query(
       `CREATE TABLE "auth_codes" (` +

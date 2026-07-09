@@ -15,6 +15,10 @@ primary_region = "iad"
   # NODE_ENV=development only for a throwaway showcase that should boot without
   # real credentials.
   NODE_ENV = "production"
+  # Apple Root CA certs (public, committed in server/certs/apple and baked into the
+  # image at /app/certs — see Dockerfile). Satisfies the StoreKit receipt-validation
+  # boot gate without a secret; App Store receipts verify against these roots.
+  APPLE_ROOT_CERTS_DIR = "/app/certs/apple"
 
 [http_service]
   internal_port = 4000

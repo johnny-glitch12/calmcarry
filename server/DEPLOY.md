@@ -30,9 +30,10 @@ fly deploy
 
 ## 4. Remaining integration keys (optional — each degrades gracefully without them)
 Set when ready (see `.env.example` for the full list):
-`APPLE_IAP_SHARED_SECRET`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `APPLE_SIGNIN_CLIENT_ID`,
-`GOOGLE_SIGNIN_CLIENT_ID`, `SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_WEBHOOK_SECRET`,
-`FCM_SERVER_KEY` / APNs keys.
+`APPLE_IAP_SHARED_SECRET`, `APPLE_APP_APPLE_ID`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`,
+`APPLE_SIGNIN_CLIENT_ID`, `GOOGLE_SIGNIN_CLIENT_ID`, `SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`,
+`SHOPIFY_WEBHOOK_SECRET`, and push: APNs (`APNS_KEY_P8` / `APNS_KEY_ID` / `APNS_TEAM_ID`)
++ FCM v1 (`FIREBASE_SERVICE_ACCOUNT_JSON`). (Legacy `FCM_SERVER_KEY` is gone — FCM v1 only.)
 
 ## 5. Point the app at it
 The Expo build profiles already pin `EXPO_PUBLIC_API_BASE=https://api.theglowcompany.co`

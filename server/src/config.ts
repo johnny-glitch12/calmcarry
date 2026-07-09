@@ -76,7 +76,6 @@ export const config = {
     from: process.env.MAIL_FROM ?? 'CalmCarry <no-reply@theglowcompany.co>',
   },
   push: {
-    fcmServerKey: process.env.FCM_SERVER_KEY ?? '', // PLACEHOLDER
     apnsKeyId: process.env.APNS_KEY_ID ?? '', // PLACEHOLDER
     apnsTeamId: process.env.APNS_TEAM_ID ?? '', // PLACEHOLDER
     apnsKeyP8: process.env.APNS_KEY_P8 ?? '', // PLACEHOLDER (the .p8 contents)

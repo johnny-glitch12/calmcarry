@@ -8,6 +8,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,10 +19,12 @@ import { HomeIcon, TAB_ICONS } from './TabIcons';
 import { brand, dur, ease, fonts, night, themes, useColorSchemePref } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-// Tab selection is INSTANT, matching the instant scene switch (Mason: the bar's
-// morphing/stretching read as noise — the pill DESIGN stays, the motion goes).
-// The pill simply appears fully formed on the picked tab; the only animation
-// left is the tactile press dip under the finger.
+// Tab selection POPS (Mason). The slot widths still snap in one frame — no
+// stretching/morphing — but the pill itself lands with a fast, punchy scale-in
+// and ONE small overshoot bounce, like a button that's happy you picked it.
+// Duration-capped spring: bounce peaks early, everything is DONE at 300ms
+// (a physics spring's micro-oscillation tail rang on past 600ms).
+const POP_SPRING = { duration: 300, dampingRatio: 0.55 } as const;
 
 // In Kids mode only these tabs show — no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.
@@ -53,9 +56,10 @@ const TABS: Record<string, { label: string; night?: boolean }> = {
 /**
  * A single tab in the floating-pill bar. The ACTIVE tab is a solid sage-filled
  * pill with its icon + label inline; INACTIVE tabs are a muted icon only.
- * Selection changes INSTANTLY — pill, label and slot widths swap in one frame,
- * in step with the instant scene switch. The only motion is the press dip under
- * the finger (plus a light haptic); reduced motion drops even that.
+ * Slot widths swap in ONE frame (no stretching) in step with the instant scene
+ * switch — then the pill POPS in: fast scale-up with a single overshoot bounce.
+ * Plus the press dip under the finger and a light haptic. Reduced motion: all
+ * instant, no pop.
  */
 function TabItem({
   focused,
@@ -79,7 +83,7 @@ function TabItem({
 }) {
   const Icon = TAB_ICONS[route as keyof typeof TAB_ICONS] ?? HomeIcon;
   const reduced = useReducedMotion();
-  const t = useSharedValue(focused ? 1 : 0); // focus state (0/1 — no tween)
+  const t = useSharedValue(focused ? 1 : 0); // pop progress (springs past 1 on select)
   const press = useSharedValue(1); // tap press-scale
 
   // report this tab's window rect for the hands-on tour spotlight. Re-measured
@@ -97,9 +101,18 @@ function TabItem({
   useEffect(measure, [focusedRoute, measure]);
 
   useEffect(() => {
-    // instant — the pill appears/clears in the same frame as the scene switch
-    t.value = focused ? 1 : 0;
-  }, [focused, t]);
+    if (reduced) {
+      t.value = focused ? 1 : 0;
+      return;
+    }
+    if (focused) {
+      // POP: restart from small and spring in with one overshoot bounce
+      t.value = 0;
+      t.value = withSpring(1, POP_SPRING);
+    } else {
+      t.value = 0; // the old pill clears instantly — the new one is the star
+    }
+  }, [focused, reduced, t]);
 
   const onPressIn = () => {
     if (!reduced) press.value = withTiming(0.94, { duration: dur.press, easing: ease.press });
@@ -108,11 +121,15 @@ function TabItem({
     press.value = reduced ? 1 : withTiming(1, { duration: dur.press, easing: ease.press });
   };
 
-  // press dip is the only motion; everything driven by t swaps in one frame
+  // the pill scales through the spring's overshoot (t peaks ~1.1 → a visible
+  // pop past full size, then settles); opacity fills fast so nothing ghosts
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
-  const fillStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1) }));
-  const overlayStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1) }));
-  const labelStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value, 1) }));
+  const fillStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(t.value * 2.5, 1),
+    transform: [{ scale: 0.7 + t.value * 0.3 }],
+  }));
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: Math.min(t.value * 2.5, 1) }));
+  const labelStyle = useAnimatedStyle(() => ({ opacity: Math.min(Math.max(t.value * 1.6 - 0.3, 0), 1) }));
 
   return (
     <AnimatedPressable

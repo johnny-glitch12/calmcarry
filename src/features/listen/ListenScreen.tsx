@@ -51,6 +51,7 @@ const SOUNDS: { key: SoundKey; label: string; cover: CoverKey; premium?: boolean
 ];
 const ZERO: Levels = { rain: 0, ocean: 0, brown: 0, drone: 0, pink: 0, white: 0, fire: 0, birdsong: 0, green: 0 };
 const TIMERS = [0, 15, 30, 60] as const;
+const GRID_GAP = 14; // uniform gap between sound tiles (both axes, via flex `gap`)
 
 type SavedMix = { name: string; levels: Levels };
 type TimerState = { endAt: number; mins: number };
@@ -78,11 +79,13 @@ function LevelBar({ lit }: { lit: boolean }) {
   );
 }
 
-function Tile({ label, cover, level, locked, onToggle, onLevel }: {
+function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
   label: string;
   cover: CoverKey;
   level: number;
   locked?: boolean;
+  /** exact pixel width from the grid (uniform tiles → every row symmetrical) */
+  width: number;
   onToggle: () => void;
   onLevel: (l: number) => void;
 }) {
@@ -152,13 +155,8 @@ function Tile({ label, cover, level, locked, onToggle, onLevel }: {
   const volStyle = useAnimatedStyle(() => ({ opacity: a.value }));
   const barsStyle = useAnimatedStyle(() => ({ opacity: 0.3 + 0.7 * a.value }));
 
-  // tile width follows the responsive column count (2 phone / 3 tablet / 4 wide);
-  // the ~3%/side slack leaves the row's space-between gaps
-  const cols = useResponsive().gridColumns;
-  const tileWidth = cols >= 4 ? '23%' : cols === 3 ? '31%' : '47%';
-
   return (
-    <View style={{ width: tileWidth }}>
+    <View style={{ width }}>
       <PressableScale
         onPress={onToggle}
         accessibilityRole="button"
@@ -253,6 +251,10 @@ export function ListenScreen() {
   const { isPremium, token } = useAuth();
   const { mode } = useProfile();
   const kids = mode === 'kids';
+  // responsive sound grid: measure the grid width, fit exactly `gridCols` uniform
+  // tiles with a fixed gap (2 phone / 3 tablet / 4 wide) — every row symmetrical
+  const { gridColumns: gridCols } = useResponsive();
+  const [gridW, setGridW] = useState(0);
   const [levels, setLevels] = useState<Levels>(ZERO);
   const [timer, setTimer] = useState<number>(0);
   const [mixes, setMixes] = useState<SavedMix[]>([]);
@@ -583,20 +585,29 @@ export function ListenScreen() {
         </Reveal>
       ) : null}
 
-      {/* sound grid */}
+      {/* sound grid — UNIFORM tiles + fixed gap + flex-start, so every row (full
+          or partial) is evenly sized and evenly spaced. Tile width is computed
+          from the measured grid width so N columns always fit exactly; a trailing
+          row simply left-aligns under the first columns (no lone tile splayed by
+          space-between, no drift as sounds are added). */}
       <Reveal index={2} style={{ marginTop: 24, paddingHorizontal: 24 }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 18 }}>
-          {SOUNDS.map((s) => (
-            <Tile
-              key={s.key}
-              label={s.label}
-              cover={s.cover}
-              level={levels[s.key]}
-              locked={!!s.premium && !isPremium && !kids}
-              onToggle={() => toggle(s.key)}
-              onLevel={(l) => setLevel(s.key, l)}
-            />
-          ))}
+        <View
+          onLayout={(e) => setGridW(e.nativeEvent.layout.width)}
+          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP }}>
+          {gridW > 0
+            ? SOUNDS.map((s) => (
+                <Tile
+                  key={s.key}
+                  label={s.label}
+                  cover={s.cover}
+                  level={levels[s.key]}
+                  locked={!!s.premium && !isPremium && !kids}
+                  width={(gridW - (gridCols - 1) * GRID_GAP) / gridCols}
+                  onToggle={() => toggle(s.key)}
+                  onLevel={(l) => setLevel(s.key, l)}
+                />
+              ))
+            : null}
         </View>
       </Reveal>
 

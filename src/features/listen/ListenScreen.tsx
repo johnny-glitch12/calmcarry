@@ -587,13 +587,14 @@ export function ListenScreen() {
 
       {/* sound grid — UNIFORM tiles + fixed gap + flex-start, so every row (full
           or partial) is evenly sized and evenly spaced. Tile width is computed
-          from the measured grid width so N columns always fit exactly; a trailing
-          row simply left-aligns under the first columns (no lone tile splayed by
-          space-between, no drift as sounds are added). */}
+          from the measured grid width so N columns always fit exactly. justify
+          CENTER means full rows fill edge-to-edge (no free space to distribute)
+          while a partial last row centers — so a lone trailing tile sits balanced
+          in the middle instead of stranded on the left. */}
       <Reveal index={2} style={{ marginTop: 24, paddingHorizontal: 24 }}>
         <View
           onLayout={(e) => setGridW(e.nativeEvent.layout.width)}
-          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP }}>
+          style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: GRID_GAP }}>
           {gridW > 0
             ? SOUNDS.map((s) => (
                 <Tile

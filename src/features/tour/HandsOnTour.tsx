@@ -157,15 +157,30 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
                 />
               </View>
             ) : null}
+            {/* hands-on steps: the real tap is the primary action, but nobody gets
+                held hostage — a quiet way past this step without doing it */}
+            {interactive ? (
+              <PressableScale
+                onPress={() => setI(i + 1)}
+                accessibilityRole="button"
+                accessibilityLabel="Skip this step"
+                dimTo={0.6}
+                hitSlop={8}
+                style={{ alignItems: 'center', paddingVertical: 12, marginTop: 8 }}>
+                <AppText variant="label" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+                  Skip this step
+                </AppText>
+              </PressableScale>
+            ) : null}
             <PressableScale
               onPress={onDone}
               accessibilityRole="button"
               accessibilityLabel="Skip the tour"
               dimTo={0.6}
               hitSlop={8}
-              style={{ alignItems: 'center', paddingVertical: 12, marginTop: interactive ? 6 : 2 }}>
+              style={{ alignItems: 'center', paddingVertical: 12, marginTop: interactive ? 0 : 2 }}>
               <AppText variant="label" tone="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>
-                Skip
+                Skip tour
               </AppText>
             </PressableScale>
           </View>

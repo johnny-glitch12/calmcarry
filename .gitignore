@@ -18,6 +18,11 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# store-submission + push credentials (founder drops these in; NEVER commit real ones)
+/secrets/
+google-services.json
+GoogleService-Info.plist
+
 # Metro
 .metro-health-check*
 

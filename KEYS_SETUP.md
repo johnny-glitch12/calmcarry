@@ -42,7 +42,7 @@ owner" badge) — premium works fine without Shopify.
 | Key | Note |
 |---|---|
 | `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` + `EXPO_PUBLIC_GOOGLE_*` | Social sign-in — JWKS verification is implemented; keys are all that's missing. Can still launch **email-only** and skip these |
-| `FCM_*` / `APNS_*` | Bedtime **push**. The app ships a local reminder already *(server-side send transport is still a stub — see end)* |
+| `APNS_*` / `FIREBASE_SERVICE_ACCOUNT_JSON` (+ Android `google-services.json`, §9) | Bedtime **push** — server send is fully implemented (APNs ES256 JWT + FCM v1). The app ships a local reminder already, so remote push is cuttable for v1 |
 | `SHOPIFY_*` | Device-ownership badge only — optional for the subscription |
 | `EXPO_PUBLIC_SENTRY_DSN` + `SENTRY_DSN` | Crash/error monitoring, app + server (off if blank) |
 | `CDN_BASE_URL` + `CDN_SIGNING_KEY` | **Not needed for v1** — all audio ships bundled in the binary. Only for `STREAMING_ENABLED=true` later (§7) |
@@ -69,7 +69,7 @@ Any third-party payment processor / Stripe / merchant-bank key.
 ## 3. Database — `DATABASE_URL` (Neon = easiest)
 - neon.tech → **Create project** → copy the **connection string** (`postgresql://…?sslmode=require`).
 - Paste into `DATABASE_URL`; leave `DATABASE_SSL=true`.
-- ⚠️ Add TypeORM migrations before prod (currently `synchronize` — can alter/drop columns).
+- Migrations run automatically on any Postgres connection (`migrationsRun`); `synchronize` is local-SQLite-dev only. A fresh Neon DB builds its full schema on first boot.
 
 ## 4. Apple (developer.apple.com + App Store Connect)
 - **`APPLE_BUNDLE_ID`** (`co.theglowcompany.calmcarry`): Identifiers → **+** → App ID → enable
@@ -96,9 +96,11 @@ Any third-party payment processor / Stripe / merchant-bank key.
   **JSON key**. Enable **Google Play Android Developer API**. In Play Console → **API access**
   → link the project + grant the service account financial/order access. *(Verifies receipts.)*
 - **Play subscriptions**: Play Console → **Monetize → Subscriptions** → `calmcarry.premium.monthly` + `.annual`.
-- **Push** — `FCM_SERVER_KEY`: firebase.google.com → add project (link the GCP project) → add
-  Android app → **Project settings → Cloud Messaging**. *(New projects use FCM HTTP v1 / a
-  service account instead of a legacy key — may need a small code change.)*
+- **Push** — `FIREBASE_SERVICE_ACCOUNT_JSON` (FCM HTTP v1): firebase.google.com → add project
+  (link the GCP project) → add an **Android app** → **Project settings → Service accounts →
+  Generate new private key** → paste the JSON (raw or base64). Server send is already
+  implemented against FCM v1 (no legacy `FCM_SERVER_KEY`). Download **google-services.json**
+  from that same Android app for the client-side FCM token (see §9).
 - **Play RTDN**: GCP **Pub/Sub** → topic + **push subscription** to `https://<your-api>/webhooks/google`;
   paste the topic in Play Console → **Monetization setup**. On the subscription, enable
   **authentication** (OIDC token) with a service account, then set on the server:
@@ -129,6 +131,24 @@ Any third-party payment processor / Stripe / merchant-bank key.
 - Server: `SENTRY_DSN` as a Fly secret — the API captures unhandled 5xx errors automatically.
 - Blank = monitoring off (both are strict no-ops without a DSN).
 
+## 9. Store build & submit (EAS) + Android push file
+These are **wired with placeholders** — you only drop in values/files, no code changes:
+- **`eas.json` → `submit.production`** ships `REPLACE_…` placeholders. Fill:
+  - **iOS**: an App Store Connect **API key** (ASC → Users and Access → Integrations → App
+    Store Connect API → generate). Save the `.p8` at `./secrets/asc-api-key.p8`; set
+    `ascApiKeyId`, `ascApiKeyIssuerId`, `ascAppId` (numeric App Store id), `appleTeamId`.
+  - **Android**: the Play **service-account JSON** (same file as `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`)
+    at `./secrets/play-service-account.json`; bump `track` (`internal` → `production`) when ready.
+- **`./secrets/` is gitignored** — drop the key files there; nothing is committed.
+- **EAS project link**: `eas login` then `eas init` (writes `extra.eas.projectId` into app.json).
+  Required before any build/submit — the one step that needs your Expo account.
+- **App-side build env** (`EXPO_PUBLIC_*`): set per build via the profile `env` in `eas.json`
+  or `eas env:create` — `EXPO_PUBLIC_GOOGLE_WEB/IOS/ANDROID_CLIENT_ID`, `EXPO_PUBLIC_SENTRY_DSN`.
+  Unset is safe (Google button hidden, Sentry off).
+- **Android `google-services.json`** (FCM push): drop it at `./google-services.json` (or point
+  `GOOGLE_SERVICES_JSON` at its path). `app.config.js` auto-wires `android.googleServicesFile`
+  when present, so no app.json edit is needed. Absent = the build still works, just no Android push.
+
 ---
 
 ## What's implemented vs. what still needs code
@@ -141,8 +161,10 @@ the only missing piece:
 - ✅ **Migrations** — committed migrations run automatically on any Postgres connection;
   `synchronize` is local-SQLite-dev only.
 - ✅ **Push registration** — the app registers device tokens on sign-in.
+- ✅ **Push send transport** — `push.service.ts` sends for real: APNs token-auth (ES256 JWT via
+  `jose`) + FCM HTTP v1 (service-account JSON). Credential-gated — logs `sent:false` until keys
+  are set, never crashes.
 
-Still needs code (kept as a safe no-op until then):
-- **Push send transport** — `push.service.ts` logs instead of sending. Needs FCM HTTP v1
-  (service-account JSON, not the legacy `FCM_SERVER_KEY`) and/or APNs token-based (.p8) sending.
-  Cuttable for v1: the app's local bedtime reminder already covers the core use case.
+**Nothing in the integration layer is a stub anymore.** Real keys (and, for Android push, a
+`google-services.json`) are the only missing pieces — every code path already exists and
+fail-closes safely without them.

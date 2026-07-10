@@ -304,7 +304,7 @@ export function TonightScreen() {
   // locked, swap to the best free alternative (or the always-free rescue). Locked tracks
   // stay in the shelves, where the lock badge is visible before the tap.
   const heroId =
-    TRACKS[recommendedTrackId]?.locked && !isPremium && !kids
+    TRACKS[recommendedTrackId]?.locked && !isPremium
       ? recommendedTrackIds.find((tid) => !TRACKS[tid]?.locked) ?? FREE_RESCUE
       : recommendedTrackId;
 
@@ -551,7 +551,7 @@ export function TonightScreen() {
               if (!t) return null;
               // same anti-bait rule as the hero: a locked pick must WEAR its lock
               // and lead to the paywall, never to a 60s preview that fades mid-drift
-              const isLocked = !!t.locked && !isPremium && !kids;
+              const isLocked = !!t.locked && !isPremium;
               return (
                 <CoverCard
                   key={id}

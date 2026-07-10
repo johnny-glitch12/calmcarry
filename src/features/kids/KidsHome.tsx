@@ -20,8 +20,11 @@ import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
 import { dur, ease, fonts, kidsDusk, STAGGER, themes, useTheme } from '@/theme';
 
-// Big, friendly, calm sounds a child can pick on their own.
-const KID_SOUNDS = ['forest', 'rainfall', 'slow-tide'];
+// Big, friendly, calm sounds a child can pick on their own. These MUST be free
+// tracks: kids mode now honors the paywall (it used to exempt it), so a child's
+// default picks can't be locked premium — that would dead-end at a paywall they
+// can't pass. (forest/rainfall are premium; slow-tide/gymnopedie/brown-noise are free.)
+const KID_SOUNDS = ['slow-tide', 'gymnopedie', 'brown-noise'];
 
 /** Parent-gate lock — discreet so a child won't wander out, findable for a grown-up. */
 function ParentLock({ onPress }: { onPress: () => void }) {

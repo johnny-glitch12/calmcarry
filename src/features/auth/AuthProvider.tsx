@@ -102,10 +102,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (!alive) return;
       if (savedToken && savedUser) {
+        // A 'local' token is the comp/preview sentinel — it has NO server to confirm
+        // it, so a persisted 'local' premium session is only trustworthy where the
+        // comp gate is actually live (dev / gated web preview). On a production build
+        // COMP_LOGIN is false, so a planted cc.token='local' + cc.entitlement=calm_plan
+        // must restore as FREE — otherwise it grants permanent, un-reconcilable premium
+        // (api.me('local') 401s and the refresh/re-validation paths skip 'local').
+        const unverifiableLocal = savedToken === 'local' && !COMP_LOGIN;
         setToken(savedToken);
         setUser(savedUser);
-        setEntitlement(savedEnt);
+        setEntitlement(unverifiableLocal ? FREE : savedEnt);
         setStatus('authed');
+        if (unverifiableLocal) setJSON(KEYS.entitlement, FREE);
         // best-effort refresh; ignore if backend is down
         try {
           const me = await api.me(savedToken);

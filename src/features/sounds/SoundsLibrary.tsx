@@ -69,7 +69,7 @@ export function SoundsLibrary() {
 
   // kids never see the paywall — their tiles always open the player
   const openTrack = (t: Track) =>
-    router.push(!kids && t.locked && !isPremium ? `/unlock?id=${t.id}` : `/player?id=${t.id}`);
+    router.push(t.locked && !isPremium ? `/unlock?id=${t.id}` : `/player?id=${t.id}`);
 
   // SPARSITY DISCIPLINE (thin library, designed-for): a track never appears twice
   // on this screen — anything already shown in the personal rails (saved / recent)
@@ -119,7 +119,7 @@ export function SoundsLibrary() {
                   title={t.title}
                   subtitle={`${t.category[0].toUpperCase()}${t.category.slice(1)} · ${t.duration}`}
                   image={covers[t.cover]}
-                  locked={!kids && t.locked && !isPremium}
+                  locked={t.locked && !isPremium}
                   onPress={() => openTrack(t)}
                 />
               </Animated.View>
@@ -203,7 +203,7 @@ export function SoundsLibrary() {
                     subtitle={items[0].subtitle}
                     meta={items[0].duration}
                     image={covers[items[0].cover]}
-                    locked={!kids && items[0].locked && !isPremium}
+                    locked={items[0].locked && !isPremium}
                     onPress={() => openTrack(items[0])}
                   />
                 </Animated.View>
@@ -215,7 +215,7 @@ export function SoundsLibrary() {
                         title={t.title}
                         subtitle={`${t.category[0].toUpperCase()}${t.category.slice(1)} · ${t.duration}`}
                         image={covers[t.cover]}
-                        locked={!kids && t.locked && !isPremium}
+                        locked={t.locked && !isPremium}
                         onPress={() => openTrack(t)}
                       />
                     </Animated.View>

@@ -93,9 +93,11 @@ export function Player() {
   const insets = useSafeAreaInsets();
   const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
   const track = (id && TRACKS[id]) || TRACKS['slow-tide'];
-  // Locked premium tracks give a free user a short PREVIEW, then route to the paywall
-  // (kids are exempt — never paywalled). The server signed-url still gates full audio.
-  const isPreview = !!track.locked && !isPremium && mode !== 'kids';
+  // Locked premium tracks give a free user a short PREVIEW, then route to the paywall.
+  // Gate on ENTITLEMENT ONLY — kids mode is NOT an exemption (a free profile could
+  // switch to kids and play the whole locked catalogue, incl. via a deep link
+  // calmcarry://player?id=<locked>; this preview gate is the single enforcement point).
+  const isPreview = !!track.locked && !isPremium;
   const PREVIEW_MS = 60_000;
 
   const player = useAudioPlayer(audioSources[track.audio]);

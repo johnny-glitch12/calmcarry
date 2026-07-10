@@ -20,7 +20,6 @@ import Animated, {
 import { AppText, DragDismiss, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
 import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
@@ -114,16 +113,15 @@ export default function WindDownScreen() {
   const [paused, setPaused] = useState(false);
 
   const { isPremium } = useAuth();
-  const { mode } = useProfile();
   // the wind-down plays the track the home screen recommended (falls back to Slow Tide)
   const { id } = useLocalSearchParams<{ id?: string }>();
   const track = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
-  // Entitlement gate (mirrors Player.tsx isPreview): a locked premium track must NOT
-  // stream in the wind-down for a free, non-kids user — that bundled asset plays with
-  // no server signed-url check, so it would bypass the paywall entirely. Kids are
-  // never paywalled. We send free users to the paywall UP FRONT rather than starting a
-  // 20-minute ritual and yanking it away at a 60s preview cap.
-  const lockedForUser = !!track.locked && !isPremium && mode !== 'kids';
+  // Entitlement gate: a locked premium track must NOT stream in the wind-down for a
+  // free user — that bundled asset plays with no server signed-url check, so it would
+  // bypass the paywall. Gate on entitlement ONLY (kids mode is NOT an exemption — a
+  // free profile switched to kids used to unlock everything). We send free users to
+  // the paywall UP FRONT rather than starting a 20-minute ritual and yanking it away.
+  const lockedForUser = !!track.locked && !isPremium;
 
   // ambient bed: the recommended track, looping, plays through the wind-down ritual
   const audio = useAudioPlayer(audioSources[track.audio]);

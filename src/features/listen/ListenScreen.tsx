@@ -400,7 +400,7 @@ export function ListenScreen() {
     lightTap();
     // premium sounds open the Calm Plan for free adults (kids are never paywalled)
     const s = SOUNDS.find((x) => x.key === k);
-    if (s?.premium && !isPremium && !kids) {
+    if (s?.premium && !isPremium) {
       router.push('/unlock' as Href);
       return;
     }
@@ -496,7 +496,7 @@ export function ListenScreen() {
       for (const s of SOUNDS) {
         const v = incoming[s.key];
         if (typeof v !== 'number' || v <= 0) continue;
-        const lockedSound = !!s.premium && !isPremium && !kids;
+        const lockedSound = !!s.premium && !isPremium;
         next[s.key] = lockedSound ? 0 : Math.max(1, Math.min(3, Math.round(v)));
       }
       setLevels(next);
@@ -607,7 +607,7 @@ export function ListenScreen() {
                   label={s.label}
                   cover={s.cover}
                   level={levels[s.key]}
-                  locked={!!s.premium && !isPremium && !kids}
+                  locked={!!s.premium && !isPremium}
                   width={(gridW - (gridCols - 1) * GRID_GAP) / gridCols}
                   onToggle={() => toggle(s.key)}
                   onLevel={(l) => setLevel(s.key, l)}
@@ -720,7 +720,7 @@ export function ListenScreen() {
           {MUSIC_IDS.map((id) => {
             const t = TRACKS[id];
             if (!t) return null;
-            const locked = !kids && !!t.locked && !isPremium;
+            const locked = !!t.locked && !isPremium;
             return (
               <PressableScale
                 key={id}

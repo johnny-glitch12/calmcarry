@@ -117,7 +117,7 @@ function CheckInBody({ onFeeling, onSkip }: { onFeeling: (f: Feeling) => void; o
 
 export function MoodSurvey() {
   const router = useRouter();
-  const { setFeeling, dismissCheckIn, mode } = useProfile();
+  const { setFeeling, dismissCheckIn } = useProfile();
   const { isPremium } = useAuth();
 
   // One tap: record the feeling (which also seeds the matching intent) AND start
@@ -130,7 +130,7 @@ export function MoodSurvey() {
     setFeeling(f);
     dismissCheckIn();
     const pick = FEELING_MAP[f];
-    const locked = !!TRACKS[pick.track]?.locked && !isPremium && mode !== 'kids';
+    const locked = !!TRACKS[pick.track]?.locked && !isPremium;
     router.replace(`/player?id=${locked ? pick.freeTrack : pick.track}`);
   };
   const skip = () => {

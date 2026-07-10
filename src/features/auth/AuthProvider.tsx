@@ -41,6 +41,18 @@ type AuthValue = {
 const FREE: ApiEntitlement = { tier: 'free', status: 'active' };
 const CALM: ApiEntitlement = { tier: 'calm_plan', status: 'active' };
 
+/** Is this entitlement live premium? A cached calm_plan self-expires at `expiresAt`
+ *  even OFFLINE — so "buy one month, then stay offline" can't keep premium forever
+ *  (the server is the online source of truth; this bounds the offline window). A
+ *  missing/malformed expiry means "no expiry" (fail-open: never lock out a valid
+ *  premium user on a bad date — the comp/preview session has no expiry by design). */
+function isLivePremium(e: ApiEntitlement): boolean {
+  if (e.tier !== 'calm_plan' || e.status !== 'active') return false;
+  if (!e.expiresAt) return true;
+  const t = Date.parse(e.expiresAt);
+  return Number.isNaN(t) || t > Date.now();
+}
+
 // Preview-only comp account — lets a reviewer explore the FULL premium app on the
 // gated preview build while the production database isn't provisioned yet. Enabled
 // ONLY for: (a) the gated WEB preview (EXPO_PUBLIC_COMP_LOGIN set on web), or
@@ -177,7 +189,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s !== 'active') return;
       try {
         const r = await api.billingStatus(token);
-        const ent: ApiEntitlement = { tier: r.isPremium ? 'calm_plan' : 'free', status: 'active' };
+        const ent: ApiEntitlement = {
+          tier: r.isPremium ? 'calm_plan' : 'free',
+          status: 'active',
+          expiresAt: r.expiresAt ?? null,
+        };
         setEntitlement(ent);
         await setJSON(KEYS.entitlement, ent);
       } catch {
@@ -317,7 +333,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       entitlement,
-      isPremium: entitlement.tier === 'calm_plan' && entitlement.status === 'active',
+      isPremium: isLivePremium(entitlement),
       backendUp,
       signIn,
       register,

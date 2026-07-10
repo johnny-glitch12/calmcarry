@@ -43,7 +43,14 @@ async function req<T>(path: string, opts: RequestInit = {}, token?: string | nul
 }
 
 export type ApiUser = { id?: string; email: string; name: string; emailVerified?: boolean };
-export type ApiEntitlement = { tier: 'free' | 'calm_plan'; status: 'active' | 'revoked' };
+export type ApiEntitlement = {
+  tier: 'free' | 'calm_plan';
+  status: 'active' | 'revoked';
+  // ISO expiry of a calm_plan. Enforced client-side so a cached premium self-expires
+  // even offline (can't buy one month, go offline, and keep premium forever). Absent =
+  // no expiry (e.g. the dev/preview comp session).
+  expiresAt?: string | null;
+};
 
 export const api = {
   base: API_BASE,

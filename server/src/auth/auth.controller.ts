@@ -121,9 +121,15 @@ export class AuthController {
 
     return {
       user: { id: owner.id, email: owner.email, name: owner.name, emailVerified: owner.emailVerified },
+      // Include expiresAt so the client can self-expire a cached premium OFFLINE —
+      // otherwise "buy one month, then stay offline" keeps premium indefinitely.
       entitlement: isPremium
-        ? { tier: 'calm_plan', status: 'active' }
-        : { tier: 'free', status: 'active' },
+        ? {
+            tier: 'calm_plan',
+            status: 'active',
+            expiresAt: entitlement?.expiresAt ? new Date(entitlement.expiresAt).toISOString() : null,
+          }
+        : { tier: 'free', status: 'active', expiresAt: null },
     };
   }
 

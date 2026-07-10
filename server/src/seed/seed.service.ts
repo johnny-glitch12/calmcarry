@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { Repository } from 'typeorm';
-import { isProd } from '../config';
+import { config } from '../config';
 import {
   ContentItem,
   Device,
@@ -13,7 +14,6 @@ import {
 } from '../entities';
 
 const DEMO_EMAIL = 'sarah@theglowcompany.co';
-const DEMO_PASSWORD = 'glow1234';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -53,12 +53,13 @@ export class SeedService implements OnApplicationBootstrap {
       await this.seedContent();
       await this.seedPrograms();
     }
-    // The demo household ships with KNOWN credentials — dev/demo only. NEVER seed
-    // a known-password account into a production database.
-    if (ownerCount === 0 && !isProd) {
+    // The demo household is a premium account — gate it behind an EXPLICIT opt-in
+    // (SEED_DEMO=1), never on NODE_ENV. An unset/dev NODE_ENV must never silently
+    // create a loginable premium account (that would be a free-premium door).
+    if (ownerCount === 0 && config.seedDemo) {
       await this.seedDemoUser();
-    } else if (ownerCount === 0 && isProd) {
-      this.logger.warn('Production: skipping demo-user seed (no known-credentials account).');
+    } else if (ownerCount === 0) {
+      this.logger.log('Skipping demo-user seed (set SEED_DEMO=1 to create a demo owner).');
     }
     // NOTE: the community wins wall is intentionally NOT seeded — it shows only
     // real, user-submitted posts. Fabricated testimonials would be dishonest
@@ -145,7 +146,11 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   private async seedDemoUser(): Promise<void> {
-    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+    // NEVER a source-committed password on a premium account. Randomize per seed and
+    // log it ONCE for the operator to grab; it never lives in the repo.
+    const demoPassword = crypto.randomUUID();
+    this.logger.warn(`Seeded demo owner ${DEMO_EMAIL} — password: ${demoPassword} (randomized, shown once)`);
+    const passwordHash = await bcrypt.hash(demoPassword, 10);
     const owner = await this.ownerRepo.save(
       this.ownerRepo.create({ email: DEMO_EMAIL, passwordHash, name: 'Sarah Quinn' }),
     );

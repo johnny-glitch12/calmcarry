@@ -97,6 +97,13 @@ export const config = {
   // deploys. Unset → per-instance in-memory (limits don't hold across machines).
   redisUrl: process.env.REDIS_URL ?? '',
 
+  // Money-path DEV switches — DEFAULT OFF and INDEPENDENT of NODE_ENV, so an unset
+  // or mis-set NODE_ENV can never silently grant premium or seed a premium account.
+  // Turn ON only for local end-to-end testing without real store credentials.
+  allowDevIap: process.env.ALLOW_DEV_IAP === '1', // devGrant a receipt without store creds
+  allowSandboxIap: process.env.ALLOW_SANDBOX_IAP === '1', // accept Apple SANDBOX receipts in prod (App Review)
+  seedDemo: process.env.SEED_DEMO === '1', // seed the known-credentials demo owner
+
   // product ids whose validated receipt grants the premium subscription. The
   // server NEVER trusts a client/receipt product id outside this allowlist.
   premiumProductIds: (

@@ -9,7 +9,7 @@ import { Environment, SignedDataVerifier } from '@apple/app-store-server-library
 import { GoogleAuth } from 'google-auth-library';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { config, devFallback, integrations, isProd } from '../config';
+import { config, integrations, isProd } from '../config';
 import type { EntitlementPlan } from '../entities';
 
 export type Store = 'apple' | 'google';
@@ -109,15 +109,29 @@ export class ReceiptValidationService {
 
   private async apple(receipt: string, productId?: string): Promise<ValidatedSubscription> {
     if (!config.apple.rootCertsDir) {
-      if (!devFallback) throw new ServiceUnavailableException('IAP not configured');
+      // FAIL CLOSED unless dev-IAP is EXPLICITLY enabled. Gating on an opt-in flag
+      // (not NODE_ENV) means an unset/mis-set NODE_ENV can never mint a free grant.
+      if (!config.allowDevIap) throw new ServiceUnavailableException('IAP not configured');
+      this.assertPremiumSku(productId); // even the dev grant must be a real premium SKU
       return this.devGrant(productId);
     }
     if (!receipt) throw new BadRequestException('Missing transaction');
-    // App Review tests sandbox purchases even on production builds, so try the
-    // build's environment first, then fall back to the other.
-    const order: ('prod' | 'sandbox')[] = isProd ? ['prod', 'sandbox'] : ['sandbox', 'prod'];
-    let tx: { productId?: string; originalTransactionId?: string; transactionId?: string; expiresDate?: number } | null =
-      null;
+    // Environment order. In prod we accept PRODUCTION receipts only; a real paid
+    // purchase can't be sandbox-signed, and accepting sandbox in prod = free premium
+    // for anyone with a sandbox account. Sandbox is enabled in prod ONLY behind an
+    // explicit flag (App Review tests sandbox against prod builds).
+    const order: ('prod' | 'sandbox')[] = isProd
+      ? config.allowSandboxIap
+        ? ['prod', 'sandbox']
+        : ['prod']
+      : ['sandbox', 'prod'];
+    let tx: {
+      productId?: string;
+      originalTransactionId?: string;
+      transactionId?: string;
+      expiresDate?: number;
+      environment?: string;
+    } | null = null;
     let lastErr: unknown;
     for (const env of order) {
       try {
@@ -130,6 +144,12 @@ export class ReceiptValidationService {
     if (!tx) {
       this.logger.warn(`Apple transaction verification failed: ${String(lastErr)}`);
       throw new UnauthorizedException('Apple transaction failed verification');
+    }
+    // Defense in depth: even if a sandbox-signed transaction somehow decoded, never
+    // grant premium on a SANDBOX-environment transaction in prod unless explicitly allowed.
+    if (isProd && !config.allowSandboxIap && tx.environment === Environment.SANDBOX) {
+      this.logger.warn('Rejected a SANDBOX Apple transaction in production.');
+      throw new UnauthorizedException('Sandbox receipt rejected in production');
     }
     const sku = tx.productId ?? productId;
     this.assertPremiumSku(sku);
@@ -148,7 +168,8 @@ export class ReceiptValidationService {
   // ---------- Google Play (androidpublisher v3) ----------
   private async google(purchaseToken: string, productId?: string): Promise<ValidatedSubscription> {
     if (!integrations.googleIap) {
-      if (!devFallback) throw new ServiceUnavailableException('IAP not configured');
+      if (!config.allowDevIap) throw new ServiceUnavailableException('IAP not configured');
+      this.assertPremiumSku(productId); // even the dev grant must be a real premium SKU
       return this.devGrant(productId);
     }
     if (!purchaseToken) throw new BadRequestException('Missing purchase token');

@@ -10,6 +10,9 @@ import { DataSource, IsNull, Repository } from 'typeorm';
 import { CaregiverInvite, CaregiverLink, Owner } from '../entities';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// One paid subscription unlocks a HOUSEHOLD, not the world. Cap members so a single
+// sub can't be resold/shared with unlimited accounts (each caregiver inherits premium).
+const MAX_CAREGIVERS = 5;
 
 @Injectable()
 export class CaregiversService {
@@ -25,6 +28,16 @@ export class CaregiversService {
     // a caregiver can't invite (only the household primary)
     const isCaregiver = await this.links.findOne({ where: { caregiverOwnerId: householdOwnerId } });
     if (isCaregiver) throw new ForbiddenException('Only the household owner can invite caregivers.');
+
+    // Bound outstanding capacity (existing members + unredeemed codes) to the cap so
+    // a subscriber can't mint an unlimited pile of redeemable invites.
+    const [linkCount, outstanding] = await Promise.all([
+      this.links.count({ where: { householdOwnerId } }),
+      this.invites.count({ where: { householdOwnerId, redeemedByOwnerId: IsNull() } }),
+    ]);
+    if (linkCount + outstanding >= MAX_CAREGIVERS) {
+      throw new BadRequestException('This household has reached its caregiver limit.');
+    }
 
     // ~48 bits of entropy (3 groups), single-use + 7-day expiry, and /redeem is
     // rate-limited — so an invite code can't be feasibly brute-forced.
@@ -56,6 +69,13 @@ export class CaregiversService {
       // from their own household and strand the caregivers who depend on them.
       const isHost = await m.findOne(CaregiverLink, { where: { householdOwnerId: caregiverOwnerId } });
       if (isHost) throw new BadRequestException('You already host a household and can’t also join another.');
+
+      // Enforce the household cap at redeem time — this is the gate that actually
+      // grants the inherited premium, so the ceiling must hold here. (SQLite serializes
+      // write txns and the invite-consume below is atomic; a rare Postgres concurrent
+      // race could overshoot by one, bounded and non-material for a human-scale action.)
+      const memberCount = await m.count(CaregiverLink, { where: { householdOwnerId: invite.householdOwnerId } });
+      if (memberCount >= MAX_CAREGIVERS) throw new BadRequestException('This household is already full.');
 
       // consume the invite atomically — only succeeds if it's still unredeemed
       const consumed = await m.update(

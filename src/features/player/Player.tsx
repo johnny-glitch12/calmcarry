@@ -22,6 +22,7 @@ import { lightTap } from '@/lib/haptics';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { SleepyStars } from '@/features/kids/SleepyStars';
+import { SlidePuzzle } from '@/features/kids/SlidePuzzle';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS, WELLNESS_DISCLAIMER } from '@/content/library';
@@ -106,6 +107,7 @@ export function Player() {
   const loggedRef = useRef(false);
   const startedAtRef = useRef<number | null>(null); // wall-clock at session_start (for durationSec)
   const completedRef = useRef(false); // session_complete fired once
+  const [showPuzzle, setShowPuzzle] = useState(false); // kids-only slide-puzzle overlay
 
   // allow playback in silent mode + keep playing with the screen off / app backgrounded
   // (sleep apps must run all night — build plan §12). doNotMix: our audio is the
@@ -680,7 +682,24 @@ export function Player() {
             />
           </PressableScale>
           <PlayPause paused={paused} onPress={toggle} />
-          <View style={{ width: 44, height: 44 }} />
+          {/* Kids get a real game to play WHILE listening (Mason): a slide puzzle of the
+              track art. Opens as an overlay — the audio player stays mounted, so sound
+              never stops. Adults get the balancing spacer that keeps play centered. */}
+          {mode === 'kids' ? (
+            <PressableScale
+              onPress={() => {
+                lightTap();
+                setShowPuzzle(true);
+              }}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Play a picture puzzle"
+              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="grid" size={24} color={c.accent} />
+            </PressableScale>
+          ) : (
+            <View style={{ width: 44, height: 44 }} />
+          )}
         </View>
 
         {/* Non-medical wellness disclaimer on GUIDED practices (FTC/TGA) — meditation
@@ -699,6 +718,11 @@ export function Player() {
           (on top) but constrained to the art band, clear of the top bar and the
           controls, so it never steals a real tap target. Adults never see it. */}
       {mode === 'kids' ? <SleepyStars /> : null}
+      {/* the slide-puzzle game — full-screen overlay above everything; the audio player
+          keeps running underneath so the bedtime sound never stops. Kids only. */}
+      {mode === 'kids' && showPuzzle ? (
+        <SlidePuzzle cover={track.cover} onClose={() => setShowPuzzle(false)} />
+      ) : null}
       </Screen>
     </DragDismiss>
   );

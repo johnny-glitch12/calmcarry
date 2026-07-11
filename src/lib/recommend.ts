@@ -199,7 +199,7 @@ export function explainRecommendation(id: string, answer: Answer): string | null
   if (part === 'night' && answer.moments?.includes('night-wakes') && t.category === 'noise')
     return 'Steady masking for the night wake-ups you mentioned';
   if (answer.goals?.includes('calm-anxious') && t.category === 'breathing')
-    return 'For the anxious moments you told us about';
+    return 'For the wound-up moments you told us about';
   if (answer.goals?.includes('quiet-mind') && (t.category === 'breathing' || t.category === 'meditation'))
     return 'To quiet a racing mind, like you asked';
   if (answer.goals?.includes('stay-asleep') && t.category === 'noise')

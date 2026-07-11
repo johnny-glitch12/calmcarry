@@ -119,17 +119,19 @@ const GOALS: { key: string; label: string; hint: string; intent: Intent; icon: k
   { key: 'stay-asleep', label: 'Stay asleep through the night', hint: 'Fewer 3am wake-ups', intent: 'sleep', icon: 'shield' },
   { key: 'wake-refreshed', label: 'Wake up refreshed', hint: 'Mornings that feel rested', intent: 'suggest', icon: 'sunrise' },
   { key: 'quiet-mind', label: 'Quiet a racing mind', hint: 'Settle the mental chatter', intent: 'reset', icon: 'wind' },
-  { key: 'calm-anxious', label: 'Calm anxious moments', hint: 'Settle stress spikes, day or night', intent: 'reset', icon: 'heart' },
+  { key: 'calm-anxious', label: 'Ease a wound-up mind', hint: 'Settle tension, day or night', intent: 'reset', icon: 'heart' },
   { key: 'routine', label: 'Build a bedtime routine', hint: 'A rhythm you can keep', intent: 'sleep', icon: 'repeat' },
 ];
 
 // When they reach for calm (Mason: the Glow Orb isn't only a sleep device —
-// daytime resets and anxious moments are first-class use cases). Wellness-safe
-// wording: "anxious moments", never a treatment claim.
+// daytime resets and wound-up moments are first-class use cases). We help stressed/
+// anxious users too, but we DON'T show that: sleep/calm-framed wording ONLY, never
+// "anxious"/clinical terms or any treatment claim. (The internal keys stay so the
+// recommender still routes these users to breathing — the help is invisible, not absent.)
 const MOMENTS: { key: string; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
   { key: 'falling-asleep', label: 'Falling asleep', hint: 'The nightly wind-down', icon: 'moon' },
   { key: 'night-wakes', label: 'Night wake-ups', hint: 'Getting back to sleep at 3am', icon: 'clock' },
-  { key: 'anxious-moments', label: 'Anxious moments', hint: 'When stress spikes during the day', icon: 'heart' },
+  { key: 'anxious-moments', label: 'Wound-up moments', hint: 'When the day feels tense', icon: 'heart' },
   { key: 'daytime-reset', label: 'A daytime reset', hint: 'Short calm breaks with your Glow Orb in hand', icon: 'sun' },
   { key: 'wind-down', label: 'Evenings after a long day', hint: 'The bridge from busy to restful', icon: 'feather' },
 ];

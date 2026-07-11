@@ -60,7 +60,7 @@ function Avatar({ profile, active, onPress }: { profile: Profile; active: boolea
       </View>
       <Crossfade
         active={active}
-        style={{ width: 64, height: 18, marginTop: 6 }}
+        style={{ width: 64, height: 22, marginTop: 6 }}
         front={
           <AppText variant="label" tone="title" numberOfLines={1}>
             {profile.name}

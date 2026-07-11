@@ -159,7 +159,7 @@ function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => voi
             accessibilityState={{ selected: carried }}
             accessibilityLabel={carried ? 'You carried this win' : 'Acknowledge this win'}
             hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
-            style={{ alignSelf: 'flex-start' }}>
+            style={{ alignSelf: 'flex-start', flexShrink: 1 }}>
             <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6 }, reactStyle]}>
               <Crossfade
                 style={{ width: 14, height: 14 }}
@@ -168,7 +168,7 @@ function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => voi
                 back={<Feather name="heart" size={14} color={c.accent} />}
               />
               <SwapText trigger={carried ? 'y' : 'n'}>
-                <AppText variant="meta" style={{ color: carried ? c.textAccent : c.muted }}>
+                <AppText variant="meta" numberOfLines={1} style={{ color: carried ? c.textAccent : c.muted }}>
                   {carried ? 'You carried this' : 'Carried this with you'}
                 </AppText>
               </SwapText>

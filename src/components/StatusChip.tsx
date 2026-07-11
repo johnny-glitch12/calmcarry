@@ -69,7 +69,8 @@ export function StatusChip({ label, icon = 'shield', tone = 'sage', confirm = fa
           flexDirection: 'row',
           alignItems: 'center',
           alignSelf: 'flex-start',
-          height: 30,
+          minHeight: 30, // grow (not clip) if the label scales with Dynamic Type
+          paddingVertical: 6,
           paddingHorizontal: 12,
           borderRadius: 15,
           backgroundColor: t.bg,

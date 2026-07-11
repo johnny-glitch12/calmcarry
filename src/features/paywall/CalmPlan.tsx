@@ -71,8 +71,8 @@ function PlanCard({
                 {p.label}
               </AppText>
               {note ? (
-                <Appear>
-                  <AppText variant="caption" style={{ flexShrink: 1, color: c.textAccent, textTransform: 'none', letterSpacing: 0 }} numberOfLines={1}>
+                <Appear style={{ flexShrink: 1, minWidth: 0 }}>
+                  <AppText variant="caption" style={{ color: c.textAccent, textTransform: 'none', letterSpacing: 0 }} numberOfLines={1}>
                     {note}
                   </AppText>
                 </Appear>

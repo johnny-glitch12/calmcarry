@@ -397,7 +397,7 @@ export default function WindDownScreen() {
               <GlowOrb size={216} reserveGlow breathing={!paused} burst />
             </View>
 
-            <AppText variant="display" tone="title" style={{ marginTop: 40 }}>
+            <AppText variant="display" tone="title" style={{ marginTop: 24 }}>
               {track.title}
             </AppText>
             <AppText variant="body" tone="muted">

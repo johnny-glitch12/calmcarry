@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image as RNImage, StyleSheet, View } from 'react-native';
+import { Image as RNImage, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -568,8 +568,13 @@ export function Player() {
           </View>
         ) : null}
 
-        {/* centerpiece — breathing guide + cover inside the playback ring */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        {/* centerpiece — breathing guide + cover inside the playback ring. A ScrollView
+            with flexGrow+center: identical (centered) when it fits, but SCROLLS instead of
+            overlapping the fixed top bar / controls on short devices or at large font. */}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}
+          showsVerticalScrollIndicator={false}>
           <View style={{ width: 300, height: 300, alignItems: 'center', justifyContent: 'center' }}>
             <ProgressRing progress={progress} size={300} strokeWidth={3} fill style={{ position: 'absolute' }} />
             {/* breathing halo — expands on the in-breath, settles on the out */}
@@ -661,7 +666,7 @@ export function Player() {
               </SwapText>
             </Appear>
           )}
-        </View>
+        </ScrollView>
 
         {/* controls — heart (save) · play/pause · matching spacer keeps play centered.
             Screen reserves only left/right insets, so fold in the bottom inset here or

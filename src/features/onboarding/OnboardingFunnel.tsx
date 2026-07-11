@@ -943,7 +943,9 @@ function SoundsStep({ onNext, onBack }: StepProps) {
           <View style={{ borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image
               source={require('../../../assets/images/onboarding/fireplace.png')}
-              style={{ width: '100%', aspectRatio: 1 }}
+              // 4:3, not a full square — a square + the sounds demo + title overflowed the
+              // smallest phones (iPhone SE) with no way to scroll. Shorter image fits.
+              style={{ width: '100%', aspectRatio: 4 / 3 }}
               contentFit="cover"
               contentPosition="bottom"
               transition={{ duration: dur.sheet, effect: 'cross-dissolve' }}

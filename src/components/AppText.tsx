@@ -25,5 +25,15 @@ export function AppText({
     accent: c.textAccent, // text-accent meets WCAG AA; c.accent stays for icons/fills
     cta: c.ctaText,
   };
-  return <Text {...props} style={[typeScale[variant], { color: toneColor[tone] }, style]} />;
+  // Cap Dynamic Type so an OS "Larger Text" setting can't blow past our fixed-height
+  // chrome (pills, tiles, rows, the tab bar) and overlap/clip on device — the class of
+  // native-only collision the web preview never shows. Still honours scaling up to 1.4x
+  // (accessible), and any caller can override maxFontSizeMultiplier via props.
+  return (
+    <Text
+      maxFontSizeMultiplier={1.4}
+      {...props}
+      style={[typeScale[variant], { color: toneColor[tone] }, style]}
+    />
+  );
 }

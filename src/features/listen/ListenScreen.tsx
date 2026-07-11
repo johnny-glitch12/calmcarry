@@ -164,7 +164,7 @@ function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
         accessibilityLabel={`${label}${locked ? ', premium, locked' : on ? ', on' : ', off'}`}>
         <Animated.View
           style={[
-            { height: 116, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', ...c.shadow },
+            { minHeight: 116, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', ...c.shadow },
             liftStyle,
           ]}>
           <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />

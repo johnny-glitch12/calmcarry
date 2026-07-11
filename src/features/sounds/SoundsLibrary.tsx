@@ -133,12 +133,12 @@ export function SoundsLibrary() {
   return (
     <Screen mode={kids ? 'kids' : 'light'} scroll tabBarSpacing wide contentStyle={{ paddingHorizontal: 0 }}>
       <Reveal index={0} style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <View>
-            <AppText variant="caption" tone="muted">
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="caption" tone="muted" numberOfLines={1}>
               {kids ? 'Kids' : 'Sounds & sessions'}
             </AppText>
-            <AppText variant="h1" tone="title" style={{ marginTop: 6 }}>
+            <AppText variant="h1" tone="title" style={{ marginTop: 6 }} numberOfLines={1}>
               {kids ? 'Bedtime library' : 'Library'}
             </AppText>
           </View>

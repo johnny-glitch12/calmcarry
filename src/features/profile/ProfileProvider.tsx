@@ -13,7 +13,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { setAnalyticsMode } from '@/lib/analytics';
 import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
-import { clearCoppaConsent } from '@/lib/consent';
+import { clearCoppaConsent, hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
 import { getFavorites, replaceFavorites } from '@/lib/favorites';
 import { getStoredSleepGoalHours, setSleepGoalHours } from '@/lib/sleepGoal';
 import { getTrackWins } from '@/lib/trackWins';
@@ -39,10 +39,10 @@ const KEYS = {
 } as const;
 const CHECKIN_GAP_MS = 12 * 60 * 60 * 1000; // re-offer the check-in only after 12h away
 
-const DEFAULT_PROFILES: Profile[] = [
-  { id: 'p-you', name: 'You', type: 'adult' },
-  { id: 'p-leo', name: 'Leo', type: 'kids' },
-];
+// A fresh household is the adult owner only. Kid profiles are created on demand,
+// through the COPPA-consent-gated Kids-mode entry (see enterKids), so no child
+// profile is ever pre-seeded.
+const DEFAULT_PROFILES: Profile[] = [{ id: 'p-you', name: 'You', type: 'adult' }];
 
 /** Defend against corrupted/old persisted data: keep only well-formed profiles. */
 function sanitizeProfiles(raw: unknown): Profile[] {
@@ -82,7 +82,11 @@ type ProfileValue = {
   profiles: Profile[];
   activeProfile: Profile;
   setActiveProfile: (id: string) => void;
-  addProfile: (name: string, type: AppMode) => void;
+  addProfile: (name: string, type: AppMode) => Profile;
+  /** Enter Kids mode from any surface: record COPPA consent if absent, ensure a kid
+   *  profile exists (creating a neutral "Little one" when the household has none),
+   *  then switch to it. Replaces the seeded-kid assumption setMode('kids') relied on. */
+  enterKids: () => Promise<void>;
   renameProfile: (id: string, name: string) => void;
   removeProfile: (id: string) => void;
   /** the active profile's type — drives kids vs adult content everywhere */
@@ -110,7 +114,8 @@ const ProfileContext = createContext<ProfileValue>({
   profiles: DEFAULT_PROFILES,
   activeProfile: fallback,
   setActiveProfile: () => {},
-  addProfile: () => {},
+  addProfile: () => fallback,
+  enterKids: async () => {},
   renameProfile: () => {},
   removeProfile: () => {},
   mode: 'adult',
@@ -166,10 +171,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         getJSON<number | null>(KEYS.lastOpen, null),
       ]);
       const clean = sanitizeProfiles(savedProfiles);
-      const list = clean.length ? clean : DEFAULT_PROFILES;
+      // One-time cleanup: drop the retired pre-seeded demo kid ("Leo") so existing
+      // dev/test installs don't keep a phantom child. Guarded on the EXACT seeded
+      // identity (id + name + type) so a real kid a parent added or renamed is untouched.
+      const migrated = clean.filter((p) => !(p.id === 'p-leo' && p.name === 'Leo' && p.type === 'kids'));
+      const list = migrated.length ? migrated : DEFAULT_PROFILES;
       setProfiles(list);
-      // if persisted data was corrupt/partial, re-persist the clean list
-      if (clean.length !== (Array.isArray(savedProfiles) ? savedProfiles.length : -1)) {
+      // if persisted data was corrupt/partial (or we stripped the demo kid), re-persist
+      if (migrated.length !== (Array.isArray(savedProfiles) ? savedProfiles.length : -1)) {
         setJSON(KEYS.profiles, list);
       }
       // resolve active: saved id → else migrate legacy mode → else primary
@@ -316,7 +325,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     [setActiveProfile]
   );
 
-  const addProfile = useCallback((name: string, type: AppMode) => {
+  const addProfile = useCallback((name: string, type: AppMode): Profile => {
     const profile: Profile = {
       id: `p-${type}-${Date.now()}`,
       name: name.trim() || (type === 'kids' ? 'Little one' : 'Me'),
@@ -330,7 +339,27 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     // persist to the household on the backend (best-effort; next sync reconciles ids)
     const t = tokenRef.current;
     if (t && t !== 'local') api.createProfile(t, { name: profile.name, type }).catch(() => {});
+    return profile;
   }, []);
+
+  // Enter Kids mode from any entry point. Restores the two invariants the seeded "Leo"
+  // used to provide implicitly: (1) COPPA consent is on file, (2) a kid profile exists —
+  // creating a neutral "Little one" (a parent can rename it in Family) when the household
+  // has none — then switches to that kid. Consent is recorded only when absent so the
+  // original acceptedAt timestamp is preserved. The affirmative, informed consent UI lives
+  // in Family.tsx; this backfill guarantees no kid can exist without a consent record.
+  const enterKids = useCallback(async () => {
+    if (!(await hasCoppaConsent())) await recordCoppaConsent();
+    let kid = profilesRef.current.find((p) => p.type === 'kids');
+    if (!kid) {
+      kid = addProfile('Little one', 'kids');
+      // addProfile only queues a setProfiles update; profilesRef syncs in an effect AFTER
+      // render, so update it now — otherwise setActiveProfile's membership guard would
+      // reject this brand-new id.
+      profilesRef.current = [...profilesRef.current, kid];
+    }
+    setActiveProfile(kid.id);
+  }, [addProfile, setActiveProfile]);
 
   // Rename a profile in place (fixing a typo must NOT require delete+recreate,
   // which would discard the server-side profile id the household sync keys on).
@@ -433,6 +462,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       activeProfile,
       setActiveProfile,
       addProfile,
+      enterKids,
       renameProfile,
       removeProfile,
       mode,
@@ -447,7 +477,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       recommendedTrackIds,
       recommendationReason,
     }),
-    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, renameProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds, recommendationReason]
+    [hydrated, profiles, activeProfile, setActiveProfile, addProfile, enterKids, renameProfile, removeProfile, mode, setMode, intent, setIntent, feeling, setFeeling, needsCheckIn, dismissCheckIn, recommendedTrackId, recommendedTrackIds, recommendationReason]
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

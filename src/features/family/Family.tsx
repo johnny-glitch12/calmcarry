@@ -22,7 +22,7 @@ export function Family() {
   const { c, isNight } = useTheme();
   const router = useRouter();
   const { token } = useAuth();
-  const { mode, setMode, addProfile, renameProfile, removeProfile, profiles } = useProfile();
+  const { mode, enterKids: enterKidsMode, addProfile, renameProfile, removeProfile, profiles } = useProfile();
 
   // real registered devices for this account (no hardcoded household). Refetched on
   // focus so a device just registered on /register-device shows up on return.
@@ -65,6 +65,9 @@ export function Family() {
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AppMode>('kids');
   const [needConsent, setNeedConsent] = useState(false);
+  // true when the consent card is being shown to ENTER Kids mode (not to add a named
+  // profile) — granting consent then commits the entry instead of finishAdd()
+  const [pendingEnter, setPendingEnter] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   // rename-in-place — a typo fix must not require delete + recreate (that would
   // discard the server profile id the household sync keys on)
@@ -109,17 +112,39 @@ export function Family() {
     }
     finishAdd();
   };
-  const grantConsentAndAdd = async () => {
-    await recordCoppaConsent();
-    finishAdd();
-  };
-  const enterKids = async () => {
+  // keep the parent-PIN gate, then commit the entry via the provider (which ensures a
+  // kid profile exists and switches to it). No PIN yet → route to the create-PIN gate.
+  const proceedEnterKids = async () => {
     if (await hasParentPin()) {
-      setMode('kids');
+      await enterKidsMode();
       router.replace('/');
     } else {
       router.push('/parent-gate?intent=enterKids' as Href);
     }
+  };
+  const grantConsentAndAdd = async () => {
+    await recordCoppaConsent();
+    if (pendingEnter) {
+      // consent was captured to ENTER Kids mode (not to add a named profile) → continue
+      setPendingEnter(false);
+      setNeedConsent(false);
+      setAdding(false);
+      await proceedEnterKids();
+      return;
+    }
+    finishAdd();
+  };
+  const enterKids = async () => {
+    // First-ever entry with no consent on file → show the informed consent card inline
+    // (the affirmative COPPA capture); granting it continues into proceedEnterKids.
+    if (!(await hasCoppaConsent())) {
+      setNewType('kids');
+      setPendingEnter(true);
+      setAdding(true);
+      setNeedConsent(true);
+      return;
+    }
+    await proceedEnterKids();
   };
 
   return (
@@ -150,8 +175,14 @@ export function Family() {
         <FlowTransition>
         {adding ? (
           <Appear layout style={{ marginTop: 16, gap: 12 }}>
-            <FormField label="Name" value={newName} onChangeText={setNewName} placeholder="e.g. Mia" icon="user" />
-            <Segmented options={['Adult', 'Kid']} value={newType === 'kids' ? 1 : 0} onChange={(i) => { setNewType(i === 1 ? 'kids' : 'adult'); setNeedConsent(false); }} />
+            {/* entering Kids mode auto-creates a "Little one" the parent can rename, so
+                the name/type inputs are only shown when explicitly ADDING a profile */}
+            {!pendingEnter ? (
+              <>
+                <FormField label="Name" value={newName} onChangeText={setNewName} placeholder="e.g. Mia" icon="user" />
+                <Segmented options={['Adult', 'Kid']} value={newType === 'kids' ? 1 : 0} onChange={(i) => { setNewType(i === 1 ? 'kids' : 'adult'); setNeedConsent(false); }} />
+              </>
+            ) : null}
             {needConsent ? (
               <Appear key="consent">
               <Card variant="panel" style={{ gap: 10 }}>
@@ -174,7 +205,7 @@ export function Family() {
                   , including how we handle a child’s data.
                 </AppText>
                 <PrimaryButton label="I’m the parent or guardian, and I consent" onPress={grantConsentAndAdd} />
-                <PressableScale onPress={() => setNeedConsent(false)} accessibilityRole="button" dimTo={0.85} style={{ alignSelf: 'center', paddingVertical: 6 }}>
+                <PressableScale onPress={() => { setNeedConsent(false); if (pendingEnter) { setPendingEnter(false); setAdding(false); } }} accessibilityRole="button" dimTo={0.85} style={{ alignSelf: 'center', paddingVertical: 6 }}>
                   <AppText variant="label" tone="muted">Cancel</AppText>
                 </PressableScale>
               </Card>

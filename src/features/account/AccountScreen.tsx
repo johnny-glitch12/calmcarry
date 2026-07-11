@@ -11,6 +11,7 @@ import { AUDIO_CREDITS } from '@/content/audio';
 import { SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { hasCoppaConsent } from '@/lib/consent';
 import { lightTap } from '@/lib/haptics';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
@@ -222,7 +223,7 @@ export function AccountScreen() {
   const { c } = useTheme();
   const { user, isPremium, token, status, signOut, changePassword } = useAuth();
   const isGuest = status === 'guest' || !token;
-  const { mode, setMode } = useProfile();
+  const { mode, enterKids: enterKidsMode } = useProfile();
   const [reminder, setReminder] = useState(false);
   // email-verification nudge — only when the backend confirms the email is unverified
   const [needsVerify, setNeedsVerify] = useState(false);
@@ -392,8 +393,14 @@ export function AccountScreen() {
 
   // entering kids requires a parent PIN to exist first (so a child can't create one and walk out)
   const enterKids = async () => {
+    // COPPA consent is captured on the Family screen (this screen has no consent UI), so
+    // a first-time entry with no consent on file is routed there to set Kids mode up.
+    if (!(await hasCoppaConsent())) {
+      router.push('/family' as Href);
+      return;
+    }
     if (await hasParentPin()) {
-      setMode('kids');
+      await enterKidsMode();
       router.replace('/');
     } else {
       router.push('/parent-gate?intent=enterKids' as Href);

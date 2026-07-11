@@ -88,7 +88,7 @@ export function ParentGate() {
   // this screen is always night — read night tokens directly so the keypad never
   // inherits the (possibly light) root theme context above its <Screen>.
   const c = themes.night;
-  const { setMode } = useProfile();
+  const { setMode, enterKids } = useProfile();
   const { intent } = useLocalSearchParams<{ intent?: string }>();
 
   const [phase, setPhase] = useState<Phase>('loading');
@@ -136,7 +136,7 @@ export function ParentGate() {
   // from a child on a shared device).
   const highConsequence = intent === 'purchase' || intent === 'deleteAccount';
 
-  const succeed = () => {
+  const succeed = async () => {
     if (intent === 'exitKids') {
       // Reaching succeed() means either the existing PIN was entered (the gate showed
       // 'enter' and required it) OR no PIN existed (gate showed 'create'). Either way
@@ -145,8 +145,10 @@ export function ParentGate() {
       setMode('adult');
       close();
     } else if (intent === 'enterKids') {
-      // PIN was just created in the adult context → now safe to enter kids
-      setMode('kids');
+      // PIN was just created (or entered) → commit the entry via the provider, which
+      // ensures a kid profile exists (creating "Little one" if none) and switches to it.
+      // Consent was already captured upstream (Family card / Account → Family redirect).
+      await enterKids();
       router.replace('/');
     } else if (intent === 'purchase') {
       // verified for a purchase → return to the paywall; subscribe() now proceeds
@@ -165,7 +167,7 @@ export function ParentGate() {
     if (highConsequence) return;
     if (await authenticateBiometric('Unlock CalmCarry')) {
       markParentVerified(intent ?? '');
-      succeed();
+      await succeed();
     }
   };
 

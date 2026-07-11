@@ -37,6 +37,7 @@ import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
+import { dismissUpsell, recordUpsellShown, restUpsellAfterEngage, shouldShowUpsell } from '@/lib/upsell';
 import { lightTap } from '@/lib/haptics';
 import { getJSON, remove, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
@@ -240,6 +241,27 @@ export function TonightScreen() {
       alive = false;
     };
   }, [status, isPremium, kids, router]);
+
+  // Recurring, frequency-capped Calm Plan reminder for signed-in FREE users — the
+  // honest freemium nudge (a soft, dismissible Home card, never a forced modal, never
+  // shown on the player/wind-down, and it backs off when declined). src/lib/upsell.ts
+  // owns the cadence. Kids + premium never see it.
+  const [showUpsell, setShowUpsell] = useState(false);
+  useEffect(() => {
+    if (status !== 'authed' || isPremium || kids) {
+      setShowUpsell(false);
+      return;
+    }
+    let alive = true;
+    shouldShowUpsell().then((ok) => {
+      if (!alive || !ok) return;
+      setShowUpsell(true);
+      recordUpsellShown();
+    });
+    return () => {
+      alive = false;
+    };
+  }, [status, isPremium, kids]);
 
   // gentle, non-failable "calm nights" progress — earned by real sessions, shown
   // to adults too (kids get the playful stars on KidsHome). Refreshed on focus.
@@ -507,6 +529,48 @@ export function TonightScreen() {
                   <CalmNightStar key={i} earned={i < nights} index={i} color={i < nights ? c.accent : c.line} />
                 ))}
               </View>
+            </View>
+          </Card>
+        </Appear>
+      ) : null}
+
+      {/* Calm Plan reminder — a gentle, dismissible nudge for settled free users
+          (cadence + back-off in src/lib/upsell.ts). Value-framed, no price/urgency
+          here; the paywall presents the honest trial + pricing. */}
+      {showUpsell ? (
+        <Appear enter={dur.sheet}>
+          <Card variant="panel" radius={18} style={{ marginTop: 28 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <AppText variant="caption" tone="accent">
+                Calm Plan
+              </AppText>
+              <PressableScale
+                onPress={() => {
+                  dismissUpsell();
+                  setShowUpsell(false);
+                }}
+                hitSlop={16}
+                accessibilityRole="button"
+                accessibilityLabel="Not now"
+                dimTo={0.85}>
+                <Feather name="x" size={16} color={c.muted} />
+              </PressableScale>
+            </View>
+            <AppText variant="bodyMedium" tone="title" style={{ marginTop: 6 }}>
+              Open the full library
+            </AppText>
+            <AppText variant="body" tone="muted" style={{ marginTop: 6 }}>
+              Every guided session, the multi-week programs, and the whole sound machine to mix your own, shared across your household.
+            </AppText>
+            <View style={{ marginTop: 14 }}>
+              <PrimaryButton
+                label="See Calm Plan"
+                onPress={() => {
+                  restUpsellAfterEngage();
+                  setShowUpsell(false);
+                  router.push('/unlock' as Href);
+                }}
+              />
             </View>
           </Card>
         </Appear>

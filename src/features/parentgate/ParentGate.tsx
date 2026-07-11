@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
@@ -262,7 +262,13 @@ export function ParentGate() {
         </PressableScale>
       </View>
 
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      {/* ScrollView so the tall keypad column (orb + title + dots + 4 keypad rows +
+          biometric row) can't overlap/clip on short devices or at large font — it
+          stays centered when it fits and scrolls when it doesn't. No PIN logic changes. */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}
+        showsVerticalScrollIndicator={false}>
         <GlowOrb size={64} reserveGlow aura>
           <Feather name="lock" size={22} color="#FFFFFF" />
         </GlowOrb>
@@ -335,7 +341,7 @@ export function ParentGate() {
             </Animated.View>
           </Appear>
         ) : null}
-      </View>
+      </ScrollView>
     </Screen>
   );
 }

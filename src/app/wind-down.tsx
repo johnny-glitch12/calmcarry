@@ -380,7 +380,7 @@ export default function WindDownScreen() {
           {/* centerpiece — springs in on mount */}
           <Animated.View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }, centerStyle]}>
             <Animated.View style={controlsStyle}>
-              <AppText variant="caption" tone="dim" style={{ marginBottom: 28, textAlign: 'center' }}>
+              <AppText variant="caption" tone="dim" style={{ marginBottom: 16, textAlign: 'center' }}>
                 Wind down
               </AppText>
             </Animated.View>

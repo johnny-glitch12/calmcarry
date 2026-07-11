@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
@@ -14,7 +14,7 @@ import Animated, {
 import { AppText, BearMascot, PressableScale, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
-import { covers } from '@/content/covers';
+import { KidsCover, sceneForTrack } from '@/features/kids/KidsCover';
 import { TRACKS } from '@/content/library';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
@@ -149,7 +149,9 @@ export function KidsHome() {
           scaleTo={0.98}
           dimTo={0.96}>
           <View style={{ borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
-            <Image source={covers[story.cover]} style={{ width: '100%', height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
+            <View style={{ width: '100%', height: 200 }}>
+              <KidsCover scene={sceneForTrack(story.id)} />
+            </View>
             <View style={{ padding: 20, backgroundColor: c.surface }}>
               <AppText variant="caption" tone="accent">
                 Tonight’s calm
@@ -232,10 +234,11 @@ export function KidsHome() {
                 dimTo={0.96}
                 style={{ width: '31%' }}>
                 <View style={{ aspectRatio: 1, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
-                  <Image source={covers[t.cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
-                  <View style={{ flex: 1, backgroundColor: 'rgba(20,30,28,0.55)', justifyContent: 'flex-end', padding: 10 }}>
-                    {/* fixed light on the always-dark photo scrim (matches ListenScreen tiles);
-                        a theme token would flip dark in night mode and lose contrast */}
+                  <KidsCover scene={sceneForTrack(id)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+                  {/* soft bottom scrim just behind the label — keeps the cozy scene visible
+                      up top while the white title stays legible over the dusk sky */}
+                  <LinearGradient colors={['transparent', 'rgba(15,30,25,0.85)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }} />
+                  <View style={{ flex: 1, justifyContent: 'flex-end', padding: 10 }}>
                     <AppText numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 16, color: '#FFFFFF' }}>
                       {t.title}
                     </AppText>

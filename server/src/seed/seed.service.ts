@@ -1,69 +1,36 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcryptjs';
-import * as crypto from 'crypto';
 import { Repository } from 'typeorm';
-import { config } from '../config';
-import {
-  ContentItem,
-  Device,
-  Entitlement,
-  Owner,
-  Profile,
-  Program,
-} from '../entities';
-
-const DEMO_EMAIL = 'sarah@theglowcompany.co';
+import { ContentItem, Program } from '../entities';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(
-    @InjectRepository(Owner)
-    private readonly ownerRepo: Repository<Owner>,
-    @InjectRepository(Entitlement)
-    private readonly entitlementRepo: Repository<Entitlement>,
-    @InjectRepository(Device)
-    private readonly deviceRepo: Repository<Device>,
     @InjectRepository(ContentItem)
     private readonly contentRepo: Repository<ContentItem>,
     @InjectRepository(Program)
     private readonly programRepo: Repository<Program>,
-    @InjectRepository(Profile)
-    private readonly profileRepo: Repository<Profile>,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     await this.run();
   }
 
-  /** Seeds only when empty, so it's safe on every boot. */
+  /** Seeds the real catalogue only when empty, so it's safe on every boot. No demo
+   *  owner / household / device is ever seeded — real accounts are created solely by
+   *  real sign-up and purchase. The community wall is likewise never seeded (only
+   *  real, user-submitted posts), so there is no fabricated social proof. */
   async run(): Promise<void> {
-    const ownerCount = await this.ownerRepo.count();
     const contentCount = await this.contentRepo.count();
-
-    if (ownerCount > 0 && contentCount > 0) {
-      this.logger.log('Database already seeded — skipping.');
+    if (contentCount > 0) {
+      this.logger.log('Catalogue already seeded — skipping.');
       return;
     }
-    this.logger.log('Seeding demo data...');
-
-    if (contentCount === 0) {
-      await this.seedContent();
-      await this.seedPrograms();
-    }
-    // The demo household is a premium account — gate it behind an EXPLICIT opt-in
-    // (SEED_DEMO=1), never on NODE_ENV. An unset/dev NODE_ENV must never silently
-    // create a loginable premium account (that would be a free-premium door).
-    if (ownerCount === 0 && config.seedDemo) {
-      await this.seedDemoUser();
-    } else if (ownerCount === 0) {
-      this.logger.log('Skipping demo-user seed (set SEED_DEMO=1 to create a demo owner).');
-    }
-    // NOTE: the community wins wall is intentionally NOT seeded — it shows only
-    // real, user-submitted posts. Fabricated testimonials would be dishonest
-    // social proof (and an app-store-review risk for a wellness product).
+    this.logger.log('Seeding catalogue...');
+    await this.seedContent();
+    await this.seedPrograms();
     this.logger.log('Seed complete.');
   }
 
@@ -143,48 +110,5 @@ export class SeedService implements OnApplicationBootstrap {
     ];
     await this.programRepo.save(programs.map((p) => this.programRepo.create(p)));
     this.logger.log(`Seeded ${programs.length} programs.`);
-  }
-
-  private async seedDemoUser(): Promise<void> {
-    // NEVER a source-committed password on a premium account. Randomize per seed and
-    // log it ONCE for the operator to grab; it never lives in the repo.
-    const demoPassword = crypto.randomUUID();
-    this.logger.warn(`Seeded demo owner ${DEMO_EMAIL} — password: ${demoPassword} (randomized, shown once)`);
-    const passwordHash = await bcrypt.hash(demoPassword, 10);
-    const owner = await this.ownerRepo.save(
-      this.ownerRepo.create({ email: DEMO_EMAIL, passwordHash, name: 'Sarah Quinn' }),
-    );
-
-    await this.entitlementRepo.save(
-      this.entitlementRepo.create({
-        ownerId: owner.id,
-        tier: 'calm_plan',
-        status: 'active',
-        source: 'apple',
-        plan: 'annual',
-        productId: 'calmcarry.premium.annual',
-        sourceOrderId: 'GC-ORD-DEMO-0001',
-        expiresAt: new Date(Date.now() + 365 * 86_400_000),
-      }),
-    );
-
-    await this.deviceRepo.save(
-      this.deviceRepo.create({
-        ownerId: owner.id,
-        serial: 'GC-2026-08F3-1147',
-        nickname: "Sarah's Orb",
-        model: 'CalmCarry · Glow Orb',
-        warrantyStatus: 'active',
-        warrantyMonths: 24,
-      }),
-    );
-
-    // household: a primary adult + a child profile
-    await this.profileRepo.save([
-      this.profileRepo.create({ ownerId: owner.id, name: 'Sarah', type: 'adult', isPrimary: true }),
-      this.profileRepo.create({ ownerId: owner.id, name: 'Leo', type: 'kids', ageBand: '4-7' }),
-    ]);
-
-    this.logger.log(`Seeded demo user ${DEMO_EMAIL} (premium) + household + device.`);
   }
 }

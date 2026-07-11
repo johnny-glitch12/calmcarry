@@ -43,15 +43,11 @@ You can also seed manually without starting the HTTP server:
 npm run seed
 ```
 
-## Demo credentials
+## Accounts
 
-| Field    | Value                         |
-| -------- | ----------------------------- |
-| Email    | `sarah@theglowcompany.co`     |
-| Password | `glow1234`                    |
-| Name     | Sarah Quinn                   |
-| Plan     | `calm_plan` (active)          |
-| Device   | `GC-2026-08F3-1147` — "Sarah's Orb", CalmCarry · Glow Orb, warranty active 24mo |
+No demo/seed account is created. The server seeds only the content catalogue and
+programs; real owners are created via `POST /auth/register` (or a real purchase).
+Register a throwaway account to smoke-test authenticated routes locally.
 
 ## Endpoints
 
@@ -75,10 +71,10 @@ Authenticated routes expect an `Authorization: Bearer <token>` header.
 # health
 curl -s http://localhost:4000/health
 
-# login (capture token)
-TOKEN=$(curl -s -X POST http://localhost:4000/auth/login \
+# register a throwaway account (capture token)
+TOKEN=$(curl -s -X POST http://localhost:4000/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"email":"sarah@theglowcompany.co","password":"glow1234"}' \
+  -d '{"email":"test@example.com","password":"testpass123","name":"Test"}' \
   | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
 
 # current user + entitlement

@@ -7,7 +7,7 @@ NestJS + TypeORM. Boots and runs the **whole app end-to-end with zero credential
 ```bash
 npm install
 npm run build && node dist/main.js     # or: npm run start:dev
-# API on http://localhost:4000  ·  demo login: sarah@theglowcompany.co / glow1234
+# API on http://localhost:4000  ·  register a throwaway account via POST /auth/register
 ```
 
 ## Modules

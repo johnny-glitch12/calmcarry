@@ -1,28 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  CommunityPost,
-  ContentItem,
-  Device,
-  Entitlement,
-  Owner,
-  Profile,
-  Program,
-} from '../entities';
+import { ContentItem, Program } from '../entities';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Owner,
-      Entitlement,
-      Device,
-      ContentItem,
-      Program,
-      Profile,
-      CommunityPost,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([ContentItem, Program])],
   providers: [SeedService],
   exports: [SeedService],
 })

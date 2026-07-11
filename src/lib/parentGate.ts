@@ -1,6 +1,5 @@
 import * as Crypto from 'expo-crypto';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Platform } from 'react-native';
 
 import { secureGet, secureSet } from './secureStore';
 
@@ -20,14 +19,6 @@ import { secureGet, secureSet } from './secureStore';
 const KEY = 'cc.parentPin';
 const MAX_FAILS = 5;
 const LOCK_MS = 60_000; // 1-minute cooldown after MAX_FAILS wrong tries
-
-// Preview/dev-only known parent code so a reviewer (web preview) or on-device
-// tester (local DEV build) can move in/out of Kids mode without a per-device PIN
-// setup. Enabled ONLY for the gated WEB preview OR a local DEV build (__DEV__,
-// which is ALWAYS false in a Release/App Store build) — so it can never weaken the
-// real gate in a shipped binary.
-const PREVIEW = (process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web') || __DEV__;
-const PREVIEW_PIN = '1379';
 
 type PinRecord = { hash: string; salt: string; fails: number; lockedUntil: number };
 
@@ -67,7 +58,6 @@ function hashPin(pin: string, salt: string): Promise<string> {
 }
 
 export async function hasParentPin(): Promise<boolean> {
-  if (PREVIEW) return true; // preview ships a known demo code, so the gate is "enter", not "create"
   return (await readRecord()) !== null;
 }
 
@@ -92,8 +82,6 @@ export interface PinCheckResult {
 }
 
 export async function checkParentPin(pin: string): Promise<PinCheckResult> {
-  // Preview build accepts the known demo code regardless of any stale stored PIN.
-  if (PREVIEW && pin === PREVIEW_PIN) return { ok: true, lockedSeconds: 0 };
   const rec = await readRecord();
   if (!rec) return { ok: false, lockedSeconds: 0 };
 

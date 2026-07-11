@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 
 import { track } from '@/lib/analytics';
 import { api, type ApiEntitlement, type ApiUser } from '@/lib/api';
@@ -52,16 +52,6 @@ function isLivePremium(e: ApiEntitlement): boolean {
   const t = Date.parse(e.expiresAt);
   return Number.isNaN(t) || t > Date.now();
 }
-
-// Preview-only comp account — lets a reviewer explore the FULL premium app on the
-// gated preview build while the production database isn't provisioned yet. Enabled
-// ONLY for: (a) the gated WEB preview (EXPO_PUBLIC_COMP_LOGIN set on web), or
-// (b) a local DEV build (__DEV__ — Metro-served debug), so on-device testing works
-// while the backend is down. __DEV__ is ALWAYS false in a Release/App Store build,
-// so this can never unlock premium in a shipped binary.
-const COMP_LOGIN = (process.env.EXPO_PUBLIC_COMP_LOGIN === '1' && Platform.OS === 'web') || __DEV__;
-const COMP_EMAIL = 'mason@theglowcompany.co';
-const COMP_PASSWORD = 'GlowOrb2026';
 
 const AuthContext = createContext<AuthValue>({
   status: 'loading',
@@ -114,13 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (!alive) return;
       if (savedToken && savedUser) {
-        // A 'local' token is the comp/preview sentinel — it has NO server to confirm
-        // it, so a persisted 'local' premium session is only trustworthy where the
-        // comp gate is actually live (dev / gated web preview). On a production build
-        // COMP_LOGIN is false, so a planted cc.token='local' + cc.entitlement=calm_plan
-        // must restore as FREE — otherwise it grants permanent, un-reconcilable premium
+        // A 'local' token is the OFFLINE sentinel — it has NO server to confirm it, so a
+        // persisted 'local' session can only ever be FREE (premium requires a validated
+        // purchase). Force FREE on restore so a planted cc.token='local' +
+        // cc.entitlement=calm_plan can't grant permanent, un-reconcilable premium
         // (api.me('local') 401s and the refresh/re-validation paths skip 'local').
-        const unverifiableLocal = savedToken === 'local' && !COMP_LOGIN;
+        const unverifiableLocal = savedToken === 'local';
         setToken(savedToken);
         setUser(savedUser);
         setEntitlement(unverifiableLocal ? FREE : savedEnt);
@@ -204,21 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    // Preview comp account → a local premium session (no backend needed). Gated by
-    // EXPO_PUBLIC_COMP_LOGIN so it only exists in the preview build, never in prod.
-    // trim the comp password too (dev-only path) so a stray autocomplete/paste
-    // space doesn't silently drop the tester through to the offline backend.
-    if (COMP_LOGIN && email.trim().toLowerCase() === COMP_EMAIL && password.trim() === COMP_PASSWORD) {
-      const u: ApiUser = { email: COMP_EMAIL, name: 'Mason' };
-      setToken('local');
-      setUser(u);
-      setEntitlement(CALM);
-      setBackendUp(false);
-      setStatus('authed');
-      track('sign_in', { method: 'comp' });
-      await Promise.all([secureSet(KEYS.token, 'local'), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, CALM)]);
-      return;
-    }
     try {
       const { token: t, refreshToken: rt, user: u } = await api.login(email, password);
       let ent: ApiEntitlement = FREE;

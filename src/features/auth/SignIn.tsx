@@ -187,15 +187,11 @@ export function SignIn() {
       }
       setBusy(true);
       try {
-        console.log('[probe] forgot: calling api');
         await api.forgotPassword(email.trim());
-        console.log('[probe] forgot: resolved');
         setForgot('code');
-      } catch (e) {
-        console.log('[probe] forgot: caught', String(e));
+      } catch {
         setError('We couldn’t send the code just now. Try again in a moment.');
       } finally {
-        console.log('[probe] forgot: finally');
         setBusy(false);
       }
       return;

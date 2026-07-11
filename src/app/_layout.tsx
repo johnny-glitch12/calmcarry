@@ -141,11 +141,6 @@ function KidsGuard() {
   return null;
 }
 
-// DEMO TOGGLE (demo-testing only): when true, anyone NOT signed in lands on the
-// onboarding questions on EVERY launch; a signed-in session skips straight to the
-// app. FALSE for shipping builds — guests see onboarding once, then the app.
-const DEMO_FORCE_ONBOARDING = false;
-
 function RootNav() {
   // Load Feather's glyph font through expo-font (not @expo/vector-icons' own web
   // loader, which doesn't respect the export base path) so icons render in the
@@ -190,22 +185,15 @@ function RootNav() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
-  // Launch routing, once, after the navigator mounts.
+  // Launch routing, once, after the navigator mounts: guests see onboarding on the
+  // first run only, then the app.
   useEffect(() => {
     if (!navState?.key || didRedirect.current) return;
-    if (DEMO_FORCE_ONBOARDING) {
-      // DEMO: not signed in → onboarding questions every launch; signed in → app.
-      if (authStatus === 'loading') return; // wait until the session state is known
-      didRedirect.current = true;
-      if (authStatus === 'guest') router.replace('/onboarding');
-      return;
-    }
-    // normal: first run only
     if (onboarded === false) {
       didRedirect.current = true;
       router.replace('/onboarding');
     }
-  }, [navState?.key, authStatus, onboarded, router]);
+  }, [navState?.key, onboarded, router]);
 
   if (!ready) {
     return null;

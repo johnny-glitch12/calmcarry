@@ -3,8 +3,9 @@ import { useRouter } from 'expo-router';
 import { Linking, View } from 'react-native';
 
 import { AppText, Logo, PressableScale, Reveal, Screen } from '@/components';
+import { CrisisSupport } from '@/features/about/CrisisSupport';
 import { WELLNESS_DISCLAIMER } from '@/content/library';
-import { CRISIS_RESOURCES, PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
+import { PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
 import { lightTap } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 
@@ -95,41 +96,7 @@ export function About() {
       </Reveal>
 
       <Reveal index={3} style={{ marginTop: 28 }}>
-        <AppText variant="label" tone="muted" style={{ marginBottom: 10 }}>
-          If tonight feels heavy, you’re not alone
-        </AppText>
-        <View style={{ borderRadius: 18, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, ...c.shadow }}>
-          {CRISIS_RESOURCES.map((r, i) => (
-            <PressableScale
-              key={r.region}
-              onPress={() => Linking.openURL(r.url).catch(() => {})}
-              onPressIn={lightTap}
-              accessibilityRole="button"
-              accessibilityLabel={`${r.name}. ${r.contact}.`}
-              dimTo={0.95}
-              scaleTo={0.98}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                paddingVertical: 14,
-                paddingHorizontal: 16,
-                borderBottomWidth: i === CRISIS_RESOURCES.length - 1 ? 0 : 1,
-                borderBottomColor: c.line,
-              }}>
-              <Feather name="heart" size={16} color={c.accent} />
-              <View style={{ flex: 1 }}>
-                <AppText variant="bodyMedium" tone="title" style={{ fontSize: 14 }}>
-                  {r.name}
-                </AppText>
-                <AppText variant="label" tone="muted" style={{ marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
-                  {r.region} · {r.contact}
-                </AppText>
-              </View>
-              <Feather name="phone" size={15} color={c.accent} />
-            </PressableScale>
-          ))}
-        </View>
+        <CrisisSupport />
       </Reveal>
 
       <Reveal index={4} style={{ marginTop: 24 }}>

@@ -396,7 +396,8 @@ function TransformStep({ onNext, onBack }: StepProps) {
 
         <View style={{ flexDirection: 'row', gap: 14, marginTop: 28 }}>
           <TransformCard label="You today" image={require('../../../assets/images/onboarding/you-today.png')} tone={c.muted} index={2} />
-          <TransformCard label="In a week" image={require('../../../assets/images/onboarding/you-week.png')} tone={c.textAccent} index={3} highlight />
+          {/* "With a ritual", not "In a week": no visible-transformation-in-7-days promise */}
+          <TransformCard label="With a ritual" image={require('../../../assets/images/onboarding/you-week.png')} tone={c.textAccent} index={3} highlight />
         </View>
       </View>
 
@@ -934,7 +935,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
-            A full sound machine, sleep stories, and lyric-free music. Layer them and fall asleep faster.
+            A full sound machine, sleep stories, and lyric-free music. Layer them into the mix that settles you.
           </AppText>
         </Reveal>
       </View>

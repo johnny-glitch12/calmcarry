@@ -416,7 +416,7 @@ export function TonightScreen() {
               How CalmCarry works
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 6 }}>
-              Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down. The device does the rest.
+              Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down. The orb gives your hands a calm place to rest.
             </AppText>
           </Card>
         </Appear>

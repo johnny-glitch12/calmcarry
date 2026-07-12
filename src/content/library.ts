@@ -263,7 +263,7 @@ export const LEARN: Record<string, Article> = {
     // The "watch & learn" video is intentionally omitted until Glowco supplies real
     // footage — we never ship a placeholder/stock clip. Shown as a short read for now.
     body: [
-      'Find a comfortable spot, rest your Glow Orb in your palm at a level that feels good, and start a wind-down. Most people notice their shoulders drop and their breathing slow within the first few minutes.',
+      'Find a comfortable spot, rest your Glow Orb in your palm at a level that feels good, and start a wind-down. You may notice your shoulders drop and your breathing slow within the first few minutes.',
       'There is nothing to do and nothing to get right. Let the sound carry you. If your mind is busy, that is normal. Just keep returning to the warmth in your hand.',
       'Used a little each evening, the ritual becomes a cue your body learns to recognise: this is the part of the day where we let go.',
     ],
@@ -278,6 +278,23 @@ export const LEARN: Record<string, Article> = {
       'CalmCarry rests against a point in the centre of your palm that calming traditions have turned to for a very long time.',
       'It sends a gentle pulsing (a soft tingling you feel in your palm) that gives your attention something simple and physical to settle on, which helps a busy evening mind find a slower rhythm.',
       'It works beautifully alongside a wind-down session, so your senses (touch, sound, and breath) are all pointing the same calm direction. Set it to a level that feels comfortable and rest it in your palm.',
+    ],
+  },
+  // Bounded honesty (pre-mortem: the placebo gap). Plainly credits the evidence-backed
+  // part (breath + ritual), positions the orb as a physical anchor with an explicit
+  // no-medical-claims line, and carries the app's ONE sanctioned plain-words mention of
+  // anxious nights (product decision 2026-07-12: named in exactly one place, non-clinical,
+  // safe words everywhere else). The wellness disclaimer auto-renders below every article.
+  'what-works': {
+    id: 'what-works',
+    title: 'What is doing the work?',
+    kicker: 'How it works',
+    readMins: 2,
+    cover: 'deepRest',
+    body: [
+      'The heart of CalmCarry is the ritual: unhurried sound and slow, steady breathing at the same time each evening. Slow breathing and a consistent wind-down are the parts with real research behind them, and they are free in this app every night.',
+      'Your Glow Orb is the physical anchor for that ritual. Something warm and familiar to hold gives a busy mind one simple place to rest, and a habit you can feel in your hand is easier to keep. We make no medical claims for it, and we never will.',
+      'When anxious thoughts are what keep you up, the same ritual applies: a slower out-breath, a quiet sound, one thing to hold. Not a cure, just a kinder way to meet the night. If worry feels heavy or constant, please talk to someone you trust or a healthcare professional.',
     ],
   },
   routine: {

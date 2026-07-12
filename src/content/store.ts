@@ -73,9 +73,9 @@ export const TRIAL_DAYS = 3;
 
 /** Why it's worth having more than one. */
 export const DEVICE_BENEFITS = [
-  'Works the moment you hold it. No app, no setup, nothing to charge',
+  'Ready the moment you hold it. No app, no setup, nothing to charge',
   'One for every bedside: partner, guest room, or each child',
-  'Every Orb is authentic and covered by a 24-month warranty',
+  'Sold only by The Glow Company and covered by a 24-month warranty',
 ] as const;
 
 export type PurchaseReason = 'extra' | 'replacement';

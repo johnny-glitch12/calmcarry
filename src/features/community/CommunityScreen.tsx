@@ -479,7 +479,7 @@ export function CommunityScreen() {
 
       <Reveal index={5} style={{ marginTop: 20, marginBottom: 8 }}>
         <AppText variant="caption" tone="dim" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16 }}>
-          Gently moderated. No followers, no chat, no pressure. Just a sense that others are right here with you.
+          Gently moderated. No followers, no chat, no pressure. Wins are personal moments shared as encouragement, never results to expect. Just a sense that others are right here with you.
         </AppText>
       </Reveal>
     </Screen>

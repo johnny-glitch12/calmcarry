@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppText, Card, PressableScale, Reveal, Screen } from '@/components';
+import { CrisisSupport } from '@/features/about/CrisisSupport';
 import { covers } from '@/content/covers';
 import { LEARN, WELLNESS_DISCLAIMER } from '@/content/library';
 import { lightTap } from '@/lib/haptics';
@@ -58,6 +59,13 @@ export function LearnList() {
             </Card>
           </PressableScale>
         ))}
+      </Reveal>
+
+      {/* Learn is where people go when sleep isn't working — a quiet support block
+          at the foot reads as care, not alarm (pre-mortem: the signpost was buried
+          in About only). */}
+      <Reveal index={2} style={{ marginTop: 28 }}>
+        <CrisisSupport />
       </Reveal>
     </Screen>
   );

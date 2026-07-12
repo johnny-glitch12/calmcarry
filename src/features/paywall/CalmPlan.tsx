@@ -5,7 +5,7 @@ import { Linking, View } from 'react-native';
 
 import { Appear, AppText, Crossfade, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
+import { PRICING, PRIVACY_URL, SUBSCRIPTION_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
@@ -130,8 +130,16 @@ export function CalmPlan() {
   const [note, setNote] = useState<string | null>(null);
   const [prices, setPrices] = useState<Partial<Record<PlanId, string>>>({});
   const mounted = useRef(true);
+  // Concrete first-renewal date for the disclosure — "from July 15" beats "after the
+  // trial" for surprise-charge trust. "from", not "on": the store receipt owns the
+  // exact renewal instant, so we bound it honestly without asserting the minute.
+  // Computed in the mount effect (not render) to keep render pure.
+  const [trialEnds, setTrialEnds] = useState('');
   useEffect(() => {
     track('paywall_view');
+    setTrialEnds(
+      new Date(Date.now() + TRIAL_DAYS * 86_400_000).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }),
+    );
     return () => {
       mounted.current = false;
     };
@@ -326,7 +334,7 @@ export function CalmPlan() {
         <Appear key={`disclosure-${plan}`}>
           <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
             {plan === 'annual'
-              ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+              ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per}${trialEnds ? ` from ${trialEnds}` : ''} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
               : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
           </AppText>
         </Appear>
@@ -345,6 +353,11 @@ export function CalmPlan() {
           </PressableScale>
           <PressableScale onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Privacy</AppText>
+          </PressableScale>
+          {/* the cancel path lives at the point of sale, not buried in Account —
+              the disclosure names store settings; this link actually opens them */}
+          <PressableScale onPress={() => Linking.openURL(SUBSCRIPTION_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
+            <AppText variant="label" tone="muted">Manage subscription</AppText>
           </PressableScale>
         </View>
       </Reveal>

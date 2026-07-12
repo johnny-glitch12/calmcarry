@@ -26,14 +26,14 @@ import { SlidePuzzle } from '@/features/kids/SlidePuzzle';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS, WELLNESS_DISCLAIMER } from '@/content/library';
-import { track as logEvent } from '@/lib/analytics';
+import { markFirstAudio, track as logEvent } from '@/lib/analytics';
 import { resolveAudioSource } from '@/lib/audioSource';
 import { markCalmNightToday } from '@/lib/calmNights';
 import { isFavorite, toggleFavorite } from '@/lib/favorites';
 import { markProgramStepDone } from '@/lib/programs';
 import { pushRecent } from '@/lib/recents';
 import { logSession } from '@/lib/sessions';
-import { getJSON, setJSON } from '@/lib/store';
+import { getJSON, KEYS, setJSON } from '@/lib/store';
 import { recordTrackWin } from '@/lib/trackWins';
 import { dur, ease, useTheme } from '@/theme';
 
@@ -41,13 +41,21 @@ import { dur, ease, useTheme } from '@/theme';
 // all night with no way to stop short of force-closing the app.
 const SLEEP_OPTIONS = [0, 15, 30, 45, 60] as const;
 
-// Sensation-honest cues, rotated through the session (build plan: honest device
-// cues + a breathing visual guide the user while they hold the device).
-const CUES = [
+// Sensation-honest cues, rotated through the session. Two sets: the orb cues are
+// shown ONLY when a device is registered on this account (cc.devices cache) —
+// "Notice the gentle pulse in your palm" told non-owners to feel hardware they
+// don't have. Everyone else gets honest breath-and-body guidance.
+const DEVICE_CUES = [
   'Rest your Glow Orb in your palm',
   'Set it to a level that feels good',
   'Notice the gentle pulse in your palm',
   'Let your breath follow the circle',
+];
+const BREATH_CUES = [
+  'Let your breath follow the circle',
+  'Drop your shoulders on the out-breath',
+  'Unclench your jaw, soften your gaze',
+  'Let the sound carry you',
 ];
 
 function PlayPause({ paused, onPress }: { paused: boolean; onPress: () => void }) {
@@ -203,6 +211,7 @@ export function Player() {
         pushRecent(track.id).catch(() => {});
       }
       logEvent('session_start', { contentId: track.id, category: track.category });
+      markFirstAudio(); // time-to-first-audio: fires once per cold start
       markCalmNightToday().catch(() => {});
       // mark this program night complete once it's actually playing (real progress)
       if (program && day) markProgramStepDone(program, Number(day)).catch(() => {});
@@ -257,6 +266,18 @@ export function Player() {
   const ripple = useSharedValue(1);
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const [cueIdx, setCueIdx] = useState(0);
+  // orb-hold cues only for accounts with a registered device (cc.devices cache);
+  // default to the honest breath set so a non-owner is never told to feel hardware
+  const [cues, setCues] = useState<string[]>(BREATH_CUES);
+  useEffect(() => {
+    let alive = true;
+    getJSON<unknown[]>(KEYS.devices, []).then((l) => {
+      if (alive && Array.isArray(l) && l.length > 0) setCues(DEVICE_CUES);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (reduced) {
@@ -305,9 +326,9 @@ export function Player() {
 
   useEffect(() => {
     if (reduced) return; // honor reduced motion — no auto-rotating cue text
-    const id = setInterval(() => setCueIdx((i) => (i + 1) % CUES.length), 13000);
+    const id = setInterval(() => setCueIdx((i) => (i + 1) % cues.length), 13000);
     return () => clearInterval(id);
-  }, [reduced]);
+  }, [reduced, cues.length]);
 
   // gentle amplitude — a subtle breath, not a 32%/2× pulse you stare at all night
   const haloStyle = useAnimatedStyle(() => ({
@@ -661,7 +682,7 @@ export function Player() {
               <Feather name="circle" size={10} color={c.accent} />
               <SwapText trigger={cueIdx}>
                 <AppText variant="caption" tone="dim">
-                  {CUES[cueIdx]}
+                  {cues[cueIdx % cues.length]}
                 </AppText>
               </SwapText>
             </Appear>

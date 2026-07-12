@@ -7,6 +7,7 @@ import { Appear, AppText, Card, GlowOrb, PressableScale, Reveal, Screen, Section
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
+import { KEYS, setJSON } from '@/lib/store';
 import { useTheme } from '@/theme';
 
 type ApiDevice = { id: string; serial: string; model?: string };
@@ -151,6 +152,9 @@ export function DeviceHub() {
         .then((list) => {
           if (!alive) return;
           setDevice(((list as ApiDevice[]) ?? [])[0] ?? null);
+          // cache device presence so the nightly ritual surfaces (wind-down, Player
+          // cues) can be device-aware without a network fetch at bedtime
+          setJSON(KEYS.devices, (list as ApiDevice[]) ?? []);
         })
         .catch(() => alive && setDevice(null))
         .finally(() => alive && setLoading(false));

@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(null);
               setEntitlement(FREE);
               setStatus('guest');
-              await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement)]);
+              await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement, KEYS.devices)]);
             }
           }
           /* otherwise offline — keep cached session */
@@ -281,7 +281,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setEntitlement(FREE);
     setStatus('guest');
-    await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement)]);
+    // KEYS.devices: the device-presence cache drives orb-aware ritual copy — a
+    // signed-out phone must never keep claiming the previous account's orb
+    await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement, KEYS.devices)]);
   }, []);
 
   const changePassword = useCallback(

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Appear, AppText, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, StatusChip } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { KEYS, setJSON } from '@/lib/store';
 import { useTheme } from '@/theme';
 
 // Parse a DD/MM/YYYY (or YYYY-MM-DD) input into an ISO date (YYYY-MM-DD), or null if
@@ -83,6 +84,9 @@ export function RegisterDevice() {
         ...(retailer.trim() ? { retailer: retailer.trim() } : {}),
       });
       setDone(true);
+      // optimistic device-presence cache so the ritual line appears the same night
+      // the orb is registered (the next DeviceHub/Family focus refreshes the real list)
+      setJSON(KEYS.devices, [{ serial: sn }]);
     } catch {
       setFormError('We couldn’t register that just now. Please check your details and try again.');
     } finally {

@@ -38,7 +38,7 @@ import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
-import { getJSON, remove, setJSON } from '@/lib/store';
+import { getJSON, KEYS, remove, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
 
 const NEW_THIS_MONTH = ['rain-piano', 'beach-fire', 'rain-forest', 'fan'];
@@ -107,6 +107,18 @@ function CalmNightStar({ earned, index, color }: { earned: boolean; index: numbe
 function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: string; onPress: () => void }) {
   const { c } = useTheme();
   const track = TRACKS[trackId] ?? TRACKS['slow-tide'];
+  // "rest it in your palm" only when a device is registered (cc.devices cache) —
+  // a non-owner's hero shouldn't instruct them to hold hardware they don't have
+  const [hasOrb, setHasOrb] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getJSON<unknown[]>(KEYS.devices, []).then((l) => {
+      if (alive && Array.isArray(l) && l.length > 0) setHasOrb(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
   return (
     <PressableScale
       onPress={onPress}
@@ -161,7 +173,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
               <Feather name="clock" size={13} color="#BFE6DC" />
               <AppText variant="label" numberOfLines={1} style={{ flex: 1, minWidth: 0, color: '#BFE6DC' }}>
-                {track.duration} · rest it in your palm
+                {hasOrb ? `${track.duration} · rest it in your palm` : `${track.duration} · settle in somewhere soft`}
               </AppText>
             </View>
           </View>

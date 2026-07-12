@@ -18,7 +18,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText, DragDismiss, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
+import { markFirstAudio } from '@/lib/analytics';
 import { lightTap } from '@/lib/haptics';
+import { getJSON, KEYS } from '@/lib/store';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
@@ -111,6 +113,19 @@ export default function WindDownScreen() {
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [paused, setPaused] = useState(false);
+  // device-aware ritual line: invite the orb into the ritual ONLY when one is
+  // registered on this account (cc.devices cache) — never instruct a non-owner
+  // to hold hardware they don't have
+  const [hasOrb, setHasOrb] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getJSON<unknown[]>(KEYS.devices, []).then((l) => {
+      if (alive && Array.isArray(l) && l.length > 0) setHasOrb(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const { isPremium } = useAuth();
   // the wind-down plays the track the home screen recommended (falls back to Slow Tide)
@@ -159,6 +174,7 @@ export default function WindDownScreen() {
     if (lockedForUser) return; // gated — redirecting to the paywall, never play paid audio
     audio.loop = true;
     audio.play();
+    markFirstAudio(); // time-to-first-audio: fires once per cold start
     return () => {
       try {
         audio.pause();
@@ -381,7 +397,7 @@ export default function WindDownScreen() {
           <Animated.View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }, centerStyle]}>
             <Animated.View style={controlsStyle}>
               <AppText variant="caption" tone="dim" style={{ marginBottom: 16, textAlign: 'center' }}>
-                Wind down
+                {hasOrb ? 'Hold your orb. Wind down' : 'Wind down'}
               </AppText>
             </Animated.View>
 
@@ -393,8 +409,10 @@ export default function WindDownScreen() {
                 strokeWidth={3}
                 style={{ position: 'absolute' }}
               />
-              {/* burst: one soft arrival bloom as the wind-down begins — the room exhales */}
-              <GlowOrb size={216} reserveGlow breathing={!paused} burst />
+              {/* burst: one soft arrival bloom as the wind-down begins — the room exhales.
+                  paced: the orb breathes the TAUGHT 4s-in/6s-out rhythm, not the ambient
+                  symmetric loop, so following it with your own breath actually works */}
+              <GlowOrb size={216} reserveGlow breathing={!paused} paced burst />
             </View>
 
             <AppText variant="display" tone="title" style={{ marginTop: 24 }}>

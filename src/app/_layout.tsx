@@ -22,6 +22,7 @@ import { ProfileProvider, useProfile } from '@/features/profile/ProfileProvider'
 import { startAnalytics, track } from '@/lib/analytics';
 import { captureError, initMonitoring } from '@/lib/monitoring';
 import { getOnboarded } from '@/lib/onboarding';
+import { getJSON } from '@/lib/store';
 import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } from '@/theme';
 
 initMonitoring(); // native: Sentry (gated on a real DSN); web: no-op
@@ -153,6 +154,7 @@ function RootNav() {
   const { hydrated: profileHydrated, mode } = useProfile();
   const router = useRouter();
   const navState = useRootNavigationState();
+  const launchPath = usePathname();
   const didRedirect = useRef(false);
   const { status: authStatus } = useAuth();
 
@@ -185,15 +187,28 @@ function RootNav() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
-  // Launch routing, once, after the navigator mounts: guests see onboarding on the
-  // first run only, then the app.
+  // Launch routing, ONE decision per cold start, after the navigator mounts:
+  //  - first run -> onboarding
+  //  - wind-down hours (20:00-05:00) -> the Night Door: a dimmed, one-tap "Begin
+  //    wind-down" so unlock-to-audio takes seconds (pre-mortem: the app must never
+  //    make the phone the obstacle at bedtime). Never for kids profiles, never over
+  //    a deep link (only when the launch route is Home), never over the funnel's
+  //    pending-trial promise, and dismissible to the full app.
   useEffect(() => {
     if (!navState?.key || didRedirect.current) return;
+    if (onboarded === null || !profileHydrated) return; // still hydrating — decide once, later
+    didRedirect.current = true; // the one launch decision is consumed now
     if (onboarded === false) {
-      didRedirect.current = true;
       router.replace('/onboarding');
+      return;
     }
-  }, [navState?.key, onboarded, router]);
+    const hour = new Date().getHours();
+    if (mode !== 'kids' && (hour >= 20 || hour < 5) && launchPath === '/') {
+      getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
+        if (!pending) router.push('/night-door');
+      });
+    }
+  }, [navState?.key, onboarded, profileHydrated, mode, launchPath, router]);
 
   if (!ready) {
     return null;
@@ -239,6 +254,7 @@ function RootNav() {
       <Stack.Screen name="search" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
       {/* full takeovers */}
       <Stack.Screen name="survey" options={{ animation: 'fade', animationDuration: dur.modal }} />
+      <Stack.Screen name="night-door" options={{ animation: 'fade', animationDuration: dur.modal }} />
       <Stack.Screen name="check-in" options={{ animation: 'fade', animationDuration: dur.modal }} />
       <Stack.Screen name="auth" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal }} />
       <Stack.Screen name="unlock" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: true }} />

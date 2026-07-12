@@ -17,6 +17,10 @@ type Props = {
   size?: number;
   /** breathing loop (scale 1→1.06 + glow 0.85→1.0); static under reduced motion */
   breathing?: boolean;
+  /** breathe at the TAUGHT rhythm (4s in / 6s out, matching the Player's pacer)
+   *  instead of the ambient symmetric loop — for surfaces that guide the breath
+   *  (the wind-down centerpiece), so the orb never contradicts the instruction */
+  paced?: boolean;
   /** one-shot bloom (scale 1→1.08→1 + glow bloom) — the authenticity "burst" peak */
   burst?: boolean;
   /** reserve the full glow footprint (1.6× size) in layout so the halo never
@@ -38,6 +42,7 @@ type Props = {
 export function GlowOrb({
   size = 160,
   breathing = true,
+  paced = false,
   burst = false,
   reserveGlow = false,
   aura = false,
@@ -57,7 +62,43 @@ export function GlowOrb({
       glow.value = 1;
       return;
     }
-    if (burst) {
+    if (breathing && paced) {
+      // the TAUGHT rhythm: 4s expand (in-breath) / 6s settle (out-breath) — matches
+      // the Player's pacer so the orb never breathes against its own instruction.
+      // With burst also set (the wind-down arrival), the bloom plays first and hands
+      // off into the loop — burst alone used to win and the pacer never ran.
+      const scaleLoop = withRepeat(
+        withSequence(
+          withTiming(1.06, { duration: 4000, easing: ease.sine }),
+          withTiming(1, { duration: 6000, easing: ease.sine })
+        ),
+        -1,
+        false
+      );
+      const glowLoop = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 4000, easing: ease.sine }),
+          withTiming(0.85, { duration: 6000, easing: ease.sine })
+        ),
+        -1,
+        false
+      );
+      glow.value = 0.85;
+      scale.value = burst
+        ? withSequence(
+            withTiming(1.08, { duration: dur.modal, easing: ease.out }),
+            withTiming(1, { duration: dur.sheet, easing: ease.inOut }),
+            scaleLoop
+          )
+        : scaleLoop;
+      glow.value = burst
+        ? withSequence(
+            withTiming(1, { duration: dur.modal, easing: ease.out }),
+            withTiming(0.85, { duration: dur.sheet, easing: ease.inOut }),
+            glowLoop
+          )
+        : glowLoop;
+    } else if (burst) {
       // one-shot bloom (enter), then settle faster (exit) — never repeats
       scale.value = withSequence(
         withTiming(1.08, { duration: dur.modal, easing: ease.out }),
@@ -88,7 +129,7 @@ export function GlowOrb({
       cancelAnimation(scale);
       cancelAnimation(glow);
     };
-  }, [breathing, burst, reduced, scale, glow]);
+  }, [breathing, paced, burst, reduced, scale, glow]);
 
   // emanating aura ripples (two staggered rings expanding + fading out)
   useEffect(() => {

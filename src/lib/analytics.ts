@@ -33,7 +33,8 @@ export type Ev =
   | 'session_complete'
   | 'paywall_view'
   | 'subscribe_success'
-  | 'subscription_manage_open';
+  | 'subscription_manage_open'
+  | 'time_to_first_audio';
 
 // ---- anonymous install id: secure-store, migrating any legacy AsyncStorage id ----
 const ANON_KEY = 'cc.anonId'; // SecureStore-safe charset
@@ -54,6 +55,19 @@ async function anonId(): Promise<string> {
 let kidsActive = false;
 export function setAnalyticsMode(mode: 'adult' | 'kids'): void {
   kidsActive = mode === 'kids';
+}
+
+// ---- time-to-first-audio: THE app health metric (pre-mortem: the app's whole job
+// is unlock -> audio playing in seconds; this measures it honestly). LAUNCH_AT is
+// bundle-eval time, a fair approximation of JS cold start. Fires at most once per
+// cold start, from the first surface that actually starts audio (Player/wind-down).
+// Kids exclusion is automatic: track() no-ops while a kid profile is active. ----
+const LAUNCH_AT = Date.now();
+let firstAudioFired = false;
+export function markFirstAudio(): void {
+  if (firstAudioFired) return;
+  firstAudioFired = true;
+  track('time_to_first_audio', { durationSec: Math.round((Date.now() - LAUNCH_AT) / 1000) });
 }
 
 // ---- prop allow-list: ONLY these keys ever leave the device ----

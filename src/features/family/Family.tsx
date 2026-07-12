@@ -13,6 +13,7 @@ import { PRIVACY_URL, TERMS_URL } from '@/content/store';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
+import { KEYS, setJSON } from '@/lib/store';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { dur, useTheme } from '@/theme';
 
@@ -44,6 +45,8 @@ export function Family() {
           if (alive) {
             setDevices((list as ApiDevice[]) ?? []);
             setDevicesError(false);
+            // cache device presence for the device-aware ritual copy (wind-down, Player)
+            setJSON(KEYS.devices, (list as ApiDevice[]) ?? []);
           }
         })
         .catch(() => {

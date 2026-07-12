@@ -191,8 +191,12 @@ export const api = {
     req<{ ok: boolean }>('/notifications/unregister', { method: 'POST', body: JSON.stringify({ token: deviceToken }) }, token),
 
   // ---- signed CDN url for an item's audio ----
+  // Short per-call timeout: the Player awaits this BEFORE first play, so on a
+  // black-hole network the generic 8s timeout meant up to 8s of silence at the
+  // exact moment of zero patience. 2.5s is ample for a healthy round-trip and
+  // bounds worst-case silence before the bundled fallback plays.
   signedUrl: (token: string, id: string) =>
-    req<{ url: string; expiresAt: number | null; signed: boolean }>(`/content/${id}/signed-url`, {}, token),
+    req<{ url: string; expiresAt: number | null; signed: boolean }>(`/content/${id}/signed-url`, {}, token, 2500),
 
   // ---- shared caregivers (one household, whole family) ----
   caregivers: (token: string) =>

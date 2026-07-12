@@ -50,7 +50,12 @@ export class PushService {
         'apns-priority': '5', // power-friendly; these are gentle reminders, not alarms
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ aps: { alert: { title: msg.title, body: msg.body }, sound: 'default' }, ...msg.data }),
+      // quiet delivery: no sound, passive interruption level — a gentle reminder lands
+      // in Notification Center without lighting the screen or waking anyone
+      body: JSON.stringify({
+        aps: { alert: { title: msg.title, body: msg.body }, 'interruption-level': 'passive' },
+        ...msg.data,
+      }),
     });
     if (!res.ok) this.logger.warn(`APNs ${res.status}: ${(await res.text()).slice(0, 160)}`);
     return res.ok;
@@ -77,6 +82,9 @@ export class PushService {
         message: {
           token: deviceToken,
           notification: { title: msg.title, body: msg.body },
+          // land in the client's quiet 'Gentle reminders' channel (reminders-v2, LOW
+          // importance, silent) instead of FCM's default Miscellaneous channel
+          android: { notification: { channel_id: 'reminders-v2' } },
           ...(msg.data ? { data: msg.data } : {}),
         },
       }),

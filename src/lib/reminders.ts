@@ -29,14 +29,17 @@ export const REMINDER_TIMES = [
 // Android 8+ requires a channel; without one our reminders land in an unnamed
 // "Miscellaneous" bucket the user can't manage. One calm, named channel for all
 // three reminders (they're the same kind of gentle nudge — no need to fragment).
-const CHANNEL_ID = 'reminders';
+// v2: SILENT by default (LOW importance, no sound) — a "gentle nudge" that plays
+// the full default alert sound is a contradiction, and channel settings are
+// immutable after first creation, so the quiet settings need a fresh id.
+const CHANNEL_ID = 'reminders-v2';
 async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Gentle reminders',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.LOW, // silent banner in the shade
     vibrationPattern: [0, 150], // one soft pulse — never an alarm buzz
-    sound: 'default',
+    sound: null,
   }).catch(() => {});
 }
 
@@ -46,6 +49,22 @@ async function ensurePermission(): Promise<boolean> {
   if (current.status === 'granted') return true;
   const asked = await Notifications.requestPermissionsAsync();
   return asked.status === 'granted';
+}
+
+/** Permission for the trial reminder specifically: NEVER pops the OS dialog (the
+ *  reminder is scheduled mid-purchase, and interrupting a checkout with a system
+ *  prompt is exactly the wrong moment). Uses what's already granted; on iOS asks
+ *  for PROVISIONAL authorization, which iOS grants silently and delivers quietly
+ *  to Notification Center. On Android with no grant we simply skip scheduling. */
+async function quietPermission(): Promise<boolean> {
+  await ensureAndroidChannel();
+  const current = await Notifications.getPermissionsAsync();
+  if (current.status === 'granted') return true;
+  if (Platform.OS === 'ios' && current.status === 'undetermined') {
+    const asked = await Notifications.requestPermissionsAsync({ ios: { allowProvisional: true } });
+    return asked.status === 'granted' || asked.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+  }
+  return false;
 }
 
 /**
@@ -65,7 +84,9 @@ export async function setBedtimeReminder(
     if (!(await ensurePermission())) return false;
     await Notifications.scheduleNotificationAsync({
       identifier: BEDTIME_ID,
-      content: { title: 'A gentle nudge', body: 'Time to wind down with CalmCarry.' },
+      // silent + passive: lands in Notification Center without lighting up or waking
+      // anyone — a nudge you find, never one that finds you
+      content: { title: 'A gentle nudge', body: 'Time to wind down with CalmCarry.', sound: false, interruptionLevel: 'passive' },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
     });
     return true;
@@ -82,17 +103,27 @@ export async function setBedtimeReminder(
 export async function scheduleTrialEndingReminder(trialDays: number, priceLabel: string): Promise<void> {
   if (!supported || trialDays <= 0) return;
   try {
-    if (!(await ensurePermission())) return;
+    // quietPermission, not ensurePermission: this runs mid-purchase, and popping the
+    // OS permission dialog over a checkout is the wrong moment for a system prompt.
+    if (!(await quietPermission())) return;
     await Notifications.cancelScheduledNotificationAsync(TRIAL_ID).catch(() => {});
     // Fire ~1 day before our presented trial length. We deliberately do NOT assert an
     // exact charge date — the authoritative renewal date lives in the store receipt,
     // not in the app — so we nudge honestly without inventing a guaranteed date.
     const fireAt = new Date(Date.now() + Math.max(trialDays - 1, 1) * 86_400_000);
+    // The fire time inherits the exact clock time of purchase, so a midnight purchase
+    // would otherwise mean a midnight notification. Clamp to civil hours: anything
+    // before 10:00 or after 20:00 becomes 18:00 that day. Moving it can only make the
+    // reminder EARLIER relative to the charge (worst case ~6.5h before, still pre-charge).
+    const h = fireAt.getHours();
+    if (h < 10 || h >= 20) fireAt.setHours(18, 0, 0, 0);
     await Notifications.scheduleNotificationAsync({
       identifier: TRIAL_ID,
       content: {
         title: 'Your free trial is ending soon',
-        body: `After the trial, CalmCarry Premium continues at ${priceLabel} unless you cancel. You can cancel anytime in one tap.`,
+        body: `After the trial, CalmCarry Premium continues at ${priceLabel} unless you cancel. Cancel anytime in your Apple or Google account settings.`,
+        sound: false,
+        interruptionLevel: 'passive',
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt, channelId: CHANNEL_ID },
     });
@@ -126,6 +157,8 @@ export async function setWeeklyRecapReminder(enabled: boolean): Promise<boolean>
       content: {
         title: 'Your calm week',
         body: 'Take a quiet look back at the nights you wound down this week.',
+        sound: false,
+        interruptionLevel: 'passive',
       },
       // Sunday 7pm local — after the weekend, before the wind-down hour
       trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0, channelId: CHANNEL_ID },

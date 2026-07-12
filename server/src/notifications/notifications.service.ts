@@ -35,7 +35,7 @@ export class NotificationsService {
     const tokens = await this.repo.find({ where: { ownerId, enabled: true } });
     const results = await Promise.all(
       tokens.map((t) =>
-        this.push.send(t.token, t.platform, { title: 'CalmCarry', body: 'A gentle nudge — time to wind down.' }),
+        this.push.send(t.token, t.platform, { title: 'CalmCarry', body: 'A gentle nudge. Time to wind down.' }),
       ),
     );
     return { sent: results.filter((r) => r.sent).length, tokens: tokens.length };

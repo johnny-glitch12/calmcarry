@@ -520,11 +520,13 @@ export function AccountScreen() {
           {pushSupported && mode !== 'kids' && token && token !== 'local' ? (
             <SettingRow icon="heart" label="Gentle reminders" toggle={pushOn} onToggle={togglePush} />
           ) : null}
-          {/* bedtime reminder is a real local notification — native only, so hide on web */}
-          {remindersSupported ? (
+          {/* bedtime reminder is a real local notification — native only, so hide on web.
+              Also hidden in kids mode (same rule as push above): a child must not be able
+              to trigger the OS notification-permission dialog */}
+          {remindersSupported && mode !== 'kids' ? (
             <SettingRow icon="bell" label="Bedtime reminder" toggle={reminder} onToggle={toggleReminder} />
           ) : null}
-          {remindersSupported && reminder ? (
+          {remindersSupported && mode !== 'kids' && reminder ? (
             <Appear enter={dur.sheet} layout style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: c.line, gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                 <Feather name="clock" size={18} color={c.accent} />
@@ -540,7 +542,7 @@ export function AccountScreen() {
             </Appear>
           ) : null}
           {/* weekly recap — one Sunday-evening note pointing at the calm-nights card */}
-          {remindersSupported ? (
+          {remindersSupported && mode !== 'kids' ? (
             <SettingRow icon="calendar" label="Weekly calm recap" toggle={recap} onToggle={toggleRecap} />
           ) : null}
           {notifDenied ? (

@@ -37,7 +37,6 @@ import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
-import { dismissUpsell, recordUpsellShown, restUpsellAfterEngage, shouldShowUpsell } from '@/lib/upsell';
 import { lightTap } from '@/lib/haptics';
 import { getJSON, remove, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
@@ -209,20 +208,24 @@ export function TonightScreen() {
   // Only claim "3 a.m." in the actual small hours — otherwise it reads as a lie at 11pm.
   const deepNight = hour >= 1 && hour < 5;
   const lateNight = hour < 5 || hour >= 23;
+  // The whole wind-down window, not just the small hours. A nightly bedtime user
+  // opens the app at 20:00-22:59 — nothing may interpose itself there.
+  const windDownHours = hour >= 20 || hour < 5;
 
   // offer the forward-looking check-in after >12h away (once per open, not a forced loop).
   // Dismiss the moment it's shown so a Home remount can't re-push the survey onto the stack.
   const checkInShown = useRef(false);
   useEffect(() => {
-    // Never at night: a full-screen survey between a tired person and any sound is the
-    // exact cognitive load the app promises to remove. Not dismissed when skipped, so
-    // the check-in simply waits until morning.
-    if (needsCheckIn && !kids && !lateNight && !checkInShown.current) {
+    // Never during wind-down hours (20:00-05:00): a full-screen survey between a tired
+    // person and any sound is the exact cognitive load the app promises to remove — and
+    // for a nightly bedtime user, 21:30 IS the app's prime time. Not dismissed when
+    // skipped, so the check-in simply waits until a daytime open.
+    if (needsCheckIn && !kids && !windDownHours && !checkInShown.current) {
       checkInShown.current = true;
       dismissCheckIn();
       router.push('/survey' as Href);
     }
-  }, [needsCheckIn, kids, lateNight, router, dismissCheckIn]);
+  }, [needsCheckIn, kids, windDownHours, router, dismissCheckIn]);
 
   // "Start my free trial" in the funnel is a promise: once the user is signed in,
   // open the Calm Plan sheet ONCE so the store trial is actually offered. Before
@@ -242,26 +245,11 @@ export function TonightScreen() {
     };
   }, [status, isPremium, kids, router]);
 
-  // Recurring, frequency-capped Calm Plan reminder for signed-in FREE users — the
-  // honest freemium nudge (a soft, dismissible Home card, never a forced modal, never
-  // shown on the player/wind-down, and it backs off when declined). src/lib/upsell.ts
-  // owns the cadence. Kids + premium never see it.
-  const [showUpsell, setShowUpsell] = useState(false);
-  useEffect(() => {
-    if (status !== 'authed' || isPremium || kids) {
-      setShowUpsell(false);
-      return;
-    }
-    let alive = true;
-    shouldShowUpsell().then((ok) => {
-      if (!alive || !ok) return;
-      setShowUpsell(true);
-      recordUpsellShown();
-    });
-    return () => {
-      alive = false;
-    };
-  }, [status, isPremium, kids]);
+  // NOTE deliberately NO timed/recurring upsell card here. Monetization is
+  // contextual-only: the Calm Plan appears when the user taps locked content
+  // (they are already asking) — never as unsolicited commercial pressure on a
+  // calm home screen. The one exception is cc.pendingTrial above, which fulfils
+  // an explicit "Start my free trial" tap from the funnel.
 
   // gentle, non-failable "calm nights" progress — earned by real sessions, shown
   // to adults too (kids get the playful stars on KidsHome). Refreshed on focus.
@@ -396,7 +384,9 @@ export function TonightScreen() {
           {verifiedOwner ? <StatusChip confirm label="Registered owner" icon="shield" /> : null}
           {/* re-key on entitlement so the chip settles in (scale+fade) when a purchase
               flips it, instead of the label/icon hard-swapping */}
-          <StatusChip key={isPremium ? 'unlocked' : 'free'} confirm label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'lock'} />
+          {/* free state gets a neutral moon, not a padlock — a lock must never be the
+              first status a groggy free user reads on their own home screen */}
+          <StatusChip key={isPremium ? 'unlocked' : 'free'} confirm label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'moon'} />
         </View>
       </Reveal>
 
@@ -529,48 +519,6 @@ export function TonightScreen() {
                   <CalmNightStar key={i} earned={i < nights} index={i} color={i < nights ? c.accent : c.line} />
                 ))}
               </View>
-            </View>
-          </Card>
-        </Appear>
-      ) : null}
-
-      {/* Calm Plan reminder — a gentle, dismissible nudge for settled free users
-          (cadence + back-off in src/lib/upsell.ts). Value-framed, no price/urgency
-          here; the paywall presents the honest trial + pricing. */}
-      {showUpsell ? (
-        <Appear enter={dur.sheet}>
-          <Card variant="panel" radius={18} style={{ marginTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <AppText variant="caption" tone="accent">
-                Calm Plan
-              </AppText>
-              <PressableScale
-                onPress={() => {
-                  dismissUpsell();
-                  setShowUpsell(false);
-                }}
-                hitSlop={16}
-                accessibilityRole="button"
-                accessibilityLabel="Not now"
-                dimTo={0.85}>
-                <Feather name="x" size={16} color={c.muted} />
-              </PressableScale>
-            </View>
-            <AppText variant="bodyMedium" tone="title" style={{ marginTop: 6 }}>
-              Open the full library
-            </AppText>
-            <AppText variant="body" tone="muted" style={{ marginTop: 6 }}>
-              Every guided session, the multi-week programs, and the whole sound machine to mix your own, shared across your household.
-            </AppText>
-            <View style={{ marginTop: 14 }}>
-              <PrimaryButton
-                label="See Calm Plan"
-                onPress={() => {
-                  restUpsellAfterEngage();
-                  setShowUpsell(false);
-                  router.push('/unlock' as Href);
-                }}
-              />
             </View>
           </Card>
         </Appear>

@@ -29,8 +29,8 @@
       "package": "co.theglowcompany.calmcarry",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#D3EDEA",
-        "foregroundImage": "./assets/images/icon.png"
+        "backgroundColor": "#0E1817",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },

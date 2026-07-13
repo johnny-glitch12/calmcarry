@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { TabBar } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { HandsOnTour } from '@/features/tour/HandsOnTour';
+import { QuickActionsBridge } from '@/lib/quickActions';
 import { getJSON, setJSON } from '@/lib/store';
 
 /** One-time hands-on walkthrough (Mason). Lives HERE — above the scenes AND the
@@ -63,6 +64,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="you" options={{ title: 'Profile' }} />
     </Tabs>
     <TourGate />
+    {/* home-screen quick actions: registers the "Begin wind-down" shortcut + routes
+        its launches. Lives here (a sub-layout) because the routing hook navigates. */}
+    <QuickActionsBridge />
     </View>
   );
 }

@@ -22,6 +22,7 @@ import { ProfileProvider, useProfile } from '@/features/profile/ProfileProvider'
 import { startAnalytics, track } from '@/lib/analytics';
 import { captureError, initMonitoring } from '@/lib/monitoring';
 import { getOnboarded } from '@/lib/onboarding';
+import { hasInitialQuickAction } from '@/lib/quickActions';
 import { getJSON } from '@/lib/store';
 import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } from '@/theme';
 
@@ -221,7 +222,9 @@ function RootNav() {
       return;
     }
     const hour = new Date().getHours();
-    if (mode !== 'kids' && (hour >= 20 || hour < 5) && launchPath === '/') {
+    // hasInitialQuickAction: a "Begin wind-down" home-screen shortcut launch already
+    // routes to the Night Door itself — pushing ours too would stack two of them
+    if (mode !== 'kids' && (hour >= 20 || hour < 5) && launchPath === '/' && !hasInitialQuickAction()) {
       if (authStatus !== 'authed') {
         // guests can never receive the unlock sheet, so a stale cc.pendingTrial (a
         // funnel tap that never signed in) must not suppress the bedtime flow forever

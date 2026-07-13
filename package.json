@@ -24,6 +24,7 @@
     "expo-linking": "~56.0.15",
     "expo-local-authentication": "~56.0.4",
     "expo-notifications": "~56.0.19",
+    "expo-quick-actions": "^6.0.2",
     "expo-router": "~56.2.13",
     "expo-secure-store": "~56.0.4",
     "expo-splash-screen": "~56.0.12",

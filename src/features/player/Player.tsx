@@ -267,9 +267,17 @@ export function Player() {
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const [cueIdx, setCueIdx] = useState(0);
   // orb-hold cues only for accounts with a registered device (cc.devices cache);
-  // default to the honest breath set so a non-owner is never told to feel hardware
+  // default to the honest breath set so a non-owner is never told to feel hardware.
+  // KIDS always get breath cues, device or not: the app must never be the thing
+  // instructing a child to hold the microcurrent device without a parent present
+  // (conservative default pending counsel, docs/ORB_ROADMAP.md; a parent can still
+  // hand the orb over themselves).
   const [cues, setCues] = useState<string[]>(BREATH_CUES);
   useEffect(() => {
+    if (mode === 'kids') {
+      setCues(BREATH_CUES);
+      return;
+    }
     let alive = true;
     getJSON<unknown[]>(KEYS.devices, []).then((l) => {
       if (alive && Array.isArray(l) && l.length > 0) setCues(DEVICE_CUES);
@@ -277,7 +285,7 @@ export function Player() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     if (reduced) {

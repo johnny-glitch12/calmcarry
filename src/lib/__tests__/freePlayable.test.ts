@@ -1,3 +1,4 @@
+import { FEELING_MAP, FREE_RESCUE } from '@/content/feelings';
 import { TRACKS } from '@/content/library';
 import { recommendTracks, TRACK_TAGS } from '@/lib/recommend';
 
@@ -19,10 +20,9 @@ const FEELINGS = ['racing', 'cant-switch-off', 'wired-tired', 'wound-up', 'heavy
 const INTENTS = ['sleep', 'reset', 'sounds', 'suggest', null] as const;
 const HOURS = [3, 9, 14, 22]; // deep night, morning, afternoon, bedtime
 
-// The free anchors the app's fallbacks reach for. Cross-reference (update together):
-// - FREE_RESCUE in TonightScreen.tsx ('slow-tide')
-// - FEELING_MAP freeTrack values in ProfileProvider.tsx
-const FREE_ANCHORS = ['slow-tide', 'box-breathing', 'gymnopedie'];
+// The free anchors the app's fallbacks reach for — DERIVED from the same data the
+// runtime uses (src/content/feelings.ts), so an edit there is asserted here, not missed.
+const FREE_ANCHORS = [...new Set([FREE_RESCUE, ...Object.values(FEELING_MAP).map((m) => m.freeTrack)])];
 
 describe('free playability (the 3am guarantee)', () => {
   it('every adult recommendation ranking contains at least one unlocked track', () => {
@@ -53,7 +53,7 @@ describe('free playability (the 3am guarantee)', () => {
       expect(TRACK_TAGS[id]).toBeTruthy(); // untagged = invisible to the recommender
     }
     // the always-free rescue must also be reachable by a kid profile
-    expect(TRACK_TAGS['slow-tide']?.kidSafe).toBe(true);
+    expect(TRACK_TAGS[FREE_RESCUE]?.kidSafe).toBe(true);
   });
 
   it('the catalog never drops below a minimal free tier', () => {

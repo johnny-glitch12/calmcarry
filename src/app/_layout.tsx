@@ -2,7 +2,7 @@ import '../global.css';
 
 import { Feather } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
-import { Redirect, Stack, usePathname, useRootNavigationState, useRouter, type ErrorBoundaryProps } from 'expo-router';
+import { Redirect, Stack, usePathname, useRouter, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, Text } from 'react-native';
@@ -164,7 +164,6 @@ function RootNav() {
   const { hydrated: schemeHydrated } = useColorSchemePref();
   const { hydrated: profileHydrated, mode } = useProfile();
   const router = useRouter();
-  const navState = useRootNavigationState();
   const launchPath = usePathname();
   const didRedirect = useRef(false);
   const { status: authStatus } = useAuth();
@@ -203,11 +202,19 @@ function RootNav() {
   //  - wind-down hours (20:00-05:00) -> the Night Door: a dimmed, one-tap "Begin
   //    wind-down" so unlock-to-audio takes seconds (pre-mortem: the app must never
   //    make the phone the obstacle at bedtime). Never for kids profiles, never over
-  //    a deep link (only when the launch route is Home), never over the funnel's
+  //    a deep link (only when the launch route is Home), never over an ACTIVE
   //    pending-trial promise, and dismissible to the full app.
+  // GATED ON `ready`, not navState?.key: in expo-router 56 the root navigation state
+  // exists from the very first render (the internal '__root' stack), so navState?.key
+  // gives NO mount protection — dispatching before our <Stack> mounts (rendered only
+  // once `ready`) pushes a duplicate '__root' and mounts the whole app tree TWICE
+  // (double auth restore racing one refresh token, doubled analytics). `ready` flips
+  // in the same render that mounts the Stack; effects run after commit, so every
+  // dispatch below lands on a mounted Stack.
   useEffect(() => {
-    if (!navState?.key || didRedirect.current) return;
-    if (onboarded === null || !profileHydrated) return; // still hydrating — decide once, later
+    if (!ready || didRedirect.current) return;
+    // web: `ready` waits only on fonts, so re-check the decision inputs there
+    if (onboarded === null || !profileHydrated || authStatus === 'loading') return;
     didRedirect.current = true; // the one launch decision is consumed now
     if (onboarded === false) {
       router.replace('/onboarding');
@@ -215,11 +222,17 @@ function RootNav() {
     }
     const hour = new Date().getHours();
     if (mode !== 'kids' && (hour >= 20 || hour < 5) && launchPath === '/') {
-      getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
-        if (!pending) router.push('/night-door');
-      });
+      if (authStatus !== 'authed') {
+        // guests can never receive the unlock sheet, so a stale cc.pendingTrial (a
+        // funnel tap that never signed in) must not suppress the bedtime flow forever
+        router.push('/night-door');
+      } else {
+        getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
+          if (!pending) router.push('/night-door');
+        });
+      }
     }
-  }, [navState?.key, onboarded, profileHydrated, mode, launchPath, router]);
+  }, [ready, onboarded, profileHydrated, authStatus, mode, launchPath, router]);
 
   if (!ready) {
     return null;

@@ -31,6 +31,7 @@ import {
 import { useAuth } from '@/features/auth/AuthProvider';
 import { KidsHome } from '@/features/kids/KidsHome';
 import { setTourTarget } from '@/lib/tourTargets';
+import { FREE_RESCUE } from '@/content/feelings';
 import { FEELING_MAP, useProfile, type Feeling, type Intent } from '@/features/profile/ProfileProvider';
 import { ProfileSwitcher } from '@/features/profile/ProfileSwitcher';
 import { covers } from '@/content/covers';
@@ -43,9 +44,6 @@ import { dur, ease, STAGGER, useTheme } from '@/theme';
 
 const NEW_THIS_MONTH = ['rain-piano', 'beach-fire', 'rain-forest', 'fan'];
 
-// The always-free one-tap rescue track (never locked) — the honest 3 a.m. answer:
-// no sign-in, no paywall, no quiz, just a gentle drift back to sleep.
-const FREE_RESCUE = 'slow-tide';
 
 // A short, warm "how you're arriving" label for the hero — reflects ONLY this
 // session's check-in answer (never persisted, never a stored mood log; §3/§14).
@@ -242,15 +240,19 @@ export function TonightScreen() {
   // "Start my free trial" in the funnel is a promise: once the user is signed in,
   // open the Calm Plan sheet ONCE so the store trial is actually offered. Before
   // this, that tap and "Maybe later" were silently identical. Never for kids.
+  // A PREMIUM sign-in consumes the flag WITHOUT opening the sheet: the promise is
+  // moot (they already subscribe), and a stale flag would otherwise suppress the
+  // Night Door on every night launch forever. Guests keep the flag so the promise
+  // still fires when they eventually sign in.
   const trialOffered = useRef(false);
   useEffect(() => {
-    if (status !== 'authed' || isPremium || kids || trialOffered.current) return;
+    if (status !== 'authed' || kids || trialOffered.current) return;
     let alive = true;
     getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
       if (!alive || !pending || trialOffered.current) return;
       trialOffered.current = true;
       remove('cc.pendingTrial');
-      router.push('/unlock' as Href);
+      if (!isPremium) router.push('/unlock' as Href);
     });
     return () => {
       alive = false;

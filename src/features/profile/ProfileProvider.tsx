@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { FEELING_MAP, type Feeling, type Intent } from '@/content/feelings';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { setAnalyticsMode } from '@/lib/analytics';
 import { setMonitoringMode } from '@/lib/monitoring';
@@ -24,8 +25,10 @@ import { explainRecommendation, recommendTracks } from '@/lib/recommend';
 import { getJSON, remove, setJSON } from '@/lib/store';
 
 export type AppMode = 'adult' | 'kids';
-// Forward-looking check-in intents (build plan §6: "What would feel good right now?").
-export type Intent = 'sleep' | 'reset' | 'sounds' | 'suggest';
+// Feeling/Intent vocabulary + FEELING_MAP live in src/content/feelings.ts (pure data,
+// shared with tests); re-exported here so every existing consumer keeps its import.
+export { FEELING_MAP } from '@/content/feelings';
+export type { Feeling, Intent } from '@/content/feelings';
 
 /** A member of the household. One subscription covers the whole family (build plan §6). */
 export type Profile = { id: string; name: string; type: AppMode };
@@ -56,25 +59,6 @@ function sanitizeProfiles(raw: unknown): Profile[] {
   );
 }
 
-/**
- * How someone is "arriving" tonight — the gentle feeling step of the check-in.
- * SAFE WORDS ONLY (build plan §3/§14): NEVER "anxious"/"insomnia"/clinical terms.
- * Each maps forward-looking → an intent + a recommended track + a warm line
- * (no symptom tracking, no history — it only tailors the next recommendation).
- */
-export type Feeling = 'racing' | 'cant-switch-off' | 'wired-tired' | 'wound-up' | 'heavy-day' | 'quiet';
-
-// freeTrack: the anti-bait fallback — where a FREE user lands when the primary
-// pick is premium-locked (a preview that fades into the paywall mid-drift is the
-// exact BetterSleep move this app exists to avoid).
-export const FEELING_MAP: Record<Feeling, { intent: Intent; track: string; freeTrack: string; line: string }> = {
-  racing: { intent: 'reset', track: 'box-breathing', freeTrack: 'box-breathing', line: 'Let’s slow the spin.' },
-  'cant-switch-off': { intent: 'sleep', track: 'deep-rest', freeTrack: 'slow-tide', line: 'We’ll help you set the day down.' },
-  'wired-tired': { intent: 'sleep', track: 'slow-tide', freeTrack: 'slow-tide', line: 'Tired body, busy mind. Let’s settle both.' },
-  'wound-up': { intent: 'reset', track: 'box-breathing', freeTrack: 'box-breathing', line: 'A few slow breaths to unwind.' },
-  'heavy-day': { intent: 'sleep', track: 'deep-rest', freeTrack: 'gymnopedie', line: 'Somewhere soft to land.' },
-  quiet: { intent: 'sounds', track: 'slow-tide', freeTrack: 'slow-tide', line: 'Just some calm to rest in.' },
-};
 
 type ProfileValue = {
   hydrated: boolean;

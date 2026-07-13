@@ -44,6 +44,58 @@ export async function ensureAndroidChannel(): Promise<void> {
     vibrationPattern: [0, 150], // one soft pulse — never an alarm buzz
     sound: null,
   }).catch(() => {});
+  await migrateLegacyChannel().catch(() => {});
+}
+
+/** One-time migration off the loud v1 channel. Installs that scheduled reminders
+ *  before the quiet rework keep firing on the old DEFAULT-importance channel (with
+ *  the default alert sound) until rescheduled — so move our known reminders onto the
+ *  quiet channel, THEN delete the old one. Order matters: a notification targeting a
+ *  deleted channel falls back to an IMPORTANCE_HIGH system channel, which is louder
+ *  than what we're migrating away from. No-op once the legacy channel is gone. */
+const LEGACY_CHANNEL_ID = 'reminders';
+async function migrateLegacyChannel(): Promise<void> {
+  const legacy = await Notifications.getNotificationChannelAsync(LEGACY_CHANNEL_ID);
+  if (!legacy) return; // fresh install, or already migrated
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  for (const req of scheduled) {
+    const t = req.trigger as { channelId?: string; hour?: number; minute?: number; value?: number } | null;
+    if (t?.channelId !== LEGACY_CHANNEL_ID) continue;
+    await Notifications.cancelScheduledNotificationAsync(req.identifier).catch(() => {});
+    const content = {
+      title: req.content.title ?? '',
+      body: req.content.body ?? '',
+      sound: false as const,
+      interruptionLevel: 'passive' as const,
+    };
+    if (req.identifier === BEDTIME_ID) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: BEDTIME_ID,
+        content,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: t.hour ?? DEFAULT_HOUR,
+          minute: t.minute ?? DEFAULT_MINUTE,
+          channelId: CHANNEL_ID,
+        },
+      }).catch(() => {});
+    } else if (req.identifier === RECAP_ID) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: RECAP_ID,
+        content,
+        // the recap schedule is a fixed constant (Sunday 7pm) — rebuild directly
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0, channelId: CHANNEL_ID },
+      }).catch(() => {});
+    } else if (req.identifier === TRIAL_ID && typeof t.value === 'number' && t.value > Date.now()) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: TRIAL_ID,
+        content,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(t.value), channelId: CHANNEL_ID },
+      }).catch(() => {});
+    }
+    // anything else on the legacy channel stays cancelled (nothing else schedules locally)
+  }
+  await Notifications.deleteNotificationChannelAsync(LEGACY_CHANNEL_ID).catch(() => {});
 }
 
 async function ensurePermission(): Promise<boolean> {

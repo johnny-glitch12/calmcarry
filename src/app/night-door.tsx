@@ -7,12 +7,11 @@ import { StyleSheet, View } from 'react-native';
 import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
+import { FREE_RESCUE } from '@/content/feelings';
 import { TRACKS } from '@/content/library';
 import { getRecents } from '@/lib/recents';
 import { useTheme } from '@/theme';
 
-/** The always-free fallback when there's no playable recent (never locked). */
-const FALLBACK = 'slow-tide';
 
 /**
  * The Night Door (pre-mortem: the screen-at-bedtime paradox). Opening the app in
@@ -27,7 +26,7 @@ export default function NightDoorScreen() {
   const { c } = useTheme();
   const router = useRouter();
   const { isPremium } = useAuth();
-  const [targetId, setTargetId] = useState<string>(FALLBACK);
+  const [targetId, setTargetId] = useState<string>(FREE_RESCUE);
 
   // last-played that is playable for this entitlement, else the free rescue.
   // Same anti-bait rule as the Home hero: the one-tap must PLAY, never paywall.
@@ -43,7 +42,7 @@ export default function NightDoorScreen() {
     };
   }, [isPremium]);
 
-  const track = TRACKS[targetId] ?? TRACKS[FALLBACK];
+  const track = TRACKS[targetId] ?? TRACKS[FREE_RESCUE];
   const begin = () => router.replace(`/wind-down?id=${track.id}`);
   const dismiss = () => (router.canGoBack() ? router.back() : router.replace('/'));
 

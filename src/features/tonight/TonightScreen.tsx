@@ -171,7 +171,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
               <Feather name="clock" size={13} color="#BFE6DC" />
               <AppText variant="label" numberOfLines={1} style={{ flex: 1, minWidth: 0, color: '#BFE6DC' }}>
-                {hasOrb ? `${track.duration} · rest it in your palm` : `${track.duration} · settle in somewhere soft`}
+                {hasOrb ? `${track.duration} · rest it in your palm` : `${track.duration} · get cozy and listen`}
               </AppText>
             </View>
           </View>
@@ -300,15 +300,43 @@ export function TonightScreen() {
   // bar itself); Home only contributes the hero's measured rect via heroRef.
   const heroRef = useRef<View>(null);
 
-  // "how CalmCarry works" intro for newcomers (dismissible, persisted)
+  // "how CalmCarry works" intro for newcomers (dismissible, persisted).
+  // ONE TEACHER AT A TIME: the card waits until the hands-on tour is done/skipped,
+  // so the first landing never shows the tour spotlight AND this card at once
+  // (the exact first-run pile-up the user audit flagged). Re-read on focus so the
+  // card appears on the next Home visit after the tour finishes.
   const [hiwDismissed, setHiwDismissed] = useState(false);
+  const [tourDone, setTourDone] = useState(false);
   useEffect(() => {
     getJSON('cc.hiwDismissed', false).then(setHiwDismissed);
   }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      getJSON('cc.tourDone', false).then((d) => {
+        if (alive) setTourDone(!!d);
+      });
+      return () => {
+        alive = false;
+      };
+    }, [])
+  );
   const dismissHiw = () => {
     setHiwDismissed(true);
     setJSON('cc.hiwDismissed', true);
   };
+  // device-aware newcomer copy: never open with "rest your Glow Orb" for someone
+  // with no registered device (same honesty rule as the hero meta + wind-down)
+  const [hasOrbHome, setHasOrbHome] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getJSON<unknown[]>(KEYS.devices, []).then((l) => {
+      if (alive && Array.isArray(l) && l.length > 0) setHasOrbHome(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // kids get their own big, playful, picture-led home a child can run alone
   if (kids) return <KidsHome />;
@@ -415,7 +443,7 @@ export function TonightScreen() {
 
       {/* how CalmCarry works — newcomer intro (fades in AND out — dismissing the
           X should never hard-vanish the card) */}
-      {!hiwDismissed ? (
+      {!hiwDismissed && tourDone ? (
         <Appear enter={dur.sheet}>
           <Card variant="panel" radius={18} style={{ marginTop: 18 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -430,7 +458,9 @@ export function TonightScreen() {
               How CalmCarry works
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 6 }}>
-              Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down. The orb gives your hands a calm place to rest.
+              {hasOrbHome
+                ? 'Rest your Glow Orb in your palm, set it to a level that feels good, and press play. The app guides the breath and the wind-down. The orb gives your hands a calm place to rest.'
+                : 'Pick tonight\u2019s session and press play. The app guides the breath and the wind-down. All you need to do is settle in and follow along.'}
             </AppText>
           </Card>
         </Appear>

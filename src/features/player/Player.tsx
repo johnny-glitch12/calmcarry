@@ -57,6 +57,13 @@ const BREATH_CUES = [
   'Unclench your jaw, soften your gaze',
   'Let the sound carry you',
 ];
+// kid sessions speak kid: no jaws, no gazes — words a four-year-old can follow
+const KID_CUES = [
+  'Snuggle in and get comfy',
+  'A big, slow breath in',
+  'And let it drift back out',
+  'Let the sound tuck you in',
+];
 
 function PlayPause({ paused, onPress }: { paused: boolean; onPress: () => void }) {
   const { c } = useTheme();
@@ -275,7 +282,7 @@ export function Player() {
   const [cues, setCues] = useState<string[]>(BREATH_CUES);
   useEffect(() => {
     if (mode === 'kids') {
-      setCues(BREATH_CUES);
+      setCues(KID_CUES);
       return;
     }
     let alive = true;

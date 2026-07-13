@@ -20,6 +20,13 @@ function TourGate() {
   const [phase, setPhase] = useState<'idle' | 'active' | 'done'>('idle');
   useEffect(() => {
     if (phase !== 'idle' || !hydrated || mode === 'kids' || pathname !== '/') return;
+    // never teach at bedtime: in wind-down hours (20:00-05:00) the user came for
+    // sleep, not a walkthrough — the tour simply waits for a daytime open (same
+    // rule as the check-in suppression). Also keeps the first NIGHT landing clean:
+    // Night Door -> Home with no tour, no newcomer card (that card waits on
+    // cc.tourDone), nothing between the person and Begin.
+    const hour = new Date().getHours();
+    if (hour >= 20 || hour < 5) return;
     let alive = true;
     getJSON('cc.tourDone', false).then((done) => {
       if (!alive) return;

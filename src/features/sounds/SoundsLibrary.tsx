@@ -180,7 +180,10 @@ export function SoundsLibrary() {
       {rails.map((rail, i) => {
         const items = rail.ids
           .map((id) => TRACKS[id])
-          .filter((t): t is Track => !!t && !seen.has(t.id));
+          // kids in a FREE household never see locked tracks they can't open — a
+          // paywall dead-end contradicts the COPPA-safe kids contract (adults keep
+          // the labelled locked cards as the honest upsell surface)
+          .filter((t): t is Track => !!t && !seen.has(t.id) && !(kids && t.locked && !isPremium));
         if (!items.length) return null; // everything here already lives in a personal rail above
         return (
           <Animated.View key={rail.title} exiting={railExit} layout={railFlow}>

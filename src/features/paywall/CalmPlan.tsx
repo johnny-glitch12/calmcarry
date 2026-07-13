@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import { Appear, AppText, Crossfade, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { TRACKS } from '@/content/library';
 import { PRICING, PRIVACY_URL, SUBSCRIPTION_URL, TERMS_URL, TRIAL_DAYS, type PlanId } from '@/content/store';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -124,6 +125,10 @@ function PlanCard({
 export function CalmPlan() {
   const { c } = useTheme();
   const router = useRouter();
+  // contextual paywall: when a locked-content tap brought the user here (unlock?id=x),
+  // acknowledge WHY they're here — the ask lands better as an answer than a pitch
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const contextTrack = id ? TRACKS[id] : undefined;
   const { activatePremium, isPremium, token } = useAuth();
   const [plan, setPlan] = useState<PlanId>('annual');
   const [busy, setBusy] = useState(false);
@@ -275,7 +280,9 @@ export function CalmPlan() {
           Go deeper, every night
         </AppText>
         <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
-          Your free tier stays free. Premium opens the full library, programs, and the whole sound machine.
+          {contextTrack
+            ? `"${contextTrack.title}" is part of Premium, along with the full library, programs, and the whole sound machine. Your free tier stays free.`
+            : 'Your free tier stays free. Premium opens the full library, programs, and the whole sound machine.'}
         </AppText>
       </Reveal>
 

@@ -1,8 +1,8 @@
-import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { api } from './api';
+import { ensureAndroidChannel } from './reminders';
 import { getJSON, setJSON } from './store';
 
 /**
@@ -11,7 +11,13 @@ import { getJSON, setJSON } from './store';
  * The OS permission prompt is requested ONLY here, on an explicit user opt-in — never
  * on launch, never in kids mode. The achieved state is returned so the UI shows ON
  * only if a device token was actually registered (no phantom toggle). First-party
- * only: the Expo push token is sent solely to our own backend.
+ * only: the token is sent solely to our own backend.
+ *
+ * NOTE deliberately the RAW device push token (getDevicePushTokenAsync: the hex APNs
+ * token on iOS, the FCM registration token on Android) — NOT an Expo push token. The
+ * server (push.service.ts) sends directly to APNs/FCM with its own credentials, and
+ * those transports reject Expo-format tokens. An Expo token was previously registered
+ * here, which would have made every remote push bounce at the transport.
  */
 
 /** Remote push is native-only; web (preview) is a no-op and the toggle is hidden. */
@@ -23,12 +29,9 @@ function platform(): 'ios' | 'android' | 'web' {
   return Platform.OS === 'android' ? 'android' : Platform.OS === 'web' ? 'web' : 'ios';
 }
 
-/** EAS projectId is REQUIRED by getExpoPushTokenAsync on SDK 56. Read defensively. */
-function projectId(): string | undefined {
-  const extra = (Constants.expoConfig as { extra?: { eas?: { projectId?: string } } } | null)?.extra?.eas
-    ?.projectId;
-  const fromEas = (Constants as unknown as { easConfig?: { projectId?: string } }).easConfig?.projectId;
-  return extra || fromEas || undefined;
+async function deviceToken(): Promise<string> {
+  const { data } = await Notifications.getDevicePushTokenAsync();
+  return String(data);
 }
 
 export async function hasPushOptIn(): Promise<boolean> {
@@ -37,8 +40,8 @@ export async function hasPushOptIn(): Promise<boolean> {
 
 /**
  * Enable/disable gentle remote reminders. Returns the state actually achieved
- * (true only if a device token was registered). Offline / permission-denied /
- * no-projectId all return false. Requires a signed-in backend account.
+ * (true only if a device token was registered). Offline / permission-denied all
+ * return false. Requires a signed-in backend account.
  */
 export async function setPushOptIn(enabled: boolean, jwt: string | null): Promise<boolean> {
   if (!pushSupported) return false;
@@ -48,11 +51,7 @@ export async function setPushOptIn(enabled: boolean, jwt: string | null): Promis
     await setJSON(GRANT_KEY, false);
     if (jwt && jwt !== 'local') {
       try {
-        const id = projectId();
-        if (id) {
-          const { data: deviceToken } = await Notifications.getExpoPushTokenAsync({ projectId: id });
-          await api.unregisterPush(jwt, deviceToken);
-        }
+        await api.unregisterPush(jwt, await deviceToken());
       } catch {
         /* best-effort — the local flag is already off */
       }
@@ -60,14 +59,10 @@ export async function setPushOptIn(enabled: boolean, jwt: string | null): Promis
     return false;
   }
   if (!jwt || jwt === 'local') return false; // registration needs a backend account
-  // No EAS projectId → we can't mint an Expo push token. Bail BEFORE prompting, so
-  // we never show an OS permission dialog that would lead nowhere.
-  const id = projectId();
-  if (!id) {
-    await setJSON(GRANT_KEY, false);
-    return false;
-  }
   try {
+    // server FCM pushes target the quiet 'reminders-v2' channel by id — make sure it
+    // exists even for users who never touched the local-reminder toggles
+    await ensureAndroidChannel();
     const current = await Notifications.getPermissionsAsync();
     let granted = current.status === 'granted';
     if (!granted) {
@@ -78,8 +73,7 @@ export async function setPushOptIn(enabled: boolean, jwt: string | null): Promis
       await setJSON(GRANT_KEY, false);
       return false;
     }
-    const { data: deviceToken } = await Notifications.getExpoPushTokenAsync({ projectId: id });
-    await api.registerPush(jwt, { token: deviceToken, platform: platform() });
+    await api.registerPush(jwt, { token: await deviceToken(), platform: platform() });
     await setJSON(GRANT_KEY, true);
     return true;
   } catch {

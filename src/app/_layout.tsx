@@ -28,6 +28,15 @@ import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } 
 initMonitoring(); // native: Sentry (gated on a real DSN); web: no-op
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Wind-down-hours launch? Evaluated at bundle eval (module scope keeps render pure;
+// same approximation as analytics' LAUNCH_AT). Used to skip the ~3s brand reveal at
+// bedtime — brand theater is daytime money; at 22:00 every second of chrome between
+// a tired person and audio is the product failing at its one job.
+const LAUNCH_IN_WIND_DOWN_HOURS = (() => {
+  const h = new Date().getHours();
+  return h >= 20 || h < 5;
+})();
+
 // Foreground delivery: expo-notifications' default shows NOTHING while the app is
 // open — silently dropping the bedtime nudge for anyone already browsing, and the
 // honesty-critical trial-ending reminder. A quiet banner; no sound, no badge.
@@ -148,8 +157,10 @@ function RootNav() {
   // static /app build instead of falling back to tofu squares.
   const [fontsLoaded, fontError] = useFonts({ ...fontMap, ...Feather.font });
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
-  // the CalmCarry brand reveal plays once per cold start, over the first route
-  const [showBrand, setShowBrand] = useState(true);
+  // the CalmCarry brand reveal plays once per cold start, over the first route —
+  // except during wind-down hours, where the Night Door (not brand theater) must be
+  // the first thing a tired person sees
+  const [showBrand, setShowBrand] = useState(!LAUNCH_IN_WIND_DOWN_HOURS);
   const { hydrated: schemeHydrated } = useColorSchemePref();
   const { hydrated: profileHydrated, mode } = useProfile();
   const router = useRouter();

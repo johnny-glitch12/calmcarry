@@ -306,9 +306,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     remove(KEYS.intent);
     // COPPA: consent is per-account — never let account B inherit account A's
     // consent (it would skip the consent screen for a new kid profile). Also drop
-    // the previous account's on-disk recents (memory was cleared above).
+    // the previous account's on-disk recents (memory was cleared above) and the
+    // device-presence cache (account B must not see account A's orb-aware ritual
+    // copy — sign-out clears it too, but an in-place account switch skips signOut).
     clearCoppaConsent();
     clearRecents();
+    remove('cc.devices'); // KEYS.devices in lib/store (this file's KEYS is profile-local)
   }, [hydrated, token, user?.email]);
 
   const setActiveProfile = useCallback((id: string) => {

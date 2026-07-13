@@ -33,7 +33,10 @@ export const REMINDER_TIMES = [
 // the full default alert sound is a contradiction, and channel settings are
 // immutable after first creation, so the quiet settings need a fresh id.
 const CHANNEL_ID = 'reminders-v2';
-async function ensureAndroidChannel(): Promise<void> {
+/** Exported: the push registration path (lib/push.ts) must also create this channel,
+ *  since server FCM pushes target it by id and a push-only user may never have
+ *  touched the local-reminder toggles that would otherwise create it. */
+export async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Gentle reminders',

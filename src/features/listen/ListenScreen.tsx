@@ -601,7 +601,7 @@ export function ListenScreen() {
           onLayout={(e) => setGridW(e.nativeEvent.layout.width)}
           style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: GRID_GAP }}>
           {gridW > 0
-            ? SOUNDS.map((s) => (
+            ? SOUNDS.filter((s) => !(kids && s.premium && !isPremium)).map((s) => (
                 <Tile
                   key={s.key}
                   label={s.label}

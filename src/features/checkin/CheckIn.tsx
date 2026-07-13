@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
@@ -7,6 +7,7 @@ import { useProfile } from '@/features/profile/ProfileProvider';
 import { track } from '@/lib/analytics';
 import { lightTap } from '@/lib/haptics';
 import { maybeRequestReview } from '@/lib/reviews';
+import { getJSON, KEYS } from '@/lib/store';
 import { useTheme } from '@/theme';
 
 /**
@@ -18,6 +19,18 @@ export function CheckIn() {
   const router = useRouter();
   const { c } = useTheme();
   const { mode } = useProfile();
+  // same device-awareness as the rest of the nightly flow (cc.devices cache):
+  // never tell someone without an orb to set one down
+  const [hasOrb, setHasOrb] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getJSON<unknown[]>(KEYS.devices, []).then((l) => {
+      if (alive && Array.isArray(l) && l.length > 0) setHasOrb(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // peak-end is the fair moment to EARN a review, but never at lights-out: fire the
   // gated request (never kids, only after a few calm nights, once ever) behind the
@@ -47,7 +60,9 @@ export function CheckIn() {
         </Reveal>
         <Reveal index={2} style={{ alignItems: 'center' }}>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 290 }}>
-            Set your Glow Orb down whenever you’re ready. Rest well. There’s nothing else to do.
+            {hasOrb
+              ? 'Set your Glow Orb down whenever you’re ready. Rest well. There’s nothing else to do.'
+              : 'Set the phone down whenever you’re ready. Rest well. There’s nothing else to do.'}
           </AppText>
         </Reveal>
       </View>

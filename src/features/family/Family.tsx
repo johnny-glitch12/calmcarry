@@ -337,7 +337,7 @@ export function Family() {
                 }}>
                 <AppText variant="meta" tone="muted">
                   {devicesError
-                    ? 'We couldn’t check your devices just now. Pull back in a moment. Anything you’ve registered is safe.'
+                    ? 'We couldn’t check your devices just now. Come back in a moment. Anything you’ve registered is safe.'
                     : 'No devices registered yet. Register your Glow Orb to activate its warranty and replacement support.'}
                 </AppText>
               </View>

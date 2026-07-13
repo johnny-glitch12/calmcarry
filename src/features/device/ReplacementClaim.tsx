@@ -14,7 +14,7 @@ const LABEL = { fontFamily: fonts.medium, fontSize: 13 } as const;
 
 type ApiDevice = { id: string; serial: string; model?: string };
 
-const ISSUES = ["Won't power on", 'Battery life', 'Physical damage', 'Sound / audio', 'Other'];
+const ISSUES = ['Won’t power on', 'Battery life', 'Physical damage', 'Sound / audio', 'Other'];
 
 function IssueChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const { c } = useTheme();
@@ -253,7 +253,7 @@ export function ReplacementClaim() {
               label="Describe the issue"
               value={desc}
               onChangeText={setDesc}
-              placeholder="Tell us what's happening…"
+              placeholder="Tell us what’s happening…"
               multiline
             />
           </Reveal>

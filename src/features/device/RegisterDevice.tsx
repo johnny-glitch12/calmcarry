@@ -131,7 +131,7 @@ export function RegisterDevice() {
               Register your device
             </AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 8 }}>
-              Activate your 24-month warranty and unlock replacement support.
+              Activate your 24-month warranty and replacement support.
             </AppText>
           </Reveal>
 

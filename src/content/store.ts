@@ -25,7 +25,7 @@ export const SUBSCRIPTION_URL =
 export const CRISIS_RESOURCES = [
   { region: 'US', name: '988 Suicide & Crisis Lifeline', contact: 'Call or text 988', url: 'tel:988' },
   { region: 'UK & ROI', name: 'Samaritans', contact: 'Call 116 123', url: 'tel:116123' },
-  { region: 'Canada', name: 'Talk Suicide Canada', contact: 'Call 1-833-456-4566', url: 'tel:18334564566' },
+  { region: 'Canada', name: '9-8-8 Suicide Crisis Helpline', contact: 'Call or text 9-8-8', url: 'tel:988' },
   { region: 'Australia', name: 'Lifeline', contact: 'Call 13 11 14', url: 'tel:131114' },
 ] as const;
 

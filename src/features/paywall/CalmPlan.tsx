@@ -281,7 +281,7 @@ export function CalmPlan() {
         </AppText>
         <AppText variant="body" tone="muted" style={{ marginTop: 8, textAlign: 'center', maxWidth: 300 }}>
           {contextTrack
-            ? `"${contextTrack.title}" is part of Premium, along with the full library, programs, and the whole sound machine. Your free tier stays free.`
+            ? `“${contextTrack.title}” is part of Premium, along with the full library, programs, and the whole sound machine. Your free tier stays free.`
             : 'Your free tier stays free. Premium opens the full library, programs, and the whole sound machine.'}
         </AppText>
       </Reveal>

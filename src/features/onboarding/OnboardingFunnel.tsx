@@ -118,7 +118,7 @@ const GOALS: { key: string; label: string; hint: string; intent: Intent; icon: k
   { key: 'fall-asleep', label: 'Fall asleep faster', hint: 'Drift off without the tossing and turning', intent: 'sleep', icon: 'moon' },
   { key: 'stay-asleep', label: 'Stay asleep through the night', hint: 'Fewer 3am wake-ups', intent: 'sleep', icon: 'shield' },
   { key: 'wake-refreshed', label: 'Wake up refreshed', hint: 'Mornings that feel rested', intent: 'suggest', icon: 'sunrise' },
-  { key: 'quiet-mind', label: 'Quiet a racing mind', hint: 'Settle the mental chatter', intent: 'reset', icon: 'wind' },
+  { key: 'quiet-mind', label: 'Quiet a racing mind', hint: 'Slow the mental chatter', intent: 'reset', icon: 'wind' },
   { key: 'calm-anxious', label: 'Ease a wound-up mind', hint: 'Settle tension, day or night', intent: 'reset', icon: 'heart' },
   { key: 'routine', label: 'Build a bedtime routine', hint: 'A rhythm you can keep', intent: 'sleep', icon: 'repeat' },
 ];
@@ -349,14 +349,17 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
       </View>
 
       <Reveal index={3} style={{ alignItems: 'center', gap: 18 }}>
+        {/* labelled, not an anonymous arrow circle: the first button a stranger ever
+            sees should say what it does (user audit). Same CTA colours + press feel. */}
         <PressableScale
           onPress={onNext}
           onPressIn={lightTap}
           accessibilityRole="button"
           accessibilityLabel="Begin"
-          scaleTo={0.94}
-          style={{ width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: c.ctaBg, ...c.shadow }}>
-          <Feather name="arrow-right" size={26} color={c.ctaText} />
+          scaleTo={0.96}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 60, paddingHorizontal: 34, borderRadius: 30, backgroundColor: c.ctaBg, ...c.shadow }}>
+          <AppText style={{ fontFamily: fonts.semibold, fontSize: 17, color: c.ctaText }}>Begin</AppText>
+          <Feather name="arrow-right" size={20} color={c.ctaText} />
         </PressableScale>
         <PressableScale onPress={onSignIn} accessibilityRole="button" dimTo={0.6} hitSlop={10}>
           <AppText style={[P.body, { color: c.muted, fontSize: 15 }]}>
@@ -595,7 +598,7 @@ function GenderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps)
     <FunnelShell
       onBack={onBack}
       progress={progress}
-      kicker="A GENTLE QUESTION"
+      kicker="ABOUT YOU"
       title="Hormone levels can influence sleep patterns."
       subtitle="Optional, and stored only on your device. It helps us tailor guidance."
       onContinue={onNext}
@@ -618,7 +621,7 @@ function AgeStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
     <FunnelShell
       onBack={onBack}
       progress={progress}
-      kicker="A GENTLE QUESTION"
+      kicker="WHO IT’S FOR"
       title="As we age, our sleep needs change."
       subtitle="Which range are you in? Or tell us if this is for a little one."
       onContinue={onNext}
@@ -903,9 +906,9 @@ function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
     <FunnelShell
       onBack={onBack}
       progress={progress}
-      kicker="SMARTER INSIGHTS"
+      kicker="LOOKING AHEAD"
       title="Connect a wearable?"
-      subtitle="Wearable sync is on our roadmap. Tell us what you use and we’ll let you know the moment it’s ready."
+      subtitle="Wearable sync isn’t here yet. Tell us what you use and we’ll let you know when it’s ready."
       onContinue={onNext}
       canContinue
       continueLabel={answers.wearable ? 'Continue' : 'Skip'}>
@@ -1019,7 +1022,7 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.body, { color: c.muted, marginTop: 10, marginBottom: 28 }]}>
-            Your {TRIAL_DAYS}-day trial is completely free. It only becomes a paid plan if you keep it. Cancel anytime in your Apple or Google account before it ends.
+            Your {TRIAL_DAYS}-day trial is free. It only becomes a paid plan if you keep it. Cancel anytime in your Apple or Google account before it ends.
           </AppText>
         </Reveal>
         {row('unlock', 'Today', 'Full access to everything, free.', 2)}

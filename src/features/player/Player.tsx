@@ -683,7 +683,7 @@ export function Player() {
                 onPress={retryLoad}
                 hitSlop={12}
                 accessibilityRole="button"
-                accessibilityLabel="Couldn't load this session. Tap to try again."
+                accessibilityLabel="Couldn’t load this session. Tap to try again."
                 dimTo={0.85}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, minHeight: 44 }}>
                 <Feather name="refresh-cw" size={13} color={c.accent} />

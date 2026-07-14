@@ -7,7 +7,7 @@ import { lightTap } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 
 /**
- * Region-aware crisis/help signpost — deliberately calm styling (muted accent heart
+ * Region-aware crisis/help signpost - deliberately calm styling (muted accent heart
  * and phone, a surface card, no red, no alarm language). Rendered in About, at the
  * foot of Learn, and under the check-in: the places someone lands when the night
  * isn't working. Care, not a medical claim; a signpost, never a diagnosis.

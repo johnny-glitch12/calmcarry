@@ -8,7 +8,7 @@ import { AppText, PressableScale, Reveal, Screen } from '@/components';
 import { LEARN } from '@/content/library';
 import { useTheme } from '@/theme';
 
-/** Watch & learn — a real short-clip player (expo-video). The source comes from
+/** Watch & learn - a real short-clip player (expo-video). The source comes from
  *  the article's videoUrl (CMS-driven; placeholder today, Glowco supplies finals). */
 export function WatchClip() {
   const { c } = useTheme();

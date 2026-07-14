@@ -31,7 +31,7 @@ export class UsersService {
 
   /**
    * Permanently delete an account and ALL its data (Apple 5.1.1(v) in-app account
-   * deletion + COPPA/GDPR data rights — build plan §13 data minimization). Runs in
+   * deletion + COPPA/GDPR data rights - build plan §13 data minimization). Runs in
    * a transaction, children first, so nothing is orphaned.
    */
   async deleteAccount(ownerId: string): Promise<void> {
@@ -73,9 +73,9 @@ export class UsersService {
     await this.ownerRepo.update({ id: ownerId }, { appleRefreshToken: token });
   }
 
-  // Cross-device preference sync. STRICT allow-list — anything not listed here is
+  // Cross-device preference sync. STRICT allow-list - anything not listed here is
   // silently dropped, so the client can never turn this into a general data store.
-  // Deliberately absent: mood/feeling (build plan §3/§14 — never a stored mood log).
+  // Deliberately absent: mood/feeling (build plan §3/§14 - never a stored mood log).
   private static readonly PREF_KEYS = ['goals', 'moments', 'favorites', 'sleepGoalHours', 'voice'] as const;
 
   async getPrefs(ownerId: string): Promise<Record<string, unknown>> {
@@ -101,7 +101,7 @@ export class UsersService {
     return owner.prefs;
   }
 
-  /** GDPR/UK-GDPR/AU-APP12 data-access export — the account's own data as JSON
+  /** GDPR/UK-GDPR/AU-APP12 data-access export - the account's own data as JSON
    *  (build plan §13). NEVER includes the password hash or the Apple refresh token. */
   async exportAccount(ownerId: string): Promise<Record<string, unknown>> {
     const owner = await this.ownerRepo.findOne({ where: { id: ownerId } });
@@ -173,12 +173,12 @@ export class UsersService {
     },
   ): Promise<Entitlement> {
     // A subscription covers the whole HOUSEHOLD, and reads resolve to the household
-    // owner — so the grant must too. A caregiver's purchase therefore upgrades the
+    // owner - so the grant must too. A caregiver's purchase therefore upgrades the
     // primary's account (where every member, including the caregiver, reads it).
     const householdId = await this.household.resolveOwnerId(ownerId);
     // A purchase/transaction belongs to exactly ONE account. Look it up GLOBALLY
     // (not scoped to this owner): if the same receipt/transactionRef is already
-    // bound to a DIFFERENT account, reject — otherwise one paid receipt could be
+    // bound to a DIFFERENT account, reject - otherwise one paid receipt could be
     // replayed to upgrade unlimited accounts. Same owner = a renewal → update the
     // one row so a later expired/revoked status actually downgrades them.
     const existing = sub.transactionRef
@@ -225,7 +225,7 @@ export class UsersService {
     return anyActive ?? entitlements[0];
   }
 
-  /** Single source of truth for "is this entitlement premium RIGHT NOW" — active,
+  /** Single source of truth for "is this entitlement premium RIGHT NOW" - active,
    *  calm_plan, and not past its expiry. Used by every paywall gate. */
   isPremiumEntitlement(e: Entitlement | null | undefined): boolean {
     return (
@@ -244,7 +244,7 @@ export class UsersService {
    * Apply a store lifecycle event (App Store Server Notification / Play RTDN) to the
    * subscription keyed by its renewal ref (Apple originalTransactionId / Google
    * purchaseToken). This is how renewals, cancellations, expiries and refunds reach
-   * us WITHOUT a client call — without it, a cancelled/refunded sub stays "premium"
+   * us WITHOUT a client call - without it, a cancelled/refunded sub stays "premium"
    * until the client happens to re-validate. Returns false if we don't know the ref.
    */
   async applySubscriptionEvent(

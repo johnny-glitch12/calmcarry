@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import type { Owner } from '../entities';
 
 // Behavioural test of the whole account-security surface (register/login/reset/
-// verify/refresh/logout) against in-memory fakes — no DB, no DI container. The
+// verify/refresh/logout) against in-memory fakes - no DB, no DI container. The
 // mail fake captures outbound codes so the tests exercise the REAL emailed-code
 // path (bcrypt-hashed, TTL'd, attempt-limited) instead of peeking at internals.
 
@@ -75,12 +75,12 @@ function makeFixture() {
   const svc = new AuthService(
     users as never,
     jwt as never,
-    null as never, // social — not exercised here
+    null as never, // social - not exercised here
     mail as never,
     codes as never,
     refreshTokens as never,
   );
-  // the code is only ever visible in the email body — read it back like a user would
+  // the code is only ever visible in the email body - read it back like a user would
   const lastCode = () => /Your code is: (\d{6})/.exec(sent[sent.length - 1]?.text ?? '')?.[1] ?? '';
   // register's verify mail is fire-and-forget (bcrypt hashes the code across
   // macrotasks), so wait for it rather than flushing a single tick
@@ -129,9 +129,9 @@ describe('AuthService account security', () => {
 
     await expect(svc.login('mum@example.com', 'old-password-1')).rejects.toThrow(UnauthorizedException);
     await expect(svc.login('mum@example.com', 'new-password-1')).resolves.toBeTruthy();
-    // a reset must end existing sessions — the pre-reset refresh token is dead
+    // a reset must end existing sessions - the pre-reset refresh token is dead
     await expect(svc.refresh(first.refreshToken)).rejects.toThrow(UnauthorizedException);
-    // and the code was consumed — it cannot be replayed
+    // and the code was consumed - it cannot be replayed
     await expect(svc.resetPassword('mum@example.com', code, 'again-password-1')).rejects.toThrow(
       UnauthorizedException,
     );
@@ -176,7 +176,7 @@ describe('AuthService account security', () => {
     const first = await svc.register('mum@example.com', 'sleepy-nights-8', 'Ada');
     const second = await svc.refresh(first.refreshToken);
     expect(second.refreshToken).not.toBe(first.refreshToken);
-    // replaying the rotated (revoked) token must fail — stolen-token detection
+    // replaying the rotated (revoked) token must fail - stolen-token detection
     await expect(svc.refresh(first.refreshToken)).rejects.toThrow(UnauthorizedException);
     await expect(svc.refresh(second.refreshToken)).resolves.toBeTruthy();
     await expect(svc.refresh('a'.repeat(64))).rejects.toThrow(UnauthorizedException);

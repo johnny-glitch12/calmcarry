@@ -16,7 +16,7 @@ export interface PublicPost {
   createdAt: Date;
 }
 
-// The only sound keys a shared mix may contain — anything else is dropped on write
+// The only sound keys a shared mix may contain - anything else is dropped on write
 // so a client can never smuggle arbitrary JSON into the wall.
 const SOUND_KEYS = ['rain', 'ocean', 'brown', 'drone', 'pink', 'white', 'fire', 'birdsong'];
 
@@ -79,7 +79,7 @@ export class CommunityService {
   /** Member report (App Store UGC 1.2): any member can flag a post. Thresholds
    *  act immediately and quietly: 2 reports re-hold the post for review (it
    *  leaves the feed), 4 reject it outright. Idempotence is not tracked per
-   *  reporter (anonymous wall, no user graph) — the thresholds absorb noise. */
+   *  reporter (anonymous wall, no user graph) - the thresholds absorb noise. */
   async report(postId: string): Promise<{ ok: true }> {
     const post = await this.repo.findOne({ where: { id: postId } });
     if (!post) return { ok: true }; // nothing to reveal about what exists

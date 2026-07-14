@@ -19,7 +19,7 @@ type Props = {
 };
 
 /**
- * DragDismiss — pull-down-to-dismiss for full-screen modal sheets (Player,
+ * DragDismiss - pull-down-to-dismiss for full-screen modal sheets (Player,
  * wind-down). The sheet tracks the finger 1:1 downward (damped 4:1 upward, so
  * it resists rather than walls), and releases on EITHER distance (28% of the
  * screen) OR a flick (velocity), so a quick downward flick dismisses without
@@ -27,7 +27,7 @@ type Props = {
  *
  * Purely additive: activates only after a deliberate downward pull (12px), so
  * taps, horizontal swipes and the screens' own controls behave exactly as
- * before — and the visible close buttons remain for accessibility.
+ * before - and the visible close buttons remain for accessibility.
  */
 export function DragDismiss({ children, onDismiss }: Props) {
   const { height } = useWindowDimensions();
@@ -38,7 +38,7 @@ export function DragDismiss({ children, onDismiss }: Props) {
   const finish = () => onDismiss();
 
   const pan = Gesture.Pan()
-    // deliberate vertical pull only — horizontal motion and taps never capture
+    // deliberate vertical pull only - horizontal motion and taps never capture
     .activeOffsetY(14)
     .failOffsetX([-16, 16])
     .onUpdate((e) => {
@@ -48,7 +48,7 @@ export function DragDismiss({ children, onDismiss }: Props) {
     })
     .onEnd((e) => {
       if (dismissing.value) return;
-      const flick = e.velocityY > 900; // momentum dismissal — a flick is enough
+      const flick = e.velocityY > 900; // momentum dismissal - a flick is enough
       const far = e.translationY > height * 0.28;
       if (flick || far) {
         dismissing.value = 1;
@@ -68,7 +68,7 @@ export function DragDismiss({ children, onDismiss }: Props) {
           }
         });
       } else {
-        // not enough — spring home carrying the release velocity
+        // not enough - spring home carrying the release velocity
         ty.value = withSpring(0, { ...spring, velocity: e.velocityY });
       }
     });

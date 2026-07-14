@@ -5,7 +5,7 @@ export class LoginDto {
   @MaxLength(254)
   email: string;
 
-  // cap length — bcrypt on an unbounded string is a CPU-DoS vector
+  // cap length - bcrypt on an unbounded string is a CPU-DoS vector
   @IsString()
   @IsNotEmpty()
   @MaxLength(128)

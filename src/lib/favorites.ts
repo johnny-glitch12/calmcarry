@@ -1,7 +1,7 @@
 import { getJSON, setJSON } from './store';
 
 /**
- * Saved tracks — a simple, local "favourites" list so a user can re-find a session
+ * Saved tracks - a simple, local "favourites" list so a user can re-find a session
  * they loved. Mirrors the programs.ts pattern: plain string ids, ordered most-recent
  * first, persisted in AsyncStorage. No backend needed for v1.
  */

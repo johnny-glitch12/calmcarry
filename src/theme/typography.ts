@@ -1,7 +1,7 @@
 import type { TextStyle } from 'react-native';
 
 /**
- * Typography — The Glow Company design system (build plan §16):
+ * Typography - The Glow Company design system (build plan §16):
  * HEADINGS = Montserrat, BODY & UI = Poppins. No serif.
  *
  * RN does not synthesize weights reliably, so each style names the exact
@@ -9,15 +9,15 @@ import type { TextStyle } from 'react-native';
  */
 
 export const fonts = {
-  // Poppins — body & UI
+  // Poppins - body & UI
   regular: 'Poppins_400Regular',
   medium: 'Poppins_500Medium',
   semibold: 'Poppins_600SemiBold',
   bold: 'Poppins_700Bold',
-  // Montserrat — headings & display
+  // Montserrat - headings & display
   heading: 'Montserrat_600SemiBold',
   display: 'Montserrat_700Bold',
-  // dedicated brand-lockup weight (the "calm" wordmark) — heavier than display,
+  // dedicated brand-lockup weight (the "calm" wordmark) - heavier than display,
   // used ONLY by the Logo component, never for body/display text.
   logoMark: 'Montserrat_800ExtraBold',
 } as const;
@@ -55,7 +55,7 @@ export const type = {
     fontSize: 20,
     lineHeight: 26,
   },
-  // compact display heading (between h1 and h2) — e.g. a profile name
+  // compact display heading (between h1 and h2) - e.g. a profile name
   h1Compact: {
     fontFamily: fonts.display,
     fontSize: 22,
@@ -69,7 +69,7 @@ export const type = {
     lineHeight: 24,
   },
   // the canonical card / list-row title (replaces the inline bodyMedium→15/14 overrides
-  // scattered across every screen — the single most-repeated text class in the app)
+  // scattered across every screen - the single most-repeated text class in the app)
   cardTitle: {
     fontFamily: fonts.semibold,
     fontSize: 15,

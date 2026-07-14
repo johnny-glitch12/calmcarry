@@ -7,10 +7,10 @@ import { getTourTarget, subscribeTourTargets } from '@/lib/tourTargets';
 import { dur, useTheme } from '@/theme';
 
 /**
- * Hands-on first-run walkthrough (Mason: simple, straight to the point — but you
+ * Hands-on first-run walkthrough (Mason: simple, straight to the point - but you
  * DO it, not just read it). A dim scrim with a spotlight hole over the real UI:
  * the first step shows tonight's pick, then the user must actually tap the
- * Library and Listen tabs to move on — the tour narrates the screen they just
+ * Library and Listen tabs to move on - the tour narrates the screen they just
  * opened. Rendered ABOVE the tab bar (tabs layout), so nothing cuts through it.
  */
 type Step = {
@@ -119,7 +119,7 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
       {rect ? (
         <>
           {/* the scrim is painted by ONE giant-border view whose inner edge is the
-              ROUNDED spotlight cutout — four flat slabs left the hole's corners
+              ROUNDED spotlight cutout - four flat slabs left the hole's corners
               un-dimmed (a bright square peeking out behind a circular ring). */}
           <View
             pointerEvents="none"
@@ -135,7 +135,7 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
               backgroundColor: 'transparent',
             }}
           />
-          {/* invisible touch-absorbing slabs around the hole — during a hands-on
+          {/* invisible touch-absorbing slabs around the hole - during a hands-on
               step the ONLY tappable thing is the real control (plus the card). */}
           <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y }} />
           <Pressable style={{ position: 'absolute', top: rect.y + rect.h, left: 0, right: 0, bottom: 0 }} />
@@ -162,7 +162,7 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
           />
         </>
       ) : (
-        // target not measured (shouldn't happen) — plain scrim, centered card below
+        // target not measured (shouldn't happen) - plain scrim, centered card below
         <Pressable style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, block]} />
       )}
 
@@ -187,7 +187,7 @@ export function HandsOnTour({ onDone }: { onDone: () => void }) {
               </View>
             ) : null}
             {/* hands-on steps: the real tap is the primary action, but nobody gets
-                held hostage — a quiet way past this step without doing it */}
+                held hostage - a quiet way past this step without doing it */}
             {interactive ? (
               <PressableScale
                 onPress={() => setI(i + 1)}

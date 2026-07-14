@@ -35,7 +35,7 @@ export class DevicesService {
     serial: string,
   ): Promise<Device> {
     // Bind ownership to the HOUSEHOLD (matching listForOwner/createClaim), not the
-    // raw caller — otherwise a caregiver's registration lands under their own id and
+    // raw caller - otherwise a caregiver's registration lands under their own id and
     // the unit is invisible/orphaned to the whole household on every read.
     const householdId = await this.household.resolveOwnerId(ownerId);
     // A serial maps to one physical unit. If it's already registered, only the same
@@ -60,7 +60,7 @@ export class DevicesService {
     try {
       return await this.deviceRepo.save(device);
     } catch {
-      // unique-serial race: another request inserted it first — re-read and honour
+      // unique-serial race: another request inserted it first - re-read and honour
       // the idempotent/ownership rules instead of surfacing a 500.
       const raced = await this.deviceRepo.findOne({ where: { serial: normalized } });
       if (raced) {
@@ -99,7 +99,7 @@ export class DevicesService {
     return this.claimRepo.save(claim);
   }
 
-  // e.g. GC-CLM-7F3A9C — crypto-strong so references aren't guessable/enumerable
+  // e.g. GC-CLM-7F3A9C - crypto-strong so references aren't guessable/enumerable
   private generateReference(): string {
     return `GC-CLM-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
   }

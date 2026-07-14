@@ -225,7 +225,7 @@ export function AccountScreen() {
   const isGuest = status === 'guest' || !token;
   const { mode, enterKids: enterKidsMode } = useProfile();
   const [reminder, setReminder] = useState(false);
-  // email-verification nudge — only when the backend confirms the email is unverified
+  // email-verification nudge - only when the backend confirms the email is unverified
   const [needsVerify, setNeedsVerify] = useState(false);
   useEffect(() => {
     // guest/local sessions never render the card (see the render gate), so no reset needed
@@ -235,13 +235,13 @@ export function AccountScreen() {
       .me(token)
       .then((r) => alive && setNeedsVerify(r.user.emailVerified === false))
       .catch(() => {
-        /* offline — no nudge */
+        /* offline - no nudge */
       });
     return () => {
       alive = false;
     };
   }, [token]);
-  // change-password (signed-in) — inline expandable row state
+  // change-password (signed-in) - inline expandable row state
   const [pwOpen, setPwOpen] = useState(false);
   const [pwCurrent, setPwCurrent] = useState('');
   const [pwNext, setPwNext] = useState('');
@@ -312,16 +312,16 @@ export function AccountScreen() {
   }, [isPremium, token]);
 
   // schedules a REAL daily local notification; only shows ON if one was actually
-  // scheduled (permission granted) — never a toggle that quietly does nothing.
+  // scheduled (permission granted) - never a toggle that quietly does nothing.
   const toggleReminder = async (v: boolean) => {
     const t = REMINDER_TIMES[reminderIdx];
     const scheduled = await setBedtimeReminder(v, t.hour, t.minute);
     setReminder(scheduled);
     setJSON('cc.reminder', scheduled);
-    // the toggle snapping back with no words is a dead end — say WHY it stayed off
+    // the toggle snapping back with no words is a dead end - say WHY it stayed off
     setNotifDenied(v && !scheduled);
   };
-  // weekly recap — same honesty rule: ON only if one is actually scheduled
+  // weekly recap - same honesty rule: ON only if one is actually scheduled
   const toggleRecap = async (v: boolean) => {
     const scheduled = await setWeeklyRecapReminder(v);
     setRecap(scheduled);
@@ -338,7 +338,7 @@ export function AccountScreen() {
       await setBedtimeReminder(true, t.hour, t.minute);
     }
   };
-  // gentle remote reminders — opt-in only; shows ON only if a device token actually
+  // gentle remote reminders - opt-in only; shows ON only if a device token actually
   // registered (push.ts persists 'cc.push' itself). Permission is requested only here.
   const togglePush = async (v: boolean) => {
     setPushOn(await setPushOptIn(v, token));
@@ -380,7 +380,7 @@ export function AccountScreen() {
     }
   };
 
-  // GDPR / UK-GDPR / AU APP 12 data-access export — hand the user their own data.
+  // GDPR / UK-GDPR / AU APP 12 data-access export - hand the user their own data.
   const onExport = async () => {
     if (!token || token === 'local') return;
     try {
@@ -409,7 +409,7 @@ export function AccountScreen() {
 
   return (
     <Screen mode="light" scroll tabBarSpacing>
-      {/* profile — for guests the whole header is the sign-in affordance (before
+      {/* profile - for guests the whole header is the sign-in affordance (before
           this, "Sign in to sync your account" was dead text and the only path to
           /auth was the coral Sign out button) */}
       <Reveal index={0}>
@@ -435,7 +435,7 @@ export function AccountScreen() {
         </PressableScale>
       </Reveal>
 
-      {/* email verification nudge — real accounts only, and only while unverified */}
+      {/* email verification nudge - real accounts only, and only while unverified */}
       {needsVerify && token && token !== 'local' ? (
         <Reveal index={1} style={{ marginTop: 16 }}>
           <VerifyEmailCard token={token} onDone={() => setNeedsVerify(false)} />
@@ -444,7 +444,7 @@ export function AccountScreen() {
 
       {/* entitlement */}
       <Reveal index={1} style={{ marginTop: 24 }}>
-        {/* For premium users the card is not a link — an accidental brush shouldn't eject them to
+        {/* For premium users the card is not a link - an accidental brush shouldn't eject them to
             the OS billing screen. Manage lives explicitly in the Subscription row below. Free users
             still tap through to unlock. */}
         <PressableScale
@@ -494,7 +494,7 @@ export function AccountScreen() {
         </PressableScale>
       </Reveal>
 
-      {/* mode — NIGHT-FIRST: the adult app is the night theme by identity (no theme
+      {/* mode - NIGHT-FIRST: the adult app is the night theme by identity (no theme
           picker); only the kids surface keeps a soft daytime look */}
       <Reveal index={2} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Who’s it for" title="Mode" />
@@ -515,12 +515,12 @@ export function AccountScreen() {
       <Reveal index={3} style={{ marginTop: 24 }}>
         <SectionHeader kicker="Preferences" title="Sleep & sound" />
         <Group>
-          {/* gentle remote reminders — opt-in, account-tied; native + signed-in adults only.
+          {/* gentle remote reminders - opt-in, account-tied; native + signed-in adults only.
               never shown in kids mode (notifications are for the parent account) */}
           {pushSupported && mode !== 'kids' && token && token !== 'local' ? (
             <SettingRow icon="heart" label="Gentle reminders" toggle={pushOn} onToggle={togglePush} />
           ) : null}
-          {/* bedtime reminder is a real local notification — native only, so hide on web.
+          {/* bedtime reminder is a real local notification - native only, so hide on web.
               Also hidden in kids mode (same rule as push above): a child must not be able
               to trigger the OS notification-permission dialog */}
           {remindersSupported && mode !== 'kids' ? (
@@ -541,7 +541,7 @@ export function AccountScreen() {
               />
             </Appear>
           ) : null}
-          {/* weekly recap — one Sunday-evening note pointing at the calm-nights card */}
+          {/* weekly recap - one Sunday-evening note pointing at the calm-nights card */}
           {remindersSupported && mode !== 'kids' ? (
             <SettingRow icon="calendar" label="Weekly calm recap" toggle={recap} onToggle={toggleRecap} />
           ) : null}
@@ -658,7 +658,7 @@ export function AccountScreen() {
       </Reveal>
 
       <Reveal index={5} style={{ marginTop: 24 }}>
-        {/* guests get a real Sign in action here — not a coral "Sign out" that
+        {/* guests get a real Sign in action here - not a coral "Sign out" that
             confusingly happens to route to auth */}
         <PressableScale
           onPress={isGuest ? () => router.push('/auth' as Href) : onSignOut}
@@ -679,7 +679,7 @@ export function AccountScreen() {
             Deleting your account won’t cancel your subscription. Cancel that in your Apple or Google account settings.
           </AppText>
         ) : null}
-        {/* Account & data deletion — required by App Store 5.1.1(v) + COPPA/GDPR */}
+        {/* Account & data deletion - required by App Store 5.1.1(v) + COPPA/GDPR */}
         <PressableScale
           onPress={onDeleteAccount}
           onPressIn={lightTap}
@@ -705,7 +705,7 @@ export function AccountScreen() {
             </Animated.View>
           </Dimmable>
         </PressableScale>
-        {/* honest deletion terms — surfaced once the action is armed (GDPR 17(3)/CCPA):
+        {/* honest deletion terms - surfaced once the action is armed (GDPR 17(3)/CCPA):
             permanent + immediate, and billing records may be retained where law requires */}
         {confirmDelete && !deleting ? (
           <Appear>

@@ -21,10 +21,10 @@ const THROTTLE = { default: { ttl: 60_000, limit: 4 } };
  * setInterval in RetentionService never fires reliably. An external scheduler runs
  * the COPPA / data-retention purge by hitting this endpoint daily.
  *
- * Auth — either satisfies, both constant-time, fail-closed:
- *   • Authorization: Bearer <CRON_SECRET>  — Vercel Cron (GET) injects this automatically
+ * Auth - either satisfies, both constant-time, fail-closed:
+ *   • Authorization: Bearer <CRON_SECRET>  - Vercel Cron (GET) injects this automatically
  *     when CRON_SECRET is set on the project (see vercel.json `crons`).
- *   • x-cms-key: <CMS_ADMIN_KEY>           — manual / other schedulers (curl, GH Actions; POST).
+ *   • x-cms-key: <CMS_ADMIN_KEY>           - manual / other schedulers (curl, GH Actions; POST).
  *
  * Two explicit verbs (GET for Vercel Cron, POST for manual) rather than @All, to keep
  * PUT/PATCH/DELETE/HEAD/OPTIONS off the attack surface. Rejected hits are logged here
@@ -62,11 +62,11 @@ export class RetentionController {
     if (!authorized) {
       // Surfaces a mis-configured cron (e.g. CRON_SECRET unset → Vercel sends no
       // Authorization → 401 every night) which the exception filter wouldn't log.
-      this.logger.warn('Rejected /retention/purge — missing or invalid CRON_SECRET / x-cms-key.');
+      this.logger.warn('Rejected /retention/purge - missing or invalid CRON_SECRET / x-cms-key.');
       throw new UnauthorizedException('Unauthorized');
     }
     const purged = await this.retention.purge();
-    this.logger.log(`Retention purge ran via endpoint — removed ${purged} record(s).`);
+    this.logger.log(`Retention purge ran via endpoint - removed ${purged} record(s).`);
     return { ok: true, purged };
   }
 }

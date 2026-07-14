@@ -26,7 +26,7 @@ const CODE_TTL_MS = 15 * 60_000; // reset/verify codes live 15 minutes
 const CODE_MAX_ATTEMPTS = 5;
 const REFRESH_TTL_MS = 60 * 24 * 60 * 60_000; // 60 days
 
-/** SHA-256 hex of an opaque high-entropy token (fast + indexable — bcrypt is for
+/** SHA-256 hex of an opaque high-entropy token (fast + indexable - bcrypt is for
  *  low-entropy secrets like passwords and 6-digit codes, not 256-bit tokens). */
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -41,12 +41,12 @@ export class AuthService {
     @InjectRepository(RefreshToken) private readonly refreshTokens: Repository<RefreshToken>,
   ) {}
 
-  /** Sign in with Apple / Google — verifies the identity token, then finds or creates the household. */
+  /** Sign in with Apple / Google - verifies the identity token, then finds or creates the household. */
   async socialLogin(provider: SocialProvider, idToken: string, authorizationCode?: string): Promise<AuthResult> {
     const id = await this.social.verify(provider, idToken);
     let owner = await this.usersService.findByEmail(id.email);
     if (!owner) {
-      const passwordHash = await bcrypt.hash(randomUUID(), 12); // no password — social only
+      const passwordHash = await bcrypt.hash(randomUUID(), 12); // no password - social only
       owner = await this.usersService.createOwner(id.email, passwordHash, id.name);
       await this.usersService.grantEntitlement(owner.id, 'free');
       // the provider already verified this address before issuing the token
@@ -74,7 +74,7 @@ export class AuthService {
     await this.usersService.deleteAccount(ownerId);
   }
 
-  // A fixed bcrypt hash so the "unknown email" path still performs a comparison —
+  // A fixed bcrypt hash so the "unknown email" path still performs a comparison -
   // equalizes response time and avoids leaking which emails exist (enumeration).
   private static readonly DUMMY_HASH =
     '$2a$12$ifr9753A0wdd1/dqPgH7sOtNk8bnLdvU4DTYTltcLD3gZujh37BwK';
@@ -108,7 +108,7 @@ export class AuthService {
 
     // every new owner starts on the free tier
     await this.usersService.grantEntitlement(owner.id, 'free');
-    // soft verification: send a code in the background — never block signup on it
+    // soft verification: send a code in the background - never block signup on it
     this.issueCode(owner, 'verify').catch(() => {});
 
     return this.buildAuthResult(owner);
@@ -116,7 +116,7 @@ export class AuthService {
 
   // ---- password reset (6-digit emailed code; no account enumeration) ----
 
-  /** Always resolves ok — whether or not the email exists (no enumeration). */
+  /** Always resolves ok - whether or not the email exists (no enumeration). */
   async requestPasswordReset(email: string): Promise<{ ok: true }> {
     const owner = await this.usersService.findByEmail(email);
     if (owner) await this.issueCode(owner, 'reset');
@@ -124,7 +124,7 @@ export class AuthService {
   }
 
   /** Verify the emailed code, set the new password, and sign the user in.
-   *  Consumes the code and revokes ALL refresh tokens — a password reset must
+   *  Consumes the code and revokes ALL refresh tokens - a password reset must
    *  end every existing session. */
   async resetPassword(email: string, code: string, newPassword: string): Promise<AuthResult> {
     const owner = await this.usersService.findByEmail(email);
@@ -164,7 +164,7 @@ export class AuthService {
   // ---- refresh-token rotation + server-side logout ----
 
   /** Rotate: validate the presented token, revoke it, issue a fresh pair. A
-   *  replayed (already-rotated) token fails here — by design. */
+   *  replayed (already-rotated) token fails here - by design. */
   async refresh(refreshToken: string): Promise<AuthResult> {
     const row = await this.refreshTokens.findOne({ where: { tokenHash: sha256(refreshToken) } });
     if (!row || row.revokedAt || new Date(row.expiresAt).getTime() < Date.now()) {

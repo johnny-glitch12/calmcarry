@@ -18,22 +18,22 @@ type Props = {
   /** breathing loop (scale 1→1.06 + glow 0.85→1.0); static under reduced motion */
   breathing?: boolean;
   /** breathe at the TAUGHT rhythm (4s in / 6s out, matching the Player's pacer)
-   *  instead of the ambient symmetric loop — for surfaces that guide the breath
+   *  instead of the ambient symmetric loop - for surfaces that guide the breath
    *  (the wind-down centerpiece), so the orb never contradicts the instruction */
   paced?: boolean;
-  /** one-shot bloom (scale 1→1.08→1 + glow bloom) — the authenticity "burst" peak */
+  /** one-shot bloom (scale 1→1.08→1 + glow bloom) - the authenticity "burst" peak */
   burst?: boolean;
   /** reserve the full glow footprint (1.6× size) in layout so the halo never
    *  bleeds over adjacent text. Use in centered column layouts. */
   reserveGlow?: boolean;
-  /** slow sonar-like ripples that emanate from the orb — quietly "alive" */
+  /** slow sonar-like ripples that emanate from the orb - quietly "alive" */
   aura?: boolean;
   children?: ReactNode;
   style?: ViewStyle;
 };
 
 /**
- * GlowOrb — the signature element (device avatar / player art / timer center /
+ * GlowOrb - the signature element (device avatar / player art / timer center /
  * auth burst). Soft mint sphere by day, luminous sage glow by night.
  * Breathing: scale 1.0→1.06 + glow opacity 0.85→1.0, withRepeat 4000ms sine.
  * burst: a single 1.0→1.08→1.0 bloom for the authenticity peak.
@@ -63,10 +63,10 @@ export function GlowOrb({
       return;
     }
     if (breathing && paced) {
-      // the TAUGHT rhythm: 4s expand (in-breath) / 6s settle (out-breath) — matches
+      // the TAUGHT rhythm: 4s expand (in-breath) / 6s settle (out-breath) - matches
       // the Player's pacer so the orb never breathes against its own instruction.
       // With burst also set (the wind-down arrival), the bloom plays first and hands
-      // off into the loop — burst alone used to win and the pacer never ran.
+      // off into the loop - burst alone used to win and the pacer never ran.
       const scaleLoop = withRepeat(
         withSequence(
           withTiming(1.06, { duration: 4000, easing: ease.sine }),
@@ -99,7 +99,7 @@ export function GlowOrb({
           )
         : glowLoop;
     } else if (burst) {
-      // one-shot bloom (enter), then settle faster (exit) — never repeats
+      // one-shot bloom (enter), then settle faster (exit) - never repeats
       scale.value = withSequence(
         withTiming(1.08, { duration: dur.modal, easing: ease.out }),
         withTiming(1, { duration: dur.sheet, easing: ease.inOut })

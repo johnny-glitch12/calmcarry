@@ -15,7 +15,7 @@ import { dur, ease, useTheme } from '@/theme';
 import { AnimatedLogo } from './AnimatedLogo';
 
 /**
- * BrandSplash — the full-screen CalmCarry launch moment. A soft themed gradient
+ * BrandSplash - the full-screen CalmCarry launch moment. A soft themed gradient
  * cradles the AnimatedLogo reveal, then the whole layer fades out and hands off
  * to the app. Rendered as an overlay (absolute fill) by the root layout. Reduced
  * motion still shows the lockup briefly so the brand registers, then dismisses.
@@ -31,7 +31,7 @@ export function BrandSplash({ onDone }: { onDone: () => void }) {
   // the app opens: fades in under the reveal, fades out as we hand off. Native
   // autoplays on launch; web blocks autoplay until a gesture (it just stays silent).
   // The 60ms interval below is intentional AUDIO-volume cadence (expo-audio volume
-  // isn't animatable by Reanimated), not UI motion — hence no dur.* token.
+  // isn't animatable by Reanimated), not UI motion - hence no dur.* token.
   const ambient = useAudioPlayer(audioSources.forest);
   const vol = useRef(0);
   const AMBIENT_TARGET = 0.25;

@@ -26,7 +26,7 @@ export function AppText({
     cta: c.ctaText,
   };
   // Cap Dynamic Type so an OS "Larger Text" setting can't blow past our fixed-height
-  // chrome (pills, tiles, rows, the tab bar) and overlap/clip on device — the class of
+  // chrome (pills, tiles, rows, the tab bar) and overlap/clip on device - the class of
   // native-only collision the web preview never shows. Still honours scaling up to 1.4x
   // (accessible), and any caller can override maxFontSizeMultiplier via props.
   return (

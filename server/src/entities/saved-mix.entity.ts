@@ -17,7 +17,7 @@ export class SavedMix {
   @Column()
   name: string;
 
-  /** [{ key: 'rain', level: 2 }, ...] — per-sound volume levels */
+  /** [{ key: 'rain', level: 2 }, ...] - per-sound volume levels */
   @Column({ type: 'simple-json' })
   sounds: { key: string; level: number }[];
 

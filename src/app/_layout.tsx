@@ -31,7 +31,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Wind-down-hours launch? Evaluated at bundle eval (module scope keeps render pure;
 // same approximation as analytics' LAUNCH_AT). Used to skip the ~3s brand reveal at
-// bedtime — brand theater is daytime money; at 22:00 every second of chrome between
+// bedtime - brand theater is daytime money; at 22:00 every second of chrome between
 // a tired person and audio is the product failing at its one job.
 const LAUNCH_IN_WIND_DOWN_HOURS = (() => {
   const h = new Date().getHours();
@@ -39,7 +39,7 @@ const LAUNCH_IN_WIND_DOWN_HOURS = (() => {
 })();
 
 // Foreground delivery: expo-notifications' default shows NOTHING while the app is
-// open — silently dropping the bedtime nudge for anyone already browsing, and the
+// open - silently dropping the bedtime nudge for anyone already browsing, and the
 // honesty-critical trial-ending reminder. A quiet banner; no sound, no badge.
 if (Platform.OS !== 'web') {
   // require here keeps expo-notifications off the web bundle path
@@ -137,15 +137,15 @@ function RootTheme({ children }: { children: ReactNode }) {
 
 // The ONLY routes reachable while a child profile is active. Everything else
 // (settings, billing, store, community, search, programs, learn) is an adult
-// surface — kids mode redirects to home. The parent gate is the sole exit.
+// surface - kids mode redirects to home. The parent gate is the sole exit.
 const KID_ALLOWED = ['/', '/sounds', '/listen', '/player', '/parent-gate'];
 
-/** Authoritative child-safety guard — not just tab filtering. Blocks every
+/** Authoritative child-safety guard - not just tab filtering. Blocks every
  *  adult route (in-app push OR deep link) whenever a kid profile is active. */
 function KidsGuard() {
   const { mode, hydrated } = useProfile();
   const pathname = usePathname();
-  // synchronous redirect during render — an adult route can't paint a frame in Kids mode
+  // synchronous redirect during render - an adult route can't paint a frame in Kids mode
   if (hydrated && mode === 'kids' && !KID_ALLOWED.includes(pathname)) {
     return <Redirect href="/" />;
   }
@@ -158,7 +158,7 @@ function RootNav() {
   // static /app build instead of falling back to tofu squares.
   const [fontsLoaded, fontError] = useFonts({ ...fontMap, ...Feather.font });
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
-  // the CalmCarry brand reveal plays once per cold start, over the first route —
+  // the CalmCarry brand reveal plays once per cold start, over the first route -
   // except during wind-down hours, where the Night Door (not brand theater) must be
   // the first thing a tired person sees
   const [showBrand, setShowBrand] = useState(!LAUNCH_IN_WIND_DOWN_HOURS);
@@ -174,7 +174,7 @@ function RootNav() {
     startAnalytics(); // load the durable event buffer + attach the background-flush hook
   }, []);
 
-  // §15 funnel top — fire ONLY once the active profile is known AND it isn't a kid.
+  // §15 funnel top - fire ONLY once the active profile is known AND it isn't a kid.
   // Guarding on `mode` at the call site is race-proof (it doesn't depend on the
   // ProfileProvider→setAnalyticsMode effect having run yet), so a child profile's
   // open is never recorded (COPPA). openedRef keeps it to a single fire.
@@ -207,7 +207,7 @@ function RootNav() {
   //    pending-trial promise, and dismissible to the full app.
   // GATED ON `ready`, not navState?.key: in expo-router 56 the root navigation state
   // exists from the very first render (the internal '__root' stack), so navState?.key
-  // gives NO mount protection — dispatching before our <Stack> mounts (rendered only
+  // gives NO mount protection - dispatching before our <Stack> mounts (rendered only
   // once `ready`) pushes a duplicate '__root' and mounts the whole app tree TWICE
   // (double auth restore racing one refresh token, doubled analytics). `ready` flips
   // in the same render that mounts the Stack; effects run after commit, so every
@@ -223,7 +223,7 @@ function RootNav() {
     }
     const hour = new Date().getHours();
     // hasInitialQuickAction: a "Begin wind-down" home-screen shortcut launch already
-    // routes to the Night Door itself — pushing ours too would stack two of them
+    // routes to the Night Door itself - pushing ours too would stack two of them
     if (mode !== 'kids' && (hour >= 20 || hour < 5) && launchPath === '/' && !hasInitialQuickAction()) {
       if (authStatus !== 'authed') {
         // guests can never receive the unlock sheet, so a stale cc.pendingTrial (a
@@ -244,19 +244,19 @@ function RootNav() {
   return (
     <>
       <KidsGuard />
-      {/* default = a calm cross-fade between screens — unhurried (dur.modal) so a
+      {/* default = a calm cross-fade between screens - unhurried (dur.modal) so a
           scene change doesn't snap; still well short of a crawling glide */}
       <Stack screenOptions={{ headerShown: false, animation: 'fade', animationDuration: dur.modal }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
       {/* wind-down rises like a player expanding from the mini-player (§4 stand-in).
           gestureEnabled OFF: the screen's own DragDismiss pan (finger-tracking,
-          velocity release) is the single dismissal system — no double gesture. */}
+          velocity release) is the single dismissal system - no double gesture. */}
       <Stack.Screen
         name="wind-down"
         options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: false }}
       />
-      {/* content player — rises like the wind-down */}
+      {/* content player - rises like the wind-down */}
       <Stack.Screen
         name="player"
         options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: false }}
@@ -286,7 +286,7 @@ function RootNav() {
       <Stack.Screen name="auth" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal }} />
       <Stack.Screen name="unlock" options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: dur.modal, gestureEnabled: true }} />
       </Stack>
-      {/* CalmCarry brand reveal — overlays the first route on cold start, then fades */}
+      {/* CalmCarry brand reveal - overlays the first route on cold start, then fades */}
       {showBrand ? <BrandSplash onDone={() => setShowBrand(false)} /> : null}
     </>
   );

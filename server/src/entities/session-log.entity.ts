@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Owner } from './owner.entity';
 
-// Indexed for the daily retention purge (DELETE WHERE startedAt < cutoff) — without
+// Indexed for the daily retention purge (DELETE WHERE startedAt < cutoff) - without
 // it that DELETE is a full table scan that can blow the serverless function timeout.
 @Index('idx_session_log_started_at', ['startedAt'])
 @Entity('session_logs')
@@ -30,7 +30,7 @@ export class SessionLog {
   @Column({ type: 'text', nullable: true })
   contentId: string | null;
 
-  // NOTE: deliberately NO mood/settle rating — the plan forbids symptom tracking,
+  // NOTE: deliberately NO mood/settle rating - the plan forbids symptom tracking,
   // clinical scales, and mood history (§3 "never feel like a patient" + §13 data
   // minimization). A session log records only that a session ran, never how the
   // user felt.

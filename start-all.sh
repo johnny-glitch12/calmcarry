@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CalmCarry — start the API + Expo app together.
+# CalmCarry - start the API + Expo app together.
 set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 

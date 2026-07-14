@@ -1,7 +1,7 @@
 /**
  * Thin client for the CalmCarry NestJS API (server/, port 4000).
  * Every call has a short timeout and throws on any failure so callers can fall
- * back to local/offline behaviour — the app must stay usable if the backend is
+ * back to local/offline behaviour - the app must stay usable if the backend is
  * not running.
  */
 import { Platform } from 'react-native';
@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 // builds). Defaults to the local API for the web/dev target.
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:4000';
 
-const TIMEOUT_MS = 8000; // was 3500 — too aggressive on real cellular; the server keeps running after the client aborts
+const TIMEOUT_MS = 8000; // was 3500 - too aggressive on real cellular; the server keeps running after the client aborts
 const MONEY_TIMEOUT_MS = 20000; // receipt validation round-trips to Apple/Google server-side, so give it real headroom
 
 /** A failed HTTP response (has .status). Network/timeout errors are plain Errors
@@ -66,7 +66,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     }),
-  // Sign in with Apple / Google — backend verifies the identity token (§6/§8)
+  // Sign in with Apple / Google - backend verifies the identity token (§6/§8)
   social: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) =>
     req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/social', {
       method: 'POST',
@@ -99,7 +99,7 @@ export const api = {
     req<{ ok: boolean }>('/auth/email/send-verification', { method: 'POST' }, token),
   verifyEmail: (token: string, code: string) =>
     req<{ ok: boolean; emailVerified: boolean }>('/auth/email/verify', { method: 'POST', body: JSON.stringify({ code }) }, token),
-  // App Store UGC 1.2 — report an objectionable community post
+  // App Store UGC 1.2 - report an objectionable community post
   communityReport: (token: string, postId: string) =>
     req<{ ok: boolean }>('/community/report', { method: 'POST', body: JSON.stringify({ postId }) }, token),
   me: (token: string) => req<{ user: ApiUser; entitlement: ApiEntitlement }>('/me', {}, token),
@@ -107,7 +107,7 @@ export const api = {
   deleteAccount: (token: string) => req<{ ok: boolean; deleted: boolean }>('/me', { method: 'DELETE' }, token),
   // GDPR/UK-GDPR/AU-APP12 data-access export (the caller's own data as JSON)
   exportMe: (token: string) => req<Record<string, unknown>>('/me/export', {}, token),
-  // cross-device preference sync — allow-listed keys only; feeling is NEVER synced
+  // cross-device preference sync - allow-listed keys only; feeling is NEVER synced
   getPrefs: (token: string) => req<Record<string, unknown>>('/me/prefs', {}, token),
   putPrefs: (token: string, prefs: Record<string, unknown>) =>
     req<Record<string, unknown>>('/me/prefs', { method: 'PUT', body: JSON.stringify(prefs) }, token),
@@ -174,7 +174,7 @@ export const api = {
       body: JSON.stringify({ intent, profileType }),
     }),
 
-  // ---- ownership (Shopify) — matches ONLY the signed-in account's own email
+  // ---- ownership (Shopify) - matches ONLY the signed-in account's own email
   //      (the server ignores any client-supplied address) ----
   ownershipMatch: (token: string) =>
     req<{ verifiedOwner: boolean; ownsBundle: boolean; orderId: string | null }>(
@@ -215,7 +215,7 @@ export const api = {
   // ---- first-party analytics (anonymous funnel events, §15) ----
   trackEvent: (name: string, anonId: string, props?: Record<string, unknown>) =>
     req<{ ok: boolean }>('/events', { method: 'POST', body: JSON.stringify({ name, anonId, props }) }),
-  // batched intake — the client buffers events and flushes a small batch at a time
+  // batched intake - the client buffers events and flushes a small batch at a time
   trackEvents: (
     anonId: string,
     events: { name: string; props?: Record<string, unknown>; at: string }[],

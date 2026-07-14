@@ -19,7 +19,7 @@ import { api } from '@/lib/api';
 import { setPendingMix } from '@/lib/mixShare';
 import { brand, dur, ease, type as typeScale, useTheme } from '@/theme';
 
-/** Pressure-free filter chip — the selected fill EASES in (overlay) and the label
+/** Pressure-free filter chip - the selected fill EASES in (overlay) and the label
  *  color interpolates, so tapping Latest/With a mix never hard-swaps. */
 function FilterChip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   const { c } = useTheme();
@@ -53,7 +53,7 @@ function ago(iso: string): string {
 
 // Anonymous-by-default wins wall, presented as a calm FEED (build plan §6/§13):
 // adults only, gently moderated, walled off from kids. Everyone appears as "A
-// CalmCarry parent" behind one shared, non-human glyph — no real names, no faces,
+// CalmCarry parent" behind one shared, non-human glyph - no real names, no faces,
 // no followers, no like-counts, no chat. Just gentle, one-way wins (and the odd
 // shared sound mix). The wall shows ONLY real backend posts (+ your optimistic share).
 type SharedMix = { name: string; levels: Record<string, number> };
@@ -61,7 +61,7 @@ type Win = { key: string; handle: string; text: string; when: string; pending?: 
 
 /** A single feed card. Anonymous handle + soft moon glyph, the win, an optional
  *  "Load this mix" card, and a count-less, one-way "Carried this with you" tap that
- *  acknowledges without a leaderboard. No reply/DM/share-message — wins are one-way. */
+ *  acknowledges without a leaderboard. No reply/DM/share-message - wins are one-way. */
 function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => void; onReport?: () => Promise<unknown> }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
@@ -79,12 +79,12 @@ function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => voi
       return;
     }
     if (report !== 'armed') return;
-    setReport('done'); // optimistic — the server accepts reports without acknowledging post existence
+    setReport('done'); // optimistic - the server accepts reports without acknowledging post existence
     onReport?.().catch(() => {});
   };
 
   const carry = () => {
-    if (carried) return; // one-way, idempotent — no toggle-off, no count
+    if (carried) return; // one-way, idempotent - no toggle-off, no count
     setCarried(true);
     if (!reduced) {
       scale.value = withSequence(
@@ -96,7 +96,7 @@ function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => voi
 
   return (
     <Card variant="surface" muted={win.pending}>
-      {/* header — one shared moon glyph for everyone (a symbol, never a person), the
+      {/* header - one shared moon glyph for everyone (a symbol, never a person), the
           fixed anonymous handle, and a quiet relative time */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
@@ -141,7 +141,7 @@ function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => voi
         </PressableScale>
       ) : null}
 
-      {/* footer — pending notice, or a one-way, COUNT-LESS acknowledgment. The two
+      {/* footer - pending notice, or a one-way, COUNT-LESS acknowledgment. The two
           crossfade so a post clearing moderation glides from "Pending review" to the
           carry action instead of hard-swapping. */}
       {win.pending ? (
@@ -202,7 +202,7 @@ function WinCard({ win, onLoadMix, onReport }: { win: Win; onLoadMix?: () => voi
   );
 }
 
-/** The two skeleton placeholder cards shown while the wall loads — gives the feed
+/** The two skeleton placeholder cards shown while the wall loads - gives the feed
  *  shape instead of a bare spinner. Bars use the calm panel tone. */
 function SkeletonCard() {
   const { c } = useTheme();
@@ -240,12 +240,12 @@ export function CommunityScreen() {
     if (reduced) return;
     listFade.value = 0;
     // sheet (not screen): a filter tap should re-fade the list smoothly but stay
-    // responsive — a full screen-length fade here would feel laggy on each tap.
+    // responsive - a full screen-length fade here would feel laggy on each tap.
     listFade.value = withTiming(1, { duration: dur.sheet, easing: ease.inOut });
   }, [filter, reduced, listFade]);
   const listStyle = useAnimatedStyle(() => ({ opacity: reduced ? 1 : listFade.value }));
 
-  // fetch the live wall — only real, backend-approved posts populate it. Refetched
+  // fetch the live wall - only real, backend-approved posts populate it. Refetched
   // on focus so presence + new wins refresh when the tab regains focus.
   useFocusEffect(
     useCallback(() => {
@@ -283,7 +283,7 @@ export function CommunityScreen() {
 
   // Optimistic share, reconciled with the server: show the card immediately, then
   // adopt the saved post (and its moderation status) on success, or roll it back
-  // and tell the user on failure — never leave a fake "live" card that didn't save.
+  // and tell the user on failure - never leave a fake "live" card that didn't save.
   const share = async () => {
     const text = draft.trim();
     if (!text) return;
@@ -309,14 +309,14 @@ export function CommunityScreen() {
       );
     } catch {
       setWins((w) => w.filter((win) => win.key !== tempKey));
-      // give the words back — "try again" must not mean retyping a whole win at bedtime
+      // give the words back - "try again" must not mean retyping a whole win at bedtime
       setDraft(text);
       setNote('Couldn’t share that just now. Please try again.');
     }
   };
 
   // derived view per the pressure-free filter (Latest = chronological; With a mix =
-  // posts carrying a shareable sound mix first, then the rest by time — never ranked
+  // posts carrying a shareable sound mix first, then the rest by time - never ranked
   // by popularity/engagement)
   const visibleWins = filter === 'mix' ? [...wins].sort((a, b) => Number(!!b.mix) - Number(!!a.mix)) : wins;
 
@@ -354,7 +354,7 @@ export function CommunityScreen() {
         </Card>
       </Reveal>
 
-      {/* pressure-free filter — Latest / With a mix (never Following or Popular) */}
+      {/* pressure-free filter - Latest / With a mix (never Following or Popular) */}
       <Reveal index={2} style={{ marginTop: 20 }}>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {([
@@ -366,7 +366,7 @@ export function CommunityScreen() {
         </View>
       </Reveal>
 
-      {/* wins wall — reading comes before writing, so the calm content is what a
+      {/* wins wall - reading comes before writing, so the calm content is what a
           tired user meets first (the composer follows below) */}
       <Reveal index={3} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Wins wall" title="Tonight’s quiet victories" />
@@ -404,7 +404,7 @@ export function CommunityScreen() {
               </Card>
             </Appear>
           ) : !token ? (
-            // guests never fetched the wall — an honest sign-in prompt, not a
+            // guests never fetched the wall - an honest sign-in prompt, not a
             // false "no wins shared yet" claim about content we never loaded
             <Appear key="guest" enter={dur.sheet}>
               <Card variant="panel" padding={20} style={{ alignItems: 'center', gap: 6 }}>
@@ -440,7 +440,7 @@ export function CommunityScreen() {
         </Animated.View>
       </Reveal>
 
-      {/* gentle composer — placed after the wins so reading precedes writing and no
+      {/* gentle composer - placed after the wins so reading precedes writing and no
           keyboard is summoned ahead of the calm content */}
       <Reveal index={4} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Share" title="Add a small win" />

@@ -6,7 +6,7 @@ beforeEach(async () => {
 });
 
 describe('kids calm-nights (earned, capped, non-failable)', () => {
-  it('starts at 0 — never a fake default', async () => {
+  it('starts at 0 - never a fake default', async () => {
     expect(await getCalmNights()).toBe(0);
   });
 

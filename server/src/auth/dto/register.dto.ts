@@ -5,7 +5,7 @@ export class RegisterDto {
   @MaxLength(254)
   email: string;
 
-  // cap length — bcrypt on an unbounded string is a CPU-DoS vector
+  // cap length - bcrypt on an unbounded string is a CPU-DoS vector
   @IsString()
   @MinLength(6)
   @MaxLength(128)

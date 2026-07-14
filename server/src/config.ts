@@ -12,7 +12,7 @@ export const config = {
   port: parseInt(process.env.PORT ?? '4000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
   jwtSecret: process.env.JWT_SECRET ?? 'calmcarry-dev-secret-change-me-in-production',
-  // typed as an `ms`-style duration — @nestjs/jwt v11 requires StringValue, not string
+  // typed as an `ms`-style duration - @nestjs/jwt v11 requires StringValue, not string
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '7d') as import('ms').StringValue, // short-lived access; /auth/refresh rotates a 60d refresh token
   // file-based SQLite by default; set DATABASE_URL (Postgres) in production
   dbPath: process.env.DB_PATH ?? join(process.cwd(), 'data', 'calmcarry.sqlite'),
@@ -90,14 +90,14 @@ export const config = {
   // Auth for the serverless retention-purge cron. Vercel Cron sends
   // `Authorization: Bearer ${CRON_SECRET}`; set this on the Vercel project or the
   // daily COPPA/retention purge will 401 and never run. (Long-lived deploys don't
-  // need it — their in-process daily timer runs the purge directly.)
+  // need it - their in-process daily timer runs the purge directly.)
   cronSecret: process.env.CRON_SECRET ?? '',
 
   // Optional shared store for rate-limit counters across serverless/multi-instance
   // deploys. Unset → per-instance in-memory (limits don't hold across machines).
   redisUrl: process.env.REDIS_URL ?? '',
 
-  // Money-path DEV switches — DEFAULT OFF and INDEPENDENT of NODE_ENV, so an unset
+  // Money-path DEV switches - DEFAULT OFF and INDEPENDENT of NODE_ENV, so an unset
   // or mis-set NODE_ENV can never silently grant premium. Turn ON only for local
   // end-to-end testing without real store credentials.
   allowDevIap: process.env.ALLOW_DEV_IAP === '1', // devGrant a receipt without store creds
@@ -141,7 +141,7 @@ export const devFallback = config.nodeEnv !== 'production';
 /**
  * The production secret-gate. Returns the list of missing/default critical secrets
  * (empty in non-prod). BOTH entrypoints (main.ts and the Vercel serverless function)
- * MUST call this before serving — otherwise prod could silently boot on the public
+ * MUST call this before serving - otherwise prod could silently boot on the public
  * dev JWT secret + dev fallbacks. Pure (no logging/exit) so each caller decides how
  * to fail (main exits the process; serverless throws so the function 500s).
  */
@@ -151,7 +151,7 @@ export function prodSecretGaps(): string[] {
   if (!process.env.JWT_SECRET || config.jwtSecret.includes('change-me')) missing.push('JWT_SECRET');
   if (config.cmsAdminKey === 'dev-cms-key') missing.push('CMS_ADMIN_KEY');
   if (!config.databaseUrl) missing.push('DATABASE_URL');
-  // CDN keys are only required once STREAMING is turned on — v1 ships bundled-only
+  // CDN keys are only required once STREAMING is turned on - v1 ships bundled-only
   // audio, and CdnService fail-closes (503) cleanly if hit without keys, which the
   // client catches and falls back to the bundled asset.
   if (process.env.STREAMING_ENABLED === 'true' && (!config.cdn.baseUrl || !config.cdn.signingKey))

@@ -5,7 +5,7 @@ const base = { feeling: null, intent: null, mode: 'adult' as const, hour: 22 };
 
 describe('recommend', () => {
   // DRIFT GUARD: an untagged track scores zero for everyone and is fully
-  // invisible to kids — every track added to TRACKS must be tagged.
+  // invisible to kids - every track added to TRACKS must be tagged.
   it('tags every track in the catalog', () => {
     const untagged = Object.keys(TRACKS).filter((id) => !TRACK_TAGS[id]);
     expect(untagged).toEqual([]);

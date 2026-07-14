@@ -1,8 +1,8 @@
-# CalmCarry — project hand-off
+# CalmCarry - project hand-off
 
 The companion app for The Glow Company's CalmCarry device, built to the
 **Definitive Build Plan** (`~/Downloads/CalmCarry_App_Build_Plan.pdf`).
-This is the index — see also `server/BACKEND.md` and `STORE_SUBMISSION.md`.
+This is the index - see also `server/BACKEND.md` and `STORE_SUBMISSION.md`.
 
 > **Status:** full-stack app + backend, runs end-to-end **with zero API keys**.
 > Nothing is blocked on credentials. Not committed to git yet (by request).
@@ -27,11 +27,11 @@ Demo login: **sarah@theglowcompany.co / glow1234** (premium household + a device
 
 ## What ONLY you / Mason can do (the "leave it last" list)
 1. **Developer accounts:** Apple Developer ($99/yr), Google Play ($25), an Expo account (free).
-2. **Drop in keys** — every secret is a placeholder in `server/.env.example` (copy to `.env`). Until then each integration auto-runs in dev-fallback:
+2. **Drop in keys** - every secret is a placeholder in `server/.env.example` (copy to `.env`). Until then each integration auto-runs in dev-fallback:
    - Apple/Google **IAP** secrets · Apple/Google **Sign-in** client ids
    - **Shopify** shop + admin token + bundle product ids + webhook secret
    - **CDN** base url + signing key · **APNs/FCM** push keys · `CMS_ADMIN_KEY` · `JWT_SECRET` · `DATABASE_URL` (Postgres)
-3. **Real content & assets:** licensed audio (sound machine + sleep tales), recorded narration (scripts drafted in `docs/`), final cover art, real store/product/privacy/terms URLs (set in `src/content/store.ts` — currently `theglowcompany.co` placeholders; your Drive metadata showed `glowdermal.com.au`, so confirm the domain).
+3. **Real content & assets:** licensed audio (sound machine + sleep tales), recorded narration (scripts drafted in `docs/`), final cover art, real store/product/privacy/terms URLs (set in `src/content/store.ts` - currently `theglowcompany.co` placeholders; your Drive metadata showed `glowdermal.com.au`, so confirm the domain).
 4. **Confirm the store domain + device price** (we deliberately don't hard-code price; checkout shows it).
 
 ## Go-live steps (when ready)
@@ -41,7 +41,7 @@ Demo login: **sarah@theglowcompany.co / glow1234** (premium household + a device
 4. `eas build` (config in `eas.json`, bundle id `co.theglowcompany.calmcarry`) → TestFlight / internal testing → store submission (checklist in `STORE_SUBMISSION.md`). Budget for one rejection + resubmit (per the plan).
 
 ## Compliance baked in (don't undo)
-Wellness-not-medical everywhere (no "anxiety/insomnia/ADHD"; "not a medical device" sits in the store listing's first paragraph). Device language is sensation-honest ("a gentle pulsing in your palm") — never "paired/connected/buzz/vibration" (the device has no Bluetooth). Sleep tracking is intentionally **cut**. Kids mode is parent-gated with zero social/billing surface. Physical device sells via external web checkout (Apple/Play forbid IAP for hardware); the digital subscription uses IAP.
+Wellness-not-medical everywhere (no "anxiety/insomnia/ADHD"; "not a medical device" sits in the store listing's first paragraph). Device language is sensation-honest ("a gentle pulsing in your palm") - never "paired/connected/buzz/vibration" (the device has no Bluetooth). Sleep tracking is intentionally **cut**. Kids mode is parent-gated with zero social/billing surface. Physical device sells via external web checkout (Apple/Play forbid IAP for hardware); the digital subscription uses IAP.
 
 ## Repo map
 `src/app` routes · `src/features/*` screens · `src/components` primitives · `src/content` library/store · `src/lib` api/store/sessions · `src/theme` tokens · `assets/brand` logos · `server/` the API · `docs/` launch-pack (store copy, privacy, narration scripts, positioning).

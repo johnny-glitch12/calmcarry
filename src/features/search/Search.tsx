@@ -42,7 +42,7 @@ const ALL: Result[] = [
   })),
 ];
 
-// Starter taps for the empty state — each maps to real content so a groggy user
+// Starter taps for the empty state - each maps to real content so a groggy user
 // gets instant results with zero typing.
 const SUGGESTIONS = ['Rain', 'Ocean', 'Noise', 'Breathing', 'Piano'];
 
@@ -62,7 +62,7 @@ export function Search() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/sounds'));
 
-  // Exit fade for branches/rows that leave as the query changes — pairs with the
+  // Exit fade for branches/rows that leave as the query changes - pairs with the
   // Reveal entrance so a swap or reflow eases both ways instead of hard-cutting.
   const exit = () => FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System);
 
@@ -98,7 +98,7 @@ export function Search() {
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
               Find a soundscape, sleep tale, breathing session, or program.
             </AppText>
-            {/* one-tap suggestions — typing in bed is the highest-effort thing we can ask */}
+            {/* one-tap suggestions - typing in bed is the highest-effort thing we can ask */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
               {SUGGESTIONS.map((term) => (
                 <PressableScale

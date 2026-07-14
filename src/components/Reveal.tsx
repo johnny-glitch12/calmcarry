@@ -25,9 +25,9 @@ type Props = {
 };
 
 /**
- * Reveal — a subtle ONE-TIME entrance when content first mounts (translateY 12 +
+ * Reveal - a subtle ONE-TIME entrance when content first mounts (translateY 12 +
  * opacity, staggered by index). Intentionally does NOT re-fire on every tab focus
- * — re-staggering the whole screen on each tab tap reads as "look at my animation"
+ * - re-staggering the whole screen on each tab tap reads as "look at my animation"
  * slop; content should just be there when you return to a tab. Starts visible so
  * SSR / reduced motion render the resting state.
  */

@@ -17,7 +17,7 @@ import { getJSON, remove, setJSON } from './store';
  *  - NEVER PII / MEDICAL / MOOD: props pass a strict ALLOW-LIST; anything else is
  *    dropped before it can leave the device.
  *  - OFFLINE-SAFE + BATCHED: events buffer in memory and flush in small batches on a
- *    timer, on app-background, or when the buffer fills — so an all-night session
+ *    timer, on app-background, or when the buffer fills - so an all-night session
  *    never spams the network. Unsent events are persisted only when a flush fails,
  *    and recovered on next launch.
  *  - track() never throws and never blocks the UI.
@@ -113,7 +113,7 @@ function schedule(): void {
 }
 
 export async function flush(): Promise<void> {
-  if (flushing) return; // a flush is already in-flight — never send the same batch twice
+  if (flushing) return; // a flush is already in-flight - never send the same batch twice
   if (timer) {
     clearTimeout(timer);
     timer = null;
@@ -130,7 +130,7 @@ export async function flush(): Promise<void> {
     if (buf.length) schedule();
     else await remove(BUF_KEY);
   } catch {
-    // offline / rejected — keep the buffer for the next attempt
+    // offline / rejected - keep the buffer for the next attempt
     await setJSON(BUF_KEY, buf.slice(-MAX_BUFFER));
     schedule();
   } finally {

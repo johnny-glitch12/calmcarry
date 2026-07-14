@@ -8,8 +8,8 @@ import { HandsOnTour } from '@/features/tour/HandsOnTour';
 import { QuickActionsBridge } from '@/lib/quickActions';
 import { getJSON, setJSON } from '@/lib/store';
 
-/** One-time hands-on walkthrough (Mason). Lives HERE — above the scenes AND the
- *  tab bar — because its spotlight points at the real tab pills and the user
+/** One-time hands-on walkthrough (Mason). Lives HERE - above the scenes AND the
+ *  tab bar - because its spotlight points at the real tab pills and the user
  *  advances by actually tapping them. Starts on the first Home landing (where
  *  the hero target exists), adults only, persisted like the old card tour. */
 function TourGate() {
@@ -21,7 +21,7 @@ function TourGate() {
   useEffect(() => {
     if (phase !== 'idle' || !hydrated || mode === 'kids' || pathname !== '/') return;
     // never teach at bedtime: in wind-down hours (20:00-05:00) the user came for
-    // sleep, not a walkthrough — the tour simply waits for a daytime open (same
+    // sleep, not a walkthrough - the tour simply waits for a daytime open (same
     // rule as the check-in suppression). Also keeps the first NIGHT landing clean:
     // Night Door -> Home with no tour, no newcomer card (that card waits on
     // cc.tourDone), nothing between the person and Begin.
@@ -50,7 +50,7 @@ function TourGate() {
 export default function TabsLayout() {
   return (
     <View style={{ flex: 1 }}>
-    {/* Tab switches are INSTANT (Mason: "make it simple") — the native-tab feel:
+    {/* Tab switches are INSTANT (Mason: "make it simple") - the native-tab feel:
     // tap, and you're there. No fade, no dissolve; the screens themselves are
     // calm and each still plays its one-time entrance on FIRST open (Reveal).
     // Several fade recipes were tried (420ms dissolve, 190ms overlap fade) and

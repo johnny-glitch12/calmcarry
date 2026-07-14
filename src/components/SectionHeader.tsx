@@ -16,7 +16,7 @@ type Props = {
 };
 
 /**
- * SectionHeader — left-aligned (F-pattern, §7) section title with an optional
+ * SectionHeader - left-aligned (F-pattern, §7) section title with an optional
  * uppercase kicker and a trailing text action. The action dips to 0.6 opacity
  * on press (ease-out, dur.press) so it feels alive, not dead (§4).
  */
@@ -34,7 +34,7 @@ export function SectionHeader({ title, kicker, actionLabel, onAction }: Props) {
       <View style={{ flex: 1, minWidth: 0 }}>
         {kicker ? (
           // sentence-case `meta` (13px, no tracking) instead of the all-caps 11px
-          // `caption` micro-label — far easier to read with tired, dark-adapted
+          // `caption` micro-label - far easier to read with tired, dark-adapted
           // eyes; tone="accent" still sets it apart from the title.
           <AppText variant="meta" tone="accent" numberOfLines={1} style={{ marginBottom: 4 }}>
             {kicker}

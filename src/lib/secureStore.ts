@@ -5,8 +5,8 @@ import { Platform } from 'react-native';
 /**
  * Secure key/value storage for sensitive secrets (the auth token, the parent PIN
  * record). On iOS/Android these live in the Keychain / Keystore via
- * expo-secure-store. SecureStore has NO web support (Expo SDK 56), so on web —
- * which is preview-only; the product is native — we fall back to AsyncStorage
+ * expo-secure-store. SecureStore has NO web support (Expo SDK 56), so on web -
+ * which is preview-only; the product is native - we fall back to AsyncStorage
  * (localStorage). SecureStore keys may contain only [A-Za-z0-9._-].
  */
 const useSecure = Platform.OS !== 'web';
@@ -30,7 +30,7 @@ export async function secureSet(key: string, value: string): Promise<void> {
       await AsyncStorage.setItem(key, value);
     }
   } catch {
-    /* ignore — best effort */
+    /* ignore - best effort */
   }
 }
 

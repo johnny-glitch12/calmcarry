@@ -6,7 +6,7 @@ import { useTheme } from '@/theme';
 type Variant = 'surface' | 'panel';
 
 /**
- * Card — the ONE surface/panel primitive. Before this, the recipe
+ * Card - the ONE surface/panel primitive. Before this, the recipe
  * `{ borderRadius, borderWidth, borderColor, backgroundColor, ...shadow }` was
  * copy-pasted inline across ~17 feature files, and the radius drifted (12/16/18/20).
  * Route every content card/panel through here so the rounding + border + shadow

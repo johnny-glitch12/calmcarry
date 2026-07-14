@@ -6,7 +6,7 @@
  *      (or export ELEVENLABS_API_KEY in the shell)
  *   2) node scripts/gen-voices.mjs [outDir]
  *
- * Writes raw mp3s to outDir (default: scratch ./voice-out) — re-encode into
+ * Writes raw mp3s to outDir (default: scratch ./voice-out) - re-encode into
  * assets/audio/ afterwards (mono 96k) to match the bundled asset profile.
  * The key is never logged.
  */
@@ -35,7 +35,7 @@ const SCRIPT =
   "Let's slow things down for a moment. Take a slow breath in... and let it go. " +
   "You don't have to carry today into tonight. Just settle in. I'll guide you from here.";
 
-// App personas → preferred ElevenLabs premade voices (name PREFIX match — the
+// App personas → preferred ElevenLabs premade voices (name PREFIX match - the
 // library names carry suffixes like 'Brian - Deep, Resonant and Comforting'),
 // picked for bedtime register from the account's actual list:
 const PERSONAS = [
@@ -67,7 +67,7 @@ async function main() {
   for (const p of PERSONAS) {
     const voice = p.prefer.map(byName).find(Boolean);
     if (!voice) {
-      console.error(`No voice found for ${p.label} (tried ${p.prefer.join(', ')}) — pick manually from /v2/voices.`);
+      console.error(`No voice found for ${p.label} (tried ${p.prefer.join(', ')}) - pick manually from /v2/voices.`);
       continue;
     }
     console.log(`${p.label} → ${voice.name}`);

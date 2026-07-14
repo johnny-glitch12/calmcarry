@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react-native';
 
 /**
  * Native crash/error monitoring (Sentry). Initialises ONLY when a real DSN is
- * provided via EXPO_PUBLIC_SENTRY_DSN — no DSN → no-op (never pretends to report).
+ * provided via EXPO_PUBLIC_SENTRY_DSN - no DSN → no-op (never pretends to report).
  * PLACEHOLDER: set EXPO_PUBLIC_SENTRY_DSN to your Sentry project's DSN.
  */
 const DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
@@ -19,7 +19,7 @@ export function initMonitoring(): void {
   }
 }
 
-/** Gate reporting by active profile, exactly like analytics — zero third-party
+/** Gate reporting by active profile, exactly like analytics - zero third-party
  *  reporting while a kid profile is active. */
 export function setMonitoringMode(mode: 'adult' | 'kids'): void {
   kids = mode === 'kids';

@@ -4,7 +4,7 @@ import { type CoverKey } from './covers';
 // Broadened toward a BetterSleep-shaped library so the browse rails can scale by
 // type. 'soundscape' = nature/ambient scenes; 'music' = instrumental/melodic;
 // 'noise' = spectral masking colors. (Frequencies, sleep stories, and ASMR are
-// first-classable here too as their real audio is sourced — see SoundsLibrary.)
+// first-classable here too as their real audio is sourced - see SoundsLibrary.)
 export type TrackCategory = 'soundscape' | 'music' | 'noise' | 'meditation' | 'story' | 'breathing';
 
 export type Track = {
@@ -16,7 +16,7 @@ export type Track = {
   category: TrackCategory;
   /** which bundled audio file plays for this track */
   audio: AudioKey;
-  /** paid — unlocked by the Calm Plan bundle (no in-app purchase) */
+  /** paid - unlocked by the Calm Plan bundle (no in-app purchase) */
   locked?: boolean;
   /** one honest sentence: what this is and when to reach for it (shown in the Player) */
   about?: string;
@@ -59,7 +59,7 @@ export const TRACKS: Record<string, Track> = {
   // forest art until a bespoke green-noise cover is produced.
   'green-noise': { id: 'green-noise', title: 'Green Noise', subtitle: 'Mid-band hush · nature-like', cover: 'forestStream', duration: 'loops', category: 'noise', audio: 'green', locked: true,
     about: 'Noise shaped toward the middle of hearing, closer to wind in leaves than static. A natural-feeling masking bed.' },
-  // in-house blends of the real rain/fire/ocean recordings — honest one-tap scenes
+  // in-house blends of the real rain/fire/ocean recordings - honest one-tap scenes
   'rain-fire': { id: 'rain-fire', title: 'Rain by the Fire', subtitle: 'Steady rain · a low crackle', cover: 'fireside', duration: 'loops', category: 'soundscape', audio: 'rainFire', locked: true,
     about: 'Our blend of the real rain and campfire recordings: shelter and warmth in one scene.' },
   'rain-ocean': { id: 'rain-ocean', title: 'Rain over the Sea', subtitle: 'Rainfall · slow swell beneath', cover: 'shoreline', duration: 'loops', category: 'soundscape', audio: 'rainOcean', locked: true,
@@ -171,7 +171,7 @@ export type Program = {
 };
 
 export const PROGRAMS: Record<string, Program> = {
-  // The free starter arc — leads the rail and is composed ENTIRELY of free tracks
+  // The free starter arc - leads the rail and is composed ENTIRELY of free tracks
   // so a free-tier newcomer can finish all 7 nights without ever hitting the paywall
   // (the honest "earn trust first" answer to BetterSleep gating its onboarding).
   'first-week': {
@@ -245,7 +245,7 @@ export type Article = {
   cover?: CoverKey;
   body: string[];
   /** optional short clip (build plan §6 "watch & learn"). When present the article
-   *  offers a real video player. PLACEHOLDER source today — Glowco supplies finals. */
+   *  offers a real video player. PLACEHOLDER source today - Glowco supplies finals. */
   videoUrl?: string;
 };
 
@@ -261,7 +261,7 @@ export const LEARN: Record<string, Article> = {
     readMins: 3,
     cover: 'slowTide',
     // The "watch & learn" video is intentionally omitted until Glowco supplies real
-    // footage — we never ship a placeholder/stock clip. Shown as a short read for now.
+    // footage - we never ship a placeholder/stock clip. Shown as a short read for now.
     body: [
       'Find a comfortable spot, rest your Glow Orb in your palm at a level that feels good, and start a wind-down. You may notice your shoulders drop and your breathing slow within the first few minutes.',
       'There is nothing to do and nothing to get right. Let the sound carry you. If your mind is busy, that is normal. Just keep returning to the warmth in your hand.',

@@ -5,7 +5,7 @@ export type AuthCodePurpose = 'reset' | 'verify';
 
 /**
  * Short-lived 6-digit codes for password reset + email verification. One live
- * code per (owner, purpose) — issuing a new one replaces the old. The code
+ * code per (owner, purpose) - issuing a new one replaces the old. The code
  * itself is bcrypt-hashed (never stored or logged in the clear) and guarded by
  * an attempt counter + expiry, so 10^6 space is fine.
  */

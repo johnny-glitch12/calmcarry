@@ -5,7 +5,7 @@ import { CreateLogDto } from './dto/create-log.dto';
 import { LogsService } from './logs.service';
 
 // Session logs are write-only from the app: it POSTs a "played this" record for
-// §15 activation analytics. No GET — a log-history/sleep-tracking screen was cut
+// §15 activation analytics. No GET - a log-history/sleep-tracking screen was cut
 // (task #39), so nothing consumed it; stored logs are read only via the admin
 // funnel aggregate and the retention purge.
 @UseGuards(JwtAuthGuard)

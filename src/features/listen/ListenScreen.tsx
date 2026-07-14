@@ -27,7 +27,7 @@ import { takePendingMix } from '@/lib/mixShare';
 import { getJSON, remove, setJSON } from '@/lib/store';
 import { dur, ease, spring, themes, useResponsive, useTheme } from '@/theme';
 
-// Lyric-free instrumental music (build plan §6/§7 — Listen = Music + Sound machine).
+// Lyric-free instrumental music (build plan §6/§7 - Listen = Music + Sound machine).
 // CMS-extensible; the sound machine below handles ambient sounds.
 // gymnopedie is the ONE free music track (§6.1); spa is premium and shows a lock for free adults
 const MUSIC_IDS = ['gymnopedie', 'spa'];
@@ -62,7 +62,7 @@ const timerStateFor = (mins: number): TimerState => ({ endAt: Date.now() + mins 
 
 
 // A single volume-level bar. The accent fill EASES in/out (opacity over a c.line
-// base) whenever this level is lit or dimmed — dragging the fader or tapping a bar
+// base) whenever this level is lit or dimmed - dragging the fader or tapping a bar
 // no longer hard-swaps the color (the PIN-dot class of jolt).
 function LevelBar({ lit }: { lit: boolean }) {
   const { c } = useTheme();
@@ -101,12 +101,12 @@ function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
   const scrimStyle = useAnimatedStyle(() => ({ opacity: 0.54 + 0.18 * l.value }));
 
   // Fader drag: slide across the volume strip to set the level continuously
-  // (taps on the individual bars still work — the pan only activates after a
+  // (taps on the individual bars still work - the pan only activates after a
   // deliberate horizontal pull, and vertical motion stays with the ScrollView).
   const stripW = useSharedValue(0);
   const lastLvl = useSharedValue(0);
   const tickLevel = (l: number) => {
-    if (!on) return; // sound turned off mid-drag (stopAll / timer) — don't resurrect it
+    if (!on) return; // sound turned off mid-drag (stopAll / timer) - don't resurrect it
     lightTap(); // one light tick per step, like a physical detent
     onLevel(l);
   };
@@ -169,7 +169,7 @@ function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
           ]}>
           <Image source={covers[cover]} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
           {/* locked tiles carry a heavier scrim so tired eyes read them as dimmed/paywalled
-              before committing a tap — the darkening EASES when a purchase unlocks it */}
+              before committing a tap - the darkening EASES when a purchase unlocks it */}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgb(20,30,28)' }, scrimStyle]} />
           <View style={{ flex: 1, padding: 12, justifyContent: 'space-between' }}>
             <View style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 13, overflow: 'hidden', backgroundColor: locked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
@@ -204,7 +204,7 @@ function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
               ) : null}
             </View>
           </View>
-          {/* accent activation ring — fades in over the tile edge (avoids animating borderColor) */}
+          {/* accent activation ring - fades in over the tile edge (avoids animating borderColor) */}
           {!locked ? (
             <Animated.View
               pointerEvents="none"
@@ -213,7 +213,7 @@ function Tile({ label, cover, level, locked, width, onToggle, onLevel }: {
           ) : null}
         </Animated.View>
       </PressableScale>
-      {/* per-sound volume — 3 levels: tap a bar OR slide across the strip like a
+      {/* per-sound volume - 3 levels: tap a bar OR slide across the strip like a
           fader (the drag ticks a light haptic at each step). Locked tiles show a
           matching spacer instead. */}
       {locked ? (
@@ -252,12 +252,12 @@ export function ListenScreen() {
   const { mode } = useProfile();
   const kids = mode === 'kids';
   // kids mode forces "cozy dusk" (<Screen mode="kids">); read that palette DIRECTLY
-  // — this body runs above its own Screen's provider, so an ambient useTheme() would
+  // - this body runs above its own Screen's provider, so an ambient useTheme() would
   // return the app's light/night appearance and mis-paint the content. Adult mode
   // keeps its ambient (night-forced) theme.
   const c = kids ? themes.kids : ambientC;
   // responsive sound grid: measure the grid width, fit exactly `gridCols` uniform
-  // tiles with a fixed gap (2 phone / 3 tablet / 4 wide) — every row symmetrical
+  // tiles with a fixed gap (2 phone / 3 tablet / 4 wide) - every row symmetrical
   const { gridColumns: gridCols } = useResponsive();
   const [gridW, setGridW] = useState(0);
   const [levels, setLevels] = useState<Levels>(ZERO);
@@ -337,7 +337,7 @@ export function ListenScreen() {
   // Lock-screen session for the mixer. ONE anchor player (the first active sound)
   // carries the OS session: on Android that's what keeps background audio alive
   // past ~3 minutes (expo-audio v56), and it gives the lock screen a real pause.
-  // isLiveStream hides the seek bar — these are endless loops, not tracks.
+  // isLiveStream hides the seek bar - these are endless loops, not tracks.
   const anchorRef = useRef<SoundKey | null>(null);
   useEffect(() => {
     const first = (Object.keys(players) as SoundKey[]).find((k) => levels[k] > 0) ?? null;
@@ -379,7 +379,7 @@ export function ListenScreen() {
     [],
   );
 
-  // A lock-screen pause only reaches the anchor player — notice it and let the
+  // A lock-screen pause only reaches the anchor player - notice it and let the
   // whole mix follow with the usual gentle fade, so the UI and the ear agree.
   useEffect(() => {
     if (!anyOn) return;
@@ -404,7 +404,7 @@ export function ListenScreen() {
       router.push('/unlock' as Href);
       return;
     }
-    // start at medium, never full — a face-full of max-volume rain at 3am jolts a
+    // start at medium, never full - a face-full of max-volume rain at 3am jolts a
     // drowsy user (and a sleeping partner) awake; the level bars still allow one tap up.
     setLevels((prev) => ({ ...prev, [k]: prev[k] > 0 ? 0 : 2 }));
   };
@@ -419,7 +419,7 @@ export function ListenScreen() {
   };
 
   // At the timer boundary, ramp every active sound to silence over ~3.5s and THEN
-  // stop — a hard cut is jarring for someone already drifting off.
+  // stop - a hard cut is jarring for someone already drifting off.
   const fadeAndStop = () => {
     if (fadeRef.current) clearInterval(fadeRef.current);
     let f = 1;
@@ -436,7 +436,7 @@ export function ListenScreen() {
     }, 300);
   };
 
-  // Set the sleep timer to an exact duration — one direct tap, no cycle-and-read loop.
+  // Set the sleep timer to an exact duration - one direct tap, no cycle-and-read loop.
   const setTimerTo = (mins: number) => {
     lightTap();
     setTimer(mins);
@@ -453,7 +453,7 @@ export function ListenScreen() {
   // The setTimeout above is SUSPENDED while the app is backgrounded (but audio keeps
   // playing). On return to foreground, re-check the saved end time: fade now if it
   // already elapsed, else re-arm the remainder. (A true stop-while-asleep needs a
-  // native/background timer — tracked for Glowco.)
+  // native/background timer - tracked for Glowco.)
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return;
@@ -473,7 +473,7 @@ export function ListenScreen() {
     if (!anyOn) return;
     lightTap();
     // name the mix from its active sounds so chips are self-describing ("Rain · Ocean"),
-    // not indistinguishable "Mix 1 / Mix 2" — same naming shareMix already uses
+    // not indistinguishable "Mix 1 / Mix 2" - same naming shareMix already uses
     const active = SOUNDS.filter((s) => levels[s.key] > 0);
     const name = active.slice(0, 3).map((s) => s.label).join(' · ') || `Mix ${mixes.length + 1}`;
     const next = [...mixes, { name, levels }].slice(-12);
@@ -487,7 +487,7 @@ export function ListenScreen() {
     applyExternalLevels(m.levels);
   };
 
-  // Apply a mix arriving from a shared community card — once, on focus. Only known
+  // Apply a mix arriving from a shared community card - once, on focus. Only known
   // keys are honoured, levels are clamped, and any premium sound a free user can't
   // access is zeroed (a shared mix can never unlock paid sounds).
   const applyExternalLevels = useCallback(
@@ -535,7 +535,7 @@ export function ListenScreen() {
     }, [applyExternalLevels])
   );
 
-  // Share the CURRENT live mix to the community wall — anonymous, adults + signed-in
+  // Share the CURRENT live mix to the community wall - anonymous, adults + signed-in
   // only (kids never post). The name is built from the active sound labels.
   const shareMix = async () => {
     if (!anyOn || kids || !token || token === 'local') return;
@@ -567,7 +567,7 @@ export function ListenScreen() {
         </AppText>
       </Reveal>
 
-      {/* saved mixes — the fastest path back to last night's blend, so it sits first */}
+      {/* saved mixes - the fastest path back to last night's blend, so it sits first */}
       {mixes.length > 0 ? (
         <Reveal index={1} style={{ marginTop: 24 }}>
           <View style={{ paddingHorizontal: 24 }}>
@@ -590,11 +590,11 @@ export function ListenScreen() {
         </Reveal>
       ) : null}
 
-      {/* sound grid — UNIFORM tiles + fixed gap + flex-start, so every row (full
+      {/* sound grid - UNIFORM tiles + fixed gap + flex-start, so every row (full
           or partial) is evenly sized and evenly spaced. Tile width is computed
           from the measured grid width so N columns always fit exactly. justify
           CENTER means full rows fill edge-to-edge (no free space to distribute)
-          while a partial last row centers — so a lone trailing tile sits balanced
+          while a partial last row centers - so a lone trailing tile sits balanced
           in the middle instead of stranded on the left. */}
       <Reveal index={2} style={{ marginTop: 24, paddingHorizontal: 24 }}>
         <View
@@ -619,7 +619,7 @@ export function ListenScreen() {
 
       {/* master controls */}
       <Reveal index={3} style={{ marginTop: 28, paddingHorizontal: 24 }}>
-        {/* sleep timer — one direct tap to any duration, no blind cycle-and-read loop */}
+        {/* sleep timer - one direct tap to any duration, no blind cycle-and-read loop */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <Feather name="moon" size={16} color={c.textAccent} />
           <AppText variant="cardTitle" tone="title">
@@ -669,7 +669,7 @@ export function ListenScreen() {
           </PressableScale>
         </View>
 
-        {/* Stop all — THE in-bed action: a full-width chip, above share, so silencing
+        {/* Stop all - THE in-bed action: a full-width chip, above share, so silencing
             everything reads before the lesser share/save affordances */}
         {anyOn ? (
           <Appear enter={dur.sheet}>
@@ -712,7 +712,7 @@ export function ListenScreen() {
         ) : null}
       </Reveal>
 
-      {/* Music — lyric-free instrumental tracks. Last, because the one-tap sound grid
+      {/* Music - lyric-free instrumental tracks. Last, because the one-tap sound grid
           above is the fastest path to something calming; music is a deliberate choice. */}
       <Reveal index={4} style={{ marginTop: 28, paddingHorizontal: 24 }}>
         <SectionHeader kicker="Music" title="Lyric-free, to drift to" />

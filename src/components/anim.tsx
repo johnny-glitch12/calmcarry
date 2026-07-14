@@ -15,7 +15,7 @@ import Animated, {
 import { dur, ease } from '@/theme';
 
 /**
- * Shared motion primitives — the app's rule is that NOTHING a user triggers may
+ * Shared motion primitives - the app's rule is that NOTHING a user triggers may
  * change instantly (an abrupt onset is a jolt to a sleepy brain). These four
  * helpers cover the recurring cases so every screen animates the same way:
  *
@@ -41,7 +41,7 @@ export function Appear({
   style?: StyleProp<ViewStyle>;
   /** enter duration (default dur.sheet). */
   enter?: number;
-  /** exit duration (default dur.exit — quicker than the enter, per the motion doctrine). */
+  /** exit duration (default dur.exit - quicker than the enter, per the motion doctrine). */
   exit?: number;
   /** delay the entrance (ms). */
   delay?: number;
@@ -69,7 +69,7 @@ export function FlowTransition({ children, style }: { children: ReactNode; style
 }
 
 /**
- * Dimmable — eases opacity between full and a dimmed value when an enabled/busy
+ * Dimmable - eases opacity between full and a dimmed value when an enabled/busy
  * state flips, so a control never snaps from active to disabled. Wrap the content
  * INSIDE a PressableScale (whose own animated opacity would otherwise override a
  * static dim on its style).
@@ -95,7 +95,7 @@ export function Dimmable({
 }
 
 /**
- * SwapText — when a displayed value changes, dip the current text to 0, swap it,
+ * SwapText - when a displayed value changes, dip the current text to 0, swap it,
  * then ease the new text back in. No layout overlap (single node), so numbers,
  * prices, labels and status strings morph instead of teleporting. Pass `trigger`
  * as the value that signals a change (usually the string/number itself).
@@ -145,7 +145,7 @@ export function SwapText({
 }
 
 /**
- * SelectionOverlay — an absolutely-positioned layer carrying the ACTIVE look
+ * SelectionOverlay - an absolutely-positioned layer carrying the ACTIVE look
  * (fill / border / tint) that fades in over a parent styled with the resting
  * look. Drop it in as the first child of a relatively-positioned container so a
  * selection change eases instead of snapping. Pointer events pass through to the
@@ -170,7 +170,7 @@ export function SelectionOverlay({
 }
 
 /**
- * Crossfade — dissolve between two states (e.g. lock ↔ play glyph, day-number ↔
+ * Crossfade - dissolve between two states (e.g. lock ↔ play glyph, day-number ↔
  * check, muted ↔ accent label) instead of hard-swapping. Both children are
  * stacked and centered in a FIXED-SIZE container (the caller sets width/height on
  * `style`); `front` shows when `active`, `back` otherwise.

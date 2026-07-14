@@ -8,7 +8,7 @@ import { AnalyticsService } from '../events/analytics.service';
 import { UsersService } from '../users/users.service';
 
 /**
- * Store subscription LIFECYCLE handler — App Store Server Notifications V2 and
+ * Store subscription LIFECYCLE handler - App Store Server Notifications V2 and
  * Google Play Real-Time Developer Notifications (RTDN). Without these, an entitlement
  * only changes when the CLIENT posts a receipt, so a cancel/refund/expiry that happens
  * store-side is invisible until the app re-validates (a refunded user keeps premium).
@@ -18,7 +18,7 @@ import { UsersService } from '../users/users.service';
  *    Root CA (operator supplies the root certs via APPLE_ROOT_CERTS_DIR).
  *  - Google: the Pub/Sub push request's OIDC bearer token is verified (signature +
  *    audience + service-account email) before the message is trusted.
- * If verification material is absent, we FAIL CLOSED (503) — never process unverified.
+ * If verification material is absent, we FAIL CLOSED (503) - never process unverified.
  */
 @Injectable()
 export class WebhooksService {
@@ -167,7 +167,7 @@ export class WebhooksService {
         this.recordChurn('revoked');
         break;
       case 3:
-        // CANCELED — auto-renew turned off; term stays active until it lapses, but
+        // CANCELED - auto-renew turned off; term stays active until it lapses, but
         // record the cancellation intent so churn/cancellation reasons are visible.
         this.recordChurn('user_cancelled');
         break;

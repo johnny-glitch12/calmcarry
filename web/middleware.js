@@ -1,7 +1,7 @@
 // Login wall for the CalmCarry preview (Vercel Edge Middleware, HTTP Basic Auth).
 // Prompts for a username + password before anything (landing or app) loads.
 // Credentials can be overridden by Vercel env vars PREVIEW_USER / PREVIEW_PASS;
-// the defaults below are a throwaway preview gate — rotate anytime.
+// the defaults below are a throwaway preview gate - rotate anytime.
 export const config = { matcher: '/(.*)' };
 
 export default function middleware(request) {

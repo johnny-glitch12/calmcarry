@@ -12,11 +12,11 @@ Welcome. There's nothing to get right here. You've made it to the end of the day
 
 Let your eyes close whenever they're ready. Settle your shoulders down, away from your ears. [pause]
 
-Rest the CalmCarry in your palm, and let your hand grow heavy. Set it to a level that feels good to you — soft enough to fade into the background. [pause]
+Rest the CalmCarry in your palm, and let your hand grow heavy. Set it to a level that feels good to you - soft enough to fade into the background. [pause]
 
 Notice the gentle pulsing in the centre of your palm. You don't have to hold onto it. Just let it be there, like a small, steady companion. [pause]
 
-Now, a slow breath in… and a longer breath out. [pause] Again — in… and let it go. [pause]
+Now, a slow breath in… and a longer breath out. [pause] Again - in… and let it go. [pause]
 
 If your mind is still busy, that's alright. Let the thoughts drift past like cars on a far-off road. You don't need to follow them. [pause]
 
@@ -46,7 +46,7 @@ One last slow breath. [pause] When you're ready, carry this small calm back into
 
 ## 3. Kids Settle-Down (ages 4-7, with Bramble the bear)
 
-Hello, sleepyhead. It's time to meet our friend Bramble — a soft, friendly bear who loves bedtime. [pause]
+Hello, sleepyhead. It's time to meet our friend Bramble - a soft, friendly bear who loves bedtime. [pause]
 
 Hold your CalmCarry gently in your hand, the way Bramble holds his little honey jar. Let a grown-up help you find a level that feels nice and soft. [pause]
 
@@ -54,7 +54,7 @@ Can you feel the gentle pulsing in your hand? That's Bramble's heartbeat, saying
 
 Bramble is curling up in his cosy den now. He yawns a great big bear yawn. Can you yawn too? [pause]
 
-Let's take a slow breath, like Bramble smelling the warm honey… and breathe it out. [pause] Again — sniff the honey… and out. [pause]
+Let's take a slow breath, like Bramble smelling the warm honey… and breathe it out. [pause] Again - sniff the honey… and out. [pause]
 
 Bramble's eyes are getting heavy. His paws are soft and still. [pause]
 
@@ -68,7 +68,7 @@ Goodnight, little one. Goodnight, Bramble. [pause]
 
 Let's breathe together in a slow, steady square. We'll use the pulsing in your palm to keep the rhythm. [pause]
 
-Rest the CalmCarry in your palm and set it to a level that feels good — there, but not loud. [pause]
+Rest the CalmCarry in your palm and set it to a level that feels good - there, but not loud. [pause]
 
 Notice the gentle pulsing. We'll move with it, side by side. [pause]
 
@@ -92,7 +92,7 @@ A few more rounds at your own pace. Feel your busy mind beginning to quiet. [pau
 
 Find a comfortable spot, sitting or lying down. We're going to travel slowly through the body and let it soften, piece by piece. [pause]
 
-Rest the CalmCarry in your palm. Set it to a level that feels good — a gentle pulsing you can return to anytime. [pause]
+Rest the CalmCarry in your palm. Set it to a level that feels good - a gentle pulsing you can return to anytime. [pause]
 
 Start at the top of your head. Let your forehead smooth out. Unclench your jaw. [pause]
 
@@ -106,7 +106,7 @@ Let your hips grow heavy. Your legs, loose and warm. [pause]
 
 All the way down to your feet. Let them go completely. [pause]
 
-Now feel your whole body at once — held, heavy, settled. The pulsing in your palm keeps gentle time. [pause]
+Now feel your whole body at once - held, heavy, settled. The pulsing in your palm keeps gentle time. [pause]
 
 There's nowhere to be but here. Rest in it as long as you'd like. [pause]
 
@@ -114,11 +114,11 @@ There's nowhere to be but here. Rest in it as long as you'd like. [pause]
 
 ## 6. 3am Back-to-Sleep
 
-Hello. I know — it's the middle of the night, and your mind switched itself on. This happens to so many of us. You're not alone in the dark. [pause]
+Hello. I know - it's the middle of the night, and your mind switched itself on. This happens to so many of us. You're not alone in the dark. [pause]
 
 Don't reach for the time. Don't do the maths on how much sleep is left. None of that helps right now. [pause]
 
-Reach for your CalmCarry instead. Rest it in your palm and set it to a level that feels good — soft and low, just for you. [pause]
+Reach for your CalmCarry instead. Rest it in your palm and set it to a level that feels good - soft and low, just for you. [pause]
 
 Notice the gentle pulsing or tingling in your hand. Let it give your busy mind something kind to hold onto. [pause]
 

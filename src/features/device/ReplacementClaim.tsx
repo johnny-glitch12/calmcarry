@@ -53,7 +53,7 @@ function IssueChip({ label, selected, onPress }: { label: string; selected: bool
           active={selected}
           style={{ borderRadius: 18, borderWidth: 1, borderColor: c.accent, backgroundColor: c.accent }}
         />
-        {/* label color crossfades white↔text via two stacked layers — Crossfade isn't
+        {/* label color crossfades white↔text via two stacked layers - Crossfade isn't
             usable here (it absolute-positions both children, collapsing this
             content-sized chip's width), so mirror Segmented's shared-value pattern */}
         <View

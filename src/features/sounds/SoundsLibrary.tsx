@@ -19,7 +19,7 @@ type Rail = { kicker: string; title: string; ids: string[] };
 // Library organised by the MOMENT, not by feature (build plan §7):
 // Quick calm / Wind down & sleep / Music & sounds (+ Watch & learn + Programs below).
 // Kickers are kept ONLY where they add information the title doesn't already carry
-// ("Tonight"). Redundant restatements ("For right now" over "Quick calm") are dropped —
+// ("Tonight"). Redundant restatements ("For right now" over "Quick calm") are dropped -
 // tired eyes shouldn't double-read tiny all-caps text before reaching the cards.
 const ADULT_RAILS: Rail[] = [
   { kicker: '', title: 'Quick calm', ids: ['box-breathing'] },
@@ -67,16 +67,16 @@ export function SoundsLibrary() {
     }, [])
   );
 
-  // kids never see the paywall — their tiles always open the player
+  // kids never see the paywall - their tiles always open the player
   const openTrack = (t: Track) =>
     router.push(t.locked && !isPremium ? `/unlock?id=${t.id}` : `/player?id=${t.id}`);
 
   // SPARSITY DISCIPLINE (thin library, designed-for): a track never appears twice
-  // on this screen — anything already shown in the personal rails (saved / recent)
+  // on this screen - anything already shown in the personal rails (saved / recent)
   // is dropped from the moment rails below. A rail left with ONE item doesn't
   // render as a lonely one-card "rail"; it becomes a full-width editorial card.
   const seen = new Set<string>([...(!kids ? saved : []), ...(!kids ? recent : [])]);
-  // "Picked for you" — the recommender's top picks (survey answers + tonight's
+  // "Picked for you" - the recommender's top picks (survey answers + tonight's
   // check-in + favourites + time of day), deduped against the personal rails.
   // Its picks join `seen` so the moment rails below never repeat them.
   const forYou = kids ? [] : recommendedTrackIds.filter((id) => !seen.has(id)).slice(0, 8);
@@ -95,7 +95,7 @@ export function SoundsLibrary() {
 
   // Focus-refresh reshuffle motion (build plan §7): on return to the Library the
   // seen-set filter can pull a rail (or a single track) out of the moment sections
-  // and float saved/recent rails in — nothing may snap out of existence. Removals
+  // and float saved/recent rails in - nothing may snap out of existence. Removals
   // fade (exiting) and everything left glides to its new place (layout) instead of
   // jumping. Kept off `entering` so Reveal still owns the one-time mount entrance.
   const railExit = FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System);
@@ -142,7 +142,7 @@ export function SoundsLibrary() {
               {kids ? 'Bedtime library' : 'Library'}
             </AppText>
           </View>
-          {/* search + learn are adult affordances (route to programs/paywall) — hidden in kids */}
+          {/* search + learn are adult affordances (route to programs/paywall) - hidden in kids */}
           {!kids ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 24 }}>
               <PressableScale
@@ -171,16 +171,16 @@ export function SoundsLibrary() {
         </View>
       </Reveal>
 
-      {/* personal rails first — your saved sessions + where you left off (adults) */}
+      {/* personal rails first - your saved sessions + where you left off (adults) */}
       {!kids ? dynamicRail('saved', 'Saved', 'Your saved sessions', saved) : null}
       {!kids ? dynamicRail('recent', 'Recently played', 'Pick up where you left off', recent) : null}
       {!kids ? dynamicRail('foryou', 'For you', 'Picked for you', forYou) : null}
 
-      {/* track rails — the moment-based sections (Quick calm / Wind down & sleep / Music & sounds) */}
+      {/* track rails - the moment-based sections (Quick calm / Wind down & sleep / Music & sounds) */}
       {rails.map((rail, i) => {
         const items = rail.ids
           .map((id) => TRACKS[id])
-          // kids in a FREE household never see locked tracks they can't open — a
+          // kids in a FREE household never see locked tracks they can't open - a
           // paywall dead-end contradicts the COPPA-safe kids contract (adults keep
           // the labelled locked cards as the honest upsell surface)
           .filter((t): t is Track => !!t && !seen.has(t.id) && !(kids && t.locked && !isPremium));
@@ -230,7 +230,7 @@ export function SoundsLibrary() {
         );
       })}
 
-      {/* Learn — short daytime reads (text today; the plan's "watch & learn" video
+      {/* Learn - short daytime reads (text today; the plan's "watch & learn" video
           comes when Glowco produces clips, §6 "don't over-invest"). Labelled as
           reads, not clips, so we never imply video that isn't there. */}
       {!kids ? (
@@ -254,7 +254,7 @@ export function SoundsLibrary() {
         </Animated.View>
       ) : null}
 
-      {/* Programs — gentle multi-week journeys (premium). Last per plan §7 order. */}
+      {/* Programs - gentle multi-week journeys (premium). Last per plan §7 order. */}
       {!kids ? (
         <Animated.View layout={railFlow}>
           <Reveal index={rails.length + 2} style={{ marginBottom: 28 }}>

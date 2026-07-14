@@ -1,8 +1,8 @@
-# CalmCarry — API keys & secrets setup
+# CalmCarry - API keys & secrets setup
 
 Everything in this app runs in **dev with zero keys** (safe local fallbacks). You only
 need real values to ship to production. Fill them into `server/.env` and the app's `.env`
-(both are gitignored — never commit real secrets).
+(both are gitignored - never commit real secrets).
 
 > **Never paste a secret into a chat, ticket, screenshot, or log.** Treat any secret that
 > leaks into one as compromised and regenerate it. Generate secrets locally and store them
@@ -17,12 +17,12 @@ go through their own billing (StoreKit / Play Billing). That means:
 
 - ❌ **No Stripe / PayPal / payment processor, no merchant account, no card handling, no PCI.**
 - ✅ Apple/Google collect the money and pay you out (minus ~15–30%).
-- ✅ You still need a few keys — **not to charge money, but to (a) verify a purchase is real
+- ✅ You still need a few keys - **not to charge money, but to (a) verify a purchase is real
   and (b) hear about cancels/refunds/renewals that happen outside the app.**
 
 The **physical Glow Orb** is sold on the **Shopify** web store (physical goods are *not* IAP).
 Shopify keys are only used to match a hardware buyer's email to their account ("Verified
-owner" badge) — premium works fine without Shopify.
+owner" badge) - premium works fine without Shopify.
 
 ---
 
@@ -36,16 +36,16 @@ owner" badge) — premium works fine without Shopify.
 | `CORS_ORIGINS` | Lock API to your web origins |
 | IAP products in App Store Connect + Play Console | The subscriptions + their prices (`calmcarry.premium.monthly` / `.annual`) |
 | `APPLE_IAP_SHARED_SECRET` / `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Server-side **receipt validation** (anti-fraud) |
-| App Store Server Notifications + Play RTDN webhooks | Remove premium on **cancel / refund / lapse** — verification (Apple JWS + Google Pub/Sub OIDC) is implemented; just configure the endpoints + env vars (§4–5) |
+| App Store Server Notifications + Play RTDN webhooks | Remove premium on **cancel / refund / lapse** - verification (Apple JWS + Google Pub/Sub OIDC) is implemented; just configure the endpoints + env vars (§4–5) |
 
 ### 🟡 Nice-to-have / can cut for v1
 | Key | Note |
 |---|---|
-| `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` + `EXPO_PUBLIC_GOOGLE_*` | Social sign-in — JWKS verification is implemented; keys are all that's missing. Can still launch **email-only** and skip these |
-| `APNS_*` / `FIREBASE_SERVICE_ACCOUNT_JSON` (+ Android `google-services.json`, §9) | Bedtime **push** — server send is fully implemented (APNs ES256 JWT + FCM v1). The app ships a local reminder already, so remote push is cuttable for v1 |
-| `SHOPIFY_*` | Device-ownership badge only — optional for the subscription |
+| `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` + `EXPO_PUBLIC_GOOGLE_*` | Social sign-in - JWKS verification is implemented; keys are all that's missing. Can still launch **email-only** and skip these |
+| `APNS_*` / `FIREBASE_SERVICE_ACCOUNT_JSON` (+ Android `google-services.json`, §9) | Bedtime **push** - server send is fully implemented (APNs ES256 JWT + FCM v1). The app ships a local reminder already, so remote push is cuttable for v1 |
+| `SHOPIFY_*` | Device-ownership badge only - optional for the subscription |
 | `EXPO_PUBLIC_SENTRY_DSN` + `SENTRY_DSN` | Crash/error monitoring, app + server (off if blank) |
-| `CDN_BASE_URL` + `CDN_SIGNING_KEY` | **Not needed for v1** — all audio ships bundled in the binary. Only for `STREAMING_ENABLED=true` later (§7) |
+| `CDN_BASE_URL` + `CDN_SIGNING_KEY` | **Not needed for v1** - all audio ships bundled in the binary. Only for `STREAMING_ENABLED=true` later (§7) |
 
 ### ⚪ Not needed
 Any third-party payment processor / Stripe / merchant-bank key.
@@ -53,20 +53,20 @@ Any third-party payment processor / Stripe / merchant-bank key.
 ---
 
 ## 0. Prerequisite accounts
-- **Apple Developer Program** — $99/year (Sign in with Apple, IAP, push, App Store).
-- **Google Play Console** — $25 one-time, plus a free **Google Cloud** project.
-- **Postgres host** — Neon or Supabase (free tier).
-- **Sentry** — free tier. **Shopify** — the existing Glow Company store admin.
+- **Apple Developer Program** - $99/year (Sign in with Apple, IAP, push, App Store).
+- **Google Play Console** - $25 one-time, plus a free **Google Cloud** project.
+- **Postgres host** - Neon or Supabase (free tier).
+- **Sentry** - free tier. **Shopify** - the existing Glow Company store admin.
 
-## 1. Self-generated — `JWT_SECRET`, `CMS_ADMIN_KEY`
+## 1. Self-generated - `JWT_SECRET`, `CMS_ADMIN_KEY`
 - Run locally (once per secret): `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
 - Paste each into `server/.env`. Keep them private; do not reuse the `change-me` defaults.
 
-## 2. App wiring — `EXPO_PUBLIC_API_BASE`, `CORS_ORIGINS`
+## 2. App wiring - `EXPO_PUBLIC_API_BASE`, `CORS_ORIGINS`
 - `EXPO_PUBLIC_API_BASE` = the deployed API URL (e.g. `https://calmcarry-api.fly.dev`).
 - `CORS_ORIGINS` = comma-separated web origins allowed to call the API.
 
-## 3. Database — `DATABASE_URL` (Neon = easiest)
+## 3. Database - `DATABASE_URL` (Neon = easiest)
 - neon.tech → **Create project** → copy the **connection string** (`postgresql://…?sslmode=require`).
 - Paste into `DATABASE_URL`; leave `DATABASE_SSL=true`.
 - Migrations run automatically on any Postgres connection (`migrationsRun`); `synchronize` is local-SQLite-dev only. A fresh Neon DB builds its full schema on first boot.
@@ -82,7 +82,7 @@ Any third-party payment processor / Stripe / merchant-bank key.
   (must match `PREMIUM_PRODUCT_IDS` + `iap.native.ts`).
 - **App Store Server Notifications**: App Information → **App Store Server Notifications** →
   **V2**, URL = `https://<your-api>/webhooks/apple`. *(Tells you about renew/cancel/refund.)*
-- **Push** — `APNS_KEY_ID` / `APNS_TEAM_ID` / `APNS_KEY_P8`: Keys → **+** → enable **APNs** →
+- **Push** - `APNS_KEY_ID` / `APNS_TEAM_ID` / `APNS_KEY_P8`: Keys → **+** → enable **APNs** →
   download `AuthKey_XXXX.p8` (one-time). Key ID = `APNS_KEY_ID`; Team ID (top-right) =
   `APNS_TEAM_ID`; the `.p8` file contents = `APNS_KEY_P8`.
 
@@ -96,7 +96,7 @@ Any third-party payment processor / Stripe / merchant-bank key.
   **JSON key**. Enable **Google Play Android Developer API**. In Play Console → **API access**
   → link the project + grant the service account financial/order access. *(Verifies receipts.)*
 - **Play subscriptions**: Play Console → **Monetize → Subscriptions** → `calmcarry.premium.monthly` + `.annual`.
-- **Push** — `FIREBASE_SERVICE_ACCOUNT_JSON` (FCM HTTP v1): firebase.google.com → add project
+- **Push** - `FIREBASE_SERVICE_ACCOUNT_JSON` (FCM HTTP v1): firebase.google.com → add project
   (link the GCP project) → add an **Android app** → **Project settings → Service accounts →
   Generate new private key** → paste the JSON (raw or base64). Server send is already
   implemented against FCM v1 (no legacy `FCM_SERVER_KEY`). Download **google-services.json**
@@ -104,21 +104,21 @@ Any third-party payment processor / Stripe / merchant-bank key.
 - **Play RTDN**: GCP **Pub/Sub** → topic + **push subscription** to `https://<your-api>/webhooks/google`;
   paste the topic in Play Console → **Monetization setup**. On the subscription, enable
   **authentication** (OIDC token) with a service account, then set on the server:
-  - `GOOGLE_PUBSUB_AUDIENCE` = the subscription's audience — by default the push endpoint URL
+  - `GOOGLE_PUBSUB_AUDIENCE` = the subscription's audience - by default the push endpoint URL
     (`https://<your-api>/webhooks/google`) unless you set a custom audience.
   - `GOOGLE_PUBSUB_SA_EMAIL` = that service account's email (e.g. `rtdn-push@<project>.iam.gserviceaccount.com`).
     The webhook rejects tokens whose `email` claim doesn't match.
   Without both, the Google webhook stays fail-closed (returns 503, never processes unverified events).
 
-## 6. Shopify (device only — optional) — `SHOPIFY_*`
+## 6. Shopify (device only - optional) - `SHOPIFY_*`
 - `SHOPIFY_SHOP` = `theglowcompany.myshopify.com`.
 - Admin → **Settings → Apps → Develop apps → Create app** → Admin API scope **`read_orders`** →
   Install → copy the **Admin API access token** → `SHOPIFY_ADMIN_TOKEN`.
 - The app's **API secret key** = `SHOPIFY_WEBHOOK_SECRET`.
 - `SHOPIFY_BUNDLE_PRODUCT_IDS` = product/variant IDs of the device bundle that grants premium.
 
-## 7. Content CDN — `CDN_BASE_URL`, `CDN_SIGNING_KEY` (post-v1 only)
-- **Skip this for launch.** v1 ships every track bundled in the app binary — nothing streams,
+## 7. Content CDN - `CDN_BASE_URL`, `CDN_SIGNING_KEY` (post-v1 only)
+- **Skip this for launch.** v1 ships every track bundled in the app binary - nothing streams,
   so no CDN account, keys, or cost. Revisit when the catalog outgrows the binary (~30+ tracks).
 - To turn streaming on later, set `STREAMING_ENABLED=true` **plus** both CDN vars. The server
   fail-closes: with the flag on and either key missing, it refuses to boot in production.
@@ -126,24 +126,24 @@ Any third-party payment processor / Stripe / merchant-bank key.
   `CDN_BASE_URL` = zone URL; `CDN_SIGNING_KEY` = that token key.
 - ⚠️ The signing scheme in `cdn.service.ts` must match the CDN you choose.
 
-## 8. Sentry — `EXPO_PUBLIC_SENTRY_DSN` (app) + `SENTRY_DSN` (server)
+## 8. Sentry - `EXPO_PUBLIC_SENTRY_DSN` (app) + `SENTRY_DSN` (server)
 - sentry.io → **Create project** ×2 (React Native for the app, Node for the API) → copy each **DSN**.
-- Server: `SENTRY_DSN` as a Fly secret — the API captures unhandled 5xx errors automatically.
+- Server: `SENTRY_DSN` as a Fly secret - the API captures unhandled 5xx errors automatically.
 - Blank = monitoring off (both are strict no-ops without a DSN).
 
 ## 9. Store build & submit (EAS) + Android push file
-These are **wired with placeholders** — you only drop in values/files, no code changes:
+These are **wired with placeholders** - you only drop in values/files, no code changes:
 - **`eas.json` → `submit.production`** ships `REPLACE_…` placeholders. Fill:
   - **iOS**: an App Store Connect **API key** (ASC → Users and Access → Integrations → App
     Store Connect API → generate). Save the `.p8` at `./secrets/asc-api-key.p8`; set
     `ascApiKeyId`, `ascApiKeyIssuerId`, `ascAppId` (numeric App Store id), `appleTeamId`.
   - **Android**: the Play **service-account JSON** (same file as `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`)
     at `./secrets/play-service-account.json`; bump `track` (`internal` → `production`) when ready.
-- **`./secrets/` is gitignored** — drop the key files there; nothing is committed.
+- **`./secrets/` is gitignored** - drop the key files there; nothing is committed.
 - **EAS project link**: `eas login` then `eas init` (writes `extra.eas.projectId` into app.json).
-  Required before any build/submit — the one step that needs your Expo account.
+  Required before any build/submit - the one step that needs your Expo account.
 - **App-side build env** (`EXPO_PUBLIC_*`): set per build via the profile `env` in `eas.json`
-  or `eas env:create` — `EXPO_PUBLIC_GOOGLE_WEB/IOS/ANDROID_CLIENT_ID`, `EXPO_PUBLIC_SENTRY_DSN`.
+  or `eas env:create` - `EXPO_PUBLIC_GOOGLE_WEB/IOS/ANDROID_CLIENT_ID`, `EXPO_PUBLIC_SENTRY_DSN`.
   Unset is safe (Google button hidden, Sentry off).
 - **Android `google-services.json`** (FCM push): drop it at `./google-services.json` (or point
   `GOOGLE_SERVICES_JSON` at its path). `app.config.js` auto-wires `android.googleServicesFile`
@@ -152,19 +152,19 @@ These are **wired with placeholders** — you only drop in values/files, no code
 ---
 
 ## What's implemented vs. what still needs code
-Most flows that used to be stubs are now **fully implemented and fail-closed** — real keys are
+Most flows that used to be stubs are now **fully implemented and fail-closed** - real keys are
 the only missing piece:
-- ✅ **Social sign-in** — Apple + Google JWKS signature verification (`jose` / `google-auth-library`).
-- ✅ **Receipt validation** — App Store Server API (JWS, Apple root certs pinned) + Play
+- ✅ **Social sign-in** - Apple + Google JWKS signature verification (`jose` / `google-auth-library`).
+- ✅ **Receipt validation** - App Store Server API (JWS, Apple root certs pinned) + Play
   Developer API (`androidpublisher` v3), SKU-allowlisted, fail-closed.
-- ✅ **Subscription webhooks** — Apple JWS verification + Google Pub/Sub OIDC verification (§5).
-- ✅ **Migrations** — committed migrations run automatically on any Postgres connection;
+- ✅ **Subscription webhooks** - Apple JWS verification + Google Pub/Sub OIDC verification (§5).
+- ✅ **Migrations** - committed migrations run automatically on any Postgres connection;
   `synchronize` is local-SQLite-dev only.
-- ✅ **Push registration** — the app registers device tokens on sign-in.
-- ✅ **Push send transport** — `push.service.ts` sends for real: APNs token-auth (ES256 JWT via
-  `jose`) + FCM HTTP v1 (service-account JSON). Credential-gated — logs `sent:false` until keys
+- ✅ **Push registration** - the app registers device tokens on sign-in.
+- ✅ **Push send transport** - `push.service.ts` sends for real: APNs token-auth (ES256 JWT via
+  `jose`) + FCM HTTP v1 (service-account JSON). Credential-gated - logs `sent:false` until keys
   are set, never crashes.
 
 **Nothing in the integration layer is a stub anymore.** Real keys (and, for Android push, a
-`google-services.json`) are the only missing pieces — every code path already exists and
+`google-services.json`) are the only missing pieces - every code path already exists and
 fail-closes safely without them.

@@ -8,7 +8,7 @@ import { useTheme } from '@/theme';
 
 // Turns CalmCarry's already-true architecture (anonymous analytics, no ad SDK,
 // NSPrivacyTracking=false, no sleep recording, kids never tracked) into a visible,
-// plain-English trust surface — the thing BetterSleep buries in an external policy.
+// plain-English trust surface - the thing BetterSleep buries in an external policy.
 const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string }[] = [
   {
     icon: 'eye-off',

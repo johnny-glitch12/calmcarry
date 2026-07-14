@@ -9,7 +9,7 @@ import { useTheme } from '@/theme';
 
 // Parse a DD/MM/YYYY (or YYYY-MM-DD) input into an ISO date (YYYY-MM-DD), or null if
 // blank/invalid. The server's purchaseDate is @IsOptional+@IsISO8601, which REJECTS
-// empty strings and non-ISO formats — so we only ever send a real ISO value.
+// empty strings and non-ISO formats - so we only ever send a real ISO value.
 function toISODate(input: string): string | null {
   const s = input.trim();
   if (!s) return null;
@@ -60,7 +60,7 @@ export function RegisterDevice() {
       setError('Enter the serial from the base of your device (e.g. GC-2026-…).');
       return;
     }
-    // Purchase date is OPTIONAL — but if entered it MUST be a real date we can send
+    // Purchase date is OPTIONAL - but if entered it MUST be a real date we can send
     // as ISO8601 (the server rejects anything else). Never send a blank/non-ISO value.
     let iso: string | null = null;
     if (date.trim()) {

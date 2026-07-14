@@ -73,13 +73,13 @@ type ProfileValue = {
   enterKids: () => Promise<void>;
   renameProfile: (id: string, name: string) => void;
   removeProfile: (id: string) => void;
-  /** the active profile's type — drives kids vs adult content everywhere */
+  /** the active profile's type - drives kids vs adult content everywhere */
   mode: AppMode;
-  /** switch to the (first) profile of this type — kept for the Adult/Kids toggles + parent gate */
+  /** switch to the (first) profile of this type - kept for the Adult/Kids toggles + parent gate */
   setMode: (m: AppMode) => void;
   intent: Intent | null;
   setIntent: (i: Intent) => void;
-  /** how the user is "arriving" tonight — drives a warmer, tailored recommendation */
+  /** how the user is "arriving" tonight - drives a warmer, tailored recommendation */
   feeling: Feeling | null;
   setFeeling: (f: Feeling) => void;
   needsCheckIn: boolean;
@@ -122,7 +122,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [intent, setIntentState] = useState<Intent | null>(null);
   const [feeling, setFeelingState] = useState<Feeling | null>(null);
   const [needsCheckIn, setNeedsCheckIn] = useState(false);
-  // recently-played track ids — read once per app open so the recommendation is
+  // recently-played track ids - read once per app open so the recommendation is
   // stable within a session but fresh each open (local-only, never a server profile).
   const [recents, setRecents] = useState<string[]>([]);
   // taste + survey signals for the recommender: saved favourites, and the
@@ -131,7 +131,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [surveyGoals, setSurveyGoals] = useState<string[]>([]);
   const [surveyMoments, setSurveyMoments] = useState<string[]>([]);
-  // completed wind-downs per track — the behavioural "it worked" signal (read once
+  // completed wind-downs per track - the behavioural "it worked" signal (read once
   // per open, like recents, so recommendations stay stable within a session)
   const [trackWins, setTrackWins] = useState<Record<string, number>>({});
   const { token, user, isPremium } = useAuth();
@@ -174,7 +174,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       if (resolvedId !== savedActive) setJSON(KEYS.activeId, resolvedId);
       if (legacyMode != null) remove(KEYS.legacyMode);
       setIntentState(savedIntent);
-      // NOTE: `feeling` is intentionally NOT persisted — the nightly check-in is
+      // NOTE: `feeling` is intentionally NOT persisted - the nightly check-in is
       // forward-looking and must never become a stored mood log (build plan §3/§14).
       setRecents(await getRecents());
       setFavorites(await getFavorites());
@@ -189,7 +189,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  // Once signed in, the backend household is the source of truth — adopt it so
+  // Once signed in, the backend household is the source of truth - adopt it so
   // profiles sync across devices. Offline-safe: failure keeps the local set.
   useEffect(() => {
     if (!hydrated || !token || token === 'local') return;
@@ -207,14 +207,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         );
       })
       .catch(() => {
-        /* offline — keep the local household */
+        /* offline - keep the local household */
       });
     return () => {
       alive = false;
     };
   }, [hydrated, token]);
 
-  // Cross-device prefs sync — ONE best-effort reconcile per sign-in/app open.
+  // Cross-device prefs sync - ONE best-effort reconcile per sign-in/app open.
   // Local answers win; the server fills gaps; favourites merge as a union (losing
   // a save is worse than gaining one). The merged set is pushed back so the next
   // device sees it. Feeling is NEVER synced (build plan §3/§14) and the server
@@ -255,7 +255,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         if (storedGoal != null) push.sleepGoalHours = storedGoal;
         await api.putPrefs(token, push);
       } catch {
-        /* offline — purely best-effort */
+        /* offline - purely best-effort */
       }
     })();
     return () => {
@@ -288,11 +288,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setJSON(KEYS.profiles, DEFAULT_PROFILES);
     setJSON(KEYS.activeId, DEFAULT_PROFILES[0].id);
     remove(KEYS.intent);
-    // COPPA: consent is per-account — never let account B inherit account A's
+    // COPPA: consent is per-account - never let account B inherit account A's
     // consent (it would skip the consent screen for a new kid profile). Also drop
     // the previous account's on-disk recents (memory was cleared above) and the
     // device-presence cache (account B must not see account A's orb-aware ritual
-    // copy — sign-out clears it too, but an in-place account switch skips signOut).
+    // copy - sign-out clears it too, but an in-place account switch skips signOut).
     clearCoppaConsent();
     clearRecents();
     remove('cc.devices'); // KEYS.devices in lib/store (this file's KEYS is profile-local)
@@ -330,9 +330,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Enter Kids mode from any entry point. Restores the two invariants the seeded "Leo"
-  // used to provide implicitly: (1) COPPA consent is on file, (2) a kid profile exists —
+  // used to provide implicitly: (1) COPPA consent is on file, (2) a kid profile exists -
   // creating a neutral "Little one" (a parent can rename it in Family) when the household
-  // has none — then switches to that kid. Consent is recorded only when absent so the
+  // has none - then switches to that kid. Consent is recorded only when absent so the
   // original acceptedAt timestamp is preserved. The affirmative, informed consent UI lives
   // in Family.tsx; this backfill guarantees no kid can exist without a consent record.
   const enterKids = useCallback(async () => {
@@ -341,7 +341,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!kid) {
       kid = addProfile('Little one', 'kids');
       // addProfile only queues a setProfiles update; profilesRef syncs in an effect AFTER
-      // render, so update it now — otherwise setActiveProfile's membership guard would
+      // render, so update it now - otherwise setActiveProfile's membership guard would
       // reject this brand-new id.
       profilesRef.current = [...profilesRef.current, kid];
     }
@@ -386,7 +386,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   // Picking a feeling also seeds the matching intent, so the recommendation is
   // tailored even if the user stops after the first (feeling) tap. The feeling
-  // stays in memory only (never persisted — no mood log); the intent it seeds is
+  // stays in memory only (never persisted - no mood log); the intent it seeds is
   // a content preference and is fine to persist.
   const setFeeling = useCallback((f: Feeling) => {
     setFeelingState(f);
@@ -404,7 +404,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const mode = activeProfile.type;
 
   // Publish the active mode so first-party analytics NEVER tracks a child profile
-  // (COPPA — kids are never tracked). Keeps the gate out of every call site.
+  // (COPPA - kids are never tracked). Keeps the gate out of every call site.
   useEffect(() => {
     setAnalyticsMode(mode);
     setMonitoringMode(mode); // COPPA: pause crash/error reporting in kids mode too
@@ -428,7 +428,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     [feeling, intent, mode, recents, favorites, surveyGoals, surveyMoments, trackWins]
   );
   const recommendedTrackIds = useMemo(() => recommendTracks(recoAnswer), [recoAnswer]);
-  // The HERO / "Begin wind-down" CTA must be free-PLAYABLE for a free, non-kids user —
+  // The HERO / "Begin wind-down" CTA must be free-PLAYABLE for a free, non-kids user -
   // the core nightly loop can't dead-end at a paywall (that's the BetterSleep tease we
   // exist to avoid). Locked picks still sit in recommendedTrackIds for the labelled
   // "More for tonight" upsell rail; premium + kids get the true top pick.

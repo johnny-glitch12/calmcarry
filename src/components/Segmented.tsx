@@ -22,7 +22,7 @@ const LABEL = { fontFamily: fonts.semibold, fontSize: 13, letterSpacing: 0.2 } a
 
 /**
  * One segment. The active label color CROSSFADES (two stacked Text layers, opacity)
- * over the same dur.sheet as the thumb slide — no single-frame color hard-cut, no
+ * over the same dur.sheet as the thumb slide - no single-frame color hard-cut, no
  * font-weight swap (which would re-measure and jitter the label under the moving
  * thumb). Reduced motion jumps instantly. Transform/opacity only.
  */
@@ -54,7 +54,7 @@ function Segment({
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      {/* the two stacked label layers are decorative (crossfade only) — the Pressable's
+      {/* the two stacked label layers are decorative (crossfade only) - the Pressable's
           accessibilityLabel is the single authoritative name, so hide them from AT to
           avoid a double-announce ("Adult Adult") */}
       <View
@@ -69,7 +69,7 @@ function Segment({
 }
 
 /**
- * Segmented — pill segmented control. The active thumb slides under dur.sheet
+ * Segmented - pill segmented control. The active thumb slides under dur.sheet
  * ease.out; labels crossfade color (not a hard swap). Theme-aware. (Local
  * control, not the bottom tab bar, so a contained thumb slide is on-spec.)
  */
@@ -85,7 +85,7 @@ export function Segmented({ options, value, onChange }: Props) {
 
   const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
 
-  // The thumb tracks the controlled `value` — so it also glides back if a parent
+  // The thumb tracks the controlled `value` - so it also glides back if a parent
   // rejects/reverts the change (e.g. a cancelled parent gate), never desyncing
   // from the labels. First placement (and reduced motion) snaps; later moves slide.
   useEffect(() => {

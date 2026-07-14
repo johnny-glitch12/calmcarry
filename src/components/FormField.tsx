@@ -35,7 +35,7 @@ type Props = {
 };
 
 /**
- * FormField (DESIGN_SYSTEM §6) — labelled text input with an animated sage
+ * FormField (DESIGN_SYSTEM §6) - labelled text input with an animated sage
  * focus ring (line→accent over dur.press), error state in coral, optional
  * leading icon, multiline. Renders in both light + night themes.
  */
@@ -64,7 +64,7 @@ export function FormField({
     err.value = reduced ? (error ? 1 : 0) : withTiming(error ? 1 : 0, { duration: dur.press, easing: ease.press });
   }, [error, reduced, err]);
 
-  // iOS has no live regions — announce the error when it lands so a screen-reader
+  // iOS has no live regions - announce the error when it lands so a screen-reader
   // user hears WHY the submit didn't go through (Android uses the live region below)
   useEffect(() => {
     if (error) AccessibilityInfo.announceForAccessibility(error);
@@ -141,7 +141,7 @@ export function FormField({
         />
       </Animated.View>
       {error ? (
-        // coral (#EF626C) is only ~2.77:1 on the cream surface (fails AA) — use a
+        // coral (#EF626C) is only ~2.77:1 on the cream surface (fails AA) - use a
         // darker red by day, the brighter coral by night where it clears contrast.
         <Appear enter={dur.nav}>
           <AppText

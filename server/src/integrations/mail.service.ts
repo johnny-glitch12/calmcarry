@@ -10,7 +10,7 @@ export interface Mail {
 /**
  * Transactional mail (password reset / email verification). Credential-safe like
  * every integration here: without SMTP_URL it LOGS the message (subject + a
- * redacted recipient — never the code body) and reports sent:false, so dev and
+ * redacted recipient - never the code body) and reports sent:false, so dev and
  * preview environments work end-to-end while prod refuses to pretend.
  * With SMTP_URL set (e.g. smtps://user:pass@host:465) it sends via nodemailer.
  */

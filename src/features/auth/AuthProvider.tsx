@@ -30,10 +30,10 @@ type AuthValue = {
   /** Sign in with a verified Apple/Google identity token (backend creates/resumes the account) */
   socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  /** change password while signed in — adopts the fresh session pair the server
+  /** change password while signed in - adopts the fresh session pair the server
    *  returns (it revokes every other device's refresh token) */
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
-  /** unlock premium. DEMO stand-in for an Apple/Google IAP — production validates
+  /** unlock premium. DEMO stand-in for an Apple/Google IAP - production validates
    *  the store receipt server-side before setting the entitlement. */
   activatePremium: () => Promise<void>;
 };
@@ -42,10 +42,10 @@ const FREE: ApiEntitlement = { tier: 'free', status: 'active' };
 const CALM: ApiEntitlement = { tier: 'calm_plan', status: 'active' };
 
 /** Is this entitlement live premium? A cached calm_plan self-expires at `expiresAt`
- *  even OFFLINE — so "buy one month, then stay offline" can't keep premium forever
+ *  even OFFLINE - so "buy one month, then stay offline" can't keep premium forever
  *  (the server is the online source of truth; this bounds the offline window). A
  *  missing/malformed expiry means "no expiry" (fail-open: never lock out a valid
- *  premium user on a bad date — the comp/preview session has no expiry by design). */
+ *  premium user on a bad date - the comp/preview session has no expiry by design). */
 function isLivePremium(e: ApiEntitlement): boolean {
   if (e.tier !== 'calm_plan' || e.status !== 'active') return false;
   if (!e.expiresAt) return true;
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (!alive) return;
       if (savedToken && savedUser) {
-        // A 'local' token is the OFFLINE sentinel — it has NO server to confirm it, so a
+        // A 'local' token is the OFFLINE sentinel - it has NO server to confirm it, so a
         // persisted 'local' session can only ever be FREE (premium requires a validated
         // purchase). Force FREE on restore so a planted cc.token='local' +
         // cc.entitlement=calm_plan can't grant permanent, un-reconcilable premium
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Expired access token (7d) + a stored refresh token (60d) → rotate and
           // retry ONCE, so a returning user never sits on a dead session where
           // every authed call silently 401s. Network errors (no .status) still
-          // mean offline — keep the cached session untouched.
+          // mean offline - keep the cached session untouched.
           const status = (e as { status?: number })?.status;
           if (status === 401 && savedToken !== 'local') {
             try {
@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setJSON(KEYS.user, me.user);
               setJSON(KEYS.entitlement, me.entitlement);
             } catch {
-              // the refresh token is dead too — this is a real signed-out state,
+              // the refresh token is dead too - this is a real signed-out state,
               // not offline; clear the session instead of faking "signed in"
               if (!alive) return;
               setToken(null);
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement, KEYS.devices)]);
             }
           }
-          /* otherwise offline — keep cached session */
+          /* otherwise offline - keep cached session */
         }
       } else {
         setStatus('guest');
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Re-validate entitlement whenever the app returns to the foreground. Without
-  // this, isPremium is frozen at launch — an expired/revoked subscription (changed
+  // this, isPremium is frozen at launch - an expired/revoked subscription (changed
   // store-side) would keep unlocking content until the next cold start. Uses
   // /billing/status (the expiry-aware gate), and stays offline-safe.
   useEffect(() => {
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setEntitlement(ent);
         await setJSON(KEYS.entitlement, ent);
       } catch {
-        /* offline — keep the cached entitlement */
+        /* offline - keep the cached entitlement */
       }
     });
     return () => sub.remove();
@@ -199,7 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         ent = (await api.me(t)).entitlement;
       } catch {
-        /* keep FREE until /me confirms — never assume premium */
+        /* keep FREE until /me confirms - never assume premium */
       }
       setToken(t);
       setUser(u);
@@ -214,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const status = (e as { status?: number })?.status;
       if (status === 401 || status === 403) throw e;
       // genuine network/offline → a local FREE session so the app stays usable.
-      // Premium is NEVER granted offline — it requires a validated purchase.
+      // Premium is NEVER granted offline - it requires a validated purchase.
       const u: ApiUser = { email, name: nameFromEmail(email) };
       setToken('local');
       setUser(u);
@@ -269,19 +269,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    // revoke the refresh token server-side (real logout, not just local) — best-effort
+    // revoke the refresh token server-side (real logout, not just local) - best-effort
     try {
       const rt = await secureGet(KEYS.refresh);
       if (rt) api.logout(rt).catch(() => {});
     } catch {
-      /* secure store unavailable — still clear locally */
+      /* secure store unavailable - still clear locally */
     }
     clearAudioSourceCache(); // drop any signed CDN URLs so the next account re-resolves cleanly
     setToken(null);
     setUser(null);
     setEntitlement(FREE);
     setStatus('guest');
-    // KEYS.devices: the device-presence cache drives orb-aware ritual copy — a
+    // KEYS.devices: the device-presence cache drives orb-aware ritual copy - a
     // signed-out phone must never keep claiming the previous account's orb
     await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement, KEYS.devices)]);
   }, []);
@@ -290,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (currentPassword: string, newPassword: string) => {
       if (!token || token === 'local') throw new Error('offline');
       const r = await api.changePassword(token, currentPassword, newPassword);
-      // adopt the fresh pair — every previous refresh token (all devices) is now revoked
+      // adopt the fresh pair - every previous refresh token (all devices) is now revoked
       setToken(r.token);
       await secureSet(KEYS.token, r.token);
       if (r.refreshToken) await secureSet(KEYS.refresh, r.refreshToken);

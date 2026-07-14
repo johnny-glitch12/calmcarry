@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * owners.prefs — cross-device preference sync (allow-listed keys only; the
+ * owners.prefs - cross-device preference sync (allow-listed keys only; the
  * service layer rejects anything else, and mood/feeling is never accepted).
  * Additive only; simple-json maps to text in both SQLite and Postgres.
  */

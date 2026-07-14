@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Adds community_posts.mix — an optional, anonymous shared sound-machine mix
+ * Adds community_posts.mix - an optional, anonymous shared sound-machine mix
  * (name + per-sound levels), stored as JSON text. Additive + nullable; ordinary
  * text wins leave it null.
  */

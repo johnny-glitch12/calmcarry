@@ -53,11 +53,11 @@ Register a throwaway account to smoke-test authenticated routes locally.
 
 | Method | Path                  | Auth   | Description |
 | ------ | --------------------- | ------ | ----------- |
-| GET    | `/health`             | —      | `{ ok: true }` liveness check |
-| POST   | `/auth/register`      | —      | `{ email, password, name }` → `{ token, user }` (creates Owner + `free` entitlement) |
-| POST   | `/auth/login`         | —      | `{ email, password }` → `{ token, user }` (JWT, 30d) |
+| GET    | `/health`             | -      | `{ ok: true }` liveness check |
+| POST   | `/auth/register`      | -      | `{ email, password, name }` → `{ token, user }` (creates Owner + `free` entitlement) |
+| POST   | `/auth/login`         | -      | `{ email, password }` → `{ token, user }` (JWT, 30d) |
 | GET    | `/me`                 | Bearer | `{ user, entitlement: { tier, status } }` |
-| GET    | `/content`            | —      | `{ tracks: ContentItem[], programs: Program[] }` (public; includes `locked`) |
+| GET    | `/content`            | -      | `{ tracks: ContentItem[], programs: Program[] }` (public; includes `locked`) |
 | GET    | `/devices`            | Bearer | `Device[]` with their warranty claims |
 | POST   | `/devices`            | Bearer | `{ serial, purchaseDate?, retailer? }` → `Device` (warranty `active`, 24mo) |
 | POST   | `/devices/:id/claims` | Bearer | `{ type, description }` → `WarrantyClaim` (`submitted`, reference `GC-CLM-####`) |

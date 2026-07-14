@@ -1,7 +1,7 @@
 #!/bin/bash
 # Generate the in-house sound-library expansion (2026-07): fans & hums, wind,
 # little-ones beds, shaped variants of our licensed recordings, blends, and
-# noise variants. Every output is HONEST audio — synthesized in-house or
+# noise variants. Every output is HONEST audio - synthesized in-house or
 # derived from the already-credited recordings in assets/audio (see
 # AUDIO_CREDITS). Loop beds: blends 75s, synth/shaped 90s, piano pieces 120s.
 # Profile matches the bundle: mono, 96kbps mp3, loudnorm.

@@ -17,7 +17,7 @@ import { AppText } from './AppText';
 import { Crossfade, SelectionOverlay } from './anim';
 
 /**
- * VoiceRow — one selectable voice row. Owns its own animated press scale so the
+ * VoiceRow - one selectable voice row. Owns its own animated press scale so the
  * press feedback glides (dur.press + ease.press) instead of snapping instantly,
  * matching CoverCard / LibraryCard. Transform + opacity only.
  */
@@ -62,7 +62,7 @@ function VoiceRow({
 }
 
 /**
- * VoicePicker — choose the guided-session voice. Each row plays a real bedtime
+ * VoicePicker - choose the guided-session voice. Each row plays a real bedtime
  * sample on tap (so you hear it before choosing) and the pick is persisted.
  * Used both in onboarding and in Settings. Press feedback + haptics.
  */

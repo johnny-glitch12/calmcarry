@@ -1,10 +1,10 @@
 import { getJSON, setJSON } from './store';
 
 /**
- * Real, gentle program progress (build plan: "gentle, non-clinical progress —
+ * Real, gentle program progress (build plan: "gentle, non-clinical progress -
  * never a streak you can fail"). We store which step-days the user has completed
  * per program; a step is marked done when its session is actually played. Nothing
- * resets or penalises — it only ever fills in.
+ * resets or penalises - it only ever fills in.
  */
 const KEY = 'cc.programProgress';
 type ProgressMap = Record<string, number[]>;

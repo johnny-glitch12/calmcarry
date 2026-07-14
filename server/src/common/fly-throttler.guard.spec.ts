@@ -1,6 +1,6 @@
 import { FlyThrottlerGuard } from './fly-throttler.guard';
 
-// getTracker decides whose bucket a request lands in — behind Fly's proxy this
+// getTracker decides whose bucket a request lands in - behind Fly's proxy this
 // MUST be the real client IP (Fly-Client-IP), never the shared socket address.
 describe('FlyThrottlerGuard.getTracker', () => {
   const guard = Object.create(FlyThrottlerGuard.prototype) as FlyThrottlerGuard;

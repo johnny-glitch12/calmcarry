@@ -23,7 +23,7 @@ export type IapResult = { ok: boolean; reason?: string };
 
 export const iapSupported = true;
 
-// PLACEHOLDER product ids — keep in sync with App Store Connect / Play + the
+// PLACEHOLDER product ids - keep in sync with App Store Connect / Play + the
 // backend PREMIUM_PRODUCT_IDS allowlist + content/store.ts PRICING.
 const PRODUCT_IDS: Record<'monthly' | 'annual', string> = {
   monthly: 'calmcarry.premium.monthly',
@@ -99,7 +99,7 @@ export async function purchaseSubscription(plan: 'monthly' | 'annual', token: st
 /**
  * Localized store prices for the paywall (e.g. "£5.99", "A$99.99") so UK/CA/AU
  * buyers never see a USD string that mismatches what StoreKit/Play actually charges.
- * Returns {} on any failure — the caller falls back to the static USD PRICING.
+ * Returns {} on any failure - the caller falls back to the static USD PRICING.
  */
 export async function fetchLocalizedPrices(): Promise<Partial<Record<'monthly' | 'annual', string>>> {
   try {

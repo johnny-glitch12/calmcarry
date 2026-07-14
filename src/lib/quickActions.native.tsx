@@ -23,18 +23,18 @@ export function QuickActionsBridge() {
         title: 'Begin wind-down',
         subtitle: 'One tap to tonight’s session',
         // SF Symbol on iOS; Android shows the app badge default (a bundled drawable
-        // needs the config plugin + a design asset — fine to add later)
+        // needs the config plugin + a design asset - fine to add later)
         icon: Platform.OS === 'ios' ? 'symbol:moon.stars' : undefined,
         params: { href: '/night-door' },
       },
     ]).catch(() => {
-      /* unsupported launcher — quietly no shortcuts */
+      /* unsupported launcher - quietly no shortcuts */
     });
   }, []);
   return null;
 }
 
-/** True when the app was cold-started from a home-screen quick action — the launch
+/** True when the app was cold-started from a home-screen quick action - the launch
  *  routing skips its own Night Door push then, or the two would stack. */
 export function hasInitialQuickAction(): boolean {
   return QuickActions.initial != null;

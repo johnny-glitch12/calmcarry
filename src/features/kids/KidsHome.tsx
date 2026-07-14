@@ -22,11 +22,11 @@ import { dur, ease, fonts, kidsDusk, STAGGER, themes, useTheme } from '@/theme';
 
 // Big, friendly, calm sounds a child can pick on their own. These MUST be free
 // tracks: kids mode now honors the paywall (it used to exempt it), so a child's
-// default picks can't be locked premium — that would dead-end at a paywall they
+// default picks can't be locked premium - that would dead-end at a paywall they
 // can't pass. (forest/rainfall are premium; slow-tide/gymnopedie/brown-noise are free.)
 const KID_SOUNDS = ['slow-tide', 'gymnopedie', 'brown-noise'];
 
-/** Parent-gate lock — discreet so a child won't wander out, findable for a grown-up. */
+/** Parent-gate lock - discreet so a child won't wander out, findable for a grown-up. */
 function ParentLock({ onPress }: { onPress: () => void }) {
   const { c } = useTheme();
   return (
@@ -50,7 +50,7 @@ function ParentLock({ onPress }: { onPress: () => void }) {
   );
 }
 
-/** One earned star gently pops + fades in on a short stagger — a small, playful
+/** One earned star gently pops + fades in on a short stagger - a small, playful
  *  "count-in" a child feels rewarded by. Un-earned stars rest. Reduced motion →
  *  static. transform + opacity only. */
 function KidStar({ earned, index, color }: { earned: boolean; index: number; color: string }) {
@@ -63,7 +63,7 @@ function KidStar({ earned, index, color }: { earned: boolean; index: number; col
       return;
     }
     // reset to 0 first so a star that becomes earned AFTER mount (a night earned
-    // on this session) replays the scale+fade count-in — which also softens the
+    // on this session) replays the scale+fade count-in - which also softens the
     // line→accent color prop swap landing at the same moment.
     p.value = 0;
     p.value = withDelay(index * STAGGER, withTiming(1, { duration: dur.sheet, easing: ease.out }));
@@ -97,7 +97,7 @@ function Stars({ count }: { count: number }) {
 export function KidsHome() {
   const router = useRouter();
   // KidsHome ALWAYS renders in "cozy dusk". Read the kids theme DIRECTLY, not via
-  // useTheme() — this component body runs ABOVE its own <Screen>'s ThemeProvider,
+  // useTheme() - this component body runs ABOVE its own <Screen>'s ThemeProvider,
   // so an ambient useTheme() would hand back the app's light/night appearance and
   // paint the content in the wrong palette (the child cards were rendering night
   // tokens under a kids gradient). Child components below (rendered inside <Screen
@@ -107,11 +107,11 @@ export function KidsHome() {
   const { activeProfile } = useProfile();
   const [nights, setNights] = useState(0);
   // greet the CHILD on the active kid profile ("Mia"), not the parent's account
-  // name — that's the whole point of named profiles
+  // name - that's the whole point of named profiles
   const profileName = activeProfile?.type === 'kids' ? activeProfile.name : null;
   const firstName = (profileName ?? user?.name ?? '').split(' ')[0] || 'friend';
 
-  // real count — earned by actually doing calm sessions (see markCalmNightToday).
+  // real count - earned by actually doing calm sessions (see markCalmNightToday).
   // Refetch on focus so a star appears right after a session, not only on first mount.
   useFocusEffect(
     useCallback(() => {
@@ -122,7 +122,7 @@ export function KidsHome() {
   const story = TRACKS['penguin'] ?? TRACKS['slow-tide'];
 
   return (
-    // "cozy dusk" — its own warm bedtime palette (not the adult light/night themes)
+    // "cozy dusk" - its own warm bedtime palette (not the adult light/night themes)
     <Screen mode="kids" scroll tabBarSpacing>
       {/* greeting + grown-up lock */}
       <Reveal index={0}>
@@ -139,7 +139,7 @@ export function KidsHome() {
         </View>
       </Reveal>
 
-      {/* BIG story hero — the one thing they came for: above the fold, one tap to play */}
+      {/* BIG story hero - the one thing they came for: above the fold, one tap to play */}
       <Reveal index={1} style={{ marginTop: 22 }}>
         <PressableScale
           onPress={() => router.push(`/player?id=${story.id}`)}
@@ -235,7 +235,7 @@ export function KidsHome() {
                 style={{ width: '31%' }}>
                 <View style={{ aspectRatio: 1, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
                   <KidsCover scene={sceneForTrack(id)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-                  {/* soft bottom scrim just behind the label — keeps the cozy scene visible
+                  {/* soft bottom scrim just behind the label - keeps the cozy scene visible
                       up top while the white title stays legible over the dusk sky */}
                   <LinearGradient colors={['transparent', 'rgba(15,30,25,0.85)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }} />
                   <View style={{ flex: 1, justifyContent: 'flex-end', padding: 10 }}>

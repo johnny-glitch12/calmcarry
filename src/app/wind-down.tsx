@@ -67,7 +67,7 @@ function ControlButton({
   );
 }
 
-/** Play/pause button — press feedback + a crossfade between the two glyphs. */
+/** Play/pause button - press feedback + a crossfade between the two glyphs. */
 function PlayPauseButton({ paused, onPress }: { paused: boolean; onPress: () => void }) {
   const { c } = useTheme();
   const size = 64;
@@ -114,7 +114,7 @@ export default function WindDownScreen() {
   const insets = useSafeAreaInsets();
   const [paused, setPaused] = useState(false);
   // device-aware ritual line: invite the orb into the ritual ONLY when one is
-  // registered on this account (cc.devices cache) — never instruct a non-owner
+  // registered on this account (cc.devices cache) - never instruct a non-owner
   // to hold hardware they don't have
   const [hasOrb, setHasOrb] = useState(false);
   useEffect(() => {
@@ -132,8 +132,8 @@ export default function WindDownScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const track = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
   // Entitlement gate: a locked premium track must NOT stream in the wind-down for a
-  // free user — that bundled asset plays with no server signed-url check, so it would
-  // bypass the paywall. Gate on entitlement ONLY (kids mode is NOT an exemption — a
+  // free user - that bundled asset plays with no server signed-url check, so it would
+  // bypass the paywall. Gate on entitlement ONLY (kids mode is NOT an exemption - a
   // free profile switched to kids used to unlock everything). We send free users to
   // the paywall UP FRONT rather than starting a 20-minute ritual and yanking it away.
   const lockedForUser = !!track.locked && !isPremium;
@@ -147,7 +147,7 @@ export default function WindDownScreen() {
   // wind-down, and on Android an active lock-screen session is what keeps
   // background audio alive past ~3 minutes (expo-audio v56 docs).
   useEffect(() => {
-    if (lockedForUser) return; // redirecting to the paywall — never announce paid audio
+    if (lockedForUser) return; // redirecting to the paywall - never announce paid audio
     try {
       const art = RNImage.resolveAssetSource(covers[track.cover])?.uri;
       audio.setActiveForLockScreen(
@@ -171,7 +171,7 @@ export default function WindDownScreen() {
     if (lockedForUser) router.replace(`/unlock?id=${track.id}` as Href);
   }, [lockedForUser, track.id, router]);
   useEffect(() => {
-    if (lockedForUser) return; // gated — redirecting to the paywall, never play paid audio
+    if (lockedForUser) return; // gated - redirecting to the paywall, never play paid audio
     audio.loop = true;
     audio.play();
     markFirstAudio(); // time-to-first-audio: fires once per cold start
@@ -199,7 +199,7 @@ export default function WindDownScreen() {
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Real session-end: a wall-clock countdown (pause-aware) that actually fades the
-  // audio to silence at 20:00 — the on-screen "fades to silence" promise was cosmetic
+  // audio to silence at 20:00 - the on-screen "fades to silence" promise was cosmetic
   // (the loop would otherwise play all night). Independent of reduced-motion.
   const endTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -214,7 +214,7 @@ export default function WindDownScreen() {
     if (endTimer.current) clearTimeout(endTimer.current);
     let v = 1;
     const step = () => {
-      v -= 0.07; // ~5s gentle fade — long enough not to startle someone drifting off
+      v -= 0.07; // ~5s gentle fade - long enough not to startle someone drifting off
       try {
         audio.volume = Math.max(v, 0);
       } catch {
@@ -260,20 +260,20 @@ export default function WindDownScreen() {
     if (idleTimer.current) clearTimeout(idleTimer.current);
     idleTimer.current = setTimeout(() => {
       // idle auto-dim is AMBIENT (system-initiated, video-player pattern): it should
-      // melt away unnoticed — deliberately slower than any user-facing exit.
+      // melt away unnoticed - deliberately slower than any user-facing exit.
       controls.value = withTiming(0, { duration: dur.modal, easing: ease.inOut });
     }, 4000);
   }, [controls, reduced]);
 
   const wake = useCallback(() => {
-    // wake is user feedback — answers the tap instantly
+    // wake is user feedback - answers the tap instantly
     controls.value = withTiming(1, { duration: dur.press, easing: ease.press });
     if (!paused) scheduleIdleFade();
   }, [controls, paused, scheduleIdleFade]);
 
   // mount: spring the centerpiece in, start the session, arm the idle fade
   useEffect(() => {
-    if (lockedForUser) return; // gated — don't arm timers/progress while redirecting to paywall
+    if (lockedForUser) return; // gated - don't arm timers/progress while redirecting to paywall
     if (!reduced) {
       enter.value = withTiming(1, { duration: dur.modal, easing: ease.out });
     }
@@ -315,7 +315,7 @@ export default function WindDownScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused, endSession, reduced]);
 
-  // Reduced motion: no continuous ring animation — advance the ring + scrim in calm
+  // Reduced motion: no continuous ring animation - advance the ring + scrim in calm
   // 1s discrete steps off the real countdown, so time-left is still reflected.
   useEffect(() => {
     if (!reduced) return;
@@ -346,7 +346,7 @@ export default function WindDownScreen() {
     cancelAnimation(progress);
     if (endTimer.current) clearTimeout(endTimer.current);
     if (fadeRef.current) clearTimeout(fadeRef.current);
-    // Manually bailing out of the ritual should just make the screen GONE — not spawn a
+    // Manually bailing out of the ritual should just make the screen GONE - not spawn a
     // "were you settled?" question with more light and another aimed tap. The peak-end
     // check-in stays for the natural 20:00 end in endSession, where reflection fits.
     if (router.canGoBack()) router.back();
@@ -369,7 +369,7 @@ export default function WindDownScreen() {
       mode="night"
       backdrop={
         // immersive scene: tonight's artwork under a deep scrim (heavier than the
-        // player's — the wind-down should feel like the room lights going down)
+        // player's - the wind-down should feel like the room lights going down)
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <Image source={covers[track.cover]} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
           <LinearGradient
@@ -388,12 +388,12 @@ export default function WindDownScreen() {
       {/* tap anywhere to wake the controls back up */}
       <Pressable style={{ flex: 1 }} onPress={wake} accessibilityRole="none">
         <View style={{ flex: 1 }}>
-          {/* top bar: close chevron — always visible (never fades; it's the one close affordance) */}
+          {/* top bar: close chevron - always visible (never fades; it's the one close affordance) */}
           <View style={{ flexDirection: 'row', justifyContent: 'flex-start', paddingTop: 4 }}>
             <ControlButton icon="chevron-down" size={40} iconRatio={0.5} onPress={close} label="Close wind-down" />
           </View>
 
-          {/* centerpiece — springs in on mount */}
+          {/* centerpiece - springs in on mount */}
           <Animated.View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }, centerStyle]}>
             <Animated.View style={controlsStyle}>
               <AppText variant="caption" tone="dim" style={{ marginBottom: 16, textAlign: 'center' }}>
@@ -409,7 +409,7 @@ export default function WindDownScreen() {
                 strokeWidth={3}
                 style={{ position: 'absolute' }}
               />
-              {/* burst: one soft arrival bloom as the wind-down begins — the room exhales.
+              {/* burst: one soft arrival bloom as the wind-down begins - the room exhales.
                   paced: the orb breathes the TAUGHT 4s-in/6s-out rhythm, not the ambient
                   symmetric loop, so following it with your own breath actually works */}
               <GlowOrb size={216} reserveGlow breathing={!paused} paced burst />
@@ -428,7 +428,7 @@ export default function WindDownScreen() {
             </Animated.View>
           </Animated.View>
 
-          {/* controls — pause persists; it's the one control that survives the idle fade.
+          {/* controls - pause persists; it's the one control that survives the idle fade.
               bottom inset folded in: Screen only reserves left/right edges */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: Math.max(insets.bottom, 12) + 12 }}>
             <PlayPauseButton paused={paused} onPress={togglePause} />

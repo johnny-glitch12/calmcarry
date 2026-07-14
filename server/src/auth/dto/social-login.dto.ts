@@ -9,7 +9,7 @@ export class SocialLoginDto {
   @MaxLength(8192)
   idToken: string;
 
-  // Apple one-time authorization code — exchanged for a refresh token so the account
+  // Apple one-time authorization code - exchanged for a refresh token so the account
   // can be revoked on deletion. Optional; Google sign-in omits it.
   @IsOptional()
   @IsString()

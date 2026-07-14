@@ -20,7 +20,7 @@ export interface SocialIdentity {
  * Resolves a Sign in with Apple / Google identity token to a trusted identity by
  * VERIFYING it against the provider's published JWKS (RS256 signature) and checking
  * issuer + audience + expiry. Without that, the token's email/sub claims are
- * attacker-controllable (account takeover) — so this is the real gate, not a decode.
+ * attacker-controllable (account takeover) - so this is the real gate, not a decode.
  *
  * Fails CLOSED when the provider's client id isn't configured (we can't bind the
  * token's `aud` without it), so an unconfigured environment refuses social sign-in
@@ -99,7 +99,7 @@ export class SocialAuthService {
   }
 
   /** Exchange an authorization code for a refresh token (stored to revoke on deletion).
-   *  Returns null when unconfigured or on any failure — never throws. */
+   *  Returns null when unconfigured or on any failure - never throws. */
   async appleExchangeCode(code: string): Promise<string | null> {
     if (!this.appleRevokeConfigured() || !code) return null;
     try {
@@ -138,7 +138,7 @@ export class SocialAuthService {
         }),
       });
     } catch {
-      /* best-effort — never block deletion on a revoke failure */
+      /* best-effort - never block deletion on a revoke failure */
     }
   }
 }

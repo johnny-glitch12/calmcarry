@@ -13,7 +13,7 @@ import { ReceiptValidationService } from './receipt-validation.service';
 
 // The money path has no automated coverage; these lock the anti-fraud guards that
 // decide whether a verified transaction actually grants premium.
-describe('ReceiptValidationService — money-path guards', () => {
+describe('ReceiptValidationService - money-path guards', () => {
   const svc = new ReceiptValidationService();
   // planFor + assertPremiumSku are private; exercise them directly (they ARE the guard).
   const planFor = (id?: string): string => (svc as unknown as { planFor(id?: string): string }).planFor(id);

@@ -17,11 +17,11 @@ const S: Record<
 };
 
 /**
- * The CalmCarry brand lockup — a crisp, theme-tinted TEXT wordmark we fully
+ * The CalmCarry brand lockup - a crisp, theme-tinted TEXT wordmark we fully
  * control (razor-sharp at any size, tints per theme): bold rounded lowercase
  * "calm" with a small registered mark, stacked over a letter-spaced "CARRY"
  * kicker. Tinted deep-eucalyptus on light, luminous glow on night. The ® is a
- * flex-aligned superscript (no inline transform — that wouldn't lift on web).
+ * flex-aligned superscript (no inline transform - that wouldn't lift on web).
  * Single accessibilityLabel "CalmCarry"; the mark is exempt from Dynamic Type.
  */
 export function Logo({
@@ -40,7 +40,7 @@ export function Logo({
 
   return (
     <View accessible accessibilityRole="image" accessibilityLabel="CalmCarry" style={[{ alignItems: 'center' }, style]}>
-      {/* "calm" + superscript ® — flex-start so the small ® hangs at the cap top */}
+      {/* "calm" + superscript ® - flex-start so the small ® hangs at the cap top */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
         <Text
           allowFontScaling={false}
@@ -64,7 +64,7 @@ export function Logo({
         </Text>
       </View>
 
-      {/* "CARRY" kicker — letter-spaced caps, optically re-centered for the trailing track */}
+      {/* "CARRY" kicker - letter-spaced caps, optically re-centered for the trailing track */}
       <Text
         allowFontScaling={false}
         importantForAccessibility="no-hide-descendants"

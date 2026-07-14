@@ -45,7 +45,7 @@ import { dur, ease, STAGGER, useTheme } from '@/theme';
 const NEW_THIS_MONTH = ['rain-piano', 'beach-fire', 'rain-forest', 'fan'];
 
 
-// A short, warm "how you're arriving" label for the hero — reflects ONLY this
+// A short, warm "how you're arriving" label for the hero - reflects ONLY this
 // session's check-in answer (never persisted, never a stored mood log; §3/§14).
 const ARRIVAL_PERSONA: Record<Feeling, string> = {
   racing: 'Busy mind',
@@ -83,7 +83,7 @@ function CalmNightStar({ earned, index, color }: { earned: boolean; index: numbe
       return;
     }
     // reset to 0 first so a star that becomes earned AFTER mount (a night earned
-    // on this session) replays the scale+fade count-in — which also softens the
+    // on this session) replays the scale+fade count-in - which also softens the
     // line→accent color prop swap landing at the same moment.
     p.value = 0;
     p.value = withDelay(index * STAGGER, withTiming(1, { duration: dur.sheet, easing: ease.out }));
@@ -99,13 +99,13 @@ function CalmNightStar({ earned, index, color }: { earned: boolean; index: numbe
   );
 }
 
-/** The hero ritual panel — personalised to the recommended track (the one
+/** The hero ritual panel - personalised to the recommended track (the one
  *  "notice-first" element, §7). The track's own watercolour cover fills the card
  *  as a warm backdrop under a left-dark scrim, with a clean play affordance. */
 function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: string; onPress: () => void }) {
   const { c } = useTheme();
   const track = TRACKS[trackId] ?? TRACKS['slow-tide'];
-  // "rest it in your palm" only when a device is registered (cc.devices cache) —
+  // "rest it in your palm" only when a device is registered (cc.devices cache) -
   // a non-owner's hero shouldn't instruct them to hold hardware they don't have
   const [hasOrb, setHasOrb] = useState(false);
   useEffect(() => {
@@ -135,7 +135,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           justifyContent: 'center',
           ...c.shadow,
         }}>
-        {/* the pick's own watercolour art as a warm backdrop — the hero is the first
+        {/* the pick's own watercolour art as a warm backdrop - the hero is the first
             thing the eye lands on, so it should feel like a place, not a flat panel */}
         <Image
           source={covers[track.cover]}
@@ -154,7 +154,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
           style={StyleSheet.absoluteFill}
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 12 }}>
-          {/* on-scrim text — intentionally lighter than the night SURFACE tokens: this
+          {/* on-scrim text - intentionally lighter than the night SURFACE tokens: this
               sits over the dark image scrim above, so it needs photo-overlay contrast,
               not surface contrast (light-mint accent + near-white title). Kept as
               literals rather than theme tokens because it's an image-overlay context. */}
@@ -191,7 +191,7 @@ export function TonightScreen() {
   const { mode, intent, feeling, recommendedTrackId, recommendedTrackIds, recommendationReason, needsCheckIn, dismissCheckIn, profiles } = useProfile();
   const { c } = useTheme();
 
-  // real ownership badge — only shown if the purchase email matches a Glow order.
+  // real ownership badge - only shown if the purchase email matches a Glow order.
   // Refetched on focus so a device just claimed/registered surfaces the chip here.
   const [verifiedOwner, setVerifiedOwner] = useState(false);
   useFocusEffect(
@@ -215,11 +215,11 @@ export function TonightScreen() {
 
   // Night flags drive dimming + the honest 3 a.m. rescue copy. Declared up here so the
   // check-in guard below can suppress the survey during the small hours.
-  // Only claim "3 a.m." in the actual small hours — otherwise it reads as a lie at 11pm.
+  // Only claim "3 a.m." in the actual small hours - otherwise it reads as a lie at 11pm.
   const deepNight = hour >= 1 && hour < 5;
   const lateNight = hour < 5 || hour >= 23;
   // The whole wind-down window, not just the small hours. A nightly bedtime user
-  // opens the app at 20:00-22:59 — nothing may interpose itself there.
+  // opens the app at 20:00-22:59 - nothing may interpose itself there.
   const windDownHours = hour >= 20 || hour < 5;
 
   // offer the forward-looking check-in after >12h away (once per open, not a forced loop).
@@ -227,7 +227,7 @@ export function TonightScreen() {
   const checkInShown = useRef(false);
   useEffect(() => {
     // Never during wind-down hours (20:00-05:00): a full-screen survey between a tired
-    // person and any sound is the exact cognitive load the app promises to remove — and
+    // person and any sound is the exact cognitive load the app promises to remove - and
     // for a nightly bedtime user, 21:30 IS the app's prime time. Not dismissed when
     // skipped, so the check-in simply waits until a daytime open.
     if (needsCheckIn && !kids && !windDownHours && !checkInShown.current) {
@@ -261,11 +261,11 @@ export function TonightScreen() {
 
   // NOTE deliberately NO timed/recurring upsell card here. Monetization is
   // contextual-only: the Calm Plan appears when the user taps locked content
-  // (they are already asking) — never as unsolicited commercial pressure on a
+  // (they are already asking) - never as unsolicited commercial pressure on a
   // calm home screen. The one exception is cc.pendingTrial above, which fulfils
   // an explicit "Start my free trial" tap from the funnel.
 
-  // gentle, non-failable "calm nights" progress — earned by real sessions, shown
+  // gentle, non-failable "calm nights" progress - earned by real sessions, shown
   // to adults too (kids get the playful stars on KidsHome). Refreshed on focus.
   const [nights, setNights] = useState(0);
   useFocusEffect(
@@ -278,7 +278,7 @@ export function TonightScreen() {
     }, [])
   );
 
-  // "New this month" — driven by the CMS catalog flag so the shelf rotates without
+  // "New this month" - driven by the CMS catalog flag so the shelf rotates without
   // an app release. Falls back to the bundled default; only shows tracks we ship.
   const [newIds, setNewIds] = useState<string[]>(NEW_THIS_MONTH);
   useEffect(() => {
@@ -349,12 +349,12 @@ export function TonightScreen() {
   // player); the ritual is the labelled button beneath. Same word for both was the
   // one incoherence the user audit caught in the two side-by-side affordances.
   const heroKicker = feeling ? FEELING_MAP[feeling].line : (recommendationReason ?? (intent ? INTENT_REASON[intent] : "Tonight’s pick"));
-  // the next-best matches after the hero pick — ranked to the check-in answer
+  // the next-best matches after the hero pick - ranked to the check-in answer
   const moreIds = recommendedTrackIds.filter((id) => id !== recommendedTrackId).slice(0, 4);
-  // free 3 a.m. rescue — copy adapts to the hour but always lands on a free track
+  // free 3 a.m. rescue - copy adapts to the hour but always lands on a free track
   const rescueLabel = deepNight ? 'Awake at 3 a.m.?' : lateNight ? 'Can’t sleep?' : 'Can’t switch off right now?';
 
-  // The hero is the one "notice-first" action, so it must ALWAYS be fully playable —
+  // The hero is the one "notice-first" action, so it must ALWAYS be fully playable -
   // never bait a free user into 60s of calm then a paywall mid-drift. If the pick is
   // locked, swap to the best free alternative (or the always-free rescue). Locked tracks
   // stay in the shelves, where the lock badge is visible before the tap.
@@ -422,14 +422,14 @@ export function TonightScreen() {
         </AppText>
       </Reveal>
 
-      {/* status — device congruency + entitlement */}
+      {/* status - device congruency + entitlement */}
       <Reveal index={1}>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           {feeling ? <StatusChip confirm label={ARRIVAL_PERSONA[feeling]} icon="user" /> : null}
           {verifiedOwner ? <StatusChip confirm label="Registered owner" icon="shield" /> : null}
           {/* re-key on entitlement so the chip settles in (scale+fade) when a purchase
               flips it, instead of the label/icon hard-swapping */}
-          {/* free state gets a neutral moon, not a padlock — a lock must never be the
+          {/* free state gets a neutral moon, not a padlock - a lock must never be the
               first status a groggy free user reads on their own home screen */}
           <StatusChip key={isPremium ? 'unlocked' : 'free'} confirm label={isPremium ? 'Library unlocked' : 'Free tier'} icon={isPremium ? 'unlock' : 'moon'} />
         </View>
@@ -444,7 +444,7 @@ export function TonightScreen() {
         </Reveal>
       ) : null}
 
-      {/* how CalmCarry works — newcomer intro (fades in AND out — dismissing the
+      {/* how CalmCarry works - newcomer intro (fades in AND out - dismissing the
           X should never hard-vanish the card) */}
       {!hiwDismissed && tourDone ? (
         <Appear enter={dur.sheet}>
@@ -469,13 +469,13 @@ export function TonightScreen() {
         </Appear>
       ) : null}
 
-      {/* Always-free rescue — the honest answer to a 3 a.m. wake-up: one tap into a
+      {/* Always-free rescue - the honest answer to a 3 a.m. wake-up: one tap into a
           free drift, no sign-in, no paywall, no quiz. Hidden in kids mode. In the deep
           night this jumps ABOVE the hero (see rescueReveal below) so the feature built
           for the small-hours wake-up is the first thing a groggy user reaches. */}
       {!kids && deepNight ? rescueReveal : null}
 
-      {/* personalised hero — always fully playable via heroId (never baits a free user
+      {/* personalised hero - always fully playable via heroId (never baits a free user
           into a mid-drift paywall). Demoted one Reveal index in the deep night so the
           rescue row above fades in first. */}
       <Reveal index={deepNight ? 5 : 3}>
@@ -483,7 +483,7 @@ export function TonightScreen() {
           ref={heroRef}
           style={{ marginTop: 20 }}
           onLayout={() => {
-            // register the hero's window rect for the hands-on tour spotlight —
+            // register the hero's window rect for the hands-on tour spotlight -
             // measured after the entrance settles so the rect isn't mid-flight
             setTimeout(() => {
               heroRef.current?.measureInWindow?.((x, y, width, height) => {
@@ -503,7 +503,7 @@ export function TonightScreen() {
         </View>
       </Reveal>
 
-      {/* primary CTA — self-explaining so no comparison with the hero is needed */}
+      {/* primary CTA - self-explaining so no comparison with the hero is needed */}
       <Reveal index={deepNight ? 6 : 4}>
         <View style={{ marginTop: 16 }}>
           <PrimaryButton
@@ -516,7 +516,7 @@ export function TonightScreen() {
       {/* Not deep-night: the rescue row keeps its original position below the CTA. */}
       {!kids && !deepNight ? rescueReveal : null}
 
-      {/* First-7-nights free starter arc — only for newcomers (0 calm nights), so it's
+      {/* First-7-nights free starter arc - only for newcomers (0 calm nights), so it's
           an invitation, not clutter once the ritual is established. */}
       {nights === 0 ? (
         <Appear enter={dur.sheet}>
@@ -544,7 +544,7 @@ export function TonightScreen() {
         </Appear>
       ) : null}
 
-      {/* gentle calm-nights progress — only once at least one night is earned, so
+      {/* gentle calm-nights progress - only once at least one night is earned, so
           it's an encouragement, never an empty "0/7" guilt-meter */}
       {nights > 0 ? (
         <Appear enter={dur.sheet}>
@@ -571,7 +571,7 @@ export function TonightScreen() {
         </Appear>
       ) : null}
 
-      {/* new this month — fresh content (CMS-driven in production) */}
+      {/* new this month - fresh content (CMS-driven in production) */}
       <Reveal index={5}>
         <View style={{ marginTop: 32 }}>
           <SectionHeader kicker="Fresh" title="New this month" />

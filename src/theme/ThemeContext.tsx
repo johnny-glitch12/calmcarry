@@ -5,7 +5,7 @@ import { themes, type ThemeColors, type ThemeMode } from './colors';
 /**
  * CalmCarry is a HYBRID: light by day (utility screens), a brand-derived
  * deep-eucalyptus NIGHT theme for wind-down/player/sleep screens. Theme is
- * therefore PER-SCREEN, not driven by the OS color scheme — each screen wraps
+ * therefore PER-SCREEN, not driven by the OS color scheme - each screen wraps
  * its subtree in <ThemeProvider mode="light|night">.
  */
 

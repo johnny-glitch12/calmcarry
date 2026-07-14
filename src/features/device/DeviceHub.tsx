@@ -64,12 +64,12 @@ function ActionRow({
   );
 }
 
-/** The on-screen "device twin" — its own component so useTheme() resolves to the
+/** The on-screen "device twin" - its own component so useTheme() resolves to the
  *  Screen's theme (not the default-light context above it). Mirrors the physical
  *  Glow Orb for app↔device congruency. Data-driven: only shows a serial + a
- *  "Registered" badge when a real device is registered to this account — NOT
+ *  "Registered" badge when a real device is registered to this account - NOT
  *  "Authentic"/"genuine" (there's no manufactured-serial registry to verify that;
- *  registration ≠ authenticity). No Bluetooth, no sync — honest copy only. */
+ *  registration ≠ authenticity). No Bluetooth, no sync - honest copy only. */
 function DeviceSummaryCard({
   device,
   loading,
@@ -133,7 +133,7 @@ export function DeviceHub() {
   const { token } = useAuth();
   const back = () => (router.canGoBack() ? router.back() : router.replace('/you'));
 
-  // real, account-bound device — refetched on focus so a just-registered Orb appears
+  // real, account-bound device - refetched on focus so a just-registered Orb appears
   const signedIn = !!token && token !== 'local';
   const [device, setDevice] = useState<ApiDevice | null>(null);
   const [loading, setLoading] = useState(signedIn);
@@ -178,7 +178,7 @@ export function DeviceHub() {
         </AppText>
       </Reveal>
 
-      {/* device summary card — the on-screen twin of the physical orb (data-driven) */}
+      {/* device summary card - the on-screen twin of the physical orb (data-driven) */}
       <Reveal index={1} style={{ marginTop: 20 }}>
         <DeviceSummaryCard
           device={device}
@@ -188,7 +188,7 @@ export function DeviceHub() {
         />
       </Reveal>
 
-      {/* buy / replace — hardware is sold on the web store (no IAP for physical goods) */}
+      {/* buy / replace - hardware is sold on the web store (no IAP for physical goods) */}
       <Reveal index={2} style={{ marginTop: 24 }}>
         <SectionHeader kicker="Get more" title="Add a Glow Orb" />
         <ActionRow
@@ -203,7 +203,7 @@ export function DeviceHub() {
       <Reveal index={3} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Manage" title="Device & warranty" />
         <View style={{ gap: 12 }}>
-          {/* one row for the account's actual state — a registered device shows its
+          {/* one row for the account's actual state - a registered device shows its
               registration; no device shows how to register (never both) */}
           {device ? (
             <Appear key="registered">

@@ -35,7 +35,7 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files — never commit real secrets (but keep .env.example tracked)
+# local env files - never commit real secrets (but keep .env.example tracked)
 .env
 .env.*
 !.env.example

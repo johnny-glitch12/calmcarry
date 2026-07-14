@@ -13,7 +13,7 @@ import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { dur, ease } from '@/theme';
 
 /**
- * Bramble — the sleepy CalmCarry bear. The kid-facing companion (and a nod to the
+ * Bramble - the sleepy CalmCarry bear. The kid-facing companion (and a nod to the
  * "kids mini bear" device). Soft sage + cream, closed sleepy eyes, rosy cheeks.
  * Breathes gently (reduced-motion gated). Pure SVG so it scales crisply.
  */
@@ -22,7 +22,7 @@ export function BearMascot({ size = 140, style, breathing = true }: { size?: num
   const t = useSharedValue(0);
   useEffect(() => {
     if (reduced || !breathing) {
-      // rest at scale 1 — a legible resting state even if reduced-motion (or the
+      // rest at scale 1 - a legible resting state even if reduced-motion (or the
       // breathing prop) flips mid-loop, instead of freezing mid-breath
       t.value = 0;
       return;

@@ -9,7 +9,7 @@ Any hosted Postgres works (Fly Postgres, Neon, Supabase, RDS). Grab its connecti
 ## 2. Set secrets (example: Fly.io)
 ```sh
 fly launch --no-deploy            # creates the app from fly.toml
-# DB: create a Neon project (free tier is fine at launch) and copy its URL —
+# DB: create a Neon project (free tier is fine at launch) and copy its URL -
 # use sslmode=require&channel_binding=require; TLS is VERIFIED by the app.
 fly secrets set \
   JWT_SECRET="$(openssl rand -hex 32)" \
@@ -20,7 +20,7 @@ fly secrets set \
   APPLE_ROOT_CERTS_DIR="/app/certs/apple"
 # No DB bootstrap step: a fresh Postgres is migrated automatically on first boot
 # (migrationsRun applies the committed migrations). CDN keys are NOT needed for
-# v1 (bundled-only audio) — set them only with STREAMING_ENABLED=true later.
+# v1 (bundled-only audio) - set them only with STREAMING_ENABLED=true later.
 ```
 
 ## 3. Deploy
@@ -28,16 +28,16 @@ fly secrets set \
 fly deploy
 ```
 
-## 4. Remaining integration keys (optional — each degrades gracefully without them)
+## 4. Remaining integration keys (optional - each degrades gracefully without them)
 Set when ready (see `.env.example` for the full list):
 `APPLE_IAP_SHARED_SECRET`, `APPLE_APP_APPLE_ID`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`,
 `APPLE_SIGNIN_CLIENT_ID`, `GOOGLE_SIGNIN_CLIENT_ID`, `SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`,
 `SHOPIFY_WEBHOOK_SECRET`, and push: APNs (`APNS_KEY_P8` / `APNS_KEY_ID` / `APNS_TEAM_ID`)
-+ FCM v1 (`FIREBASE_SERVICE_ACCOUNT_JSON`). (Legacy `FCM_SERVER_KEY` is gone — FCM v1 only.)
++ FCM v1 (`FIREBASE_SERVICE_ACCOUNT_JSON`). (Legacy `FCM_SERVER_KEY` is gone - FCM v1 only.)
 
 ## 5. Point the app at it
 The Expo build profiles already pin `EXPO_PUBLIC_API_BASE=https://api.theglowcompany.co`
-(eas.json) — create the DNS CNAME `api.theglowcompany.co → calmcarry-api.fly.dev`, then
+(eas.json) - create the DNS CNAME `api.theglowcompany.co → calmcarry-api.fly.dev`, then
 `fly certs add api.theglowcompany.co`. The binary never encodes the host choice again.
 
 ## Notes

@@ -26,7 +26,7 @@ type Props = {
 };
 
 /**
- * PrimaryButton — brand-sage pill. Press feedback: scale 0.97 + Haptics Impact
+ * PrimaryButton - brand-sage pill. Press feedback: scale 0.97 + Haptics Impact
  * Light, ease.press dur.press, no ripple (DESIGN_SYSTEM §4). Renders in both themes.
  */
 export function PrimaryButton({
@@ -58,7 +58,7 @@ export function PrimaryButton({
   }, [loading, reduced, l]);
 
   // Press IN dips quickly (eased); release SETTLES on a soft spring so the button
-  // breathes back rather than snapping — a calmer, more soothing tap.
+  // breathes back rather than snapping - a calmer, more soothing tap.
   const press = (to: number) => {
     if (reduced) {
       scale.value = to;

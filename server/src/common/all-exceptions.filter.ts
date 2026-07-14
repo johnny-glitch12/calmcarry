@@ -10,7 +10,7 @@ import { HttpAdapterHost } from '@nestjs/core';
 import * as Sentry from '@sentry/node';
 
 /**
- * Global exception filter — logs unhandled 5xx errors (with stack) and method/path so
+ * Global exception filter - logs unhandled 5xx errors (with stack) and method/path so
  * server failures and failed store-webhook verifications are VISIBLE in the host logs.
  * This is the wiring point for an error aggregator (e.g. Sentry Node) once a DSN is
  * provisioned. Client (4xx) errors stay quiet. Preserves the normal Nest response.

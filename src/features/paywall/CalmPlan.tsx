@@ -55,7 +55,7 @@ function PlanCard({
           overflow: 'hidden',
           borderRadius: 16,
           padding: 16,
-          // Resting look. borderWidth is CONSTANT (2) between states — the selected
+          // Resting look. borderWidth is CONSTANT (2) between states - the selected
           // fill/border color eases in via the overlay, so there's no 1px shift.
           backgroundColor: c.surface,
           borderWidth: 2,
@@ -126,7 +126,7 @@ export function CalmPlan() {
   const { c } = useTheme();
   const router = useRouter();
   // contextual paywall: when a locked-content tap brought the user here (unlock?id=x),
-  // acknowledge WHY they're here — the ask lands better as an answer than a pitch
+  // acknowledge WHY they're here - the ask lands better as an answer than a pitch
   const { id } = useLocalSearchParams<{ id?: string }>();
   const contextTrack = id ? TRACKS[id] : undefined;
   const { activatePremium, isPremium, token } = useAuth();
@@ -135,7 +135,7 @@ export function CalmPlan() {
   const [note, setNote] = useState<string | null>(null);
   const [prices, setPrices] = useState<Partial<Record<PlanId, string>>>({});
   const mounted = useRef(true);
-  // Concrete first-renewal date for the disclosure — "from July 15" beats "after the
+  // Concrete first-renewal date for the disclosure - "from July 15" beats "after the
   // trial" for surprise-charge trust. "from", not "on": the store receipt owns the
   // exact renewal instant, so we bound it honestly without asserting the minute.
   // Computed in the mount effect (not render) to keep render pure.
@@ -199,11 +199,11 @@ export function CalmPlan() {
       ok = r.ok;
       if (!ok && r.reason === 'cancelled') {
         if (mounted.current) setBusy(false);
-        return; // user backed out — no error nag
+        return; // user backed out - no error nag
       }
     } else if (live && __DEV__) {
       // DEV/web ONLY: exercise the server validation path (dev-fallback grants without
-      // keys). Gated to __DEV__ so a PRODUCTION web build can never fake a receipt —
+      // keys). Gated to __DEV__ so a PRODUCTION web build can never fake a receipt -
       // real purchases happen on-device via Apple/Google IAP.
       try {
         const r = await api.billingValidate(token, {
@@ -231,7 +231,7 @@ export function CalmPlan() {
     else setNote('We couldn’t complete the purchase. Please try again.');
   };
 
-  // Restore: re-applies an EXISTING entitlement only — never starts a new purchase.
+  // Restore: re-applies an EXISTING entitlement only - never starts a new purchase.
   const restore = async () => {
     if (busy) return;
     if (!live) {
@@ -305,7 +305,7 @@ export function CalmPlan() {
       </Reveal>
 
       <Reveal index={3} style={{ marginTop: 20, gap: 10 }}>
-        {/* honest-billing beats — the exact pains BetterSleep-style apps inflict */}
+        {/* honest-billing beats - the exact pains BetterSleep-style apps inflict */}
         <View style={{ gap: 8, marginBottom: 2 }}>
           {['One subscription covers your whole household', 'Cancel in one tap, anytime. No email, no phone call'].map((t) => (
             <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -345,7 +345,7 @@ export function CalmPlan() {
               : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
           </AppText>
         </Appear>
-        {/* the way out: a single, full-width quiet dismiss right under the button — not lost among the legal links */}
+        {/* the way out: a single, full-width quiet dismiss right under the button - not lost among the legal links */}
         <PressableScale onPress={close} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14 }}>
           <AppText variant="bodyMedium" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
             Maybe later
@@ -361,7 +361,7 @@ export function CalmPlan() {
           <PressableScale onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Privacy</AppText>
           </PressableScale>
-          {/* the cancel path lives at the point of sale, not buried in Account —
+          {/* the cancel path lives at the point of sale, not buried in Account -
               the disclosure names store settings; this link actually opens them */}
           <PressableScale onPress={() => Linking.openURL(SUBSCRIPTION_URL).catch(() => {})} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ paddingVertical: 8 }}>
             <AppText variant="label" tone="muted">Manage subscription</AppText>

@@ -49,7 +49,7 @@ class TrackBatchDto {
 
 // This intake is PUBLIC + unauthenticated, so never trust client props. Whitelist a
 // small set of known funnel keys with primitive, length-capped values and DROP
-// everything else (no nested objects, no arbitrary/PII fields) — COPPA + storage safety.
+// everything else (no nested objects, no arbitrary/PII fields) - COPPA + storage safety.
 const ALLOWED_PROP_KEYS = ['plan', 'category', 'contentId', 'source', 'step', 'variant', 'first', 'completed', 'durationSec', 'reason'];
 function sanitizeProps(props?: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!props || typeof props !== 'object') return null;
@@ -74,7 +74,7 @@ function safeKeyEqual(a: string, b: string): boolean {
 
 /**
  * First-party analytics intake (build plan §15). Writes are public + anonymous (no
- * auth, no PII) — the client posts funnel events keyed by an install id. The funnel
+ * auth, no PII) - the client posts funnel events keyed by an install id. The funnel
  * readout is admin-only (CMS key header).
  */
 @Controller('events')
@@ -98,7 +98,7 @@ export class EventsController {
     return { ok: true, accepted };
   }
 
-  // Admin-only funnel readout — guarded by the CMS key header (same pattern as the
+  // Admin-only funnel readout - guarded by the CMS key header (same pattern as the
   // CMS content write). Not rate-limited tight so the dashboard can poll it.
   @Get('funnel')
   async funnel(@Headers('x-cms-key') key: string) {

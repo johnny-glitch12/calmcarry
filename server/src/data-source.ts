@@ -21,7 +21,7 @@ import {
   WarrantyClaim,
 } from './entities';
 
-// Single source of truth for the entity set — shared by the Nest app (app.module)
+// Single source of truth for the entity set - shared by the Nest app (app.module)
 // and the TypeORM CLI (this file), so generated migrations always match runtime.
 export const ENTITIES = [
   Owner,
@@ -43,14 +43,14 @@ export const ENTITIES = [
 ];
 
 // Used ONLY by the TypeORM CLI (migration:generate / run / revert). The runtime
-// connection is configured in app.module. synchronize is OFF here — the CLI never
+// connection is configured in app.module. synchronize is OFF here - the CLI never
 // mutates schema implicitly.
 export const dataSourceOptions: DataSourceOptions = {
   ...(config.databaseUrl
     ? {
         type: 'postgres' as const,
         url: config.databaseUrl,
-        // verified TLS — mirror of app.module.ts (COPPA-scoped data)
+        // verified TLS - mirror of app.module.ts (COPPA-scoped data)
         ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
       }
     : { type: 'better-sqlite3' as const, database: config.dbPath }),

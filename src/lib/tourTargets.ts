@@ -2,7 +2,7 @@
  * Tiny registry of on-screen rects for the hands-on tour. Real UI (the Home
  * hero, tab-bar items) measures itself into here; the tour overlay subscribes
  * and draws its spotlight around the live positions. No context, no re-render
- * coupling — the couple of writers and one reader stay fully decoupled.
+ * coupling - the couple of writers and one reader stay fully decoupled.
  */
 export type TargetRect = { x: number; y: number; width: number; height: number };
 

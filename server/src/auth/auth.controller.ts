@@ -19,7 +19,7 @@ import { RegisterDto } from './dto/register.dto';
 import { SocialLoginDto } from './dto/social-login.dto';
 import { JwtAuthGuard, JwtPayload } from './jwt-auth.guard';
 
-// Tight per-IP limit on credential endpoints — blunts brute force / credential
+// Tight per-IP limit on credential endpoints - blunts brute force / credential
 // stuffing (10 attempts/minute) on top of the global 120/min limit.
 const CREDENTIAL_THROTTLE = { default: { ttl: 60_000, limit: 10 } };
 
@@ -42,7 +42,7 @@ export class AuthController {
     return this.authService.register(dto.email, dto.password, dto.name);
   }
 
-  // Password reset: request an emailed 6-digit code (always 200 — no account
+  // Password reset: request an emailed 6-digit code (always 200 - no account
   // enumeration), then trade code + new password for a fresh session.
   @Throttle(CREDENTIAL_THROTTLE)
   @Post('auth/password/forgot')
@@ -75,14 +75,14 @@ export class AuthController {
     return this.authService.refresh(dto.refreshToken);
   }
 
-  // Server-side logout — revokes the refresh token (idempotent).
+  // Server-side logout - revokes the refresh token (idempotent).
   @Post('auth/logout')
   @HttpCode(200)
   logout(@Body() dto: RefreshDto) {
     return this.authService.logout(dto.refreshToken);
   }
 
-  // Email verification (soft gate) — send / confirm the 6-digit code.
+  // Email verification (soft gate) - send / confirm the 6-digit code.
   @UseGuards(JwtAuthGuard)
   @Post('auth/email/send-verification')
   @HttpCode(200)
@@ -116,12 +116,12 @@ export class AuthController {
       owner.id,
     );
     // Report tier through the SAME expiry-aware gate the paywall uses, so a lapsed
-    // (active-but-expired) calm_plan reads as 'free' — never as live premium.
+    // (active-but-expired) calm_plan reads as 'free' - never as live premium.
     const isPremium = this.usersService.isPremiumEntitlement(entitlement);
 
     return {
       user: { id: owner.id, email: owner.email, name: owner.name, emailVerified: owner.emailVerified },
-      // Include expiresAt so the client can self-expire a cached premium OFFLINE —
+      // Include expiresAt so the client can self-expire a cached premium OFFLINE -
       // otherwise "buy one month, then stay offline" keeps premium indefinitely.
       entitlement: isPremium
         ? {
@@ -142,7 +142,7 @@ export class AuthController {
     return { ok: true, deleted: true };
   }
 
-  // Data-access export (GDPR Art.15 / UK-GDPR / AU APP 12) — the caller's own data.
+  // Data-access export (GDPR Art.15 / UK-GDPR / AU APP 12) - the caller's own data.
   @UseGuards(JwtAuthGuard)
   @Get('me/export')
   exportMe(@CurrentUser() user: JwtPayload) {

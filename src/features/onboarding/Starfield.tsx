@@ -12,9 +12,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 /**
- * Starfield — literal white star lights that twinkle over the night sky. Each
+ * Starfield - literal white star lights that twinkle over the night sky. Each
  * star fades between a dim and a bright opacity on its own gentle cadence (with a
- * randomised delay) so they flicker independently, like a real sky — never a
+ * randomised delay) so they flicker independently, like a real sky - never a
  * synchronised strobe. Reduced motion → the stars hold at a steady glow. Layout is
  * computed ONCE at module load (deterministic pseudo-random), never during render.
  */
@@ -117,7 +117,7 @@ function StarDot({ s }: { s: Star }) {
 
 export function Starfield() {
   const reduced = useReducedMotion();
-  // the whole sky drifts gently — a slow, low-amplitude sway (X and Y on different
+  // the whole sky drifts gently - a slow, low-amplitude sway (X and Y on different
   // long periods so it never looks like a straight slide). Twinkle rides on top.
   const sx = useSharedValue(-6);
   const sy = useSharedValue(-4);

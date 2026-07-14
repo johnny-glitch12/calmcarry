@@ -31,7 +31,7 @@ import { UsersModule } from './users/users.module';
         ? {
             type: 'postgres' as const,
             url: config.databaseUrl,
-            // VERIFIED TLS — this DB holds COPPA-scoped data (kid first names).
+            // VERIFIED TLS - this DB holds COPPA-scoped data (kid first names).
             // Neon/hosted PG present valid certs; never skip verification.
             ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
           }
@@ -45,10 +45,10 @@ import { UsersModule } from './users/users.module';
       synchronize: !config.databaseUrl && !isProd,
       migrationsRun: !!config.databaseUrl,
     }),
-    // Global DoS backstop: 300 requests / 10s / IP — generous enough for a normal
+    // Global DoS backstop: 300 requests / 10s / IP - generous enough for a normal
     // app-open burst + shared (NAT) networks, still caps sustained abuse. Auth
     // routes are tightened to 10/min; /health is skipped (monitoring pings it).
-    // NOTE: storage is in-memory (per instance) — on serverless/multi-instance these
+    // NOTE: storage is in-memory (per instance) - on serverless/multi-instance these
     // counters don't hold across machines. Set REDIS_URL + a shared ThrottlerStorage
     // (e.g. @nest-lab/throttler-storage-redis) before scaling horizontally.
     ThrottlerModule.forRoot([{ ttl: 10_000, limit: 300 }]),

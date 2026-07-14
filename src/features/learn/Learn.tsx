@@ -15,7 +15,7 @@ export function LearnList() {
   const router = useRouter();
   const items = Object.values(LEARN);
   // pushed stack screen: standard back chevron (edge-swipe alone isn't discoverable),
-  // and no tabBarSpacing — the tab bar never renders on stack routes
+  // and no tabBarSpacing - the tab bar never renders on stack routes
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   return (
     <Screen mode="light" scroll>
@@ -61,7 +61,7 @@ export function LearnList() {
         ))}
       </Reveal>
 
-      {/* Learn is where people go when sleep isn't working — a quiet support block
+      {/* Learn is where people go when sleep isn't working - a quiet support block
           at the foot reads as care, not alarm (pre-mortem: the signpost was buried
           in About only). */}
       <Reveal index={2} style={{ marginTop: 28 }}>

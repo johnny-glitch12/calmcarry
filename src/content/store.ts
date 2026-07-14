@@ -3,10 +3,10 @@ import { Alert, Linking, Platform } from 'react-native';
 /**
  * Two purchase paths (definitive build plan):
  *  • The DIGITAL premium subscription is bought IN-APP via Apple/Google IAP
- *    ($12.99/mo or $69.99/yr) — see PRICING below + the paywall.
+ *    ($12.99/mo or $69.99/yr) - see PRICING below + the paywall.
  *  • The PHYSICAL Glow Orb is hardware. Apple & Google forbid IAP for physical
  *    goods, so the device is sold via external secure web checkout (this file).
- * Device price/currency/shipping are shown at checkout — we don't hard-code them.
+ * Device price/currency/shipping are shown at checkout - we don't hard-code them.
  */
 export const STORE_URL = 'https://www.theglowcompany.co';
 
@@ -14,7 +14,7 @@ export const STORE_URL = 'https://www.theglowcompany.co';
 export const DEVICE_CHECKOUT_URL = `${STORE_URL}/products/calmcarry-glow-orb`;
 
 /** OS subscription management (honest billing: one-tap cancel routes here). Must be
- *  store-correct per platform — an Apple URL on Android is a Play-review + ROSCA fail. */
+ *  store-correct per platform - an Apple URL on Android is a Play-review + ROSCA fail. */
 export const SUBSCRIPTION_URL =
   Platform.OS === 'android'
     ? 'https://play.google.com/store/account/subscriptions'
@@ -29,7 +29,7 @@ export const CRISIS_RESOURCES = [
   { region: 'Australia', name: 'Lifeline', contact: 'Call 13 11 14', url: 'tel:131114' },
 ] as const;
 
-/** Support / legal pages. LAUNCH BLOCKER: these are best-guess Shopify-style paths —
+/** Support / legal pages. LAUNCH BLOCKER: these are best-guess Shopify-style paths -
  *  confirm the real published Glow Company URLs and verify each returns 200 before
  *  shipping (App/Play review reject dead privacy/terms links). */
 export const SUPPORT_URL = `${STORE_URL}/pages/contact`;
@@ -41,7 +41,7 @@ export const DEVICE_NAME = 'CalmCarry Glow Orb';
 /**
  * Premium subscription pricing (locked decision: subscription only, via Apple/
  * Google IAP, annual-leading). The ANNUAL plan opens with a short intro free trial
- * (TRIAL_DAYS) — see below. Shown in-app — that's the compliant path for digital
+ * (TRIAL_DAYS) - see below. Shown in-app - that's the compliant path for digital
  * subscriptions (IAP), unlike the physical device (external).
  */
 export const PRICING = {
@@ -67,7 +67,7 @@ export type PlanId = keyof typeof PRICING;
 
 /** Honest intro offer: the ANNUAL plan opens with a short free trial. The store
  *  (App Store Connect / Play) must carry the matching intro offer; the client just
- *  presents it and — unlike BetterSleep — schedules its OWN pre-charge reminder so a
+ *  presents it and - unlike BetterSleep - schedules its OWN pre-charge reminder so a
  *  user is never surprise-charged when the trial ends (see lib/reminders.ts). */
 export const TRIAL_DAYS = 3;
 
@@ -84,7 +84,7 @@ export type PurchaseReason = 'extra' | 'replacement';
  *  future deep-linked product page) can tell an extra from a replacement. */
 export function openCheckout(reason?: PurchaseReason) {
   const url = reason ? `${DEVICE_CHECKOUT_URL}?ref=app-${reason}` : DEVICE_CHECKOUT_URL;
-  // never fail silently — if the browser can't open, tell the user where to go
+  // never fail silently - if the browser can't open, tell the user where to go
   return Linking.openURL(url).catch(() =>
     Alert.alert('Couldn’t open the store', 'Visit theglowcompany.co to get your Glow Orb.')
   );

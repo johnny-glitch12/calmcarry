@@ -18,14 +18,14 @@ type Props = {
   title: string;
   subtitle?: string;
   image: ImageSourcePropType;
-  /** paid-tier item — shows a lock badge (bundle unlocks it, no IAP) */
+  /** paid-tier item - shows a lock badge (bundle unlocks it, no IAP) */
   locked?: boolean;
   size?: number;
   onPress?: () => void;
 };
 
 /**
- * LibraryCard — vertical cover card for the Sounds rails (illustrated cover on
+ * LibraryCard - vertical cover card for the Sounds rails (illustrated cover on
  * top, title + meta below). Press: scale 0.97 + haptic + a soft cover dim, all
  * ease.press dur.press (§4). Image fades in via expo-image transition.
  */

@@ -2,8 +2,8 @@ import { getJSON, remove, setJSON } from './store';
 
 /**
  * COPPA verifiable-parental-consent record (build plan §13). Before any child
- * profile is created, a parent — already in the adult, parent-gated area of the
- * app — must give informed, affirmative consent to the minimal data collected
+ * profile is created, a parent - already in the adult, parent-gated area of the
+ * app - must give informed, affirmative consent to the minimal data collected
  * for a kid profile (a first name + an age band; ad-free; never sold; deletable
  * any time). We record the consent (timestamp + version) so it's auditable.
  *

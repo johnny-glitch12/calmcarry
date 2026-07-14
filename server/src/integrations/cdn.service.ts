@@ -14,7 +14,7 @@ export class CdnService {
   signAssetUrl(assetPath: string): { url: string; expiresAt: number | null; signed: boolean } {
     if (!integrations.cdn) {
       // In prod, refuse rather than serve locked audio as an unsigned public URL.
-      // (The boot guard already blocks prod startup without CDN keys — this is a
+      // (The boot guard already blocks prod startup without CDN keys - this is a
       // defense-in-depth backstop.)
       if (isProd) throw new ServiceUnavailableException('Content delivery not configured');
       // dev: hand back the path; the app falls back to its bundled asset for this key

@@ -8,14 +8,14 @@ import { brand, CONTENT_MAX, ThemeProvider, themes, useColorSchemePref, useRespo
 
 type Props = {
   /** 'night' = forced night; 'day' = forced light (KIDS daytime only); 'light' =
-   *  the adaptive surface — which is night-first, i.e. always night for adults. */
+   *  the adaptive surface - which is night-first, i.e. always night for adults. */
   mode?: ThemeMode | 'day';
   scroll?: boolean;
   children: ReactNode;
   contentStyle?: ViewStyle;
   /** full-screen layer rendered ABOVE the body (e.g. the wind-down dim scrim) */
   overlay?: ReactNode;
-  /** full-bleed layer rendered UNDER the body but over the base gradient — the
+  /** full-bleed layer rendered UNDER the body but over the base gradient - the
    *  immersive-scene slot (e.g. the player's full-bleed artwork + scrim) */
   backdrop?: ReactNode;
   /** bottom inset so content clears the floating tab bar */
@@ -26,7 +26,7 @@ type Props = {
   wide?: boolean;
 };
 
-/** A soft, STATIC pool of light for atmospheric depth (§3) — sage at night, a
+/** A soft, STATIC pool of light for atmospheric depth (§3) - sage at night, a
  *  barely perceptible mint by day. Deliberately NOT animated: a drifting-blob +
  *  floating-mote field reads as generic AI-app slop and runs a loop every frame;
  *  a still, soft wash of light is calmer, more premium, and costs nothing. */
@@ -59,13 +59,13 @@ function DriftBlob({ size, color, top, left, opacity = 0.1 }: {
 }
 
 /**
- * Screen — the foundation. Sets the per-screen theme and paints the
+ * Screen - the foundation. Sets the per-screen theme and paints the
  * atmospheric background: a soft mint wash on light, a deep-eucalyptus gradient
  * with drifting sage blobs on night (DESIGN_SYSTEM §3). Gradients are
  * background-only, never on every card (§7).
  */
 export function Screen({ mode = 'light', scroll, children, contentStyle, overlay, backdrop, tabBarSpacing, wide }: Props) {
-  // Sleep screens force 'night'; everything else is ADAPTIVE — follows the
+  // Sleep screens force 'night'; everything else is ADAPTIVE - follows the
   // user's appearance preference (light by day, or dark when dark mode is on).
   const { effective } = useColorSchemePref();
   const resolved: ThemeMode =
@@ -73,7 +73,7 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   const c = themes[resolved];
   const isNight = resolved === 'night';
   const isKids = resolved === 'kids';
-  // kids "cozy dusk" is a dark surface (its own warm gradient) — treat it like
+  // kids "cozy dusk" is a dark surface (its own warm gradient) - treat it like
   // night for the gradient + light status bar, but paint a WARM peach+sage
   // ambient glow instead of the cold night blobs.
   const isDark = isNight || isKids;
@@ -93,7 +93,7 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   // top padding here (not via a SafeAreaView 'top' edge) so a screen's own
   // contentStyle.paddingTop can't accidentally erase the camera clearance.
   const insets = useSafeAreaInsets();
-  // clear the notch / Dynamic Island AND leave a calm gap below it — +8 landed
+  // clear the notch / Dynamic Island AND leave a calm gap below it - +8 landed
   // headings hard against the island on Dynamic-Island devices (read as "cut off").
   const topInset = Math.max(insets.top, 12) + 16;
 
@@ -135,7 +135,7 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
           style={StyleSheet.absoluteFill}
         />
         {isKids ? (
-          // warm cozy-dusk glow — a soft peach halo up top + a gentle sage pool,
+          // warm cozy-dusk glow - a soft peach halo up top + a gentle sage pool,
           // so the kids sky feels warm and lit, not a flat dark panel
           <>
             <DriftBlob size={340} color="#F1C7A3" top={-120} left={-40} opacity={0.13} />
@@ -172,7 +172,7 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
             />
           </>
         )}
-        {/* immersive-scene slot — full-bleed under the content, over the base wash */}
+        {/* immersive-scene slot - full-bleed under the content, over the base wash */}
         {backdrop}
         {body}
         {overlay}

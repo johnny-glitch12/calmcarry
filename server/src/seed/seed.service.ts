@@ -19,13 +19,13 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   /** Seeds the real catalogue only when empty, so it's safe on every boot. No demo
-   *  owner / household / device is ever seeded — real accounts are created solely by
+   *  owner / household / device is ever seeded - real accounts are created solely by
    *  real sign-up and purchase. The community wall is likewise never seeded (only
    *  real, user-submitted posts), so there is no fabricated social proof. */
   async run(): Promise<void> {
     const contentCount = await this.contentRepo.count();
     if (contentCount > 0) {
-      this.logger.log('Catalogue already seeded — skipping.');
+      this.logger.log('Catalogue already seeded - skipping.');
       return;
     }
     this.logger.log('Seeding catalogue...');
@@ -45,7 +45,7 @@ export class SeedService implements OnApplicationBootstrap {
       { id: 'letting-go', type: 'meditation', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', duration: '4 min', audioKey: 'guided-letting-go', coverKey: 'lettingGo', locked: true, newThisMonth: true },
       { id: 'penguin', type: 'story', title: "A Penguin's Voyage", subtitle: 'Sleep tale · ages 4+', duration: '27 min', audioKey: 'ocean', coverKey: 'penguinVoyage', locked: false },
       { id: 'spa', type: 'soundscape', title: 'Spa Piano', subtitle: 'Playlist · soft keys', duration: '60 min', audioKey: 'piano', coverKey: 'spaMusic', locked: true, newThisMonth: true },
-      // The remaining catalogue — mirrors src/content/library.ts so the signed-URL
+      // The remaining catalogue - mirrors src/content/library.ts so the signed-URL
       // endpoint enforces the SAME free/premium split server-side (no paywall bypass).
       // Free taste = gymnopedie (the one free music track) + brown-noise (the free
       // mixer sound); everything else premium (§6.1).

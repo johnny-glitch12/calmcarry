@@ -16,7 +16,7 @@ const TRIAL_ID = 'cc-trial-ending';
 
 export const remindersSupported = supported;
 
-/** Selectable wind-down times (let users pick — a fixed 9:30pm is wrong for shift
+/** Selectable wind-down times (let users pick - a fixed 9:30pm is wrong for shift
  *  workers, parents, and across time zones). */
 export const REMINDER_TIMES = [
   { hour: 21, minute: 0, label: '9:00 PM' },
@@ -28,8 +28,8 @@ export const REMINDER_TIMES = [
 
 // Android 8+ requires a channel; without one our reminders land in an unnamed
 // "Miscellaneous" bucket the user can't manage. One calm, named channel for all
-// three reminders (they're the same kind of gentle nudge — no need to fragment).
-// v2: SILENT by default (LOW importance, no sound) — a "gentle nudge" that plays
+// three reminders (they're the same kind of gentle nudge - no need to fragment).
+// v2: SILENT by default (LOW importance, no sound) - a "gentle nudge" that plays
 // the full default alert sound is a contradiction, and channel settings are
 // immutable after first creation, so the quiet settings need a fresh id.
 const CHANNEL_ID = 'reminders-v2';
@@ -41,7 +41,7 @@ export async function ensureAndroidChannel(): Promise<void> {
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Gentle reminders',
     importance: Notifications.AndroidImportance.LOW, // silent banner in the shade
-    vibrationPattern: [0, 150], // one soft pulse — never an alarm buzz
+    vibrationPattern: [0, 150], // one soft pulse - never an alarm buzz
     sound: null,
   }).catch(() => {});
   await migrateLegacyChannel().catch(() => {});
@@ -49,7 +49,7 @@ export async function ensureAndroidChannel(): Promise<void> {
 
 /** One-time migration off the loud v1 channel. Installs that scheduled reminders
  *  before the quiet rework keep firing on the old DEFAULT-importance channel (with
- *  the default alert sound) until rescheduled — so move our known reminders onto the
+ *  the default alert sound) until rescheduled - so move our known reminders onto the
  *  quiet channel, THEN delete the old one. Order matters: a notification targeting a
  *  deleted channel falls back to an IMPORTANCE_HIGH system channel, which is louder
  *  than what we're migrating away from. No-op once the legacy channel is gone. */
@@ -83,7 +83,7 @@ async function migrateLegacyChannel(): Promise<void> {
       await Notifications.scheduleNotificationAsync({
         identifier: RECAP_ID,
         content,
-        // the recap schedule is a fixed constant (Sunday 7pm) — rebuild directly
+        // the recap schedule is a fixed constant (Sunday 7pm) - rebuild directly
         trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0, channelId: CHANNEL_ID },
       }).catch(() => {});
     } else if (req.identifier === TRIAL_ID && typeof t.value === 'number' && t.value > Date.now()) {
@@ -140,7 +140,7 @@ export async function setBedtimeReminder(
     await Notifications.scheduleNotificationAsync({
       identifier: BEDTIME_ID,
       // silent + passive: lands in Notification Center without lighting up or waking
-      // anyone — a nudge you find, never one that finds you
+      // anyone - a nudge you find, never one that finds you
       content: { title: 'A gentle nudge', body: 'Time to wind down with CalmCarry.', sound: false, interruptionLevel: 'passive' },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
     });
@@ -151,7 +151,7 @@ export async function setBedtimeReminder(
 }
 
 /**
- * The honest free-trial pre-charge reminder — fires ~1 day before the trial ends so
+ * The honest free-trial pre-charge reminder - fires ~1 day before the trial ends so
  * the user is never surprise-charged (the exact trap CalmCarry's brand exists to avoid).
  * Best-effort; safe to call on trial start.
  */
@@ -163,8 +163,8 @@ export async function scheduleTrialEndingReminder(trialDays: number, priceLabel:
     if (!(await quietPermission())) return;
     await Notifications.cancelScheduledNotificationAsync(TRIAL_ID).catch(() => {});
     // Fire ~1 day before our presented trial length. We deliberately do NOT assert an
-    // exact charge date — the authoritative renewal date lives in the store receipt,
-    // not in the app — so we nudge honestly without inventing a guaranteed date.
+    // exact charge date - the authoritative renewal date lives in the store receipt,
+    // not in the app - so we nudge honestly without inventing a guaranteed date.
     const fireAt = new Date(Date.now() + Math.max(trialDays - 1, 1) * 86_400_000);
     // The fire time inherits the exact clock time of purchase, so a midnight purchase
     // would otherwise mean a midnight notification. Clamp to civil hours: anything
@@ -196,7 +196,7 @@ export async function clearTrialEndingReminder(): Promise<void> {
 const RECAP_ID = 'cc-weekly-recap';
 
 /**
- * Weekly calm recap — one gentle Sunday-evening note pointing back at the app
+ * Weekly calm recap - one gentle Sunday-evening note pointing back at the app
  * (the calm-nights card shows the real week; the notification itself makes no
  * claims, since local notifications can't know the count at fire time). Opt-in,
  * separately cancellable, and returns whether one is actually scheduled.
@@ -215,7 +215,7 @@ export async function setWeeklyRecapReminder(enabled: boolean): Promise<boolean>
         sound: false,
         interruptionLevel: 'passive',
       },
-      // Sunday 7pm local — after the weekend, before the wind-down hour
+      // Sunday 7pm local - after the weekend, before the wind-down hour
       trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 19, minute: 0, channelId: CHANNEL_ID },
     });
     return true;

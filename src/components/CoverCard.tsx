@@ -22,7 +22,7 @@ import { Crossfade } from './anim';
 type Props = {
   title: string;
   subtitle?: string;
-  /** e.g. "20 min" — shown as a meta line with a dot separator */
+  /** e.g. "20 min" - shown as a meta line with a dot separator */
   meta?: string;
   onPress?: () => void;
   /** two tonal colors for the layered cover motif (defaults to a sage motif) */
@@ -34,13 +34,13 @@ type Props = {
   /** show a lock affordance instead of play (premium/locked content) */
   locked?: boolean;
   /** opt-in subtle breathing on the cover ripple (off by default; enable only for
-   *  a hero placement — a whole rail of breathing cards is low-grade stimulation
+   *  a hero placement - a whole rail of breathing cards is low-grade stimulation
    *  for someone winding down, and costs battery on the nightstand). */
   animateArt?: boolean;
 };
 
 /**
- * CoverCard — horizontal track/program card. Cover art is a layered tonal motif
+ * CoverCard - horizontal track/program card. Cover art is a layered tonal motif
  * (gradient + orb), never a flat rectangle (§7). The ripple breathes very
  * subtly so art feels alive; press = scale 0.97 + haptic, and the play glyph
  * dims with the press. Renders in both themes from theme tokens.
@@ -85,7 +85,7 @@ export function CoverCard({
     }
     return () => cancelAnimation(ripple);
   }, [animateArt, reduced, image, ripple]);
-  // transform-only breath — the endless opacity throb (0.9↔0.6) on every card in a
+  // transform-only breath - the endless opacity throb (0.9↔0.6) on every card in a
   // scrollable list was the eye-tiring part; the gentle scale alone reads as "alive"
   const rippleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ripple.value }],
@@ -103,7 +103,7 @@ export function CoverCard({
       }}
       onPressOut={() => press(1)}
       accessibilityRole="button"
-      // the lock glyph is visual-only — say it, so a screen-reader user isn't
+      // the lock glyph is visual-only - say it, so a screen-reader user isn't
       // surprised by the paywall (mirrors LibraryCard's label)
       accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ''}${locked ? ', locked' : ''}`}
       accessibilityHint={locked ? 'Opens unlock options' : undefined}>
@@ -143,7 +143,7 @@ export function CoverCard({
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-            {/* concentric calm-ripple motif — outer ring breathes subtly */}
+            {/* concentric calm-ripple motif - outer ring breathes subtly */}
             <Animated.View
               style={[
                 {
@@ -193,7 +193,7 @@ export function CoverCard({
           ) : null}
         </View>
 
-        {/* play affordance — dims with the card press */}
+        {/* play affordance - dims with the card press */}
         <Animated.View
           style={[
             {

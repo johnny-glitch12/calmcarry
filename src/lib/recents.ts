@@ -1,7 +1,7 @@
 import { getJSON, remove, setJSON } from './store';
 
 /**
- * Recently played — a small "pick up where you left off" list. Track ids, most
+ * Recently played - a small "pick up where you left off" list. Track ids, most
  * recent first, de-duplicated, capped. Recorded when a session actually starts
  * playing (see Player), so it reflects real listens.
  */

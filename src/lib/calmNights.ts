@@ -1,7 +1,7 @@
 import { getJSON, setJSON } from './store';
 
 /**
- * "Calm nights" — the gentle, non-failable progress (stars on KidsHome, a quiet
+ * "Calm nights" - the gentle, non-failable progress (stars on KidsHome, a quiet
  * weekly card for adults). A night is EARNED by actually doing a calm session (at
  * most one per calendar day), so the count reflects real use rather than a
  * decorative number. Capped at the weekly goal; never decreases (nothing to "fail").
@@ -11,7 +11,7 @@ const COUNT_KEY = 'cc.calmNights';
 const DATE_KEY = 'cc.calmNightsDate';
 
 function today(): string {
-  // LOCAL calendar date (not UTC) — the "one per night" boundary must be the
+  // LOCAL calendar date (not UTC) - the "one per night" boundary must be the
   // user's local midnight, or evening sessions in UTC-behind zones mis-count.
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, '0');

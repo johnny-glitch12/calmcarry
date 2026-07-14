@@ -27,7 +27,7 @@ export type Responsive = {
   landscape: boolean;
   /** columns for a tile grid at this width (2 phone, 3 tablet, 4 wide) */
   gridColumns: number;
-  /** comfortable horizontal padding — a touch more air on tablets */
+  /** comfortable horizontal padding - a touch more air on tablets */
   gutter: number;
 };
 

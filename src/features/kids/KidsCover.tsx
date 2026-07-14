@@ -2,7 +2,7 @@ import { type ViewStyle } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 /**
- * KidsCover — soft, child-friendly vector cover art for Kids Mode. The adult library
+ * KidsCover - soft, child-friendly vector cover art for Kids Mode. The adult library
  * uses moody watercolour photography (dark seas, storms) that reads as anything but
  * cuddly to a small child; kids get these instead: rounded, smiling, cozy little
  * bedtime scenes in the "cozy dusk" palette (sleepy moon, a little boat, a friendly
@@ -41,7 +41,7 @@ export function sceneForTrack(id: string): KidsScene {
   return SCENE_BY_TRACK[id] ?? 'moon';
 }
 
-// a gentle closed "sleepy" eye — a shallow downward arc, like the bear mascot's
+// a gentle closed "sleepy" eye - a shallow downward arc, like the bear mascot's
 const eye = (x: number, y: number) => `M${x - 2.4} ${y}q2.4 2.6 4.8 0`;
 const smile = (x: number, y: number) => `M${x - 3} ${y}q3 3 6 0`;
 

@@ -11,18 +11,18 @@ import Animated, {
 import { AppText } from '@/components';
 
 /**
- * SleepyStars — the kids "game" layer over the player (Mason: something to do
+ * SleepyStars - the kids "game" layer over the player (Mason: something to do
  * while the audio plays, that HELPS sleep instead of fighting it). Deliberately
  * wind-down mechanics: tap the sky and a soft star blooms where you touched,
  * twinkles, then drifts down and settles out like falling dust. No score, no
- * fail, no speed, nothing to win — the interaction itself slows down. Audio is
+ * fail, no speed, nothing to win - the interaction itself slows down. Audio is
  * untouched (this is a passive touch layer). Reduced motion: stars just fade.
  */
 type Star = { id: number; x: number; y: number };
 
 const MAX_STARS = 14;
 const LIFE_MS = 6000;
-// monotonic id — two taps in the same millisecond must not collide
+// monotonic id - two taps in the same millisecond must not collide
 let nextStarId = 1;
 
 function DriftStar({ star, onDone }: { star: Star; onDone: (id: number) => void }) {
@@ -40,7 +40,7 @@ function DriftStar({ star, onDone }: { star: Star; onDone: (id: number) => void 
   const sway = ((star.id % 5) - 2) * 8;
 
   const style = useAnimatedStyle(() => {
-    // bloom in fast, linger, settle out — opacity rises over the first fifth
+    // bloom in fast, linger, settle out - opacity rises over the first fifth
     // of the life and eases away over the rest
     const o = p.value < 0.2 ? p.value * 5 : 1 - (p.value - 0.2) / 0.8;
     return {
@@ -55,7 +55,7 @@ function DriftStar({ star, onDone }: { star: Star; onDone: (id: number) => void 
     <Animated.View
       pointerEvents="none"
       style={[{ position: 'absolute', left: star.x - size / 2, top: star.y - size / 2 }, style]}>
-      {/* soft halo + star glyph — literal light colors over the dark artwork scrim */}
+      {/* soft halo + star glyph - literal light colors over the dark artwork scrim */}
       <View
         style={{
           width: size * 2,

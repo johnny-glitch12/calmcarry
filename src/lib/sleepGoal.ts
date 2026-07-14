@@ -1,7 +1,7 @@
 import { getJSON, setJSON } from './store';
 
 /**
- * The user's nightly sleep-hours goal — a real, saved preference (not a tracked
+ * The user's nightly sleep-hours goal - a real, saved preference (not a tracked
  * metric; CalmCarry doesn't measure your sleep). Set during onboarding and
  * editable in Settings; used to frame the evening rhythm + the wind-down nudge.
  */
@@ -20,7 +20,7 @@ export async function setSleepGoalHours(hours: number): Promise<void> {
   await setJSON(KEY, clamp(hours));
 }
 
-/** The stored value, or null if never set — prefs sync uses this to tell the
+/** The stored value, or null if never set - prefs sync uses this to tell the
  *  default apart from an explicit choice before adopting another device's goal. */
 export async function getStoredSleepGoalHours(): Promise<number | null> {
   const v = await getJSON<number | null>(KEY, null);

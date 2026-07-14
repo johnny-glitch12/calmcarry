@@ -40,7 +40,7 @@ export class CaregiversService {
     }
 
     // ~48 bits of entropy (3 groups), single-use + 7-day expiry, and /redeem is
-    // rate-limited — so an invite code can't be feasibly brute-forced.
+    // rate-limited - so an invite code can't be feasibly brute-forced.
     const grp = () => crypto.randomBytes(2).toString('hex');
     const code = `${grp()}-${grp()}-${grp()}`.toUpperCase();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
@@ -65,19 +65,19 @@ export class CaregiversService {
       const existing = await m.findOne(CaregiverLink, { where: { caregiverOwnerId } });
       if (existing) throw new BadRequestException('You already belong to a household.');
       // A household HOST (someone who has invited caregivers) must not also become a
-      // caregiver of another household — that would re-point their resolveOwnerId away
+      // caregiver of another household - that would re-point their resolveOwnerId away
       // from their own household and strand the caregivers who depend on them.
       const isHost = await m.findOne(CaregiverLink, { where: { householdOwnerId: caregiverOwnerId } });
       if (isHost) throw new BadRequestException('You already host a household and can’t also join another.');
 
-      // Enforce the household cap at redeem time — this is the gate that actually
+      // Enforce the household cap at redeem time - this is the gate that actually
       // grants the inherited premium, so the ceiling must hold here. (SQLite serializes
       // write txns and the invite-consume below is atomic; a rare Postgres concurrent
       // race could overshoot by one, bounded and non-material for a human-scale action.)
       const memberCount = await m.count(CaregiverLink, { where: { householdOwnerId: invite.householdOwnerId } });
       if (memberCount >= MAX_CAREGIVERS) throw new BadRequestException('This household is already full.');
 
-      // consume the invite atomically — only succeeds if it's still unredeemed
+      // consume the invite atomically - only succeeds if it's still unredeemed
       const consumed = await m.update(
         CaregiverInvite,
         { code, redeemedByOwnerId: IsNull() },

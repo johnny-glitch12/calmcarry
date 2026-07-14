@@ -8,13 +8,13 @@ import { getJSON, setJSON } from './store';
 /**
  * Opt-in remote push registration (build plan §12: gentle, opt-in, rare, never nag).
  *
- * The OS permission prompt is requested ONLY here, on an explicit user opt-in — never
+ * The OS permission prompt is requested ONLY here, on an explicit user opt-in - never
  * on launch, never in kids mode. The achieved state is returned so the UI shows ON
  * only if a device token was actually registered (no phantom toggle). First-party
  * only: the token is sent solely to our own backend.
  *
  * NOTE deliberately the RAW device push token (getDevicePushTokenAsync: the hex APNs
- * token on iOS, the FCM registration token on Android) — NOT an Expo push token. The
+ * token on iOS, the FCM registration token on Android) - NOT an Expo push token. The
  * server (push.service.ts) sends directly to APNs/FCM with its own credentials, and
  * those transports reject Expo-format tokens. An Expo token was previously registered
  * here, which would have made every remote push bounce at the transport.
@@ -46,21 +46,21 @@ export async function hasPushOptIn(): Promise<boolean> {
 export async function setPushOptIn(enabled: boolean, jwt: string | null): Promise<boolean> {
   if (!pushSupported) return false;
   if (!enabled) {
-    // opt-OUT must reach the server too — a locally-flipped flag with the token
+    // opt-OUT must reach the server too - a locally-flipped flag with the token
     // still enabled server-side means pushes keep arriving (phantom toggle).
     await setJSON(GRANT_KEY, false);
     if (jwt && jwt !== 'local') {
       try {
         await api.unregisterPush(jwt, await deviceToken());
       } catch {
-        /* best-effort — the local flag is already off */
+        /* best-effort - the local flag is already off */
       }
     }
     return false;
   }
   if (!jwt || jwt === 'local') return false; // registration needs a backend account
   try {
-    // server FCM pushes target the quiet 'reminders-v2' channel by id — make sure it
+    // server FCM pushes target the quiet 'reminders-v2' channel by id - make sure it
     // exists even for users who never touched the local-reminder toggles
     await ensureAndroidChannel();
     const current = await Notifications.getPermissionsAsync();

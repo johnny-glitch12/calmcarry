@@ -27,7 +27,7 @@ WebBrowser.maybeCompleteAuthSession();
 const AnimatedAppText = Animated.createAnimatedComponent(AppText);
 
 /**
- * InlineLink — a tappable word inside flowing prose (Terms / Privacy Policy).
+ * InlineLink - a tappable word inside flowing prose (Terms / Privacy Policy).
  * Mirrors PressableScale's press feedback (opacity dim to 0.85, dur.press,
  * ease.press) but stays an inline Text node so it wraps with the sentence.
  * Reduced-motion snaps (no animation), and the press itself always fires.
@@ -57,14 +57,14 @@ function InlineLink({ label, url }: { label: string; url: string }) {
   );
 }
 
-// PLACEHOLDER Google OAuth client ids — set the real ones from Google Cloud Console
+// PLACEHOLDER Google OAuth client ids - set the real ones from Google Cloud Console
 // via EXPO_PUBLIC_GOOGLE_* env. Apple needs no key here (uses the app's capability).
 const GOOGLE = {
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? 'PLACEHOLDER.apps.googleusercontent.com',
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? 'PLACEHOLDER.apps.googleusercontent.com',
   androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? 'PLACEHOLDER.apps.googleusercontent.com',
 };
-// Only surface the Google button once real client ids are set — never a dead button.
+// Only surface the Google button once real client ids are set - never a dead button.
 const googleConfigured = !GOOGLE.webClientId.startsWith('PLACEHOLDER');
 
 export function SignIn() {
@@ -81,7 +81,7 @@ export function SignIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // iOS has no live regions — announce auth errors so screen-reader users hear them
+  // iOS has no live regions - announce auth errors so screen-reader users hear them
   useEffect(() => {
     if (error) AccessibilityInfo.announceForAccessibility(error);
   }, [error]);
@@ -89,19 +89,19 @@ export function SignIn() {
   // must confirm they're an adult. Child use happens via COPPA-consented kid profiles.
   const [adult, setAdult] = useState(false);
   // Optimistically assume Apple sign-in on iOS so the social block is present on
-  // first paint — the async check below only ever narrows it, avoiding a layout
+  // first paint - the async check below only ever narrows it, avoiding a layout
   // shove that would push the email form down when it resolves.
   const [appleAvailable, setAppleAvailable] = useState(Platform.OS === 'ios');
   const isSignup = mode === 'signup';
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  // Sign in with Apple — native iOS only (web/Android: hidden via appleAvailable)
+  // Sign in with Apple - native iOS only (web/Android: hidden via appleAvailable)
   useEffect(() => {
     AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
   }, []);
 
-  // Sign in with Google (expo-auth-session) — returns an id_token we verify server-side
+  // Sign in with Google (expo-auth-session) - returns an id_token we verify server-side
   const [, googleResponse, googlePrompt] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE.webClientId,
     iosClientId: GOOGLE.iosClientId,
@@ -212,7 +212,7 @@ export function SignIn() {
     }
   };
 
-  // auth is a MODAL — modal presentation reports a small top inset, so add explicit
+  // auth is a MODAL - modal presentation reports a small top inset, so add explicit
   // top padding or the close-X + orb sit cramped against the sheet's top edge.
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 28 }}>
@@ -221,7 +221,7 @@ export function SignIn() {
       </PressableScale>
 
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 24 }}>
-        {/* the device itself (Mason: show the Glow Orb on login) — the watercolour
+        {/* the device itself (Mason: show the Glow Orb on login) - the watercolour
             hands-cradling-the-orb illustration, same art language as the covers */}
         <Image
           source={require('../../../assets/images/onboarding/pricing-orb.png')}
@@ -268,7 +268,7 @@ export function SignIn() {
           {/* Age affirmation for social sign-in: the email path has an explicit
               18+ checkbox before it creates an account; Apple/Google create one in
               one tap, so the same affirmation must be visible here (App Store 5.1.1 /
-              Play age assurance — the account holder is an adult; kids use COPPA
+              Play age assurance - the account holder is an adult; kids use COPPA
               profiles under them). */}
           <AppText
             variant="caption"
@@ -375,7 +375,7 @@ export function SignIn() {
                 accessibilityLabel="I’m 18 or older"
                 hitSlop={8}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
-                {/* box fill + check both EASE in on toggle (motion doctrine — no hard snap) */}
+                {/* box fill + check both EASE in on toggle (motion doctrine - no hard snap) */}
                 <View
                   style={{
                     width: 24,
@@ -425,7 +425,7 @@ export function SignIn() {
             loading={busy}
           />
         </Appear>
-        {/* Terms + Privacy acceptance (App Store / Play requirement) — implicit via "by continuing" */}
+        {/* Terms + Privacy acceptance (App Store / Play requirement) - implicit via "by continuing" */}
         <AppText
           variant="caption"
           tone="muted"

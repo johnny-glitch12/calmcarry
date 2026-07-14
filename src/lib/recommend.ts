@@ -2,7 +2,7 @@ import { TRACKS } from '@/content/library';
 import type { AppMode, Feeling, Intent } from '@/features/profile/ProfileProvider';
 
 /**
- * Content recommender — turns everything the consumer has told us into a RANKED
+ * Content recommender - turns everything the consumer has told us into a RANKED
  * set of tracks: the onboarding survey (goals + when they want help), tonight's
  * check-in feeling, their favourites (taste), what they played recently, the
  * time of day, and kids mode. Pure + deterministic, so it's unit-testable and
@@ -30,7 +30,7 @@ const ALL: TimeOfDay[] = ['morning', 'afternoon', 'evening', 'night'];
 const EN: TimeOfDay[] = ['evening', 'night'];
 const DAY: TimeOfDay[] = ['morning', 'afternoon'];
 
-/** Per-track recommendation tags — EVERY track in TRACKS must appear here
+/** Per-track recommendation tags - EVERY track in TRACKS must appear here
  *  (guarded by a unit test so new tracks can't silently fall out of the
  *  recommender, which would also hide them from kids). */
 export const TRACK_TAGS: Record<string, Tags> = {
@@ -128,15 +128,15 @@ export type Answer = {
   intent: Intent | null;
   mode: AppMode;
   hour: number;
-  /** most-recently-played track ids (newest first) — gently favours picking back up */
+  /** most-recently-played track ids (newest first) - gently favours picking back up */
   recentIds?: string[];
-  /** saved favourites — the strongest "what they like" signal */
+  /** saved favourites - the strongest "what they like" signal */
   favoriteIds?: string[];
   /** onboarding survey: what we can help with (GOALS keys) */
   goals?: string[];
   /** onboarding survey: when they want help (MOMENTS keys) */
   moments?: string[];
-  /** completed wind-downs per track (cc.trackWins) — behavioural "it worked" signal */
+  /** completed wind-downs per track (cc.trackWins) - behavioural "it worked" signal */
   workedBefore?: Record<string, number>;
 };
 
@@ -152,7 +152,7 @@ function scoreOne(id: string, answer: Answer, part: TimeOfDay, favCats: Map<stri
   if (answer.intent && t.category === INTENT_CATEGORY[answer.intent]) s += 1;
   // taste: direct favourite, plus a capped same-category affinity from all favourites
   if (answer.favoriteIds?.includes(id)) s += 2.5;
-  // wind-downs this track carried to the end — strong, but a tonight-feeling match still wins
+  // wind-downs this track carried to the end - strong, but a tonight-feeling match still wins
   s += Math.min(answer.workedBefore?.[id] ?? 0, 3) * 0.7;
   s += Math.min((favCats.get(t.category) ?? 0) * 0.75, 1.5);
   // the survey: goals + moments → category boosts (time-gated where it matters)
@@ -164,7 +164,7 @@ function scoreOne(id: string, answer: Answer, part: TimeOfDay, favCats: Map<stri
     const a = MOMENT_AFFINITY[m];
     if (a && a.cats.includes(t.category) && (!a.parts || a.parts.includes(part))) s += a.boost;
   }
-  // gentle recency nudge — capped well below a feeling/intent match
+  // gentle recency nudge - capped well below a feeling/intent match
   const r = (answer.recentIds ?? []).indexOf(id);
   if (r >= 0) s += Math.max(1.5 - r * 0.2, 0.3);
   return s;
@@ -186,7 +186,7 @@ export function recommendTracks(answer: Answer): string[] {
   return ranked.length ? ranked : [answer.mode === 'kids' ? 'penguin' : 'slow-tide'];
 }
 
-/** An honest one-line reason for why a track is being suggested — only ever
+/** An honest one-line reason for why a track is being suggested - only ever
  *  claims signals we actually have. Returns null when there's nothing personal
  *  to say (the caller falls back to its generic kicker). */
 export function explainRecommendation(id: string, answer: Answer): string | null {

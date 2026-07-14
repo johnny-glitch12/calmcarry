@@ -17,7 +17,7 @@ import { useTheme } from '@/theme';
  * The Night Door (pre-mortem: the screen-at-bedtime paradox). Opening the app in
  * wind-down hours (20:00-05:00, hooked in _layout's launch routing) lands HERE: a
  * dimmed, one-tap "Begin wind-down" that resumes the last-played track (or tonight's
- * free pick) — unlock to audio in two taps, no browsing, no reading, phone face-down
+ * free pick) - unlock to audio in two taps, no browsing, no reading, phone face-down
  * in seconds. A quiet dismiss drops back to the full Home for anyone who wants to
  * explore. Never shown to kids profiles (KidsGuard + the launch hook both exclude),
  * never over a deep link, once per cold start.
@@ -50,7 +50,7 @@ export default function NightDoorScreen() {
     <Screen
       mode="night"
       backdrop={
-        // tonight's pick under a deep scrim — the room is already dark; so are we
+        // tonight's pick under a deep scrim - the room is already dark; so are we
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <Image source={covers[track.cover]} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
           <LinearGradient

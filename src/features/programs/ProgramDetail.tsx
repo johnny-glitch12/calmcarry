@@ -28,7 +28,7 @@ export function ProgramDetail() {
   const program = (id && PROGRAMS[id]) || PROGRAMS['first-week'];
   const locked = !!program.locked && !isPremium;
 
-  // real completion state — null until the first load resolves, so the CTA label
+  // real completion state - null until the first load resolves, so the CTA label
   // and counter can hold (and then swap) instead of flashing a wrong initial value
   const [done, setDone] = useState<number[] | null>(null);
   useFocusEffect(
@@ -132,7 +132,7 @@ export function ProgramDetail() {
 }
 
 /**
- * DayBadge — the leading circle. On completion the fill eases from the resting
+ * DayBadge - the leading circle. On completion the fill eases from the resting
  * panel tint to the CTA fill (interpolateColor) while the day-number crossfades
  * to a check. Reduced motion snaps to the end state.
  */
@@ -165,7 +165,7 @@ function DayBadge({ day, isDone }: { day: number; isDone: boolean }) {
 }
 
 /**
- * StepRow — one nightly step. Keeps the Card on a fixed `surface` look and eases
+ * StepRow - one nightly step. Keeps the Card on a fixed `surface` look and eases
  * the "done" panel tint in via a SelectionOverlay (so the surface→panel flip never
  * hard-cuts). The trailing glyph crossfades play↔revisit; the day badge handles its
  * own fill + number↔check transition.
@@ -192,7 +192,7 @@ function StepRow({
       dimTo={0.95}
       scaleTo={0.98}>
       <View style={{ position: 'relative', borderRadius: 16 }}>
-        {/* panel look eased in over the resting surface Card — constant borderWidth so no layout shift */}
+        {/* panel look eased in over the resting surface Card - constant borderWidth so no layout shift */}
         <SelectionOverlay
           active={isDone}
           style={{ borderRadius: 16, borderWidth: 1, borderColor: c.lineSage, backgroundColor: c.panel }}

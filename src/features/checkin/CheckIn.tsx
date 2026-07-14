@@ -11,7 +11,7 @@ import { getJSON, KEYS } from '@/lib/store';
 import { useTheme } from '@/theme';
 
 /**
- * The gentle close to a wind-down. Forward-looking, never a test — we do NOT ask
+ * The gentle close to a wind-down. Forward-looking, never a test - we do NOT ask
  * "how did you settle?" or log any rating (build plan: no symptom tracking, never
  * make the user feel like a patient).
  */
@@ -41,7 +41,7 @@ export function CheckIn() {
     router.replace('/');
   };
 
-  // §15 funnel — the wind-down close was reached. No mood/Feeling is ever sent
+  // §15 funnel - the wind-down close was reached. No mood/Feeling is ever sent
   // (analytics no-ops in kids mode and scrubs any non-allow-listed prop).
   useEffect(() => {
     track('check_in_shown');

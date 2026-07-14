@@ -15,7 +15,7 @@ export type EntitlementStatus = 'active' | 'revoked' | 'expired';
 export type EntitlementSource = 'apple' | 'google' | 'shopify' | 'comp' | null;
 export type EntitlementPlan = 'monthly' | 'annual' | null;
 
-// A receipt/transaction may belong to ONE account only — DB-level backstop to the
+// A receipt/transaction may belong to ONE account only - DB-level backstop to the
 // service check (prevents replaying one paid receipt across many accounts).
 @Index('uq_entitlement_txn', ['transactionRef'], { unique: true, where: '"transactionRef" IS NOT NULL' })
 @Entity('entitlements')
@@ -49,7 +49,7 @@ export class Entitlement {
   @Column({ type: 'text', nullable: true })
   productId: string | null;
 
-  /** Apple originalTransactionId / Google purchaseToken — the renewal key */
+  /** Apple originalTransactionId / Google purchaseToken - the renewal key */
   @Column({ type: 'text', nullable: true })
   transactionRef: string | null;
 

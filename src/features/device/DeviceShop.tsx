@@ -82,7 +82,7 @@ export function DeviceShop() {
         </AppText>
       </Reveal>
 
-      {/* product card — the orb twin + what you're buying */}
+      {/* product card - the orb twin + what you're buying */}
       <Reveal index={1} style={{ marginTop: 22 }}>
         <View
           style={{

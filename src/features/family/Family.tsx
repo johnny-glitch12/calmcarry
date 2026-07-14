@@ -29,7 +29,7 @@ export function Family() {
   // focus so a device just registered on /register-device shows up on return.
   const [devices, setDevices] = useState<ApiDevice[]>([]);
   const [devicesLoaded, setDevicesLoaded] = useState(false);
-  // distinguish "you have no devices" from "we couldn't check" — an offline user
+  // distinguish "you have no devices" from "we couldn't check" - an offline user
   // must not be told they have nothing registered
   const [devicesError, setDevicesError] = useState(false);
   useFocusEffect(
@@ -69,10 +69,10 @@ export function Family() {
   const [newType, setNewType] = useState<AppMode>('kids');
   const [needConsent, setNeedConsent] = useState(false);
   // true when the consent card is being shown to ENTER Kids mode (not to add a named
-  // profile) — granting consent then commits the entry instead of finishAdd()
+  // profile) - granting consent then commits the entry instead of finishAdd()
   const [pendingEnter, setPendingEnter] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-  // rename-in-place — a typo fix must not require delete + recreate (that would
+  // rename-in-place - a typo fix must not require delete + recreate (that would
   // discard the server profile id the household sync keys on)
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -92,7 +92,7 @@ export function Family() {
       return;
     }
     if (confirmRemoveId !== p.id) {
-      setConfirmRemoveId(p.id); // two-tap confirm — first tap arms, second removes
+      setConfirmRemoveId(p.id); // two-tap confirm - first tap arms, second removes
       setTimeout(() => setConfirmRemoveId(null), 5000); // auto-disarm so a stray tap can't sit armed for days
       return;
     }
@@ -171,7 +171,7 @@ export function Family() {
         </AppText>
       </Reveal>
 
-      {/* household profiles — one subscription, whole family */}
+      {/* household profiles - one subscription, whole family */}
       <Reveal index={1} style={{ marginTop: 22 }}>
         <SectionHeader kicker="Who’s it for" title="Profiles" />
         <ProfileSwitcher onAdd={() => setAdding((v) => !v)} />
@@ -224,7 +224,7 @@ export function Family() {
           One subscription covers everyone. Each profile keeps its own picks.
         </AppText>
 
-        {/* remove a child profile + its data (COPPA) — gated, two-tap confirm */}
+        {/* remove a child profile + its data (COPPA) - gated, two-tap confirm */}
         {profiles.filter((p) => p.type === 'kids').length > 0 ? (
           <View style={{ marginTop: 14, gap: 8 }}>
             {profiles
@@ -283,7 +283,7 @@ export function Family() {
                     accessibilityLabel={`Remove ${p.name}`}
                     dimTo={0.85}
                     style={{ paddingVertical: 12 }}>
-                    {/* keyed crossfade so arm/auto-disarm never snaps coral↔accent — exit faster than enter */}
+                    {/* keyed crossfade so arm/auto-disarm never snaps coral↔accent - exit faster than enter */}
                     <Animated.View
                       key={confirmRemoveId === p.id ? 'confirm' : 'idle'}
                       entering={FadeIn.duration(dur.press)}
@@ -417,7 +417,7 @@ export function Family() {
         </Card>
       </Reveal>
 
-      {/* caregivers — share the household with a partner or grandparent (real) */}
+      {/* caregivers - share the household with a partner or grandparent (real) */}
       <Reveal index={3} style={{ marginTop: 24 }}>
         <PressableScale
           onPress={() => router.push('/caregivers' as Href)}

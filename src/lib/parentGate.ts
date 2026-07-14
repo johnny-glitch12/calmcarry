@@ -4,9 +4,9 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { secureGet, secureSet } from './secureStore';
 
 /**
- * Parent gate (build plan §13 + §9 — non-negotiable child safety). Required to
+ * Parent gate (build plan §13 + §9 - non-negotiable child safety). Required to
  * leave a child profile OR reach any adult area (community, settings, billing,
- * store). The plan models it as "PIN hash OR biometric flag" — so we support
+ * store). The plan models it as "PIN hash OR biometric flag" - so we support
  * BOTH: a salted SHA-256 PIN (expo-crypto) stored in the Keychain/Keystore
  * (expo-secure-store), and device biometrics (Face ID / Touch ID via
  * expo-local-authentication) where available.
@@ -108,13 +108,13 @@ export async function checkParentPin(pin: string): Promise<PinCheckResult> {
  * Short-lived "a grown-up just passed the gate" window (in-memory, session only).
  * Lets the gate be a single chokepoint for purchases & account deletion without
  * re-prompting on the very next tap or a navigation round-trip. Resets on app
- * restart by design — it never weakens the persistent PIN, only avoids nagging
+ * restart by design - it never weakens the persistent PIN, only avoids nagging
  * an adult who authenticated seconds ago.
  */
 const VERIFY_WINDOW_MS = 3 * 60_000;
 // INTENT-SCOPED: a pass for one action (e.g. exiting Kids mode) must NOT authorize a
 // different, higher-consequence action (purchase / account deletion). Only set this
-// after a real EXISTING-PIN entry — never on PIN *creation* (see ParentGate).
+// after a real EXISTING-PIN entry - never on PIN *creation* (see ParentGate).
 let lastVerified: { intent: string; at: number } | null = null;
 export function markParentVerified(intent: string): void {
   lastVerified = { intent, at: Date.now() };

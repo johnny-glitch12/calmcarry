@@ -13,7 +13,7 @@ class CreateProfileDto {
   @IsIn(['adult', 'kids'])
   type: ProfileType;
 
-  // child age band — constrained set, never unbounded free text (COPPA data hygiene)
+  // child age band - constrained set, never unbounded free text (COPPA data hygiene)
   @IsOptional()
   @IsIn(['0-3', '4-7', '8-12', '13-17', 'adult'])
   ageBand?: string;

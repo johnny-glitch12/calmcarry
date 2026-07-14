@@ -18,13 +18,13 @@ type Props = {
   label: string;
   icon?: keyof typeof Feather.glyphMap;
   tone?: Tone;
-  /** settle in (scale 0.95→1 + opacity 0→1) — the authenticity confirm peak */
+  /** settle in (scale 0.95→1 + opacity 0→1) - the authenticity confirm peak */
   confirm?: boolean;
   style?: ViewStyle;
 };
 
 /**
- * StatusChip — small pill (sage shield-check / sparkle). One outline icon
+ * StatusChip - small pill (sage shield-check / sparkle). One outline icon
  * family (Feather), no emoji (§7). Reads in both themes.
  */
 export function StatusChip({ label, icon = 'shield', tone = 'sage', confirm = false, style }: Props) {

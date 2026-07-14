@@ -67,7 +67,7 @@ type Answers = {
   source?: string;
   goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
   wearable?: string; // 'apple' | 'whoop'
-  moments?: string[]; // when they want help — day AND night use-cases, not just sleep
+  moments?: string[]; // when they want help - day AND night use-cases, not just sleep
   wantsTrial?: boolean; // tapped "Start my free trial" on the pricing step
 };
 
@@ -123,11 +123,11 @@ const GOALS: { key: string; label: string; hint: string; intent: Intent; icon: k
   { key: 'routine', label: 'Build a bedtime routine', hint: 'A rhythm you can keep', intent: 'sleep', icon: 'repeat' },
 ];
 
-// When they reach for calm (Mason: the Glow Orb isn't only a sleep device —
+// When they reach for calm (Mason: the Glow Orb isn't only a sleep device -
 // daytime resets and wound-up moments are first-class use cases). We help stressed/
 // anxious users too, but we DON'T show that: sleep/calm-framed wording ONLY, never
 // "anxious"/clinical terms or any treatment claim. (The internal keys stay so the
-// recommender still routes these users to breathing — the help is invisible, not absent.)
+// recommender still routes these users to breathing - the help is invisible, not absent.)
 const MOMENTS: { key: string; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
   { key: 'falling-asleep', label: 'Falling asleep', hint: 'The nightly wind-down', icon: 'moon' },
   { key: 'night-wakes', label: 'Night wake-ups', hint: 'Getting back to sleep at 3am', icon: 'clock' },
@@ -219,7 +219,7 @@ function FunnelShell({
   // lift the pinned button clear of the home indicator (Screen only reserves
   // left/right insets, so the content area runs to the physical bottom edge)
   const footerBottom = Math.max(insets.bottom, 24) + 30;
-  // No <Screen> here — the funnel renders ONE persistent Screen (stable dark
+  // No <Screen> here - the funnel renders ONE persistent Screen (stable dark
   // background) and only this content cross-fades between steps, so page-to-page
   // fades the content, never the whole screen (no bright flash).
   return (
@@ -243,7 +243,7 @@ function FunnelShell({
         <View style={{ marginTop: 24, gap: 12 }}>{children}</View>
       </ScrollView>
 
-      {/* pinned footer — sits above the home indicator */}
+      {/* pinned footer - sits above the home indicator */}
       <View style={{ position: 'absolute', left: 24, right: 24, bottom: footerBottom }}>
         <PrimaryButton label={continueLabel} onPress={onContinue} disabled={!canContinue} />
       </View>
@@ -325,7 +325,7 @@ function IconChip({ icon }: { icon: keyof typeof Feather.glyphMap }) {
 // steps
 // =====================================================================
 
-/** 1 — WELCOME: starlit, calming ambience, one gentle way forward.
+/** 1 - WELCOME: starlit, calming ambience, one gentle way forward.
  *  (The calming audio bed is owned by the funnel driver so it plays across every
  *  step, not just here.) */
 function WelcomeStep({ onNext, onSignIn }: StepProps) {
@@ -377,7 +377,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   );
 }
 
-/** 2 — TRANSFORM: you today vs. you in a week (the aspiration, honestly framed). */
+/** 2 - TRANSFORM: you today vs. you in a week (the aspiration, honestly framed). */
 function TransformStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -423,7 +423,7 @@ function TransformCard({ label, image, tone, index, highlight }: { label: string
   );
 }
 
-/** 3 — SATISFACTION */
+/** 3 - SATISFACTION */
 function SatisfactionStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   return (
     <FunnelShell
@@ -441,7 +441,7 @@ function SatisfactionStep({ onNext, onBack, answers, setAnswer, progress }: Step
   );
 }
 
-/** 4 — REASSURANCE (keyed to the satisfaction answer) */
+/** 4 - REASSURANCE (keyed to the satisfaction answer) */
 function ReassureStep({ onNext, onBack, answers }: StepProps) {
   const { c } = useTheme();
   const s = answers.satisfaction ?? 3;
@@ -477,7 +477,7 @@ function ReassureStep({ onNext, onBack, answers }: StepProps) {
   );
 }
 
-/** 5 — HELP WITH (multi-select, AI icons) */
+/** 5 - HELP WITH (multi-select, AI icons) */
 function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const goals = answers.goals ?? [];
   const toggle = (key: string) => setAnswer('goals', goals.includes(key) ? goals.filter((g) => g !== key) : [...goals, key]);
@@ -515,7 +515,7 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 5b — MOMENTS (day & night use-cases — the Orb isn't only for bedtime) */
+/** 5b - MOMENTS (day & night use-cases - the Orb isn't only for bedtime) */
 function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const moments = answers.moments ?? [];
   const toggle = (key: string) =>
@@ -544,7 +544,7 @@ function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps
   );
 }
 
-/** 6 — HOURS (fill-circle stepper) */
+/** 6 - HOURS (fill-circle stepper) */
 function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
@@ -569,7 +569,7 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
       <View style={{ alignItems: 'center', marginTop: 8 }}>
         <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ProgressRing progress={ring} size={200} strokeWidth={10} fill color={c.accent} trackColor={c.line} style={{ position: 'absolute' }} />
-          {/* live value (tracks the finger) — no dip-swap here, that would flicker while dragging */}
+          {/* live value (tracks the finger) - no dip-swap here, that would flicker while dragging */}
           <AppText style={{ fontFamily: fonts.bold, fontSize: 40, lineHeight: 46, color: c.text, textAlign: 'center' }}>{value >= 8 ? '8h+' : formatHM(value)}</AppText>
           <AppText style={[P.label, { color: c.muted, textTransform: 'none', marginTop: 2 }]}>a night</AppText>
         </View>
@@ -591,7 +591,7 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
   );
 }
 
-/** 7 — GENDER (optional, on-device) */
+/** 7 - GENDER (optional, on-device) */
 function GenderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   return (
@@ -614,7 +614,7 @@ function GenderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps)
   );
 }
 
-/** 8 — AGE (incl. "for my child" → points at the built-in Kids Mode) */
+/** 8 - AGE (incl. "for my child" → points at the built-in Kids Mode) */
 function AgeStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   return (
@@ -648,7 +648,7 @@ function AgeStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 9 — SOURCE */
+/** 9 - SOURCE */
 function SourceStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   return (
     <FunnelShell
@@ -676,7 +676,7 @@ function formatHM(h: number) {
   return mm === 0 ? `${hh}h` : `${hh}h ${mm}m`;
 }
 
-/** Generic drag slider — snaps to `step`, haptic detent per notch. The caller owns
+/** Generic drag slider - snaps to `step`, haptic detent per notch. The caller owns
  *  the value display (the circle on hours, the big time on goal). Horizontal drag
  *  drives it; vertical gestures stay with the scroll view. */
 function Slider({
@@ -695,7 +695,7 @@ function Slider({
   max: number;
   step: number;
   onChange: (v: number) => void;
-  /** fired when the user first grabs the track — lets a screen record the current
+  /** fired when the user first grabs the track - lets a screen record the current
    *  (possibly default) value so Continue enables even without a value change. */
   onTouch?: () => void;
   minLabel: string;
@@ -775,7 +775,7 @@ function Slider({
   );
 }
 
-/** One equalizer bar — height oscillates on a gentle loop, staggered by index. */
+/** One equalizer bar - height oscillates on a gentle loop, staggered by index. */
 function EqBar({ index }: { index: number }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
@@ -804,19 +804,19 @@ function EqBar({ index }: { index: number }) {
   return <Animated.View style={[{ width: 4, borderRadius: 2, backgroundColor: c.accent }, s]} />;
 }
 
-/** A "now playing" chip that cycles through library sounds with a live equalizer —
+/** A "now playing" chip that cycles through library sounds with a live equalizer -
  *  a taste of the sound machine on the sleep-sounds screen. */
 function SoundsDemo() {
   const { c } = useTheme();
   const [i, setI] = useState(0);
   useEffect(() => {
-    // cycle the featured sound — 5s each so there's time to actually HEAR it
+    // cycle the featured sound - 5s each so there's time to actually HEAR it
     const id = setInterval(() => setI((v) => (v + 1) % DEMO_SOUNDS.length), 5000);
     return () => clearInterval(id);
   }, []);
   const s = DEMO_SOUNDS[i];
 
-  // Mason: don't just SHOW the demo — PLAY it. Each cycle swaps the real library
+  // Mason: don't just SHOW the demo - PLAY it. Each cycle swaps the real library
   // sound in at a soft volume (the funnel ambient is paused on this step). Native
   // autoplays; web stays silent until a gesture (same policy as the ambient).
   const demo = useAudioPlayer(audioSources[DEMO_SOUNDS[0].audio]);
@@ -875,7 +875,7 @@ function BackChevron({ onBack }: { onBack: () => void }) {
   );
 }
 
-/** 10 — GOAL (sleep-target slider) */
+/** 10 - GOAL (sleep-target slider) */
 function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   const goalHours = answers.goalHours ?? 8;
@@ -889,7 +889,7 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       onContinue={onNext}
       canContinue>
       <View style={{ alignItems: 'center', marginTop: 20 }}>
-        {/* live value (tracks the finger) — no dip-swap, that would flicker while dragging */}
+        {/* live value (tracks the finger) - no dip-swap, that would flicker while dragging */}
         <AppText style={[P.hero, { color: c.text, fontSize: 46, lineHeight: 54, textAlign: 'center' }]}>{formatHM(goalHours)}</AppText>
       </View>
       <View style={{ marginTop: 28 }}>
@@ -899,7 +899,7 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 11 — SYNC (wearable — honest "coming soon") */
+/** 11 - SYNC (wearable - honest "coming soon") */
 function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   return (
@@ -922,7 +922,7 @@ function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 12 — SOUNDS (framed watercolour fireside + live now-playing row) */
+/** 12 - SOUNDS (framed watercolour fireside + live now-playing row) */
 function SoundsStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -947,7 +947,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
           <View style={{ borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image
               source={require('../../../assets/images/onboarding/fireplace.png')}
-              // 4:3, not a full square — a square + the sounds demo + title overflowed the
+              // 4:3, not a full square - a square + the sounds demo + title overflowed the
               // smallest phones (iPhone SE) with no way to scroll. Shorter image fits.
               style={{ width: '100%', aspectRatio: 4 / 3 }}
               contentFit="cover"
@@ -968,7 +968,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 13 — TRIAL FREE (informational) */
+/** 13 - TRIAL FREE (informational) */
 function TrialFreeStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -995,8 +995,8 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 14 — TRIAL REMINDER. Honest framing: the reassurance rests on clear disclosure
- *  + cancel-anytime (both real/store-guaranteed), NOT on a promised reminder — the
+/** 14 - TRIAL REMINDER. Honest framing: the reassurance rests on clear disclosure
+ *  + cancel-anytime (both real/store-guaranteed), NOT on a promised reminder - the
  *  trial-ending notification is best-effort (needs OS permission) and is scheduled
  *  on the real purchase later, so we never promise it here (ROSCA). */
 function TrialReminderStep({ onNext, onBack }: StepProps) {
@@ -1041,7 +1041,7 @@ function TrialReminderStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 15 — PRICING (real store price, honest trial framing) */
+/** 15 - PRICING (real store price, honest trial framing) */
 function PricingStep({ onNext, onBack, setAnswer }: StepProps) {
   const { c } = useTheme();
   const [annual, setAnnual] = useState<string>(PRICING.annual.price);
@@ -1067,7 +1067,7 @@ function PricingStep({ onNext, onBack, setAnswer }: StepProps) {
         </Reveal>
       </View>
       <Reveal index={3}>
-        {/* the tap is a real promise — remember it so Home can actually OFFER the
+        {/* the tap is a real promise - remember it so Home can actually OFFER the
             trial after sign-in (before this, both buttons were silently identical) */}
         <PrimaryButton
           label="Start my free trial"
@@ -1111,7 +1111,7 @@ export function OnboardingFunnel() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
 
-  // A soft NATURE bed under the WHOLE funnel — birdsong + a distant stream, not a
+  // A soft NATURE bed under the WHOLE funnel - birdsong + a distant stream, not a
   // synth hum (a tonal drone reads as "frequency"/machine, wrong for a calm app).
   // Sets and holds the mood from the first screen to the last, not just on Welcome.
   // Native autoplays; web stays silent until a gesture. Fades in gently, pauses
@@ -1148,7 +1148,7 @@ export function OnboardingFunnel() {
     };
   }, [ambient]);
 
-  // The sounds step plays REAL demo audio (SoundsDemo) — step the forest bed out
+  // The sounds step plays REAL demo audio (SoundsDemo) - step the forest bed out
   // of its way so the preview is clean, and bring it back on any other step.
   useEffect(() => {
     try {
@@ -1181,7 +1181,7 @@ export function OnboardingFunnel() {
 
   const onNext = useCallback(() => {
     lightTap();
-    // finish() flips ProfileProvider state (setIntent) + navigates — run it in the
+    // finish() flips ProfileProvider state (setIntent) + navigates - run it in the
     // event handler, NOT inside a setState updater. The updater executes during
     // React's render phase, so calling another component's setState there triggers
     // the "Cannot update a component while rendering a different component" warning.
@@ -1220,11 +1220,11 @@ export function OnboardingFunnel() {
   const StepComponent = STEP_COMPONENTS[stepId];
   const progress = index / (STEPS.length - 1);
 
-  // ONE persistent Screen — the dark background + starfield stay put across steps.
+  // ONE persistent Screen - the dark background + starfield stay put across steps.
   // Only the keyed content cross-fades, so page-to-page fades the CONTENT (text,
   // buttons), never the whole screen. No bright flash between pages. The fade is
   // deliberately unhurried (a slow, soft dissolve) so nothing snaps at a sleepy
-  // brain — calmer than the app's standard nav transition.
+  // brain - calmer than the app's standard nav transition.
   return (
     <Screen mode="night" backdrop={stepId === 'welcome' ? <Starfield /> : undefined} contentStyle={{ flex: 1, paddingHorizontal: 0 }}>
       <Appear key={stepId} enter={560} exit={340} style={{ flex: 1 }}>

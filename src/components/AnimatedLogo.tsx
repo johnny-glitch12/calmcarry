@@ -24,14 +24,14 @@ const S: Record<
 };
 
 // Whole-reveal length. The wordmark lands by ~TOTAL; the orb keeps breathing after.
-// Functional cadence for the signature reveal timeline — intentionally hardcoded,
+// Functional cadence for the signature reveal timeline - intentionally hardcoded,
 // not a dur.* token (it is the master clock the glyph windows are cut from).
 const TOTAL = 2200;
-// Beat-hold on the settled lockup before handing off — a designed pause so the
+// Beat-hold on the settled lockup before handing off - a designed pause so the
 // brand registers. Functional cadence, intentionally hardcoded (no dur.* token).
 const HOLD = 650;
 
-// smoothstep — a gentle, worklet-safe ease (3t²−2t³); calmer than linear, no mid snap.
+// smoothstep - a gentle, worklet-safe ease (3t²−2t³); calmer than linear, no mid snap.
 function smoothstep(x: number): number {
   'worklet';
   const t = x < 0 ? 0 : x > 1 ? 1 : x;
@@ -82,9 +82,9 @@ function Glyph({
 }
 
 /**
- * AnimatedLogo — the CalmCarry signature brand reveal. The GlowOrb blooms on and
+ * AnimatedLogo - the CalmCarry signature brand reveal. The GlowOrb blooms on and
  * settles into its breathing loop; "calm" rises in letter by letter; the ® pops;
- * and "CARRY" exhales — its letters start compressed toward the centre and spread
+ * and "CARRY" exhales - its letters start compressed toward the centre and spread
  * out to their airy track (pure translateX, so it stays buttery on the UI thread).
  * Transform + opacity only. Reduced motion shows the final lockup instantly.
  *
@@ -117,7 +117,7 @@ export function AnimatedLogo({
       const t = setTimeout(() => onDone?.(), dur.modal);
       return () => clearTimeout(t);
     }
-    // Master timeline driver: linear ON PURPOSE (sanctioned exception) — each
+    // Master timeline driver: linear ON PURPOSE (sanctioned exception) - each
     // glyph eases inside its own smoothstep window via win(), so easing the
     // clock itself would compound curves and skew the cascade rhythm.
     p.value = withTiming(1, { duration: TOTAL, easing: Easing.linear });
@@ -193,7 +193,7 @@ export function AnimatedLogo({
         />
       </View>
 
-      {/* "CARRY" kicker — letters exhale outward into their track */}
+      {/* "CARRY" kicker - letters exhale outward into their track */}
       <View style={{ flexDirection: 'row', marginTop: s.gap }}>
         {CARRY.map((ch, i) => (
           <Glyph

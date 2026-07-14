@@ -26,7 +26,7 @@ const ColorSchemeContext = createContext<Ctx>({
 
 /**
  * NIGHT-FIRST identity: CalmCarry is a sleep product, and the adult app is the
- * deep-eucalyptus night theme everywhere, always — one cohesive world, like the
+ * deep-eucalyptus night theme everywhere, always - one cohesive world, like the
  * best sleep apps, not a utility that happens to have a dark mode. `effective`
  * therefore always resolves 'night'. The light palette still exists for the
  * KIDS daytime surface (<Screen mode="day">), which stays soft on purpose.

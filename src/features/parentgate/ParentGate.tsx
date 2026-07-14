@@ -34,7 +34,7 @@ function Dot({ filled, error }: { filled: boolean; error: boolean }) {
   const err = c.danger;
   const f = useSharedValue(filled ? 1 : 0);
   // error tint eases between accent (0) and coral (1) instead of snapping. Reduced
-  // motion keeps the instant swap — the error haptic already signals the miss.
+  // motion keeps the instant swap - the error haptic already signals the miss.
   const e = useSharedValue(error ? 1 : 0);
   useEffect(() => {
     f.value = reduced
@@ -85,7 +85,7 @@ function Dots({ count, error }: { count: number; error: boolean }) {
 
 export function ParentGate() {
   const router = useRouter();
-  // this screen is always night — read night tokens directly so the keypad never
+  // this screen is always night - read night tokens directly so the keypad never
   // inherits the (possibly light) root theme context above its <Screen>.
   const c = themes.night;
   const { setMode, enterKids } = useProfile();
@@ -128,11 +128,11 @@ export function ParentGate() {
     return () => clearInterval(t);
   }, [lockSeconds]);
 
-  // never fall back to /you (a settings/billing tab a child must not reach) — home is kid-safe
+  // never fall back to /you (a settings/billing tab a child must not reach) - home is kid-safe
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   // Purchases & account deletion are high-consequence: they require a real PIN
-  // entry (never PIN creation, never biometrics — OS biometrics can't tell a parent
+  // entry (never PIN creation, never biometrics - OS biometrics can't tell a parent
   // from a child on a shared device).
   const highConsequence = intent === 'purchase' || intent === 'deleteAccount';
 
@@ -140,7 +140,7 @@ export function ParentGate() {
     if (intent === 'exitKids') {
       // Reaching succeed() means either the existing PIN was entered (the gate showed
       // 'enter' and required it) OR no PIN existed (gate showed 'create'). Either way
-      // release to adult — a parent must never get stuck in Kids mode. When a PIN
+      // release to adult - a parent must never get stuck in Kids mode. When a PIN
       // exists the gate already enforced entering it, so this is not a bypass.
       setMode('adult');
       close();
@@ -162,7 +162,7 @@ export function ParentGate() {
   };
 
   // Face ID / Touch ID path (plan §13/§9 "PIN or biometric"). PIN stays the fallback.
-  // Not offered for purchase/delete — those require the PIN specifically.
+  // Not offered for purchase/delete - those require the PIN specifically.
   const tryBiometric = async () => {
     if (highConsequence) return;
     if (await authenticateBiometric('Unlock CalmCarry')) {
@@ -183,13 +183,13 @@ export function ParentGate() {
   const fail = () => {
     setError(true);
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    // a single soft, eased settle — not a fast 10Hz jitter. Reduced motion skips it
+    // a single soft, eased settle - not a fast 10Hz jitter. Reduced motion skips it
     // entirely (haptic + coral dots already signal the error). Durations derive from
     // the shared dur.press token (never hardcoded) so it stays as responsive as a tap.
     if (reduced) {
       shake.value = 0;
     } else {
-      const swing = Math.round(dur.press * 0.4); // ~64ms out / back — token-anchored, calm
+      const swing = Math.round(dur.press * 0.4); // ~64ms out / back - token-anchored, calm
       const settle = Math.round(dur.press * 0.5); // ~80ms eased settle to rest
       shake.value = withSequence(
         withTiming(-5, { duration: swing, easing: ease.press }),
@@ -218,7 +218,7 @@ export function ParentGate() {
         fail();
       }
     } else {
-      // enter — a REAL existing-PIN entry is the only thing that opens the verify
+      // enter - a REAL existing-PIN entry is the only thing that opens the verify
       // window (scoped to THIS intent), so creating a PIN can't authorize a purchase/delete
       const r = await checkParentPin(pin);
       if (r.ok) {
@@ -265,7 +265,7 @@ export function ParentGate() {
       </View>
 
       {/* ScrollView so the tall keypad column (orb + title + dots + 4 keypad rows +
-          biometric row) can't overlap/clip on short devices or at large font — it
+          biometric row) can't overlap/clip on short devices or at large font - it
           stays centered when it fits and scrolls when it doesn't. No PIN logic changes. */}
       <ScrollView
         style={{ flex: 1 }}
@@ -321,7 +321,7 @@ export function ParentGate() {
           ))}
         </Animated.View>
 
-        {/* biometric option (plan §13: "PIN or Face ID") — only when entering an existing
+        {/* biometric option (plan §13: "PIN or Face ID") - only when entering an existing
             gate, and never for purchase/delete (those require the PIN specifically). It
             resolves late (biometricAvailable is async), so Appear fades it in on mount
             instead of letting it pop. The disabled dim shares the keypad's lockDim value. */}

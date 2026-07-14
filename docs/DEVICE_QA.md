@@ -1,11 +1,11 @@
-# Device QA checklist — pre-submission smoke test
+# Device QA checklist - pre-submission smoke test
 
 Everything below is **built, type-checked, and web-verified** but needs one pass on real
 hardware (iPhone + one Android) before store submission. Web preview cannot exercise
 native font metrics, notifications, background audio, StoreKit, or RN's Switch/pointer
 responders. Ordered by risk. Check each box on both platforms unless noted.
 
-## 1. Kids mode entry (rebuilt — highest priority)
+## 1. Kids mode entry (rebuilt - highest priority)
 The pre-seeded "Leo" is gone; first entry now creates the kid profile through consent.
 - [ ] Fresh install → Family → Kids mode toggle → parental-consent card appears inline
       (name/type inputs hidden), "I'm the parent…" → parent-PIN create screen → PIN set
@@ -30,7 +30,7 @@ The pre-seeded "Leo" is gone; first entry now creates the kid profile through co
 - [ ] Android warm start (app killed vs backgrounded): Night Door appears once per cold
       start only (module-eval semantics; verify a backgrounded resume doesn't re-show it).
 
-## 3. Notifications (all changed — must hear silence)
+## 3. Notifications (all changed - must hear silence)
 - [ ] Bedtime reminder fires at the chosen time with NO sound, listed quietly
       (iOS: Notification Center, passive; Android: silent banner in the shade,
       channel "Gentle reminders").

@@ -27,7 +27,7 @@ export interface ValidatedSubscription {
  *
  *  - Apple: StoreKit 2. The client sends the JWS signed transaction (purchaseToken);
  *    we verify it with the App Store Server API verifier (the same x5c-chain
- *    verification used for webhooks) — NOT the deprecated /verifyReceipt endpoint.
+ *    verification used for webhooks) - NOT the deprecated /verifyReceipt endpoint.
  *    Needs the Apple Root CA certs (APPLE_ROOT_CERTS_DIR), shared with webhooks.
  *  - Google: Play Billing. We call androidpublisher v3 purchases.subscriptions
  *    authenticated with the Play service account (GOOGLE_PLAY_SERVICE_ACCOUNT_JSON).
@@ -69,7 +69,7 @@ export class ReceiptValidationService {
     const allow = config.premiumProductIds;
     if (!allow.length) return; // no allowlist configured (dev) → skip
     // REQUIRE a known premium SKU. A missing/undefined productId must NOT grant
-    // premium — otherwise a verified transaction with no product silently bypasses
+    // premium - otherwise a verified transaction with no product silently bypasses
     // the allowlist (money-path hole).
     if (!sku || !allow.includes(sku)) {
       throw new UnauthorizedException('Receipt product is not a premium subscription');

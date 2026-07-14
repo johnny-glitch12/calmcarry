@@ -1,7 +1,7 @@
 /**
- * CalmCarry — Tailwind / NativeWind config.
+ * CalmCarry - Tailwind / NativeWind config.
  * Color values mirror src/theme/colors.ts (the canonical TS tokens).
- * The palette is LOCKED to The Glow Company brand — do not invent colors here.
+ * The palette is LOCKED to The Glow Company brand - do not invent colors here.
  */
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -43,7 +43,7 @@ module.exports = {
         orb: '20px',
       },
       fontFamily: {
-        // Mirror src/theme/typography.ts EXACTLY — Poppins (body/UI) + Montserrat
+        // Mirror src/theme/typography.ts EXACTLY - Poppins (body/UI) + Montserrat
         // (headings/display). NO serif (the old Fraunces entries were a forbidden,
         // never-loaded leftover). RN needs the exact @expo-google-fonts variant per weight.
         sans: ['Poppins_400Regular'],

@@ -18,7 +18,7 @@ type Props = {
 };
 
 /**
- * ProgressRing — SVG ring whose lit arc sweeps full→empty off a progress shared
+ * ProgressRing - SVG ring whose lit arc sweeps full→empty off a progress shared
  * value. Animated on the UI thread via strokeDashoffset (stroke, not layout),
  * so it stays smooth on native and renders to a real <svg> on web for
  * verification. Used by the wind-down timer (DESIGN_SYSTEM §4 dim-arc).
@@ -45,7 +45,7 @@ export function ProgressRing({
       <Svg width={size} height={size}>
         {/* faint full track */}
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
-        {/* depleting lit arc — rotated so it starts at 12 o'clock */}
+        {/* depleting lit arc - rotated so it starts at 12 o'clock */}
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}

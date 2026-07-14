@@ -8,10 +8,10 @@ export type SessionEntry = {
 };
 
 /**
- * Record THAT a session ran (for activation/completion analytics, §15) — never a
+ * Record THAT a session ran (for activation/completion analytics, §15) - never a
  * mood/settle rating (the plan forbids symptom tracking & mood history). Always
  * persists locally so the app works offline; also posts to the backend when a
- * real token is present. Fire-and-forget — never throws to the caller.
+ * real token is present. Fire-and-forget - never throws to the caller.
  */
 export async function logSession(
   token: string | null,
@@ -27,7 +27,7 @@ export async function logSession(
     try {
       await api.log(token, entry);
     } catch {
-      /* offline — already saved locally */
+      /* offline - already saved locally */
     }
   }
 }

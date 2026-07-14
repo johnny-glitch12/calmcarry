@@ -40,7 +40,7 @@ export class ContentService {
     return data;
   }
 
-  /** A short-lived signed URL for the item's audio. Locked items require premium —
+  /** A short-lived signed URL for the item's audio. Locked items require premium -
    *  enforced server-side so the paywall can't be bypassed by deep-linking. */
   async signedUrl(id: string, ownerId: string): Promise<{ url: string; expiresAt: number | null; signed: boolean }> {
     const item = await this.contentRepo.findOne({ where: { id } });
@@ -49,19 +49,19 @@ export class ContentService {
       // expiry-aware: an expired/lapsed subscription must NOT unlock locked audio
       if (!(await this.users.isPremium(ownerId))) throw new ForbiddenException('Premium required');
     }
-    // sanitize the CDN object key — never let a CMS audioKey / id traverse paths
+    // sanitize the CDN object key - never let a CMS audioKey / id traverse paths
     const rawKey = item.audioKey || id;
     if (!/^[A-Za-z0-9_-]+$/.test(rawKey)) throw new NotFoundException('Content not found');
     return this.cdn.signAssetUrl(`audio/${rawKey}.mp3`);
   }
 
-  /** Ephemeral check-in recommendation (build plan §6 — never stored). */
+  /** Ephemeral check-in recommendation (build plan §6 - never stored). */
   recommend(intent: string, profileType?: string): { contentId: string } {
     if (profileType === 'kids') return { contentId: 'penguin' };
     return { contentId: INTENT_TRACK[intent] ?? 'slow-tide' };
   }
 
-  /** CMS publish — ship content without an app release (build plan §11). */
+  /** CMS publish - ship content without an app release (build plan §11). */
   async upsert(item: Partial<ContentItem> & { id: string }): Promise<ContentItem> {
     const saved = await this.contentRepo.save(this.contentRepo.create(item));
     this.catalogCache = null; // publish must be visible immediately

@@ -49,7 +49,7 @@ export class ContentController {
     return this.content.getCatalog();
   }
 
-  // Signed CDN URL for an item's audio — premium delivery (auth required).
+  // Signed CDN URL for an item's audio - premium delivery (auth required).
   @Get('content/:id/signed-url')
   @UseGuards(JwtAuthGuard)
   signedUrl(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
@@ -62,7 +62,7 @@ export class ContentController {
     return this.content.recommend(dto.intent, dto.profileType);
   }
 
-  // CMS publish — guarded by the CMS admin key header (build plan §11).
+  // CMS publish - guarded by the CMS admin key header (build plan §11).
   // Constant-time compare + tight throttle to resist key guessing.
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post('admin/content')

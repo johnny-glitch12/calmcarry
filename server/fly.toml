@@ -1,4 +1,4 @@
-# Fly.io deploy config for the CalmCarry API — THE deploy target (the Vercel
+# Fly.io deploy config for the CalmCarry API - THE deploy target (the Vercel
 # serverless path was removed; see DEPLOY.md). `fly launch --no-deploy` then
 # `fly deploy`. Set secrets first (see DEPLOY.md):
 #   fly secrets set JWT_SECRET=... CMS_ADMIN_KEY=... DATABASE_URL=... \
@@ -16,14 +16,14 @@ primary_region = "iad"
   # real credentials.
   NODE_ENV = "production"
   # Apple Root CA certs (public, committed in server/certs/apple and baked into the
-  # image at /app/certs — see Dockerfile). Satisfies the StoreKit receipt-validation
+  # image at /app/certs - see Dockerfile). Satisfies the StoreKit receipt-validation
   # boot gate without a secret; App Store receipts verify against these roots.
   APPLE_ROOT_CERTS_DIR = "/app/certs/apple"
 
 [http_service]
   internal_port = 4000
   force_https = true
-  # ALWAYS-ON — deliberately not scale-to-zero. A stopped machine (a) never fires
+  # ALWAYS-ON - deliberately not scale-to-zero. A stopped machine (a) never fires
   # the in-process daily COPPA retention purge and (b) puts a multi-second Nest
   # cold boot in front of Apple/Google store webhooks. One warm shared-cpu-1x is
   # ~$3/mo; that is exactly what it buys.

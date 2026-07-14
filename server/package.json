@@ -1,7 +1,7 @@
 {
   "name": "calmcarry-server",
   "version": "1.0.0",
-  "description": "CalmCarry API — NestJS backend (auth, entitlement, content, warranty, logs)",
+  "description": "CalmCarry API - NestJS backend (auth, entitlement, content, warranty, logs)",
   "license": "UNLICENSED",
   "private": true,
   "scripts": {

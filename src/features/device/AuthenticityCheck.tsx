@@ -32,7 +32,7 @@ function DrawOnCheck({ size, draw }: { size: number; draw: SharedValue<number> }
     strokeDashoffset: CHECK_LEN * (1 - draw.value),
   }));
   const containerStyle = useAnimatedStyle(() => ({
-    // eased fade tied to the stroke (full by ~25%) — no 1-frame pop-on, hidden at rest
+    // eased fade tied to the stroke (full by ~25%) - no 1-frame pop-on, hidden at rest
     opacity: Math.min(1, draw.value * 4),
     transform: [{ scale: 0.95 + 0.05 * draw.value }],
   }));
@@ -55,9 +55,9 @@ function DrawOnCheck({ size, draw }: { size: number; draw: SharedValue<number> }
 }
 
 /**
- * AuthenticityCheck — the device-registration TRUST moment (§4, §7 Peak). It is
+ * AuthenticityCheck - the device-registration TRUST moment (§4, §7 Peak). It is
  * HONEST: it confirms the Glow Orb actually registered to this account (warranty +
- * replacement support), NOT a cryptographic genuineness proof — we have no
+ * replacement support), NOT a cryptographic genuineness proof - we have no
  * manufactured-serial registry yet, so we never claim "genuine/verified authentic"
  * from a registration alone. Registered → sage check + real device on file;
  * no device → an invitation to register. (When Glowco supplies a serial registry,
@@ -136,7 +136,7 @@ export function AuthenticityCheck() {
         </AppText>
       </SwapText>
 
-      {/* orb + check overlay — reserveGlow keeps the halo from bleeding onto the text */}
+      {/* orb + check overlay - reserveGlow keeps the halo from bleeding onto the text */}
       <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
         <GlowOrb size={150} reserveGlow aura={checking} breathing={checking} burst={authentic} />
         <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
@@ -172,7 +172,7 @@ export function AuthenticityCheck() {
             </AppText>
           </Reveal>
 
-          {/* details — the real device on file, not a placeholder */}
+          {/* details - the real device on file, not a placeholder */}
           <Reveal index={2} style={{ alignSelf: 'stretch', marginTop: 24 }}>
             <View
               style={{

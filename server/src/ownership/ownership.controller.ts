@@ -5,7 +5,7 @@ import { JwtAuthGuard, JwtPayload } from '../auth/jwt-auth.guard';
 import { ShopifyService } from '../integrations/shopify.service';
 
 /**
- * Device OWNERSHIP — separate from premium entitlement (build plan §8). Matches a
+ * Device OWNERSHIP - separate from premium entitlement (build plan §8). Matches a
  * Shopify order by purchase email to grant the owner badge + warranty. Never
  * required for app entry, and never grants premium (that's the IAP subscription).
  */
@@ -16,7 +16,7 @@ export class OwnershipController {
   @Post('ownership/match')
   @UseGuards(JwtAuthGuard)
   async match(@CurrentUser() user: JwtPayload) {
-    // Match ONLY the authenticated account's own email — never a client-supplied
+    // Match ONLY the authenticated account's own email - never a client-supplied
     // address (which would be an ownership oracle / badge-spoof vector).
     const email = (user.email ?? '').trim();
     const m = await this.shopify.matchByEmail(email);

@@ -1,20 +1,20 @@
 /**
- * CalmCarry color tokens — LOCKED to The Glow Company brand.
+ * CalmCarry color tokens - LOCKED to The Glow Company brand.
  * Source: theglowcompany.co live brand tokens (see DESIGN_SYSTEM.md §1).
  * Do NOT invent a palette. tailwind.config.js mirrors these hex values.
  */
 
 export const brand = {
-  teal: '#426768', // PRIMARY — deep eucalyptus (emphasis, primary text on light)
+  teal: '#426768', // PRIMARY - deep eucalyptus (emphasis, primary text on light)
   tealDeep: '#365B59', // pressed/active teal
-  sage: '#74A5A2', // ACCENT — their button/link color; CTAs, active states
+  sage: '#74A5A2', // ACCENT - their button/link color; CTAs, active states
   sageHover: '#466D6A', // sage pressed
-  mint: '#D3EDEA', // brand mint — hero washes, accent panels
+  mint: '#D3EDEA', // brand mint - hero washes, accent panels
   mintSoft: '#E7F3F0', // lighter mint tint
   cream: '#F2F1EB', // warm neutral background
   slate: '#485453', // brand text (slate-green)
   white: '#FFFFFF',
-  coral: '#EF626C', // their sale/alert color — sparing pops ONLY
+  coral: '#EF626C', // their sale/alert color - sparing pops ONLY
 } as const;
 
 export const light = {
@@ -23,15 +23,15 @@ export const light = {
   surface: '#FFFFFF', // cards
   title: '#2E3F3E', // headings (deep slate-teal)
   text: '#485453', // body
-  muted: '#5C6968', // secondary — opaque, clears WCAG AA (4.5:1) on cream/white/mint
-  dim: '#5E6968', // hints / labels — darkened to clear WCAG AA on cream AND mint
+  muted: '#5C6968', // secondary - opaque, clears WCAG AA (4.5:1) on cream/white/mint
+  dim: '#5E6968', // hints / labels - darkened to clear WCAG AA on cream AND mint
   line: 'rgba(72,84,83,0.12)', // hairline
   lineSage: 'rgba(116,165,162,0.35)', // accent edges
-  ctaBg: '#426768', // deep eucalyptus teal — white label clears WCAG AA (~6.2:1); sage was 2.75:1
+  ctaBg: '#426768', // deep eucalyptus teal - white label clears WCAG AA (~6.2:1); sage was 2.75:1
   ctaText: '#FFFFFF',
   // gradient stops for the atmospheric mint wash at the top third
   washGradient: ['#E7F3F0', '#F4F3ED'] as const,
-  // tinted-to-teal shadow (never gray) — used as RN shadow props
+  // tinted-to-teal shadow (never gray) - used as RN shadow props
   shadow: {
     shadowColor: '#426768',
     shadowOpacity: 0.1,
@@ -48,11 +48,11 @@ export const night = {
   surface: 'rgba(255,255,255,0.05)',
   title: '#EAF2EF',
   text: '#9DB7B1',
-  muted: '#8FA8A2', // opaque — readable secondary on the dark base
+  muted: '#8FA8A2', // opaque - readable secondary on the dark base
   dim: '#869F99', // raised so chart axis/legend labels clear contrast
   line: 'rgba(255,255,255,0.08)',
   lineSage: 'rgba(143,201,190,0.30)',
-  glow: '#8FC9BE', // luminous sage — the orb glow + progress ring on dark
+  glow: '#8FC9BE', // luminous sage - the orb glow + progress ring on dark
   ctaBg: '#7FB8AD',
   ctaText: '#15302B',
   // night base gradient (top → floor)
@@ -68,12 +68,12 @@ export const night = {
 
 export type ThemeMode = 'light' | 'night' | 'kids';
 
-// KIDS "cozy dusk" — the kids surface used to just borrow the adult light/night
+// KIDS "cozy dusk" - the kids surface used to just borrow the adult light/night
 // palette (clinical cream bg + a near-black card slab = not a kid's bedtime).
 // This is its own warm-dusk identity, still on-brand eucalyptus: a deepening
 // dusky teal-green sky, warm off-white text, cozy elevated cards (never black),
 // a warm PEACH call-to-action + peach-tinted panels, and a soft peach glow
-// (added behind the mascot on KidsHome). Warm, snug, magical — clearly bedtime.
+// (added behind the mascot on KidsHome). Warm, snug, magical - clearly bedtime.
 export const kidsDusk = {
   deep: '#152A26', // floor / scrim
   base: '#1B302C', // screen base
@@ -85,7 +85,7 @@ export const kidsDusk = {
   line: 'rgba(255,255,255,0.09)',
   lineSage: 'rgba(143,201,190,0.32)',
   glow: '#8FC9BE',
-  peach: '#F1C7A3', // the warmth — CTA, stars, the mascot's halo
+  peach: '#F1C7A3', // the warmth - CTA, stars, the mascot's halo
   ctaBg: '#F1C7A3', // Start button: soft peach, inviting for a child
   ctaText: '#1B302C',
   washGradient: ['#2E4A44', '#1B302C'] as const,
@@ -113,7 +113,7 @@ export type ThemeColors = {
   ctaText: string;
   /** luminous accent for ICONS/borders/fills (3:1 ok): sage on light, glow on night */
   accent: string;
-  /** accent for TEXT — meets WCAG AA 4.5:1: deep teal on light, glow on night */
+  /** accent for TEXT - meets WCAG AA 4.5:1: deep teal on light, glow on night */
   textAccent: string;
   /** subtle accent panel bg (mint wash by day, faint sage on dark) */
   panel: string;
@@ -121,7 +121,7 @@ export type ThemeColors = {
   panelStrong: string;
   /** orb fill/glow color */
   orb: string;
-  /** error/destructive text+icons — AA-safe per theme (coral fails AA on cream) */
+  /** error/destructive text+icons - AA-safe per theme (coral fails AA on cream) */
   danger: string;
   washGradient: readonly [string, string];
   shadow: object;
@@ -145,7 +145,7 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     panel: brand.mintSoft,
     panelStrong: brand.mint,
     orb: brand.sage,
-    // brand coral is only ~2.77:1 on cream — darkened red clears WCAG AA by day
+    // brand coral is only ~2.77:1 on cream - darkened red clears WCAG AA by day
     danger: '#B5303A',
     washGradient: light.washGradient,
     shadow: light.shadow,
@@ -184,8 +184,8 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     ctaBg: kidsDusk.ctaBg,
     ctaText: kidsDusk.ctaText,
     accent: kidsDusk.glow,
-    textAccent: '#9AD6C4', // warm luminous sage — headings/kickers pop on dusk
-    panel: 'rgba(241,199,163,0.12)', // peach-tinted soft panel (the stars card) — warmth
+    textAccent: '#9AD6C4', // warm luminous sage - headings/kickers pop on dusk
+    panel: 'rgba(241,199,163,0.12)', // peach-tinted soft panel (the stars card) - warmth
     panelStrong: 'rgba(241,199,163,0.18)',
     orb: kidsDusk.glow,
     danger: brand.coral,

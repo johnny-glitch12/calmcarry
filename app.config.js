@@ -11,7 +11,7 @@ module.exports = ({ config }) => {
   }
 
   // Android FCM push: expo-notifications needs a google-services.json to mint an
-  // FCM token. Wire it in when the founder provides one — either by path via
+  // FCM token. Wire it in when the founder provides one - either by path via
   // GOOGLE_SERVICES_JSON, or by dropping the file at ./google-services.json (both
   // gitignored). Absent → no key added, so builds without Android push still work,
   // and iOS is unaffected (it uses APNs, no Firebase file needed).

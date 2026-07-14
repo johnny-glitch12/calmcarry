@@ -12,7 +12,7 @@ import { Owner } from './owner.entity';
 export type ProfileType = 'adult' | 'kids';
 
 /** A member of the household (build plan §9). One Owner/account = one household. */
-// At most ONE primary profile per owner — DB-enforced so a lazy create on a
+// At most ONE primary profile per owner - DB-enforced so a lazy create on a
 // concurrent GET can't mint two primaries.
 @Index('uq_profile_primary', ['ownerId'], { unique: true, where: '"isPrimary" = true' })
 @Entity('profiles')

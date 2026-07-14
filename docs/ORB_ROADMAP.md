@@ -11,7 +11,7 @@ bloats the binary. The defensible position is the one Calm cannot copy: **a phys
 ritual anchor with an app that gets out of the way.**
 
 - Sell the orb as the product; the app is its nervous system. Marketing language:
-  "hold something, hear something, breathe" — never "10,000 sounds".
+  "hold something, hear something, breathe" - never "10,000 sounds".
 - The app's single health metric is **time_to_first_audio** (now instrumented).
   Every release should hold or lower it. If a feature adds a screen between unlock
   and audio, it loses.
@@ -24,11 +24,11 @@ ritual anchor with an app that gets out of the way.**
 Today the orb is standalone and the app never talks to it. Copy-only pairing shipped
 (orb-aware ritual lines, gated on registration). The next levers are hardware:
 
-1. **v1.5 — device-side session start.** A press on the orb IS the ritual start.
+1. **v1.5 - device-side session start.** A press on the orb IS the ritual start.
    The app becomes optional at bedtime: the person who wants zero screens gets zero
    screens, and the app becomes the daytime companion (library, family, warranty).
    This single change dissolves the app-device friction paradox.
-2. **v2 — BLE presence, minimal scope.** Not data sync: just "a session happened"
+2. **v2 - BLE presence, minimal scope.** Not data sync: just "a session happened"
    (timestamp + duration) so calm nights count without the phone. Resist telemetry;
    the brand promise is no tracking in the bedroom.
 3. **Intensity child-lock in hardware.** The app's kids mode is COPPA-clean, but the
@@ -38,7 +38,7 @@ Today the orb is standalone and the app never talks to it. Copy-only pairing shi
    Note: shop copy currently says "one for every bedside… or each child", and kids
    sessions in device-registered households show orb-hold cues. If counsel wants
    distance between children and the microcurrent claim set, both are one-line
-   copy changes — say the word.
+   copy changes - say the word.
 4. **Packaging → ritual.** The QR in the box should deep-link to registration + the
    first wind-down, not a marketing page. First-night activation is the whole game.
 

@@ -11,12 +11,12 @@ export interface PushMessage {
 
 /**
  * Sends gentle, opt-in reminders. REAL transports, credential-gated:
- *  - ios: APNs token-based auth — an ES256 JWT signed with the .p8 key
+ *  - ios: APNs token-based auth - an ES256 JWT signed with the .p8 key
  *    (APNS_KEY_P8 / APNS_KEY_ID / APNS_TEAM_ID; APNS_SANDBOX=1 for dev builds).
- *  - android: FCM HTTP v1 — OAuth via the Firebase service account
+ *  - android: FCM HTTP v1 - OAuth via the Firebase service account
  *    (FIREBASE_SERVICE_ACCOUNT_JSON), using google-auth-library (already a dep
  *    for Play billing).
- * Without keys it logs and reports sent:false — reminder scheduling stays
+ * Without keys it logs and reports sent:false - reminder scheduling stays
  * buildable and testable in every environment, and we never pretend a send.
  */
 @Injectable()
@@ -50,7 +50,7 @@ export class PushService {
         'apns-priority': '5', // power-friendly; these are gentle reminders, not alarms
         'content-type': 'application/json',
       },
-      // quiet delivery: no sound, passive interruption level — a gentle reminder lands
+      // quiet delivery: no sound, passive interruption level - a gentle reminder lands
       // in Notification Center without lighting the screen or waking anyone
       body: JSON.stringify({
         aps: { alert: { title: msg.title, body: msg.body }, 'interruption-level': 'passive' },

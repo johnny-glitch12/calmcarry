@@ -1,15 +1,15 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /**
- * CalmCarry's own tab iconography — hand-drawn geometric vectors on the brand's
+ * CalmCarry's own tab iconography - hand-drawn geometric vectors on the brand's
  * language (the orb's circle, a 24pt grid, 1.8 stroke, rounded caps), replacing
  * the stock Feather set where identity matters most. Each glyph says what the
  * tab IS in this app, not a generic metaphor:
- *   home      — the orb at rest on a horizon (your room, tonight)
- *   library   — three shelf rows, longest first (the collection)
- *   listen    — three fader stems with knobs (the sound machine itself)
- *   community — two circles sharing space (together, anonymous)
- *   profile   — a person drawn from the orb's own circle
+ *   home      - the orb at rest on a horizon (your room, tonight)
+ *   library   - three shelf rows, longest first (the collection)
+ *   listen    - three fader stems with knobs (the sound machine itself)
+ *   community - two circles sharing space (together, anonymous)
+ *   profile   - a person drawn from the orb's own circle
  */
 type IconProps = { size?: number; color: string; strokeWidth?: number };
 

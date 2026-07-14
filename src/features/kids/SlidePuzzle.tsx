@@ -15,17 +15,17 @@ import { lightTap } from '@/lib/haptics';
 import { dur, ease, fonts, kidsDusk } from '@/theme';
 
 /**
- * SlidePuzzle — a genuine little game a child can play WHILE the bedtime audio keeps
+ * SlidePuzzle - a genuine little game a child can play WHILE the bedtime audio keeps
  * running (Mason). Launched from a button on the kids player; the audio player stays
  * mounted underneath, so sound never stops. The picture is the track's own watercolour
  * cover, sliced 3×3 (one empty space). Tap a piece next to the gap to slide it; get the
  * picture back together.
  *
  * Tuned for bedtime, not arcade: no timer, no score to beat, no fail state, no loud
- * win — just a soft "you did it" and the picture healing over. Calm, quiet, optional.
+ * win - just a soft "you did it" and the picture healing over. Calm, quiet, optional.
  */
 
-const GRID = 3; // 3×3 = 8 pieces + one gap — easy for small hands
+const GRID = 3; // 3×3 = 8 pieces + one gap - easy for small hands
 const SIZE = GRID * GRID; // 9 cells
 const EMPTY = SIZE - 1; // piece id of the blank (bottom-right when solved)
 const SOLVED = Array.from({ length: SIZE }, (_, i) => i);
@@ -37,7 +37,7 @@ const adjacent = (a: number, b: number) => {
   return Math.abs(pa.r - pb.r) + Math.abs(pa.c - pb.c) === 1;
 };
 
-/** Shuffle by walking the gap through random valid moves — always solvable (a random
+/** Shuffle by walking the gap through random valid moves - always solvable (a random
  *  permutation would be unsolvable half the time). */
 function shuffled(): number[] {
   const s = [...SOLVED];
@@ -154,7 +154,7 @@ export function SlidePuzzle({ cover, onClose }: { cover: CoverKey; onClose: () =
   };
 
   return (
-    // full-screen cozy-dusk overlay ABOVE the player — the audio player stays mounted
+    // full-screen cozy-dusk overlay ABOVE the player - the audio player stays mounted
     // underneath, so the bedtime sound keeps playing while they play.
     <View
       style={{

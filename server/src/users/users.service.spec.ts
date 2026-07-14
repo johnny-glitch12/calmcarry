@@ -2,7 +2,7 @@ import { Entitlement } from '../entities';
 import { UsersService } from './users.service';
 
 // Pure-logic unit test of the premium gate (the expiry-aware check that the whole
-// paywall relies on — including the fix where an "active" but expired calm_plan
+// paywall relies on - including the fix where an "active" but expired calm_plan
 // must NOT unlock content). No DB/DI needed: isPremiumEntitlement is pure.
 const make = (over: Partial<Entitlement>): Entitlement =>
   ({

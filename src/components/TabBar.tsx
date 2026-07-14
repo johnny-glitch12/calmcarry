@@ -19,15 +19,15 @@ import { HomeIcon, TAB_ICONS } from './TabIcons';
 import { brand, dur, ease, fonts, night, themes, useColorSchemePref, useResponsive } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-// Tab selection POPS (Mason). The slot widths still snap in one frame — no
-// stretching/morphing — but the pill itself lands with a fast, punchy scale-in
+// Tab selection POPS (Mason). The slot widths still snap in one frame - no
+// stretching/morphing - but the pill itself lands with a fast, punchy scale-in
 // and ONE small overshoot bounce, like a button that's happy you picked it.
 // Duration-capped spring: bounce peaks early, everything is DONE at 380ms
 // (a physics spring's micro-oscillation tail rang on past 600ms). Tuned live
 // with Mason: 300 read as too quick, 380 keeps the pop but lets it breathe.
 const POP_SPRING = { duration: 380, dampingRatio: 0.55 } as const;
 
-// In Kids mode only these tabs show — no Community (adults only) or Profile
+// In Kids mode only these tabs show - no Community (adults only) or Profile
 // (settings/billing). Leaving Kids mode goes through the parent gate.
 const KID_TABS = ['index', 'sounds', 'listen'];
 
@@ -42,7 +42,7 @@ type TabBarProps = {
   };
 };
 
-/** Route name → label. Icons are CalmCarry's own vector set (TabIcons) — the
+/** Route name → label. Icons are CalmCarry's own vector set (TabIcons) - the
  *  brand's geometry, not a stock icon family. */
 const TABS: Record<string, { label: string; night?: boolean }> = {
   index: { label: 'Home' },
@@ -58,7 +58,7 @@ const TABS: Record<string, { label: string; night?: boolean }> = {
  * A single tab in the floating-pill bar. The ACTIVE tab is a solid sage-filled
  * pill with its icon + label inline; INACTIVE tabs are a muted icon only.
  * Slot widths swap in ONE frame (no stretching) in step with the instant scene
- * switch — then the pill POPS in: fast scale-up with a single overshoot bounce.
+ * switch - then the pill POPS in: fast scale-up with a single overshoot bounce.
  * Plus the press dip under the finger and a light haptic. Reduced motion: all
  * instant, no pop.
  */
@@ -73,7 +73,7 @@ function TabItem({
   pillContent,
 }: {
   focused: boolean;
-  /** the currently focused route — ANY focus change shifts every slot */
+  /** the currently focused route - ANY focus change shifts every slot */
   focusedRoute: string;
   route: string;
   label: string;
@@ -90,7 +90,7 @@ function TabItem({
   // report this tab's window rect for the hands-on tour spotlight. Re-measured
   // when ANY tab's focus changes (the pill shifts every sibling slot, and web's
   // onLayout only fires on SIZE changes, not position). Selection reflow is
-  // instant now — a frame or two of settle is all the measurement needs.
+  // instant now - a frame or two of settle is all the measurement needs.
   const itemRef = useRef<View>(null);
   const measure = useCallback(() => {
     setTimeout(() => {
@@ -111,7 +111,7 @@ function TabItem({
       t.value = 0;
       t.value = withSpring(1, POP_SPRING);
     } else {
-      t.value = 0; // the old pill clears instantly — the new one is the star
+      t.value = 0; // the old pill clears instantly - the new one is the star
     }
   }, [focused, reduced, t]);
 
@@ -163,12 +163,12 @@ function TabItem({
           },
           rowStyle,
         ]}>
-        {/* sage pill fill — appears in one frame with the selection */}
+        {/* sage pill fill - appears in one frame with the selection */}
         <Animated.View
           pointerEvents="none"
           style={[{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: 18, backgroundColor: pillBg }, fillStyle]}
         />
-        {/* icon — muted base + pill-content overlay, swapped instantly via opacity */}
+        {/* icon - muted base + pill-content overlay, swapped instantly via opacity */}
         <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={22} color={inactive} />
           <Animated.View
@@ -194,10 +194,10 @@ function TabItem({
 }
 
 /**
- * TabBar — SOLID floating bar (was frosted glass; the translucent blur read as
- * mush over busy content and all but vanished under the tour scrim — Mason: "we
+ * TabBar - SOLID floating bar (was frosted glass; the translucent blur read as
+ * mush over busy content and all but vanished under the tour scrim - Mason: "we
  * can't see it and neither would the consumer"). The active tab is a solid sage
- * pill (icon + label), inactive tabs are muted icons. Crossfade only — no
+ * pill (icon + label), inactive tabs are muted icons. Crossfade only - no
  * sliding indicator (DESIGN_SYSTEM §4). Selecting a new tab fires a light haptic.
  */
 export function TabBar({ state, navigation }: TabBarProps) {
@@ -207,26 +207,26 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const kids = mode === 'kids';
   // the focused route may force night (e.g. the Listen/sleep screen) regardless of
   // the user's appearance preference; match it so the bar stays dark on that screen.
-  // Kids mode paints its own warm "cozy dusk" — the bar follows so it's not a light
+  // Kids mode paints its own warm "cozy dusk" - the bar follows so it's not a light
   // strip under a dusk screen.
   const dark = kids || effective === 'night' || Boolean(TABS[state.routes[state.index]?.name]?.night);
   const t = themes[kids ? 'kids' : dark ? 'night' : effective];
   const inactive = t.muted;
   // active pill = brand SAGE in BOTH themes (matching the reference), with dark
-  // eucalyptus content so the label clears WCAG AA — white-on-sage is only 2.75:1,
+  // eucalyptus content so the label clears WCAG AA - white-on-sage is only 2.75:1,
   // whereas #15302B on sage is ~5.5:1. (Night already shipped a light-sage pill.)
   const pillBg = dark ? t.ctaBg : brand.sage;
   const pillContent = dark ? t.ctaText : night.ctaText;
-  // solid, card-grade surface: kids dusk / night elevated / white by day — the bar
+  // solid, card-grade surface: kids dusk / night elevated / white by day - the bar
   // must read clearly over any content (and under the tour scrim)
   const barBg = kids ? t.surface : dark ? night.elevated : '#FFFFFF';
-  // TABLET: don't let the pill bar stretch the full width of an iPad — cap it and
+  // TABLET: don't let the pill bar stretch the full width of an iPad - cap it and
   // centre it (matches the centred content column). Phones stay edge-to-edge with
   // 16pt margins. alignSelf centres within the absolute-positioned full-width slot.
   const { isTablet } = useResponsive();
 
   return (
-    // full-width positioner that CENTRES the bar — a pinned left/right box can't
+    // full-width positioner that CENTRES the bar - a pinned left/right box can't
     // centre itself, so the cap + centring lives here (16pt side padding = the
     // phone margin; on tablet the bar caps below the available width and centres)
     <View

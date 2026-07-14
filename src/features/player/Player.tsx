@@ -42,7 +42,7 @@ import { dur, ease, useTheme } from '@/theme';
 const SLEEP_OPTIONS = [0, 15, 30, 45, 60] as const;
 
 // Sensation-honest cues, rotated through the session. Two sets: the orb cues are
-// shown ONLY when a device is registered on this account (cc.devices cache) —
+// shown ONLY when a device is registered on this account (cc.devices cache) -
 // "Notice the gentle pulse in your palm" told non-owners to feel hardware they
 // don't have. Everyone else gets honest breath-and-body guidance.
 const DEVICE_CUES = [
@@ -57,7 +57,7 @@ const BREATH_CUES = [
   'Unclench your jaw, soften your gaze',
   'Let the sound carry you',
 ];
-// kid sessions speak kid: no jaws, no gazes — words a four-year-old can follow
+// kid sessions speak kid: no jaws, no gazes - words a four-year-old can follow
 const KID_CUES = [
   'Snuggle in and get comfy',
   'A big, slow breath in',
@@ -103,14 +103,14 @@ export function Player() {
   const router = useRouter();
   const { token, isPremium } = useAuth();
   const { mode } = useProfile();
-  // Player is always night mode, so `c` resolves to the night theme — read the
+  // Player is always night mode, so `c` resolves to the night theme - read the
   // palette from tokens instead of hardcoding the night hex throughout.
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
   const track = (id && TRACKS[id]) || TRACKS['slow-tide'];
   // Locked premium tracks give a free user a short PREVIEW, then route to the paywall.
-  // Gate on ENTITLEMENT ONLY — kids mode is NOT an exemption (a free profile could
+  // Gate on ENTITLEMENT ONLY - kids mode is NOT an exemption (a free profile could
   // switch to kids and play the whole locked catalogue, incl. via a deep link
   // calmcarry://player?id=<locked>; this preview gate is the single enforcement point).
   const isPreview = !!track.locked && !isPremium;
@@ -125,13 +125,13 @@ export function Player() {
   const [showPuzzle, setShowPuzzle] = useState(false); // kids-only slide-puzzle overlay
 
   // allow playback in silent mode + keep playing with the screen off / app backgrounded
-  // (sleep apps must run all night — build plan §12). doNotMix: our audio is the
+  // (sleep apps must run all night - build plan §12). doNotMix: our audio is the
   // primary sound AND lock-screen controls require it (expo-audio v56 docs).
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => {});
   }, []);
 
-  // Lock-screen presence: title + artwork + play/pause with the phone locked —
+  // Lock-screen presence: title + artwork + play/pause with the phone locked -
   // exactly when a sleep app is used. ALSO load-bearing on Android: without an
   // active lock-screen session, background playback is cut after ~3 minutes
   // (expo-audio v56 docs). Remote pause flips the player's own state, which
@@ -145,7 +145,7 @@ export function Player() {
         { showSeekBackward: false, showSeekForward: false },
       );
     } catch {
-      /* platform without lock-screen support — playback itself is unaffected */
+      /* platform without lock-screen support - playback itself is unaffected */
     }
     return () => {
       try {
@@ -157,7 +157,7 @@ export function Player() {
   }, [player, track.title, track.cover]);
 
   // Loop ONLY ambient soundscapes. Guided sessions, sleep tales and breathing
-  // exercises must play once and end gently (§6 "gentle end") — never restart.
+  // exercises must play once and end gently (§6 "gentle end") - never restart.
   useEffect(() => {
     player.loop = track.category === 'soundscape';
     player.volume = 1;
@@ -165,7 +165,7 @@ export function Player() {
     (async () => {
       // Resolve a CMS/CDN streaming source BEFORE the first play, with a guaranteed
       // bundled fallback (§11). The effect runs once per player (i.e. once per track),
-      // and resolveAudioSource caches per track id — so a track resolves exactly once
+      // and resolveAudioSource caches per track id - so a track resolves exactly once
       // and the swap always happens before playback begins, never mid-night (§12).
       try {
         const src = await resolveAudioSource(track, token);
@@ -204,7 +204,7 @@ export function Player() {
   }, [status.currentTime, status.duration, progress]);
 
   // record the listen once it's underway (local always; backend if signed in).
-  // Any real session earns today's "calm night" (once/day) — adults and kids alike —
+  // Any real session earns today's "calm night" (once/day) - adults and kids alike -
   // and pushes the track to "recently played" so it's easy to pick up again.
   useEffect(() => {
     if (!loggedRef.current && status.playing) {
@@ -264,10 +264,10 @@ export function Player() {
     toggleFavorite(track.id).then(setSaved).catch(() => {});
   };
 
-  // breathing pacer (4s in / 6s out) + rotating honest cues — the guided-session feel
+  // breathing pacer (4s in / 6s out) + rotating honest cues - the guided-session feel
   const reduced = useReducedMotion();
   const breath = useSharedValue(0);
-  // the exhale ripple — released once per breath at the top of the out-breath,
+  // the exhale ripple - released once per breath at the top of the out-breath,
   // expanding + dissolving over the full 6s exhale ("letting the day go").
   // Rests at 1 (fully dissolved = invisible); each exhale rewinds it to 0.
   const ripple = useSharedValue(1);
@@ -320,7 +320,7 @@ export function Player() {
       t1 = setTimeout(() => {
         if (!alive) return;
         setPhase('out');
-        // release one ripple at the top of the exhale — it expands and dissolves
+        // release one ripple at the top of the exhale - it expands and dissolves
         // over the full out-breath, reaching the night ring as it disappears
         ripple.value = 0;
         ripple.value = withTiming(1, { duration: 6000, easing: ease.out });
@@ -340,28 +340,28 @@ export function Player() {
   }, [reduced, ripple]);
 
   useEffect(() => {
-    if (reduced) return; // honor reduced motion — no auto-rotating cue text
+    if (reduced) return; // honor reduced motion - no auto-rotating cue text
     const id = setInterval(() => setCueIdx((i) => (i + 1) % cues.length), 13000);
     return () => clearInterval(id);
   }, [reduced, cues.length]);
 
-  // gentle amplitude — a subtle breath, not a 32%/2× pulse you stare at all night
+  // gentle amplitude - a subtle breath, not a 32%/2× pulse you stare at all night
   const haloStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + breath.value * 0.12 }],
     opacity: 0.12 + breath.value * 0.1,
   }));
-  // a crisp drawn ring riding the breath — gives the soft halo a designed edge
+  // a crisp drawn ring riding the breath - gives the soft halo a designed edge
   const breathRingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + breath.value * 0.1 }],
     opacity: 0.18 + breath.value * 0.22,
   }));
   // the exhale ripple: expands from the breath ring to the night ring (300) and
-  // dissolves as it arrives — invisible at rest (ripple = 1 → opacity 0)
+  // dissolves as it arrives - invisible at rest (ripple = 1 → opacity 0)
   const rippleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + ripple.value * 0.22 }],
     opacity: (1 - ripple.value) * 0.3,
   }));
-  // the cover itself breathes with the guide — barely (2%), like a chest rising
+  // the cover itself breathes with the guide - barely (2%), like a chest rising
   const coverStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + breath.value * 0.02 }],
   }));
@@ -398,7 +398,7 @@ export function Player() {
       completedRef.current = true;
       const durationSec = startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : undefined;
       const completed = reachedEnd || (durationSec ?? 0) >= 60;
-      // a completed wind-down is the honest "it worked" — remember it so the
+      // a completed wind-down is the honest "it worked" - remember it so the
       // recommender can lean toward tracks that carried this household before
       if (completed) void recordTrackWin(track.id);
       getJSON('cc.firstSessionDone', false).then((done) => {
@@ -435,7 +435,7 @@ export function Player() {
         } catch {
           /* ignore */
         }
-        // a child must never land on the adult "were you settled?" check-in — send
+        // a child must never land on the adult "were you settled?" check-in - send
         // kids back to their own home instead
         router.replace((mode === 'kids' ? '/' : '/check-in') as Href);
       }
@@ -443,7 +443,7 @@ export function Player() {
     step();
   }, [player, router, fireComplete, mode]);
 
-  // Guided sessions, sleep tales and breathing must play once and END — not freeze
+  // Guided sessions, sleep tales and breathing must play once and END - not freeze
   // on a silent 100% ring. Soundscapes (which loop) are excluded.
   useEffect(() => {
     if (status.didJustFinish && track.category !== 'soundscape') endSession();
@@ -469,7 +469,7 @@ export function Player() {
   });
   useEffect(() => () => fireCompleteRef.current(false), []);
 
-  // Free preview: gently fade to the paywall after 60s — "you've felt it, now keep it"
+  // Free preview: gently fade to the paywall after 60s - "you've felt it, now keep it"
   // instead of a closed door. Never logs a completion.
   const runPreviewFade = useCallback(() => {
     completedRef.current = true; // a preview is not a completed session
@@ -511,7 +511,7 @@ export function Player() {
 
   const cycleSleep = () => {
     const i = (SLEEP_OPTIONS as readonly number[]).indexOf(sleepMin);
-    // From Off, jump straight to a sane 30-min timer — one groggy tap gets the app's own
+    // From Off, jump straight to a sane 30-min timer - one groggy tap gets the app's own
     // "won't loop all night" promise, instead of four taps through 15 → 30. The full
     // cycle (30 → 45 → 60 → Off → 30) is still reachable from there.
     const next = sleepMin === 0 ? 30 : SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
@@ -526,7 +526,7 @@ export function Player() {
         mode="night"
         backdrop={
           // immersive scene: the track's own artwork fills the screen under a deep
-          // night scrim — dark enough for 3am eyes, alive enough to feel like a place
+          // night scrim - dark enough for 3am eyes, alive enough to feel like a place
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <Image
               source={covers[track.cover]}
@@ -547,7 +547,7 @@ export function Player() {
           <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close player" dimTo={0.85}>
             <Feather name="chevron-down" size={28} color={c.text} />
           </PressableScale>
-          {/* sleep / auto-stop timer — taps cycle Off → 15 → 30 → 45 → 60 min */}
+          {/* sleep / auto-stop timer - taps cycle Off → 15 → 30 → 45 → 60 min */}
           <PressableScale
             onPress={cycleSleep}
             hitSlop={14}
@@ -604,7 +604,7 @@ export function Player() {
           </View>
         ) : null}
 
-        {/* centerpiece — breathing guide + cover inside the playback ring. A ScrollView
+        {/* centerpiece - breathing guide + cover inside the playback ring. A ScrollView
             with flexGrow+center: identical (centered) when it fits, but SCROLLS instead of
             overlapping the fixed top bar / controls on short devices or at large font. */}
         <ScrollView
@@ -613,7 +613,7 @@ export function Player() {
           showsVerticalScrollIndicator={false}>
           <View style={{ width: 300, height: 300, alignItems: 'center', justifyContent: 'center' }}>
             <ProgressRing progress={progress} size={300} strokeWidth={3} fill style={{ position: 'absolute' }} />
-            {/* breathing halo — expands on the in-breath, settles on the out */}
+            {/* breathing halo - expands on the in-breath, settles on the out */}
             <Animated.View
               pointerEvents="none"
               style={[
@@ -621,7 +621,7 @@ export function Player() {
                 haloStyle,
               ]}
             />
-            {/* exhale ripple — one ring released per breath, dissolving as it reaches the night ring */}
+            {/* exhale ripple - one ring released per breath, dissolving as it reaches the night ring */}
             <Animated.View
               pointerEvents="none"
               style={[
@@ -629,7 +629,7 @@ export function Player() {
                 rippleStyle,
               ]}
             />
-            {/* breath ring — a crisp edge riding the breath */}
+            {/* breath ring - a crisp edge riding the breath */}
             <Animated.View
               pointerEvents="none"
               style={[
@@ -637,7 +637,7 @@ export function Player() {
                 breathRingStyle,
               ]}
             />
-            {/* cover inside the ring — breathes with the guide */}
+            {/* cover inside the ring - breathes with the guide */}
             <Animated.View
               style={[{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage }, coverStyle]}>
               <Image source={covers[track.cover]} style={{ width: 200, height: 200 }} contentFit="cover" accessibilityIgnoresInvertColors />
@@ -665,7 +665,7 @@ export function Player() {
           <AppText variant="body" tone="muted" style={{ marginTop: 4, textAlign: 'center' }}>
             {track.subtitle}
           </AppText>
-          {/* Mason: "more info next to audios" — what this is + when to reach for it */}
+          {/* Mason: "more info next to audios" - what this is + when to reach for it */}
           {track.about ? (
             <AppText
               variant="caption"
@@ -676,7 +676,7 @@ export function Player() {
             </AppText>
           ) : null}
 
-          {/* rotating, sensation-honest device cue — or a calm load-failure + retry */}
+          {/* rotating, sensation-honest device cue - or a calm load-failure + retry */}
           {loadFailed ? (
             <Appear key="fail" enter={dur.nav}>
               <PressableScale
@@ -704,7 +704,7 @@ export function Player() {
           )}
         </ScrollView>
 
-        {/* controls — heart (save) · play/pause · matching spacer keeps play centered.
+        {/* controls - heart (save) · play/pause · matching spacer keeps play centered.
             Screen reserves only left/right insets, so fold in the bottom inset here or
             the play button sits under the Android nav bar / iOS home indicator. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: Math.max(insets.bottom, 12) + 16 }}>
@@ -724,7 +724,7 @@ export function Player() {
           </PressableScale>
           <PlayPause paused={paused} onPress={toggle} />
           {/* Kids get a real game to play WHILE listening (Mason): a slide puzzle of the
-              track art. Opens as an overlay — the audio player stays mounted, so sound
+              track art. Opens as an overlay - the audio player stays mounted, so sound
               never stops. Adults get the balancing spacer that keeps play centered. */}
           {mode === 'kids' ? (
             <PressableScale
@@ -743,7 +743,7 @@ export function Player() {
           )}
         </View>
 
-        {/* Non-medical wellness disclaimer on GUIDED practices (FTC/TGA) — meditation
+        {/* Non-medical wellness disclaimer on GUIDED practices (FTC/TGA) - meditation
             & breathing can read as health claims; soundscapes/music/noise/tales don't. */}
         {track.category === 'meditation' || track.category === 'breathing' ? (
           <AppText
@@ -755,11 +755,11 @@ export function Player() {
         ) : null}
       </View>
       {/* kids "game" layer (Mason): tap the sky over the artwork and soft stars
-          bloom + settle out — wind-down mechanics, audio untouched. Rendered LAST
+          bloom + settle out - wind-down mechanics, audio untouched. Rendered LAST
           (on top) but constrained to the art band, clear of the top bar and the
           controls, so it never steals a real tap target. Adults never see it. */}
       {mode === 'kids' ? <SleepyStars /> : null}
-      {/* the slide-puzzle game — full-screen overlay above everything; the audio player
+      {/* the slide-puzzle game - full-screen overlay above everything; the audio player
           keeps running underneath so the bedtime sound never stops. Kids only. */}
       {mode === 'kids' && showPuzzle ? (
         <SlidePuzzle cover={track.cover} onClose={() => setShowPuzzle(false)} />

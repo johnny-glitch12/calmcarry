@@ -22,7 +22,7 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   ocean: require('../../assets/audio/ocean.mp3'),
   rain: require('../../assets/audio/rain.mp3'),
   forest: require('../../assets/audio/forest.mp3'),
-  drone: require('../../assets/audio/drone.mp3'), // mp3, not ogg — iOS won't decode .ogg
+  drone: require('../../assets/audio/drone.mp3'), // mp3, not ogg - iOS won't decode .ogg
   piano: require('../../assets/audio/piano.mp3'),
   gymnopedie: require('../../assets/audio/gymnopedie.mp3'),
   fire: require('../../assets/audio/fire.mp3'),
@@ -32,7 +32,7 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   pink: require('../../assets/audio/pink-noise.mp3'),
   white: require('../../assets/audio/white-noise.mp3'),
   green: require('../../assets/audio/green-noise.mp3'), // generated in-house: pink base, mid-500Hz emphasis
-  // In-house blends of the REAL field recordings above (rain+fire, rain+ocean) —
+  // In-house blends of the REAL field recordings above (rain+fire, rain+ocean) -
   // honest one-tap scenes mixed with ffmpeg; loudness-normalized loop beds.
   rainFire: require('../../assets/audio/rain-fire.mp3'),
   rainOcean: require('../../assets/audio/rain-ocean.mp3'),
@@ -42,7 +42,7 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   // in-house synthesized box-fan hum (brown noise band-shaped + slow 1Hz wobble)
   fan: require('../../assets/audio/fan.mp3'),
 
-  // 2026-07 library expansion — all in-house: synthesized hums/wind/little-ones
+  // 2026-07 library expansion - all in-house: synthesized hums/wind/little-ones
   // beds, shaped variants of the credited recordings, and blends of them
   // (recipes in scripts/gen-sound-variants.sh; regenerable).
   ceilingFan: require('../../assets/audio/ceiling-fan.mp3'),
@@ -81,12 +81,12 @@ export const audioSources: Record<AudioKey, AudioSource> = {
   softWhite: require('../../assets/audio/soft-white.mp3'),
   warmPink: require('../../assets/audio/warm-pink.mp3'),
 
-  // Voiced guided sessions — narration mixed over a soft ambient bed (replaces the
+  // Voiced guided sessions - narration mixed over a soft ambient bed (replaces the
   // old silent drone). Synthesized VO for now; Glowco can swap in human recordings.
   guidedBox: require('../../assets/audio/guided-box-breathing.mp3'),
   guidedRest: require('../../assets/audio/guided-deep-rest.mp3'),
   guidedLetGo: require('../../assets/audio/guided-letting-go.mp3'),
-  // Bedtime-voice PREVIEW samples for the voice picker (AI-generated TTS — ByteDance Seed Audio).
+  // Bedtime-voice PREVIEW samples for the voice picker (AI-generated TTS - ByteDance Seed Audio).
   voiceMaya: require('../../assets/audio/voice-maya.mp3'),
   voiceOrion: require('../../assets/audio/voice-orion.mp3'),
   voiceLuna: require('../../assets/audio/voice-luna.mp3'),

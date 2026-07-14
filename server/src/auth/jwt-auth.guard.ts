@@ -33,7 +33,7 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: config.jwtSecret,
-        algorithms: ['HS256'], // pin algorithm — reject alg:none / confusion attacks
+        algorithms: ['HS256'], // pin algorithm - reject alg:none / confusion attacks
       });
       (request as Request & { user: JwtPayload }).user = payload;
       return true;

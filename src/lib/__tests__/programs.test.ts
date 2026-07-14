@@ -15,7 +15,7 @@ describe('program progress (non-failable, real)', () => {
     expect(await getProgramDone('night-reset')).toEqual([2]);
   });
 
-  it('is idempotent — marking the same day twice does not duplicate', async () => {
+  it('is idempotent - marking the same day twice does not duplicate', async () => {
     await markProgramStepDone('night-reset', 1);
     await markProgramStepDone('night-reset', 1);
     expect(await getProgramDone('night-reset')).toEqual([1]);

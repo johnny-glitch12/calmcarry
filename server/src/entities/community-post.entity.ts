@@ -17,7 +17,7 @@ export class CommunityPost {
   @Column({ type: 'text', nullable: true })
   ownerId: string | null;
 
-  /** what other members see — anonymous by default */
+  /** what other members see - anonymous by default */
   @Column({ default: 'A CalmCarry parent' })
   handle: string;
 
@@ -31,7 +31,7 @@ export class CommunityPost {
   @Column({ type: 'int', default: 0 })
   reportsCount: number;
 
-  /** optional shared sound-machine mix — anonymous (carries no PII). null for an
+  /** optional shared sound-machine mix - anonymous (carries no PII). null for an
    *  ordinary text win. Sanitised on write: only known sound keys, levels 1–3. */
   @Column({ type: 'simple-json', nullable: true })
   mix: { name: string; levels: Record<string, number> } | null;

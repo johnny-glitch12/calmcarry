@@ -101,7 +101,7 @@ export class AuthController {
   @Throttle(CREDENTIAL_THROTTLE)
   @Post('auth/social')
   social(@Body() dto: SocialLoginDto) {
-    return this.authService.socialLogin(dto.provider, dto.idToken, dto.authorizationCode);
+    return this.authService.socialLogin(dto.provider, dto.idToken, dto.authorizationCode, dto.name);
   }
 
   @UseGuards(JwtAuthGuard)

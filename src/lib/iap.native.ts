@@ -4,6 +4,7 @@ import {
   finishTransaction,
   getAvailablePurchases,
   initConnection,
+  isEligibleForIntroOfferIOS,
   purchaseErrorListener,
   purchaseUpdatedListener,
   requestPurchase,
@@ -48,20 +49,59 @@ function receiptOf(p: Purchase): string {
 async function validateAndFinish(p: Purchase, token: string, productId: string): Promise<boolean> {
   const receipt = receiptOf(p);
   let ok = false;
+  let judged = false; // the server actually saw the receipt and answered
   if (receipt) {
     try {
       const r = await api.billingValidate(token, { store: STORE, receipt, productId });
       ok = !!r.isPremium;
+      judged = true;
     } catch {
-      ok = false;
+      /* network/server failure - NOT a verdict */
     }
   }
-  try {
-    await finishTransaction({ purchase: p, isConsumable: false });
-  } catch {
-    /* already finished / not critical */
+  // Finish (acknowledge) only once the server has judged the receipt. If
+  // validation never happened - offline, backend down - the transaction stays
+  // open in the store queue and is redelivered on the next launch to the
+  // persistent listener below, so a charged user is never silently stranded
+  // with an acknowledged-but-unvalidated purchase.
+  if (judged) {
+    try {
+      await finishTransaction({ purchase: p, isConsumable: false });
+    } catch {
+      /* already finished / not critical */
+    }
   }
   return ok;
+}
+
+// True while purchaseSubscription()'s own listener is wired up - the launch
+// listener stands down so one store event isn't validated twice.
+let purchaseFlowActive = false;
+let launchListener: { remove(): void } | null = null;
+
+/**
+ * Persistent purchase listener for transactions delivered OUTSIDE an active
+ * purchase flow: SCA/Ask to Buy approvals that arrive later, or a purchase that
+ * completed after the app was killed mid-checkout. Without this, those users
+ * paid and stay locked out until they find "Restore purchases". Call once at
+ * app start when a server session exists; safe to call repeatedly.
+ */
+export function initIapListener(getToken: () => string | null, onValidated: () => void): void {
+  if (launchListener) return;
+  ensureConnection()
+    .then(() => {
+      if (launchListener) return;
+      launchListener = purchaseUpdatedListener(async (p: Purchase) => {
+        if (purchaseFlowActive) return;
+        const token = getToken();
+        if (!token || token === 'local') return;
+        const ok = await validateAndFinish(p, token, (p as { productId?: string }).productId || '');
+        if (ok) onValidated();
+      });
+    })
+    .catch(() => {
+      /* store unavailable (e.g. no sandbox account) - purchase flows still init on demand */
+    });
 }
 
 export async function purchaseSubscription(plan: 'monthly' | 'annual', token: string): Promise<IapResult> {
@@ -72,9 +112,11 @@ export async function purchaseSubscription(plan: 'monthly' | 'annual', token: st
 
     return await new Promise<IapResult>((resolve) => {
       let settled = false;
+      purchaseFlowActive = true;
       const done = (r: IapResult) => {
         if (settled) return;
         settled = true;
+        purchaseFlowActive = false;
         up.remove();
         err.remove();
         resolve(r);
@@ -83,7 +125,14 @@ export async function purchaseSubscription(plan: 'monthly' | 'annual', token: st
         const ok = await validateAndFinish(p, token, (p as { productId?: string }).productId || productId);
         done({ ok, reason: ok ? undefined : 'validation_failed' });
       });
-      const err = purchaseErrorListener((e: { code?: string }) => done({ ok: false, reason: e?.code || 'cancelled' }));
+      // v15 delivers user cancellation as ErrorCode.UserCancelled ('user-cancelled');
+      // older androids used E_USER_CANCELLED. Normalize to 'cancelled' - and never
+      // let an UNKNOWN error masquerade as a quiet cancel, or real failures show
+      // the user nothing.
+      const err = purchaseErrorListener((e: { code?: string }) => {
+        const cancelled = e?.code === 'user-cancelled' || e?.code === 'E_USER_CANCELLED';
+        done({ ok: false, reason: cancelled ? 'cancelled' : e?.code || 'purchase_failed' });
+      });
       Promise.resolve(
         requestPurchase({
           request: { apple: { sku: productId }, google: { skus: [productId] } },
@@ -117,6 +166,27 @@ export async function fetchLocalizedPrices(): Promise<Partial<Record<'monthly' |
     return out;
   } catch {
     return {};
+  }
+}
+
+/**
+ * Whether THIS Apple ID is still eligible for the introductory offer (the 3-day
+ * trial). Intro offers apply once per subscription group, so a lapsed subscriber
+ * who resubscribes is charged immediately - promising them a trial breaks
+ * guideline 3.1.2 and our own honest-claims rule. Defaults to true when the
+ * check can't run (Android, group id unset, store unreachable): the store
+ * itself is the final gate; we only avoid over-promising when we KNOW better.
+ * PLACEHOLDER: set EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP to the App Store Connect
+ * subscription-group id once the products are configured.
+ */
+const SUBSCRIPTION_GROUP = process.env.EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP ?? '';
+export async function introOfferEligible(): Promise<boolean> {
+  if (Platform.OS !== 'ios' || !SUBSCRIPTION_GROUP) return true;
+  try {
+    await ensureConnection();
+    return (await isEligibleForIntroOfferIOS(SUBSCRIPTION_GROUP)) !== false;
+  } catch {
+    return true;
   }
 }
 

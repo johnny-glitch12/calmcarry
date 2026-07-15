@@ -79,5 +79,12 @@ Set iOS Text Size to maximum (and Android font scale 1.3+), then:
 - [ ] `time_to_first_audio` and `session_start` arrive server-side for an adult profile;
       NOTHING arrives while a kid profile is active.
 
-Known not-yet-built (do not test): home-screen quick actions (native dep not added),
-streaming/CDN path (branch `feat/streaming-content-protection`, off until CDN keys).
+## 9. Home-screen quick actions (built - expo-quick-actions)
+- [ ] Long-press the app icon: a "Begin wind-down" shortcut appears (iOS shows the
+      moon-and-stars symbol; Android shows the app-badge default).
+- [ ] Tapping it cold-starts straight to the Night Door, and the launch routing does
+      NOT stack a second Night Door on top.
+- [ ] Tapping it while the app is backgrounded routes to /night-door once.
+
+Known not-yet-built (do not test): streaming/CDN path (branch
+`feat/streaming-content-protection`, off until CDN keys).

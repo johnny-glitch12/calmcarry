@@ -41,13 +41,17 @@ export class AuthService {
     @InjectRepository(RefreshToken) private readonly refreshTokens: Repository<RefreshToken>,
   ) {}
 
-  /** Sign in with Apple / Google - verifies the identity token, then finds or creates the household. */
-  async socialLogin(provider: SocialProvider, idToken: string, authorizationCode?: string): Promise<AuthResult> {
+  /** Sign in with Apple / Google - verifies the identity token, then finds or creates the household.
+   *  `displayName` is the name from the provider's native sheet (Apple sends it only on the FIRST
+   *  authorization, never in the id token) - without it a Hide-My-Email account would be named
+   *  after its relay address forever. Used at creation only; never overwrites an existing name. */
+  async socialLogin(provider: SocialProvider, idToken: string, authorizationCode?: string, displayName?: string): Promise<AuthResult> {
     const id = await this.social.verify(provider, idToken);
     let owner = await this.usersService.findByEmail(id.email);
     if (!owner) {
       const passwordHash = await bcrypt.hash(randomUUID(), 12); // no password - social only
-      owner = await this.usersService.createOwner(id.email, passwordHash, id.name);
+      const name = displayName?.trim() || id.name;
+      owner = await this.usersService.createOwner(id.email, passwordHash, name);
       await this.usersService.grantEntitlement(owner.id, 'free');
       // the provider already verified this address before issuing the token
       if (id.emailVerified) await this.usersService.setEmailVerified(owner.id);

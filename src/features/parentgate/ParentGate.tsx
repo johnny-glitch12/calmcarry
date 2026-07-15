@@ -5,12 +5,15 @@ import { Platform, ScrollView, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-import { Appear, AppText, GlowOrb, PressableScale, Reveal, Screen, SwapText } from '@/components';
+import { Appear, AppText, FormField, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen, SwapText } from '@/components';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { api } from '@/lib/api';
 import {
   authenticateBiometric,
   biometricAvailable,
   checkParentPin,
+  clearParentPin,
   hasParentPin,
   markParentVerified,
   parentPinLockSeconds,
@@ -18,7 +21,7 @@ import {
 } from '@/lib/parentGate';
 import { dur, ease, spring, themes, useTheme } from '@/theme';
 
-type Phase = 'loading' | 'create' | 'confirm' | 'enter';
+type Phase = 'loading' | 'create' | 'confirm' | 'enter' | 'recover';
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const;
 
 function tap() {
@@ -89,12 +92,56 @@ export function ParentGate() {
   // inherits the (possibly light) root theme context above its <Screen>.
   const c = themes.night;
   const { setMode, enterKids } = useProfile();
+  const { token, user } = useAuth();
   const { intent } = useLocalSearchParams<{ intent?: string }>();
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [entry, setEntry] = useState('');
   const [first, setFirst] = useState('');
   const [error, setError] = useState(false);
+
+  // "Forgot PIN?" recovery: re-verify the adult through the ACCOUNT password
+  // (server-checked, rate-limited) - something a child doesn't know - then let
+  // them set a fresh PIN. Without this, a forgotten PIN permanently locks the
+  // household out of purchases, Kids-mode exit and account deletion: the record
+  // lives in the Keychain, which survives even an app reinstall. Only offered
+  // for server-backed sessions with an email; social-only accounts hold a random
+  // password, so for them the row stays hidden rather than dead-ending.
+  const canRecover = !!token && token !== 'local' && !!user?.email;
+  const [recoverPassword, setRecoverPassword] = useState('');
+  const [recoverError, setRecoverError] = useState<string | null>(null);
+  const [recoverBusy, setRecoverBusy] = useState(false);
+  const tryRecover = async () => {
+    if (recoverBusy || !user?.email) return;
+    if (!recoverPassword) {
+      setRecoverError('Enter your account password.');
+      return;
+    }
+    setRecoverBusy(true);
+    setRecoverError(null);
+    try {
+      // fresh credential check against the backend; the returned session is
+      // discarded - the current one stays valid, we only wanted the proof
+      await api.login(user.email, recoverPassword);
+      await clearParentPin();
+      // a server-verified account password is at least as strong an adult
+      // check as the PIN it replaces - honor the original intent
+      markParentVerified(intent ?? '');
+      setRecoverPassword('');
+      setEntry('');
+      setFirst('');
+      setPhase('create');
+    } catch (e) {
+      const status = (e as { status?: number })?.status;
+      setRecoverError(
+        status === 401 || status === 403
+          ? 'That password doesn’t match this account.'
+          : 'We couldn’t check that right now. Try again in a moment.',
+      );
+    } finally {
+      setRecoverBusy(false);
+    }
+  };
   const shake = useSharedValue(0);
   const reduced = useReducedMotion();
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
@@ -248,13 +295,21 @@ export function ParentGate() {
   };
 
   const title =
-    phase === 'create' ? 'Set a parent PIN' : phase === 'confirm' ? 'Confirm your PIN' : 'Enter parent PIN';
+    phase === 'create'
+      ? 'Set a parent PIN'
+      : phase === 'confirm'
+        ? 'Confirm your PIN'
+        : phase === 'recover'
+          ? 'Reset your PIN'
+          : 'Enter parent PIN';
   const sub =
     phase === 'enter'
       ? 'Keeps the grown-up areas grown-up.'
       : phase === 'confirm'
         ? 'Type it once more to be sure.'
-        : 'A 4-digit code only grown-ups know. It guards leaving Kids mode and the settings, store and community.';
+        : phase === 'recover'
+          ? 'Confirm your account password and you can set a fresh PIN.'
+          : 'A 4-digit code only grown-ups know. It guards leaving Kids mode and the settings, store and community.';
 
   return (
     <Screen mode="night" contentStyle={{ flex: 1 }}>
@@ -285,41 +340,88 @@ export function ParentGate() {
           </SwapText>
         </Reveal>
 
-        <Animated.View style={shakeStyle}>
-          <Dots count={entry.length} error={error} />
-        </Animated.View>
-
-        {/* reserve the line's slot so the message fading in/out never shoves the keypad */}
-        <View style={{ height: 36, justifyContent: 'flex-end' }}>
-          {lockSeconds > 0 ? (
-            <Appear>
-              <AppText variant="label" accessibilityLiveRegion="polite" style={{ color: c.danger, textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
-                Too many tries. Try again in {lockSeconds}s.
-              </AppText>
-            </Appear>
-          ) : null}
-        </View>
-
-        {/* keypad */}
-        <Animated.View style={[{ flexDirection: 'row', flexWrap: 'wrap', width: 264, marginTop: 40, justifyContent: 'center' }, lockDimStyle]}>
-          {KEYS.map((k, idx) => (
+        {phase === 'recover' ? (
+          /* account-password re-verification instead of the keypad */
+          <View style={{ width: '100%', maxWidth: 340, marginTop: 28, gap: 14 }}>
+            <FormField
+              label="Account password"
+              value={recoverPassword}
+              onChangeText={(t: string) => {
+                setRecoverPassword(t);
+                if (recoverError) setRecoverError(null);
+              }}
+              placeholder="Your CalmCarry password"
+              secureTextEntry
+              autoCapitalize="none"
+              error={recoverError ?? undefined}
+            />
+            <PrimaryButton label="Verify and reset PIN" onPress={tryRecover} loading={recoverBusy} />
             <PressableScale
-              key={idx}
-              onPress={() => press(k)}
-              disabled={k === '' || lockSeconds > 0}
-              accessibilityRole={k === '' ? 'none' : 'button'}
-              accessibilityLabel={k === 'del' ? 'Delete' : k || undefined}
-              scaleTo={0.9}
-              dimTo={0.8}
-              style={{ width: 88, height: 72, alignItems: 'center', justifyContent: 'center' }}>
-              {k === 'del' ? (
-                <Feather name="delete" size={24} color={c.textAccent} />
-              ) : k === '' ? null : (
-                <AppText style={{ fontSize: 28, color: c.title }}>{k}</AppText>
-              )}
+              onPress={() => {
+                setRecoverPassword('');
+                setRecoverError(null);
+                setPhase('enter');
+              }}
+              accessibilityRole="button"
+              hitSlop={12}
+              dimTo={0.85}
+              style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <AppText variant="label" tone="muted">Back to PIN entry</AppText>
             </PressableScale>
-          ))}
-        </Animated.View>
+          </View>
+        ) : (
+          <>
+            <Animated.View style={shakeStyle}>
+              <Dots count={entry.length} error={error} />
+            </Animated.View>
+
+            {/* reserve the line's slot so the message fading in/out never shoves the keypad */}
+            <View style={{ height: 36, justifyContent: 'flex-end' }}>
+              {lockSeconds > 0 ? (
+                <Appear>
+                  <AppText variant="label" accessibilityLiveRegion="polite" style={{ color: c.danger, textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>
+                    Too many tries. Try again in {lockSeconds}s.
+                  </AppText>
+                </Appear>
+              ) : null}
+            </View>
+
+            {/* keypad */}
+            <Animated.View style={[{ flexDirection: 'row', flexWrap: 'wrap', width: 264, marginTop: 40, justifyContent: 'center' }, lockDimStyle]}>
+              {KEYS.map((k, idx) => (
+                <PressableScale
+                  key={idx}
+                  onPress={() => press(k)}
+                  disabled={k === '' || lockSeconds > 0}
+                  accessibilityRole={k === '' ? 'none' : 'button'}
+                  accessibilityLabel={k === 'del' ? 'Delete' : k || undefined}
+                  scaleTo={0.9}
+                  dimTo={0.8}
+                  style={{ width: 88, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                  {k === 'del' ? (
+                    <Feather name="delete" size={24} color={c.textAccent} />
+                  ) : k === '' ? null : (
+                    <AppText style={{ fontSize: 28, color: c.title }}>{k}</AppText>
+                  )}
+                </PressableScale>
+              ))}
+            </Animated.View>
+
+            {/* Forgot PIN → account-password recovery (server-backed sessions only).
+                Works even during a lockout - the lockout throttles PIN guesses, and
+                recovery is checked by the backend, not the local counter. */}
+            {phase === 'enter' && canRecover ? (
+              <PressableScale
+                onPress={() => setPhase('recover')}
+                accessibilityRole="button"
+                hitSlop={12}
+                dimTo={0.85}
+                style={{ alignItems: 'center', paddingVertical: 10, marginTop: 4 }}>
+                <AppText variant="label" tone="muted">Forgot PIN?</AppText>
+              </PressableScale>
+            ) : null}
+          </>
+        )}
 
         {/* biometric option (plan §13: "PIN or Face ID") - only when entering an existing
             gate, and never for purchase/delete (those require the PIN specifically). It

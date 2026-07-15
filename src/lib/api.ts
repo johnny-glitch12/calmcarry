@@ -66,11 +66,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     }),
-  // Sign in with Apple / Google - backend verifies the identity token (§6/§8)
-  social: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) =>
+  // Sign in with Apple / Google - backend verifies the identity token (§6/§8).
+  // `name` carries Apple's first-authorization fullName (the id token never has it).
+  social: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) =>
     req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/social', {
       method: 'POST',
-      body: JSON.stringify({ provider, idToken, authorizationCode }),
+      body: JSON.stringify({ provider, idToken, authorizationCode, name }),
     }),
   // Password reset (emailed 6-digit code; server never reveals whether an email exists)
   forgotPassword: (email: string) =>

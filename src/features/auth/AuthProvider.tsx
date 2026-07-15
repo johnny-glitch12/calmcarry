@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -12,6 +13,7 @@ import { AppState, Platform } from 'react-native';
 import { track } from '@/lib/analytics';
 import { api, type ApiEntitlement, type ApiUser } from '@/lib/api';
 import { clearAudioSourceCache } from '@/lib/audioSource';
+import { initIapListener } from '@/lib/iap';
 import { secureDelete, secureGet, secureSet } from '@/lib/secureStore';
 import { getJSON, KEYS, remove, setJSON } from '@/lib/store';
 
@@ -28,7 +30,7 @@ type AuthValue = {
   signIn: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   /** Sign in with a verified Apple/Google identity token (backend creates/resumes the account) */
-  socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => Promise<void>;
+  socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** change password while signed in - adopts the fresh session pair the server
    *  returns (it revokes every other device's refresh token) */
@@ -141,7 +143,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // every authed call silently 401s. Network errors (no .status) still
           // mean offline - keep the cached session untouched.
           const status = (e as { status?: number })?.status;
-          if (status === 401 && savedToken !== 'local') {
+          if (status === 404 && savedToken !== 'local') {
+            // /me 404s when the owner row is GONE (account deleted from another
+            // device) while the JWT is still cryptographically valid for days.
+            // That is a real signed-out state, not offline - clear the session
+            // instead of keeping a ghost account no call can ever serve.
+            setToken(null);
+            setUser(null);
+            setEntitlement(FREE);
+            setStatus('guest');
+            await Promise.all([secureDelete(KEYS.token), secureDelete(KEYS.refresh), remove(KEYS.user, KEYS.entitlement, KEYS.devices)]);
+          } else if (status === 401 && savedToken !== 'local') {
             try {
               const rt = await secureGet(KEYS.refresh);
               if (!rt) throw e;
@@ -178,6 +190,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
   }, []);
+
+  // Interrupted purchases (SCA finishing later, Ask to Buy approvals, app killed
+  // mid-checkout) are redelivered by the store OUTSIDE any purchase flow - the
+  // persistent listener validates + finishes them and refreshes the entitlement,
+  // so a charged user unlocks without hunting for "Restore purchases".
+  const tokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    tokenRef.current = token; // every change, including sign-out → null
+    if (!token || token === 'local') return;
+    initIapListener(
+      () => tokenRef.current,
+      async () => {
+        const t = tokenRef.current;
+        if (!t || t === 'local') return;
+        try {
+          const r = await api.billingStatus(t);
+          const ent: ApiEntitlement = {
+            tier: r.isPremium ? 'calm_plan' : 'free',
+            status: 'active',
+            expiresAt: r.expiresAt ?? null,
+          };
+          setEntitlement(ent);
+          await setJSON(KEYS.entitlement, ent);
+        } catch {
+          /* offline - the foreground refresh below will catch up */
+        }
+      },
+    );
+  }, [token]);
 
   // Re-validate entitlement whenever the app returns to the foreground. Without
   // this, isPremium is frozen at launch - an expired/revoked subscription (changed
@@ -275,9 +316,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const socialSignIn = useCallback(async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => {
+  const socialSignIn = useCallback(async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) => {
     // backend verifies the token, creates/resumes the household, returns our JWT
-    const { token: t, refreshToken: rt, user: u } = await api.social(provider, idToken, authorizationCode);
+    const { token: t, refreshToken: rt, user: u } = await api.social(provider, idToken, authorizationCode, name);
     let ent: ApiEntitlement = FREE;
     try {
       ent = (await api.me(t)).entitlement;

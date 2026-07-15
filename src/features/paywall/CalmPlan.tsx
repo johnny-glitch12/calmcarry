@@ -10,7 +10,7 @@ import { PRICING, PRIVACY_URL, SUBSCRIPTION_URL, TERMS_URL, TRIAL_DAYS, type Pla
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
-import { fetchLocalizedPrices, iapSupported, purchaseSubscription, restoreSubscription } from '@/lib/iap';
+import { fetchLocalizedPrices, iapSupported, introOfferEligible, purchaseSubscription, restoreSubscription } from '@/lib/iap';
 import { scheduleTrialEndingReminder } from '@/lib/reminders';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { brand, useTheme } from '@/theme';
@@ -134,6 +134,9 @@ export function CalmPlan() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [prices, setPrices] = useState<Partial<Record<PlanId, string>>>({});
+  // true until StoreKit says otherwise - the store itself is the final gate,
+  // we only stop PROMISING the trial when we know this Apple ID already used it
+  const [trialEligible, setTrialEligible] = useState(true);
   const mounted = useRef(true);
   // Concrete first-renewal date for the disclosure - "from July 15" beats "after the
   // trial" for surprise-charge trust. "from", not "on": the store receipt owns the
@@ -155,13 +158,20 @@ export function CalmPlan() {
 
   // Localized store prices for UK/CA/AU so the paywall never shows a USD string
   // that mismatches what StoreKit/Play charges. Falls back to the static PRICING.
+  // Deliberately NOT gated on a backend session - reading product prices is pure
+  // StoreKit/Play, and a signed-out browser deserves the same honest numbers.
   useEffect(() => {
     let alive = true;
-    if (iapSupported && live) fetchLocalizedPrices().then((p) => alive && setPrices(p)).catch(() => {});
+    if (iapSupported) {
+      fetchLocalizedPrices().then((p) => alive && setPrices(p)).catch(() => {});
+      // Intro offers apply once per subscription group - a lapsed subscriber is
+      // charged immediately, so promising THEM a free trial would be a lie.
+      introOfferEligible().then((ok) => alive && setTrialEligible(ok)).catch(() => {});
+    }
     return () => {
       alive = false;
     };
-  }, [live]);
+  }, []);
   const display = (id: PlanId): { price: string; note: string | null; sub: string } => {
     const p = PRICING[id];
     const localized = prices[id];
@@ -193,10 +203,12 @@ export function CalmPlan() {
     setBusy(true);
     setNote(null);
     let ok = false;
+    let failReason: string | undefined;
     if (iapSupported && live) {
       // real native purchase → server-validated receipt
       const r = await purchaseSubscription(plan, token);
       ok = r.ok;
+      failReason = r.reason;
       if (!ok && r.reason === 'cancelled') {
         if (mounted.current) setBusy(false);
         return; // user backed out - no error nag
@@ -223,11 +235,16 @@ export function CalmPlan() {
       track('subscribe_success', { plan });
       // Best-effort pre-charge reminder (a nice-to-have; the disclosure no longer
       // PROMISES it, since a local notification can be denied or fail silently).
-      if (plan === 'annual') scheduleTrialEndingReminder(TRIAL_DAYS, display('annual').price).catch(() => {});
+      if (plan === 'annual' && trialEligible) scheduleTrialEndingReminder(TRIAL_DAYS, display('annual').price).catch(() => {});
     }
     if (!mounted.current) return;
     setBusy(false);
     if (ok) close();
+    else if (failReason === 'validation_failed')
+      // They may already have been CHARGED - the unfinished transaction is
+      // redelivered and re-validated on the next launch, so never tell them to
+      // buy again; point at the path that re-checks instead.
+      setNote('Your payment may have gone through but we couldn’t confirm it. It finishes automatically next time you open the app, or tap "Restore purchases".');
     else setNote('We couldn’t complete the purchase. Please try again.');
   };
 
@@ -322,7 +339,9 @@ export function CalmPlan() {
               isPremium
                 ? 'You’re premium ✓'
                 : plan === 'annual'
-                  ? `Start your ${TRIAL_DAYS}-day free trial`
+                  ? trialEligible
+                    ? `Start your ${TRIAL_DAYS}-day free trial`
+                    : `Subscribe at ${display('annual').price}${PRICING.annual.per}`
                   : `Start monthly at ${display('monthly').price}${PRICING.monthly.per}`
             }
             onPress={subscribe}
@@ -341,7 +360,9 @@ export function CalmPlan() {
         <Appear key={`disclosure-${plan}`}>
           <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16, marginTop: 4 }}>
             {plan === 'annual'
-              ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per}${trialEnds ? ` from ${trialEnds}` : ''} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+              ? trialEligible
+                ? `Free for ${TRIAL_DAYS} days, then auto-renews at ${display('annual').price}${PRICING.annual.per}${trialEnds ? ` from ${trialEnds}` : ''} unless cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
+                : `Auto-renews at ${display('annual').price}${PRICING.annual.per} until cancelled. The free trial applies once per account and yours has been used. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`
               : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
           </AppText>
         </Appear>

@@ -984,7 +984,7 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={2}>
           <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>
-            Everyone gets {TRIAL_DAYS} days of CalmCarry Premium. The full library, programs, and sound machine. No commitment.
+            New members get {TRIAL_DAYS} days of CalmCarry Premium. The full library, programs, and sound machine. No commitment.
           </AppText>
         </Reveal>
       </View>

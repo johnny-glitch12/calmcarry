@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Linking, Share, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, Share, Switch, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { Appear, AppText, Card, Dimmable, FormField, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, Segmented, StatusChip, SwapText } from '@/components';
@@ -13,7 +13,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasCoppaConsent } from '@/lib/consent';
 import { lightTap } from '@/lib/haptics';
-import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
+import { clearParentPin, hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { hasPushOptIn, pushSupported, setPushOptIn } from '@/lib/push';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder, setWeeklyRecapReminder } from '@/lib/reminders';
 import { getVoice, voiceByKey } from '@/lib/voice';
@@ -369,15 +369,31 @@ export function AccountScreen() {
       return;
     }
     setDeleting(true);
-    try {
-      if (token && token !== 'local') await api.deleteAccount(token);
-    } catch {
-      /* even if the server is unreachable, clear the local session below */
-    } finally {
-      await clearAll(); // permanent deletion must leave nothing personal on the device
-      await signOut();
-      router.replace('/auth');
+    // The local wipe may only follow a CONFIRMED server deletion - wiping on a
+    // timeout/500 would show the user "deleted" while their account and data
+    // live on (a false erasure confirmation, and the Apple revoke never ran).
+    // 401/404 mean the server no longer recognizes this session/account, so
+    // there is nothing left to delete remotely.
+    let serverGone = !token || token === 'local';
+    if (!serverGone && token) {
+      try {
+        await api.deleteAccount(token);
+        serverGone = true;
+      } catch (e) {
+        const status = (e as { status?: number })?.status;
+        if (status === 401 || status === 404) serverGone = true;
+      }
     }
+    if (!serverGone) {
+      setDeleting(false);
+      setConfirmDelete(false);
+      Alert.alert('Couldn’t reach the server', 'Your account still exists. Check your connection and try again.');
+      return;
+    }
+    await clearAll(); // permanent deletion must leave nothing personal on the device
+    await clearParentPin(); // the Keychain outlives AsyncStorage.clear() AND reinstalls
+    await signOut();
+    router.replace('/auth');
   };
 
   // GDPR / UK-GDPR / AU APP 12 data-access export - hand the user their own data.
@@ -434,6 +450,31 @@ export function AccountScreen() {
           </View>
         </PressableScale>
       </Reveal>
+
+      {/* Offline-session honesty: signIn/register fall back to a device-only session
+          when the backend is unreachable, and nothing used to say so - the user
+          believed a server account existed until a sign-out lost everything. Store
+          builds only: dev/web use the same 'local' sentinel for the demo login. */}
+      {token === 'local' && Platform.OS !== 'web' && !__DEV__ ? (
+        <Reveal index={1} style={{ marginTop: 16 }}>
+          <View
+            style={{
+              borderRadius: 14,
+              backgroundColor: c.surface,
+              borderWidth: 1,
+              borderColor: c.line,
+              padding: 14,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+            }}>
+            <Feather name="cloud-off" size={16} color={c.textAccent} />
+            <AppText variant="label" tone="muted" style={{ flex: 1, textTransform: 'none', letterSpacing: 0 }}>
+              This session lives only on this phone - we couldn’t reach our server when you signed in. Sign in again when you’re online to sync it.
+            </AppText>
+          </View>
+        </Reveal>
+      ) : null}
 
       {/* email verification nudge - real accounts only, and only while unverified */}
       {needsVerify && token && token !== 'local' ? (

@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import * as LocalAuthentication from 'expo-local-authentication';
 
-import { secureGet, secureSet } from './secureStore';
+import { secureDelete, secureGet, secureSet } from './secureStore';
 
 /**
  * Parent gate (build plan §13 + §9 - non-negotiable child safety). Required to
@@ -65,6 +65,13 @@ export async function setParentPin(pin: string): Promise<void> {
   const salt = await makeSalt();
   const hash = await hashPin(pin, salt);
   await writeRecord({ hash, salt, fails: 0, lockedUntil: 0 });
+}
+
+/** Remove the PIN record entirely. The Keychain outlives BOTH app uninstall and
+ *  AsyncStorage.clear(), so "delete account" must call this explicitly - otherwise
+ *  the previous household's PIN gates the next account on this device forever. */
+export async function clearParentPin(): Promise<void> {
+  await secureDelete(KEY);
 }
 
 /** Seconds remaining on a lockout (0 if not locked). */

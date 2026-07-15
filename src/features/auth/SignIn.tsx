@@ -108,11 +108,11 @@ export function SignIn() {
     androidClientId: GOOGLE.androidClientId,
   });
 
-  const social = async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string) => {
+  const social = async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) => {
     setBusy(true);
     setError(null);
     try {
-      await socialSignIn(provider, idToken, authorizationCode);
+      await socialSignIn(provider, idToken, authorizationCode, name);
       router.replace('/');
     } catch {
       setError('That sign-in didn’t go through. Email works too.');
@@ -137,9 +137,19 @@ export function SignIn() {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      if (cred.identityToken) await social('apple', cred.identityToken, cred.authorizationCode ?? undefined);
-    } catch {
-      /* user cancelled the Apple sheet */
+      if (cred.identityToken) {
+        // Apple sends fullName ONLY on the very first authorization - the id token
+        // never carries it, so dropping it here would greet Hide-My-Email users by
+        // their relay address ("xk3j9q2m") forever. Forward it while we have it.
+        const name = [cred.fullName?.givenName, cred.fullName?.familyName].filter(Boolean).join(' ') || undefined;
+        await social('apple', cred.identityToken, cred.authorizationCode ?? undefined, name);
+      }
+    } catch (e) {
+      // Only a user cancel of the Apple sheet may stay silent; anything else
+      // (entitlement/iCloud/transient) must not read as a dead button.
+      if ((e as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') {
+        setError('That sign-in didn’t go through. Email works too.');
+      }
     }
   };
 

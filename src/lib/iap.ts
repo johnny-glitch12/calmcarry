@@ -20,3 +20,11 @@ export async function restoreSubscription(_token: string): Promise<IapResult> {
 export async function fetchLocalizedPrices(): Promise<Partial<Record<'monthly' | 'annual', string>>> {
   return {};
 }
+
+/** No store queue on web - nothing to listen for. */
+export function initIapListener(_getToken: () => string | null, _onValidated: () => void): void {}
+
+/** No StoreKit on web - keep the trial copy (the store is the final gate). */
+export async function introOfferEligible(): Promise<boolean> {
+  return true;
+}

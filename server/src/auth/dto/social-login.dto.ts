@@ -15,4 +15,12 @@ export class SocialLoginDto {
   @IsString()
   @MaxLength(8192)
   authorizationCode?: string;
+
+  // Display name from the provider's native sheet. Apple sends fullName ONLY on the
+  // first authorization and never inside the id token, so without this a Hide-My-Email
+  // account is named after its relay address ("xk3j9q2m") forever.
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  name?: string;
 }

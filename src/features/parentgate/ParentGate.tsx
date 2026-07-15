@@ -401,7 +401,9 @@ export function ParentGate() {
                   {k === 'del' ? (
                     <Feather name="delete" size={24} color={c.textAccent} />
                   ) : k === '' ? null : (
-                    <AppText style={{ fontSize: 28, color: c.title }}>{k}</AppText>
+                    // lineHeight must grow with the fontSize override - the default
+                    // body line box (26) clips 28px digits on iOS (native-only bug)
+                    <AppText style={{ fontSize: 28, lineHeight: 36, color: c.title }}>{k}</AppText>
                   )}
                 </PressableScale>
               ))}

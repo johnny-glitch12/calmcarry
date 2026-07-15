@@ -4,7 +4,6 @@ import * as Haptics from 'expo-haptics';
 import { Platform, View } from 'react-native';
 
 import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
-import { CrisisSupport } from '@/features/about/CrisisSupport';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FEELING_MAP, useProfile, type Feeling } from '@/features/profile/ProfileProvider';
 import { TRACKS } from '@/content/library';
@@ -113,11 +112,6 @@ function CheckInBody({ onFeeling, onSkip }: { onFeeling: (f: Feeling) => void; o
         ))}
       </View>
 
-      {/* The check-in is where someone names a hard night - the right moment for a
-          quiet signpost below the choices (calm styling, never an alarm). */}
-      <Reveal index={FEELINGS.length + 2} style={{ marginTop: 32 }}>
-        <CrisisSupport />
-      </Reveal>
     </>
   );
 }

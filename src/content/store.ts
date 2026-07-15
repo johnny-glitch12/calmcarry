@@ -20,15 +20,6 @@ export const SUBSCRIPTION_URL =
     ? 'https://play.google.com/store/account/subscriptions'
     : 'https://apps.apple.com/account/subscriptions';
 
-/** Region-aware crisis/help signpost (shown in About). A calm/sleep app sold in
- *  US/UK/CA/AU should signpost local support; this is care, not a medical claim. */
-export const CRISIS_RESOURCES = [
-  { region: 'US', name: '988 Suicide & Crisis Lifeline', contact: 'Call or text 988', url: 'tel:988' },
-  { region: 'UK & ROI', name: 'Samaritans', contact: 'Call 116 123', url: 'tel:116123' },
-  { region: 'Canada', name: '9-8-8 Suicide Crisis Helpline', contact: 'Call or text 9-8-8', url: 'tel:988' },
-  { region: 'Australia', name: 'Lifeline', contact: 'Call 13 11 14', url: 'tel:131114' },
-] as const;
-
 /** Support / legal pages. LAUNCH BLOCKER: these are best-guess Shopify-style paths -
  *  confirm the real published Glow Company URLs and verify each returns 200 before
  *  shipping (App/Play review reject dead privacy/terms links). */

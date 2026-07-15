@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { Linking, View } from 'react-native';
 
 import { AppText, Logo, PressableScale, Reveal, Screen } from '@/components';
-import { CrisisSupport } from '@/features/about/CrisisSupport';
 import { WELLNESS_DISCLAIMER } from '@/content/library';
 import { PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
 import { lightTap } from '@/lib/haptics';
@@ -95,9 +94,6 @@ export function About() {
         </View>
       </Reveal>
 
-      <Reveal index={3} style={{ marginTop: 28 }}>
-        <CrisisSupport />
-      </Reveal>
 
       <Reveal index={4} style={{ marginTop: 24 }}>
         <AppText

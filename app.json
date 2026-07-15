@@ -44,12 +44,12 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0E1817",
-          "image": "./assets/images/splash-transparent.png",
-          "imageWidth": 130,
+          "image": "./assets/images/splash-logo.png",
+          "imageWidth": 180,
           "android": {
             "backgroundColor": "#0E1817",
-            "image": "./assets/images/splash-transparent.png",
-            "imageWidth": 130
+            "image": "./assets/images/splash-logo.png",
+            "imageWidth": 180
           }
         }
       ],

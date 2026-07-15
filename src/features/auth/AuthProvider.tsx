@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { track } from '@/lib/analytics';
 import { api, type ApiEntitlement, type ApiUser } from '@/lib/api';
@@ -52,6 +52,15 @@ function isLivePremium(e: ApiEntitlement): boolean {
   const t = Date.parse(e.expiresAt);
   return Number.isNaN(t) || t > Date.now();
 }
+
+// Demo login for the gated WEB preview (stakeholder walkthroughs). Credentials come
+// ONLY from build-time env (EXPO_PUBLIC_COMP_EMAIL / EXPO_PUBLIC_COMP_PASSWORD in the
+// untracked .env.local that `npm run build:site` reads) - no literal ships in source,
+// and the native store profiles never set these vars, so on a shipped binary both
+// resolve to '' and the branch below is unmatchable.
+const COMP_EMAIL = (process.env.EXPO_PUBLIC_COMP_EMAIL ?? '').trim().toLowerCase();
+const COMP_PASSWORD = process.env.EXPO_PUBLIC_COMP_PASSWORD ?? '';
+const COMP_LOGIN = !!COMP_EMAIL && !!COMP_PASSWORD && (Platform.OS === 'web' || __DEV__);
 
 const AuthContext = createContext<AuthValue>({
   status: 'loading',
@@ -109,7 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // purchase). Force FREE on restore so a planted cc.token='local' +
         // cc.entitlement=calm_plan can't grant permanent, un-reconcilable premium
         // (api.me('local') 401s and the refresh/re-validation paths skip 'local').
-        const unverifiableLocal = savedToken === 'local';
+        // Exception: where the env-gated demo login is live (web preview / dev), the
+        // demo session must survive reloads; COMP_LOGIN is always false on a store build.
+        const unverifiableLocal = savedToken === 'local' && !COMP_LOGIN;
         setToken(savedToken);
         setUser(savedUser);
         setEntitlement(unverifiableLocal ? FREE : savedEnt);
@@ -193,6 +204,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    // Demo login (web preview / dev only; see COMP_LOGIN above): a local premium
+    // session so a stakeholder can walk the full product without a provisioned
+    // backend. Passwords trimmed so a stray autocomplete space doesn't drop the
+    // demo through to the offline fallback.
+    if (COMP_LOGIN && email.trim().toLowerCase() === COMP_EMAIL && password.trim() === COMP_PASSWORD) {
+      const u: ApiUser = { email: COMP_EMAIL, name: 'Mason' };
+      setToken('local');
+      setUser(u);
+      setEntitlement(CALM);
+      setBackendUp(false);
+      setStatus('authed');
+      track('sign_in', { method: 'comp' });
+      await Promise.all([secureSet(KEYS.token, 'local'), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, CALM)]);
+      return;
+    }
     try {
       const { token: t, refreshToken: rt, user: u } = await api.login(email, password);
       let ent: ApiEntitlement = FREE;

@@ -70,3 +70,7 @@ calmcarry-preview/
 # scratch output from scripts/gen-voices.mjs + gen-narrations.mjs (bundled copies live in assets/audio)
 voice-out/
 narration-out/
+
+# agent tooling - not part of the product repo
+.claude/
+claude-memory/

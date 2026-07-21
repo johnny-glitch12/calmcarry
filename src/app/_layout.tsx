@@ -21,7 +21,7 @@ import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { ProfileProvider, useProfile } from '@/features/profile/ProfileProvider';
 import { startAnalytics, track } from '@/lib/analytics';
 import { captureError, initMonitoring } from '@/lib/monitoring';
-import { getOnboarded } from '@/lib/onboarding';
+import { getOnboarded, markOnboarded } from '@/lib/onboarding';
 import { hasInitialQuickAction } from '@/lib/quickActions';
 import { getJSON } from '@/lib/store';
 import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } from '@/theme';
@@ -198,13 +198,27 @@ function RootNav() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
+  // The funnel's "Sign in" escape no longer marks the device onboarded (a bailed
+  // auth screen is not a completed first-run). A real session appearing on a
+  // not-yet-onboarded device means an existing account signed back in - and an
+  // existing user IS onboarded - so persist it the moment auth lands.
+  useEffect(() => {
+    if (onboarded === false && authStatus === 'authed') {
+      markOnboarded();
+      setOnboarded(true);
+    }
+  }, [onboarded, authStatus]);
+
   // Launch routing, ONE decision per cold start, after the navigator mounts:
-  //  - first run -> onboarding
   //  - wind-down hours (20:00-05:00) -> the Night Door: a dimmed, one-tap "Begin
   //    wind-down" so unlock-to-audio takes seconds (pre-mortem: the app must never
   //    make the phone the obstacle at bedtime). Never for kids profiles, never over
   //    a deep link (only when the launch route is Home), never over an ACTIVE
   //    pending-trial promise, and dismissible to the full app.
+  //  - first run -> onboarding, but ONLY by day: the night window wins even on a
+  //    fresh install (a desperate 2:47am first open gets the one-tap rescue, not a
+  //    question funnel). onboarded stays false, so the full funnel still greets the
+  //    next daytime open.
   // GATED ON `ready`, not navState?.key: in expo-router 56 the root navigation state
   // exists from the very first render (the internal '__root' stack), so navState?.key
   // gives NO mount protection - dispatching before our <Stack> mounts (rendered only
@@ -217,14 +231,23 @@ function RootNav() {
     // web: `ready` waits only on fonts, so re-check the decision inputs there
     if (onboarded === null || !profileHydrated || authStatus === 'loading') return;
     didRedirect.current = true; // the one launch decision is consumed now
-    if (onboarded === false) {
-      router.replace('/onboarding');
-      return;
-    }
     const hour = new Date().getHours();
+    const windDown = hour >= 20 || hour < 5;
     // hasInitialQuickAction: a "Begin wind-down" home-screen shortcut launch already
     // routes to the Night Door itself - pushing ours too would stack two of them
-    if (mode !== 'kids' && (hour >= 20 || hour < 5) && launchPath === '/' && !hasInitialQuickAction()) {
+    const nightDoorLaunch = mode !== 'kids' && windDown && launchPath === '/' && !hasInitialQuickAction();
+    // authed-but-unonboarded = an existing account restored on a fresh device; the
+    // effect above marks it onboarded, so skip the funnel and fall through
+    if (onboarded === false && authStatus !== 'authed') {
+      if (nightDoorLaunch) {
+        // push (not replace) so dismissing the Night Door still lands on Home
+        router.push('/night-door');
+      } else {
+        router.replace('/onboarding');
+      }
+      return;
+    }
+    if (nightDoorLaunch) {
       if (authStatus !== 'authed') {
         // guests can never receive the unlock sheet, so a stale cc.pendingTrial (a
         // funnel tap that never signed in) must not suppress the bedtime flow forever

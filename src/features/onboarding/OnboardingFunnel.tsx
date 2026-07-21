@@ -41,6 +41,8 @@ import { useProfile, type Intent } from '@/features/profile/ProfileProvider';
 import { lightTap } from '@/lib/haptics';
 import { fetchLocalizedPrices, iapSupported } from '@/lib/iap';
 import { markOnboarded } from '@/lib/onboarding';
+import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
+import { setSleepGoalHours } from '@/lib/sleepGoal';
 import { setJSON } from '@/lib/store';
 import { dur, ease, fonts, useTheme } from '@/theme';
 
@@ -59,15 +61,12 @@ const P = {
 
 // ---- answers accumulated across the funnel ----
 type Answers = {
-  satisfaction?: number; // 1..5
   goals?: string[]; // help-with keys
   hours?: number; // 4..8 in 0.25 (15-min) steps
-  gender?: string;
-  age?: string;
-  source?: string;
+  age?: string; // only ever CHILD_AGE now - the "for my child" card keeps the flag the old age step wrote
   goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
-  wearable?: string; // 'apple' | 'whoop'
   moments?: string[]; // when they want help - day AND night use-cases, not just sleep
+  reminderIdx?: number; // REMINDER_TIMES index chosen on the reminder step
   wantsTrial?: boolean; // tapped "Start my free trial" on the pricing step
 };
 
@@ -80,31 +79,23 @@ type StepProps = {
   progress: number; // 0..1 position through the funnel
 };
 
-// ---- the funnel's ordered steps (Wave 3/4 append slider, sync, sounds, trial, pricing) ----
+// ---- the funnel's ordered steps ----
+// Deliberately short. The interrogation round (satisfaction, gender, age, source,
+// wearable, trial-reminder) is gone: every remaining question feeds something the
+// app actually uses, and the flow still ends explainer -> pricing -> auth.
 const STEPS = [
   'welcome',
   'transform',
-  'satisfaction',
-  'reassure',
   'help',
   'moments',
   'hours',
-  'gender',
-  'age',
-  'source',
   'goal',
-  'sync',
+  'reminder',
   'sounds',
   'trialFree',
-  'trialReminder',
   'pricing',
 ] as const;
 type StepId = (typeof STEPS)[number];
-
-const WEARABLES: { key: string; label: string; hint: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { key: 'apple', label: 'Apple Watch', hint: 'Sleep & heart rate', icon: 'watch' },
-  { key: 'whoop', label: 'Whoop', hint: 'Recovery & sleep', icon: 'activity' },
-];
 
 // Cover art cycled through the sleep-sounds "now playing" demo (existing library art).
 const DEMO_SOUNDS: { cover: CoverKey; title: string; sub: string; audio: AudioKey }[] = [
@@ -136,31 +127,11 @@ const MOMENTS: { key: string; label: string; hint: string; icon: keyof typeof Fe
   { key: 'wind-down', label: 'Evenings after a long day', hint: 'The bridge from busy to restful', icon: 'feather' },
 ];
 
-const SATISFACTION = [
-  { v: 1, label: 'Very dissatisfied' },
-  { v: 2, label: 'Dissatisfied' },
-  { v: 3, label: 'It’s okay' },
-  { v: 4, label: 'Satisfied' },
-  { v: 5, label: 'Very satisfied' },
-];
-
-const GENDERS = ['Female', 'Male', 'Non-binary', 'Other', 'Prefer not to say'];
-const AGES = ['18–24', '25–34', '35–44', '45–54', '55–64', '65+'];
-// Mason: surface Kids Mode right in the ages question. The account holder is
-// still the adult (18+ gate at signup); this records who the wind-downs are FOR
-// and points at the built-in Kids Mode.
+// Mason: surface Kids Mode inside the goals question (the ages step it lived on is
+// gone). The account holder is still the adult (18+ gate at signup); this records
+// who the wind-downs are FOR and points at the built-in Kids Mode. The persisted
+// flag (answers.age === 'child') is unchanged so nothing downstream shifts.
 const CHILD_AGE = 'child';
-const SOURCES: { key: string; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { key: 'bought-device', label: 'I bought a CalmCarry device', icon: 'box' },
-  { key: 'tiktok', label: 'TikTok', icon: 'music' },
-  { key: 'instagram', label: 'Instagram', icon: 'instagram' },
-  { key: 'youtube', label: 'YouTube', icon: 'youtube' },
-  { key: 'facebook', label: 'Facebook', icon: 'facebook' },
-  { key: 'appstore', label: 'App Store', icon: 'smartphone' },
-  { key: 'friend', label: 'A friend', icon: 'users' },
-  { key: 'search', label: 'Search', icon: 'search' },
-  { key: 'other', label: 'Somewhere else', icon: 'more-horizontal' },
-];
 
 // =====================================================================
 // shared chrome
@@ -311,7 +282,7 @@ function ChoiceRow({
   );
 }
 
-/** Icon chip used as the leading art on a choice row (fallback + brand-source rows). */
+/** Icon chip used as the leading art on a choice row (fallback + moments/child rows). */
 function IconChip({ icon }: { icon: keyof typeof Feather.glyphMap }) {
   const { c } = useTheme();
   return (
@@ -423,64 +394,13 @@ function TransformCard({ label, image, tone, index, highlight }: { label: string
   );
 }
 
-/** 3 - SATISFACTION */
-function SatisfactionStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
-  return (
-    <FunnelShell
-      onBack={onBack}
-      progress={progress}
-      kicker="ABOUT YOUR SLEEP"
-      title="How satisfied are you with your sleep?"
-      subtitle="There are no wrong answers. This just helps us start in the right place."
-      onContinue={onNext}
-      canContinue={!!answers.satisfaction}>
-      {SATISFACTION.map((s, i) => (
-        <ChoiceRow key={s.v} index={i} label={s.label} selected={answers.satisfaction === s.v} onPress={() => setAnswer('satisfaction', s.v)} />
-      ))}
-    </FunnelShell>
-  );
-}
-
-/** 4 - REASSURANCE (keyed to the satisfaction answer) */
-function ReassureStep({ onNext, onBack, answers }: StepProps) {
-  const { c } = useTheme();
-  const s = answers.satisfaction ?? 3;
-  const msg =
-    s <= 2
-      ? { title: 'You’re not alone, and you’re in the right place.', body: 'Rough nights wear on everything. We’ll help you build back toward rest, gently and at your pace.' }
-      : s === 3
-        ? { title: 'There’s room to feel more rested.', body: 'A few small, steady habits can move “okay” toward genuinely good. Let’s find yours.' }
-        : { title: 'Let’s protect the good nights.', body: 'You’re already doing something right. We’ll help you keep it and deepen it.' };
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
-      <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
-        <Feather name="chevron-left" size={26} color={c.text} />
-      </PressableScale>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-        <Reveal style={{ alignItems: 'center' }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-            <Feather name="heart" size={26} color={c.textAccent} />
-          </View>
-        </Reveal>
-        <Reveal index={1}>
-          <AppText style={[P.title, { color: c.text, textAlign: 'center' }]}>{msg.title}</AppText>
-        </Reveal>
-        <Reveal index={2}>
-          <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>{msg.body}</AppText>
-        </Reveal>
-      </View>
-      <Reveal index={3}>
-        <PrimaryButton label="Continue" onPress={onNext} />
-      </Reveal>
-    </View>
-  );
-}
-
-/** 5 - HELP WITH (multi-select, AI icons) */
+/** 3 - HELP WITH (multi-select, AI icons; also carries the "for my child" card
+ *  the cut ages step used to hold) */
 function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  const { c } = useTheme();
   const goals = answers.goals ?? [];
   const toggle = (key: string) => setAnswer('goals', goals.includes(key) ? goals.filter((g) => g !== key) : [...goals, key]);
+  const forChild = answers.age === CHILD_AGE;
   return (
     <FunnelShell
       onBack={onBack}
@@ -489,7 +409,7 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       title="What can we help you with?"
       subtitle="Pick everything that fits. You can change this later."
       onContinue={onNext}
-      canContinue={goals.length > 0}>
+      canContinue={goals.length > 0 || forChild}>
       {GOALS.map((g, i) => (
         <ChoiceRow
           key={g.key}
@@ -511,11 +431,26 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
           }
         />
       ))}
+      <ChoiceRow
+        index={GOALS.length}
+        label="I’m setting up for my child"
+        hint="Kids Mode is built in: stories and gentle sounds behind a parent gate"
+        selected={forChild}
+        onPress={() => setAnswer('age', forChild ? undefined : CHILD_AGE)}
+        leading={<IconChip icon="smile" />}
+      />
+      {forChild ? (
+        <Appear>
+          <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
+            You stay the account holder. Switch to Kids Mode any time from the Profile tab.
+          </AppText>
+        </Appear>
+      ) : null}
     </FunnelShell>
   );
 }
 
-/** 5b - MOMENTS (day & night use-cases - the Orb isn't only for bedtime) */
+/** 4 - MOMENTS (day & night use-cases - the Orb isn't only for bedtime) */
 function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const moments = answers.moments ?? [];
   const toggle = (key: string) =>
@@ -544,12 +479,11 @@ function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps
   );
 }
 
-/** 6 - HOURS (fill-circle stepper) */
+/** 5 - HOURS (fill-circle stepper) */
 function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const value = answers.hours ?? 6;
-  const touched = answers.hours !== undefined;
   // 40% under 5 → full at 8 (per the brief); the ring eases as the number changes
   const fillFor = (v: number) => Math.max(0.12, Math.min(1, 0.4 + (v - 4) * 0.15));
   const ring = useSharedValue(fillFor(value));
@@ -564,8 +498,12 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
       kicker="YOUR NIGHTS NOW"
       title="How many hours do you usually sleep?"
       subtitle="A rough average is perfect. Drag to set it."
-      onContinue={onNext}
-      canContinue={touched}>
+      onContinue={() => {
+        // the shown default IS a valid answer - never gate Continue on a drag
+        if (answers.hours === undefined) setAnswer('hours', value);
+        onNext();
+      }}
+      canContinue>
       <View style={{ alignItems: 'center', marginTop: 8 }}>
         <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
           <ProgressRing progress={ring} size={200} strokeWidth={10} fill color={c.accent} trackColor={c.line} style={{ position: 'absolute' }} />
@@ -581,87 +519,12 @@ function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) 
           max={8}
           step={0.25}
           onChange={(v) => setAnswer('hours', v)}
-          onTouch={() => { if (!touched) setAnswer('hours', value); }}
+          onTouch={() => { if (answers.hours === undefined) setAnswer('hours', value); }}
           minLabel="4h"
           maxLabel="8h+"
           valueText={value >= 8 ? '8 hours or more' : formatHM(value)}
         />
       </View>
-    </FunnelShell>
-  );
-}
-
-/** 7 - GENDER (optional, on-device) */
-function GenderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
-  const { c } = useTheme();
-  return (
-    <FunnelShell
-      onBack={onBack}
-      progress={progress}
-      kicker="ABOUT YOU"
-      title="Hormone levels can influence sleep patterns."
-      subtitle="Optional, and stored only on your device. It helps us tailor guidance."
-      onContinue={onNext}
-      canContinue
-      continueLabel={answers.gender ? 'Continue' : 'Skip'}>
-      {GENDERS.map((g, i) => (
-        <ChoiceRow key={g} index={i} label={g} selected={answers.gender === g} onPress={() => setAnswer('gender', g)} />
-      ))}
-      <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
-        We never sell your data. This stays on this device.
-      </AppText>
-    </FunnelShell>
-  );
-}
-
-/** 8 - AGE (incl. "for my child" → points at the built-in Kids Mode) */
-function AgeStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
-  const { c } = useTheme();
-  return (
-    <FunnelShell
-      onBack={onBack}
-      progress={progress}
-      kicker="WHO IT’S FOR"
-      title="As we age, our sleep needs change."
-      subtitle="Which range are you in? Or tell us if this is for a little one."
-      onContinue={onNext}
-      canContinue={!!answers.age}>
-      {AGES.map((a, i) => (
-        <ChoiceRow key={a} index={i} label={a} selected={answers.age === a} onPress={() => setAnswer('age', a)} />
-      ))}
-      <ChoiceRow
-        index={AGES.length}
-        label="I’m setting up for my child"
-        hint="Kids Mode is built in: stories and gentle sounds behind a parent gate"
-        selected={answers.age === CHILD_AGE}
-        onPress={() => setAnswer('age', CHILD_AGE)}
-        leading={<IconChip icon="smile" />}
-      />
-      {answers.age === CHILD_AGE ? (
-        <Appear>
-          <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
-            You stay the account holder. Switch to Kids Mode any time from the Profile tab.
-          </AppText>
-        </Appear>
-      ) : null}
-    </FunnelShell>
-  );
-}
-
-/** 9 - SOURCE */
-function SourceStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
-  return (
-    <FunnelShell
-      onBack={onBack}
-      progress={progress}
-      kicker="ONE LAST THING"
-      title="Where did you hear about us?"
-      onContinue={onNext}
-      canContinue
-      continueLabel={answers.source ? 'Continue' : 'Skip'}>
-      {SOURCES.map((s, i) => (
-        <ChoiceRow key={s.key} index={i} label={s.label} selected={answers.source === s.key} onPress={() => setAnswer('source', s.key)} leading={<IconChip icon={s.icon} />} />
-      ))}
     </FunnelShell>
   );
 }
@@ -875,7 +738,7 @@ function BackChevron({ onBack }: { onBack: () => void }) {
   );
 }
 
-/** 10 - GOAL (sleep-target slider) */
+/** 6 - GOAL (sleep-target slider) */
 function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   const goalHours = answers.goalHours ?? 8;
@@ -899,30 +762,51 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 11 - SYNC (wearable - honest "coming soon") */
-function SyncStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
-  const { c } = useTheme();
+/** 7 - REMINDER (opt-in wind-down nudge). The OS notification prompt fires only
+ *  when a time is actually chosen - Skip asks the system for nothing. Mirrors the
+ *  Account toggle's keys, and only after a reminder truly scheduled (permission
+ *  granted), so Settings never shows a phantom "on". Web: setBedtimeReminder is a
+ *  guarded no-op there, so the step renders fine and simply schedules nothing. */
+function ReminderStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
+  const idx = answers.reminderIdx;
+  const chosen = idx !== undefined;
+  const onContinue = () => {
+    if (chosen && remindersSupported) {
+      const t = REMINDER_TIMES[idx];
+      // best-effort, off the navigation path - the funnel moves on either way
+      setBedtimeReminder(true, t.hour, t.minute).then((scheduled) => {
+        if (scheduled) {
+          setJSON('cc.reminder', true);
+          setJSON('cc.reminderTimeIdx', idx);
+        }
+      });
+    }
+    onNext();
+  };
   return (
     <FunnelShell
       onBack={onBack}
       progress={progress}
-      kicker="LOOKING AHEAD"
-      title="Connect a wearable?"
-      subtitle="Wearable sync isn’t here yet. Tell us what you use and we’ll let you know when it’s ready."
-      onContinue={onNext}
+      kicker="A GENTLE NUDGE"
+      title="When should we nudge your wind-down?"
+      subtitle="One quiet note a night, never an alarm. You can change or turn it off any time."
+      onContinue={onContinue}
       canContinue
-      continueLabel={answers.wearable ? 'Continue' : 'Skip'}>
-      {WEARABLES.map((w, idx) => (
-        <ChoiceRow key={w.key} index={idx} label={w.label} hint={w.hint} selected={answers.wearable === w.key} onPress={() => setAnswer('wearable', w.key)} leading={<IconChip icon={w.icon} />} />
+      continueLabel={chosen ? 'Continue' : 'Skip'}>
+      {REMINDER_TIMES.map((t, i) => (
+        <ChoiceRow
+          key={t.label}
+          index={i}
+          label={t.label}
+          selected={idx === i}
+          onPress={() => setAnswer('reminderIdx', idx === i ? undefined : i)}
+        />
       ))}
-      <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
-        Coming soon. Nothing connects yet.
-      </AppText>
     </FunnelShell>
   );
 }
 
-/** 12 - SOUNDS (framed watercolour fireside + live now-playing row) */
+/** 8 - SOUNDS (framed watercolour fireside + live now-playing row) */
 function SoundsStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -968,7 +852,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 13 - TRIAL FREE (informational) */
+/** 9 - TRIAL FREE (informational) */
 function TrialFreeStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -995,53 +879,7 @@ function TrialFreeStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 14 - TRIAL REMINDER. Honest framing: the reassurance rests on clear disclosure
- *  + cancel-anytime (both real/store-guaranteed), NOT on a promised reminder - the
- *  trial-ending notification is best-effort (needs OS permission) and is scheduled
- *  on the real purchase later, so we never promise it here (ROSCA). */
-function TrialReminderStep({ onNext, onBack }: StepProps) {
-  const { c } = useTheme();
-  const row = (icon: keyof typeof Feather.glyphMap, title: string, body: string, i: number) => (
-    <Reveal index={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: i === 0 ? 0 : 14 }}>
-      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
-        <Feather name={icon} size={18} color={c.textAccent} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <AppText style={[P.rowLabel, { color: c.text }]}>{title}</AppText>
-        <AppText style={[P.rowHint, { color: c.muted, marginTop: 2 }]}>{body}</AppText>
-      </View>
-    </Reveal>
-  );
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
-      <BackChevron onBack={onBack} />
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <Reveal>
-          <AppText style={[P.title, { color: c.text }]}>No surprise charges</AppText>
-        </Reveal>
-        <Reveal index={1}>
-          <AppText style={[P.body, { color: c.muted, marginTop: 10, marginBottom: 28 }]}>
-            Your {TRIAL_DAYS}-day trial is free. It only becomes a paid plan if you keep it. Cancel anytime in your Apple or Google account before it ends.
-          </AppText>
-        </Reveal>
-        {row('unlock', 'Today', 'Full access to everything, free.', 2)}
-        {row('bell', `Day ${Math.max(1, TRIAL_DAYS - 1)}`, 'If you allow notifications, we’ll try to remind you before it ends.', 3)}
-        {row('calendar', `Day ${TRIAL_DAYS}`, 'Renews only if you keep it. Cancel anytime.', 4)}
-      </View>
-      <Reveal index={5}>
-        <PrimaryButton label="Try it free" onPress={onNext} />
-      </Reveal>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 18, marginTop: 16 }}>
-        <LegalLink label="Privacy Policy" onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} />
-        <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: c.line }} />
-        <LegalLink label="Terms of Service" onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} />
-      </View>
-    </View>
-  );
-}
-
-/** 15 - PRICING (real store price, honest trial framing) */
+/** 10 - PRICING (real store price, honest trial framing) */
 function PricingStep({ onNext, onBack, setAnswer }: StepProps) {
   const { c } = useTheme();
   const [annual, setAnnual] = useState<string>(PRICING.annual.price);
@@ -1089,19 +927,13 @@ function PricingStep({ onNext, onBack, setAnswer }: StepProps) {
 const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   welcome: WelcomeStep,
   transform: TransformStep,
-  satisfaction: SatisfactionStep,
-  reassure: ReassureStep,
   help: HelpStep,
   moments: MomentsStep,
   hours: HoursStep,
-  gender: GenderStep,
-  age: AgeStep,
-  source: SourceStep,
   goal: GoalStep,
-  sync: SyncStep,
+  reminder: ReminderStep,
   sounds: SoundsStep,
   trialFree: TrialFreeStep,
-  trialReminder: TrialReminderStep,
   pricing: PricingStep,
 };
 
@@ -1165,13 +997,29 @@ export function OnboardingFunnel() {
 
   const finish = useCallback(
     (final: Answers) => {
-      // persist the survey (on-device) + map the first chosen goal to a personalization intent
+      // persist the survey (on-device) + the personalization it feeds
       setJSON('cc.onboarding', final);
+      // the sleep target lands where Settings + the evening rhythm actually read
+      // it (cc.sleepGoalHours), not only inside the survey blob
+      if (typeof final.goalHours === 'number') setSleepGoalHours(final.goalHours);
       // "Start my free trial" must lead to the trial: Home consumes this flag once
       // (after sign-in) and opens the Calm Plan sheet where the store trial starts.
       if (final.wantsTrial) setJSON('cc.pendingTrial', true);
-      const firstGoal = final.goals?.[0];
-      const intent = GOALS.find((g) => g.key === firstGoal)?.intent;
+      // majority intent across EVERY chosen goal (earlier picks break ties) - one
+      // goal out of several must not decide the whole personalization
+      const tally = new Map<Intent, number>();
+      for (const key of final.goals ?? []) {
+        const goalIntent = GOALS.find((g) => g.key === key)?.intent;
+        if (goalIntent) tally.set(goalIntent, (tally.get(goalIntent) ?? 0) + 1);
+      }
+      let intent: Intent | undefined;
+      let votes = 0;
+      for (const [i, n] of tally) {
+        if (n > votes) {
+          intent = i;
+          votes = n;
+        }
+      }
       if (intent) setIntent(intent);
       markOnboarded();
       router.replace('/auth');
@@ -1194,7 +1042,10 @@ export function OnboardingFunnel() {
 
   const onBack = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const onSignIn = useCallback(() => {
-    markOnboarded();
+    // deliberately NOT markOnboarded(): tapping "Sign in" is an escape, not a
+    // completed first-run. The root layout marks the device onboarded once a real
+    // session exists (an existing account IS onboarded); if they bail out of auth
+    // instead, the funnel is still offered on the next open.
     router.replace('/auth');
   }, [router]);
 

@@ -10,7 +10,9 @@ export const SLEEP_GOAL_MIN = 4;
 export const SLEEP_GOAL_MAX = 12;
 export const SLEEP_GOAL_DEFAULT = 8;
 
-const clamp = (h: number) => Math.min(SLEEP_GOAL_MAX, Math.max(SLEEP_GOAL_MIN, Math.round(h)));
+// quarter-hour precision: the onboarding slider moves in 15-min steps, and a
+// 7h45m goal must never silently become 8h
+const clamp = (h: number) => Math.min(SLEEP_GOAL_MAX, Math.max(SLEEP_GOAL_MIN, Math.round(h * 4) / 4));
 
 export async function getSleepGoalHours(): Promise<number> {
   return clamp(await getJSON<number>(KEY, SLEEP_GOAL_DEFAULT));

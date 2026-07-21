@@ -7,7 +7,7 @@ import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
 import { AppText, CoverCard, FlowTransition, FormField, PressableScale, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
-import { PROGRAMS, TRACKS } from '@/content/library';
+import { PROGRAMS, programLength, TRACKS } from '@/content/library';
 import { lightTap } from '@/lib/haptics';
 import { dur, useTheme } from '@/theme';
 
@@ -35,7 +35,7 @@ const ALL: Result[] = [
     id: p.id,
     title: p.title,
     subtitle: p.subtitle,
-    meta: `Program · ${p.weeks}-week`,
+    meta: `Program · ${programLength(p)}`,
     cover: p.cover,
     locked: p.locked,
     playHref: `/program?id=${p.id}`,

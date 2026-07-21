@@ -88,6 +88,20 @@ export default function NightDoorScreen() {
             Not now
           </AppText>
         </PressableScale>
+        {/* the quiet second door - a spiraling night needs the SOS breath, not a
+            browse. Dimmer than "Not now" so it never competes with the one-tap
+            wind-down; present because the Night Door replaces Home in these hours. */}
+        <PressableScale
+          onPress={() => router.push('/sos')}
+          accessibilityRole="button"
+          accessibilityLabel="Need help settling? Start a slow, guided breath."
+          hitSlop={8}
+          dimTo={0.85}
+          style={{ alignItems: 'center', paddingVertical: 10 }}>
+          <AppText variant="meta" tone="dim">
+            Need help settling?
+          </AppText>
+        </PressableScale>
       </Reveal>
     </Screen>
   );

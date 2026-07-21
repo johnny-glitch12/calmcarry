@@ -14,7 +14,7 @@ import Animated, {
 import { Appear, AppText, Card, Crossfade, PressableScale, PrimaryButton, Reveal, Screen, SelectionOverlay, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { covers } from '@/content/covers';
-import { PROGRAMS, TRACKS, type Program } from '@/content/library';
+import { PROGRAMS, programLength, TRACKS, type Program } from '@/content/library';
 import { lightTap } from '@/lib/haptics';
 import { getProgramDone } from '@/lib/programs';
 import { dur, ease, fonts, useTheme } from '@/theme';
@@ -74,7 +74,7 @@ export function ProgramDetail() {
           accessibilityIgnoresInvertColors
         />
         <AppText variant="caption" tone="accent" style={{ marginTop: 18 }}>
-          {program.weeks}-week reset · for {program.avatar}
+          {programLength(program)} · for {program.avatar}
         </AppText>
         <AppText variant="display" tone="title" style={{ marginTop: 6 }}>
           {program.title}

@@ -42,7 +42,28 @@ import { lightTap } from '@/lib/haptics';
 import { getJSON, KEYS, remove, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
 
-const NEW_THIS_MONTH = ['rain-piano', 'beach-fire', 'rain-forest', 'fan'];
+/** This month's rail picks: a deterministic month-keyed shuffle over the whole
+ *  catalog, so the shelf genuinely changes when the month does - the old
+ *  hard-coded list showed the same four tracks forever. Stable within a month
+ *  (same picks on every open), reshuffles on the next. CMS ids still win. */
+function monthlyPicks(count = 5): string[] {
+  const now = new Date();
+  const key = `${now.getFullYear()}-${now.getMonth()}`;
+  // djb2 string hash - tiny, deterministic, good enough for a shelf rotation
+  const score = (id: string) => {
+    const s = `${key}:${id}`;
+    let h = 5381;
+    for (let i = 0; i < s.length; i += 1) h = (Math.imul(h, 33) + s.charCodeAt(i)) >>> 0;
+    return h;
+  };
+  // Adult ambient beds only: the home shelf must never surface the kids-framed
+  // ocean ('ages 4+') or a guided/breathing session as a background pick
+  return Object.values(TRACKS)
+    .filter((t) => ['soundscape', 'noise', 'music'].includes(t.category) && t.id !== 'penguin')
+    .map((t) => t.id)
+    .sort((a, b) => score(a) - score(b))
+    .slice(0, count);
+}
 
 
 // A short, warm "how you're arriving" label for the hero - reflects ONLY this
@@ -278,9 +299,10 @@ export function TonightScreen() {
     }, [])
   );
 
-  // "New this month" - driven by the CMS catalog flag so the shelf rotates without
-  // an app release. Falls back to the bundled default; only shows tracks we ship.
-  const [newIds, setNewIds] = useState<string[]>(NEW_THIS_MONTH);
+  // The monthly rail - the CMS catalog flag wins when the backend supplies real
+  // releases; offline (or CMS-silent) it falls back to the month-keyed rotation
+  // above. Either way the shelf changes monthly; only shows tracks we ship.
+  const [newIds, setNewIds] = useState<string[]>(monthlyPicks);
   useEffect(() => {
     let alive = true;
     api
@@ -365,14 +387,16 @@ export function TonightScreen() {
 
   // The always-free rescue row, defined once and placed either above the hero (deep
   // night) or below the CTA (otherwise). Reveal index tracks its on-screen position so
-  // the staggered entrance still fades top-to-bottom.
+  // the staggered entrance still fades top-to-bottom. Lands in SOS (a paced breath
+  // first, then the same free drift) - a spiking 3 a.m. brain needs the breath before
+  // any sound, and every SOS rung ends on a free track, so the promise below holds.
   const rescueReveal = (
     <Reveal index={deepNight ? 1 : 5}>
       <PressableScale
-        onPress={() => router.push(`/player?id=${FREE_RESCUE}` as Href)}
+        onPress={() => router.push('/sos' as Href)}
         onPressIn={lightTap}
         accessibilityRole="button"
-        accessibilityLabel={`${rescueLabel} Play a free calming session now.`}
+        accessibilityLabel={`${rescueLabel} Start a free guided breath now.`}
         scaleTo={0.98}
         dimTo={0.9}
         style={{
@@ -394,7 +418,7 @@ export function TonightScreen() {
             {rescueLabel}
           </AppText>
           <AppText variant="meta" tone="muted" style={{ marginTop: 2 }}>
-            Tap once for a free drift back to sleep, no sign-in needed.
+            Tap once for a slow breath and a free drift back to sleep, no sign-in needed.
           </AppText>
         </View>
         <Feather name="play" size={16} color={c.accent} />
@@ -469,10 +493,11 @@ export function TonightScreen() {
         </Appear>
       ) : null}
 
-      {/* Always-free rescue - the honest answer to a 3 a.m. wake-up: one tap into a
-          free drift, no sign-in, no paywall, no quiz. Hidden in kids mode. In the deep
-          night this jumps ABOVE the hero (see rescueReveal below) so the feature built
-          for the small-hours wake-up is the first thing a groggy user reaches. */}
+      {/* Always-free rescue - the honest answer to a 3 a.m. wake-up: one tap into the
+          SOS ladder (paced breath, then a free drift), no sign-in, no paywall, no quiz.
+          Hidden in kids mode. In the deep night this jumps ABOVE the hero (see
+          rescueReveal below) so the feature built for the small-hours wake-up is the
+          first thing a groggy user reaches. */}
       {!kids && deepNight ? rescueReveal : null}
 
       {/* personalised hero - always fully playable via heroId (never baits a free user
@@ -571,10 +596,12 @@ export function TonightScreen() {
         </Appear>
       ) : null}
 
-      {/* new this month - fresh content (CMS-driven in production) */}
+      {/* the monthly rail - titled "Fresh picks", not "New", because the offline
+          rotation surfaces existing catalog tracks; "new" is only true when the
+          CMS actually ships new ones, and the label must be honest in both cases */}
       <Reveal index={5}>
         <View style={{ marginTop: 32 }}>
-          <SectionHeader kicker="Fresh" title="New this month" />
+          <SectionHeader kicker="This month" title="Fresh picks" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
             {newIds.map((id) => {
               const t = TRACKS[id];

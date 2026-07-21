@@ -8,7 +8,7 @@ import { AppText, CoverCard, LibraryCard, PressableScale, Reveal, Screen, Sectio
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { covers } from '@/content/covers';
-import { LEARN, PROGRAMS, TRACKS, type Track } from '@/content/library';
+import { LEARN, PROGRAMS, programLength, TRACKS, type Track } from '@/content/library';
 import { getFavorites } from '@/lib/favorites';
 import { lightTap } from '@/lib/haptics';
 import { getRecents } from '@/lib/recents';
@@ -266,7 +266,7 @@ export function SoundsLibrary() {
                 <LibraryCard
                   key={p.id}
                   title={p.title}
-                  subtitle={`${p.weeks}-week reset`}
+                  subtitle={programLength(p)}
                   image={covers[p.cover]}
                   locked={p.locked && !isPremium}
                   onPress={() => router.push(`/program?id=${p.id}`)}

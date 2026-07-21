@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
@@ -18,10 +18,16 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText, DragDismiss, GlowOrb, PressableScale, ProgressRing, Screen } from '@/components';
-import { markFirstAudio } from '@/lib/analytics';
+import { markFirstAudio, track as logEvent } from '@/lib/analytics';
+import { markCalmNightToday } from '@/lib/calmNights';
 import { lightTap } from '@/lib/haptics';
+import { markProgramStepDone } from '@/lib/programs';
+import { pushRecent } from '@/lib/recents';
+import { logSession } from '@/lib/sessions';
 import { getJSON, KEYS } from '@/lib/store';
+import { recordTrackWin } from '@/lib/trackWins';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
@@ -127,9 +133,10 @@ export default function WindDownScreen() {
     };
   }, []);
 
-  const { isPremium } = useAuth();
+  const { isPremium, token } = useAuth();
+  const { mode } = useProfile();
   // the wind-down plays the track the home screen recommended (falls back to Slow Tide)
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, program, day } = useLocalSearchParams<{ id?: string; program?: string; day?: string }>();
   const track = TRACKS[id ?? ''] ?? TRACKS['slow-tide'];
   // Entitlement gate: a locked premium track must NOT stream in the wind-down for a
   // free user - that bundled asset plays with no server signed-url check, so it would
@@ -183,6 +190,50 @@ export default function WindDownScreen() {
       }
     };
   }, [audio, lockedForUser]);
+
+  // Credit the ritual exactly like a Player session (the flagship CTA used to earn
+  // NOTHING: no calm night, no recent, no program progress - a week of faithful
+  // nightly wind-downs left the home at 0 stars). Gated on audio ACTUALLY playing,
+  // same as Player.tsx - a 2-second open-and-close or a failed load earns nothing.
+  const audioStatus = useAudioPlayerStatus(audio);
+  const loggedRef = useRef(false);
+  const startedAtRef = useRef<number | null>(null);
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (lockedForUser || loggedRef.current || !audioStatus.playing) return;
+    loggedRef.current = true;
+    startedAtRef.current = Date.now();
+    // COPPA: never send a child's listening to the backend, and keep their plays
+    // out of the (adult) recents/recommender - same rule as the Player
+    if (mode !== 'kids') {
+      logSession(token, { contentId: track.id });
+      pushRecent(track.id).catch(() => {});
+    }
+    logEvent('session_start', { contentId: track.id, category: track.category });
+    markCalmNightToday().catch(() => {});
+    if (program && day) markProgramStepDone(program, Number(day)).catch(() => {});
+  }, [lockedForUser, audioStatus.playing, mode, token, track.id, track.category, program, day]);
+
+  // Completion fires once, on the FIRST exit path taken (natural 20:00 end or an
+  // early close). A ≥60s listen counts as a real wind-down - same rule as the Player.
+  const fireComplete = useCallback(
+    (reachedEnd: boolean) => {
+      if (completedRef.current || !loggedRef.current) return;
+      completedRef.current = true;
+      const durationSec = startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : undefined;
+      const completed = reachedEnd || (durationSec ?? 0) >= 60;
+      if (completed) void recordTrackWin(track.id);
+      logEvent('session_complete', { contentId: track.id, category: track.category, completed, durationSec });
+    },
+    [track.id, track.category],
+  );
+  // Count completion on any other exit (nav away / unmount). Latest fireComplete in
+  // a ref + [] deps so a mid-session param change can't fire a stale completion.
+  const fireCompleteRef = useRef(fireComplete);
+  useEffect(() => {
+    fireCompleteRef.current = fireComplete;
+  });
+  useEffect(() => () => fireCompleteRef.current(false), []);
   useEffect(() => {
     if (lockedForUser) return;
     if (paused) audio.pause();
@@ -211,6 +262,7 @@ export default function WindDownScreen() {
   const endSession = useCallback(() => {
     if (endingRef.current) return;
     endingRef.current = true;
+    fireComplete(true); // the ritual reached its natural end
     if (endTimer.current) clearTimeout(endTimer.current);
     let v = 1;
     const step = () => {
@@ -231,7 +283,7 @@ export default function WindDownScreen() {
       }
     };
     step();
-  }, [audio, router]);
+  }, [audio, router, fireComplete]);
 
   const beginCountdown = useCallback(() => {
     lastStartRef.current = Date.now();
@@ -346,6 +398,7 @@ export default function WindDownScreen() {
     cancelAnimation(progress);
     if (endTimer.current) clearTimeout(endTimer.current);
     if (fadeRef.current) clearTimeout(fadeRef.current);
+    fireComplete(false); // early leave still counts if ≥60s was actually listened
     // Manually bailing out of the ritual should just make the screen GONE - not spawn a
     // "were you settled?" question with more light and another aimed tap. The peak-end
     // check-in stays for the natural 20:00 end in endSession, where reflection fits.

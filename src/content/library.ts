@@ -22,10 +22,17 @@ export type Track = {
   about?: string;
 };
 
+/**
+ * The looping contract, in one place: anything the UI sells as "loops" plus every
+ * ambient soundscape must play until the user (or their sleep timer) stops it.
+ * Finite tracks — guided, breathing, timed music — play once and end gently.
+ */
+export const trackLoops = (t: Track): boolean => t.duration === 'loops' || t.category === 'soundscape';
+
 export const TRACKS: Record<string, Track> = {
   'slow-tide': { id: 'slow-tide', title: 'Slow Tide', subtitle: 'Ocean swell · low drone', cover: 'slowTide', duration: '20 min', category: 'soundscape', audio: 'ocean',
     about: 'A real ocean recording with a slow, even swell. Good for drifting off, or any moment you want the room to feel bigger and quieter.' },
-  rainfall: { id: 'rainfall', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', cover: 'rainfall', duration: '45 min', category: 'soundscape', audio: 'rain', locked: true,
+  rainfall: { id: 'rainfall', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', cover: 'rainfall', duration: 'loops', category: 'soundscape', audio: 'rain', locked: true,
     about: 'Steady, unhurried rain with far-off thunder. A favourite for masking street noise while you fall asleep.' },
   forest: { id: 'forest', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', cover: 'forestStream', duration: 'loops', category: 'soundscape', audio: 'forest', locked: true,
     about: 'Birdsong over a soft stream. Gentler and brighter than rain, suited to daytime resets as much as bedtime.' },
@@ -39,7 +46,7 @@ export const TRACKS: Record<string, Track> = {
   // little ones (it plays the ocean bed), NOT a 27-min narrated tale. Loops gently.
   penguin: { id: 'penguin', title: 'Ocean for Little Ones', subtitle: 'Calm ocean waves · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean',
     about: 'The same calm ocean, framed for small ears. Plays gently until you stop it; made for the Kids Mode bedtime.' },
-  spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: '60 min', category: 'music', audio: 'piano', locked: true,
+  spa: { id: 'spa', title: 'Spa Piano', subtitle: 'Playlist · soft keys', cover: 'spaMusic', duration: 'loops', category: 'music', audio: 'piano', locked: true,
     about: 'Soft, lyric-free piano. Background calm for reading, unwinding, or easing into the evening.' },
   gymnopedie: { id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Erik Satie · solo piano', cover: 'gymnopedie', duration: '3 min', category: 'music', audio: 'gymnopedie',
     about: 'Satie’s slow, famous solo piano piece. Three unhurried minutes; a lovely way to start a wind-down.' },
@@ -163,12 +170,20 @@ export type Program = {
   title: string;
   subtitle: string;
   cover: CoverKey;
-  weeks: number;
   /** the avatar this reset is mapped to (build plan §4) */
   avatar: string;
   steps: { day: number; title: string; trackId?: string }[];
   locked?: boolean;
 };
+
+/**
+ * The advertised length, DERIVED from the steps - never hand-set - so a program
+ * can't be sold as longer than it is. Whole weeks read "<n>-week reset";
+ * anything shorter reads "<n> nights". (Before this, "The 3 a.m. Reset" was
+ * labelled a 2-week reset with 5 nights inside.)
+ */
+export const programLength = (p: Program): string =>
+  p.steps.length % 7 === 0 ? `${p.steps.length / 7}-week reset` : `${p.steps.length} nights`;
 
 export const PROGRAMS: Record<string, Program> = {
   // The free starter arc - leads the rail and is composed ENTIRELY of free tracks
@@ -179,7 +194,6 @@ export const PROGRAMS: Record<string, Program> = {
     title: 'Your first 7 nights',
     subtitle: 'A gentle, free place to start',
     cover: 'slowTide',
-    weeks: 1,
     avatar: 'newcomers',
     steps: [
       { day: 1, title: 'Meet your wind-down', trackId: 'slow-tide' },
@@ -191,12 +205,14 @@ export const PROGRAMS: Record<string, Program> = {
       { day: 7, title: 'Make it your ritual', trackId: 'slow-tide' },
     ],
   },
+  // A full 2 weeks (14 nights) - the advertised label derives from these steps.
+  // Arc: week 1 settles the body and meets each tool once; week 2 quiets the
+  // mind and rehearses the back-to-sleep moves until they run from memory.
   'night-reset': {
     id: 'night-reset',
     title: 'The 3 a.m. Reset',
     subtitle: 'Settle the wake-ups',
     cover: 'slowTide',
-    weeks: 2,
     avatar: '3 a.m. parent',
     locked: true,
     steps: [
@@ -205,6 +221,15 @@ export const PROGRAMS: Record<string, Program> = {
       { day: 3, title: 'Back-to-sleep breathing', trackId: 'box-breathing' },
       { day: 4, title: 'Deep body settle', trackId: 'deep-rest' },
       { day: 5, title: 'A longer drift', trackId: 'rainfall' },
+      { day: 6, title: 'An even hush for the small hours', trackId: 'brown-noise' },
+      { day: 7, title: 'Soft keys to close the week', trackId: 'spa' },
+      { day: 8, title: 'Set the day down, again', trackId: 'letting-go' },
+      { day: 9, title: 'Back to sleep, second rep', trackId: 'box-breathing' },
+      { day: 10, title: 'Rain over the sea to drift', trackId: 'rain-ocean' },
+      { day: 11, title: 'Body settle, from memory', trackId: 'deep-rest' },
+      { day: 12, title: 'A softer hush all night', trackId: 'pink-noise' },
+      { day: 13, title: 'The breath that stays with you', trackId: 'box-breathing' },
+      { day: 14, title: 'Your ritual, on rails', trackId: 'slow-tide' },
     ],
   },
   'after-school': {
@@ -212,7 +237,6 @@ export const PROGRAMS: Record<string, Program> = {
     title: 'After-school Decompress',
     subtitle: 'A gentle landing',
     cover: 'forestStream',
-    weeks: 1,
     avatar: 'Carer · kids',
     locked: true,
     steps: [
@@ -221,18 +245,38 @@ export const PROGRAMS: Record<string, Program> = {
       { day: 3, title: 'A gentle ocean wind-down', trackId: 'penguin' },
     ],
   },
+  // A full 3 weeks (21 nights) - the advertised label derives from these steps.
+  // Arc: week 1 settles the body into a fixed evening slot; week 2 quiets the
+  // mind; week 3 lets the rhythm run itself, with reps for wobbly nights.
   'evening-ritual': {
     id: 'evening-ritual',
     title: 'Evening Wind-down',
     subtitle: 'A gentler evening rhythm',
     cover: 'deepRest',
-    weeks: 3,
     avatar: 'routine-builder',
     locked: true,
     steps: [
       { day: 1, title: 'Set the ritual', trackId: 'deep-rest' },
       { day: 2, title: 'Quiet the busy mind', trackId: 'letting-go' },
       { day: 3, title: 'Ocean to sleep', trackId: 'slow-tide' },
+      { day: 4, title: 'Breathe the evening slower', trackId: 'box-breathing' },
+      { day: 5, title: 'Rain to carry you down', trackId: 'rainfall' },
+      { day: 6, title: 'Deep body settle', trackId: 'deep-rest' },
+      { day: 7, title: 'Soft keys to close the week', trackId: 'spa' },
+      { day: 8, title: 'Set the day down', trackId: 'letting-go' },
+      { day: 9, title: 'A slower breath, again', trackId: 'box-breathing' },
+      { day: 10, title: 'Piano in the rain', trackId: 'rain-piano' },
+      { day: 11, title: 'A soft, balanced hush', trackId: 'pink-noise' },
+      { day: 12, title: 'The forest, settling', trackId: 'forest' },
+      { day: 13, title: 'Body settle, deeper now', trackId: 'deep-rest' },
+      { day: 14, title: 'Ocean, familiar now', trackId: 'slow-tide' },
+      { day: 15, title: 'The ritual runs itself', trackId: 'deep-rest' },
+      { day: 16, title: 'Let the day go, quickly now', trackId: 'letting-go' },
+      { day: 17, title: 'Breathing from memory', trackId: 'box-breathing' },
+      { day: 18, title: 'Rain by the fire', trackId: 'rain-fire' },
+      { day: 19, title: 'Waves close over rock', trackId: 'shoreline' },
+      { day: 20, title: 'Something quietly beautiful', trackId: 'gymnopedie' },
+      { day: 21, title: 'Your rhythm, kept', trackId: 'slow-tide' },
     ],
   },
 };

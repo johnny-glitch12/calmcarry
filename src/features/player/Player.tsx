@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image as RNImage, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Image as RNImage, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -25,7 +25,7 @@ import { SleepyStars } from '@/features/kids/SleepyStars';
 import { SlidePuzzle } from '@/features/kids/SlidePuzzle';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
-import { TRACKS, WELLNESS_DISCLAIMER } from '@/content/library';
+import { TRACKS, WELLNESS_DISCLAIMER, trackLoops } from '@/content/library';
 import { markFirstAudio, track as logEvent } from '@/lib/analytics';
 import { resolveAudioSource } from '@/lib/audioSource';
 import { markCalmNightToday } from '@/lib/calmNights';
@@ -156,10 +156,12 @@ export function Player() {
     };
   }, [player, track.title, track.cover]);
 
-  // Loop ONLY ambient soundscapes. Guided sessions, sleep tales and breathing
-  // exercises must play once and end gently (§6 "gentle end") - never restart.
+  // Loop everything sold as "loops" (noise colors, fans, ambient blends) plus all
+  // soundscapes. Guided sessions, sleep tales and breathing exercises must play
+  // once and end gently (§6 "gentle end") - never restart.
+  const loops = trackLoops(track);
   useEffect(() => {
-    player.loop = track.category === 'soundscape';
+    player.loop = loops;
     player.volume = 1;
     let cancelled = false;
     (async () => {
@@ -171,7 +173,7 @@ export function Player() {
         const src = await resolveAudioSource(track, token);
         if (!cancelled && src && src !== audioSources[track.audio]) {
           player.replace(src);
-          player.loop = track.category === 'soundscape';
+          player.loop = loops;
           player.volume = 1;
         }
       } catch {
@@ -242,7 +244,7 @@ export function Player() {
     try {
       // fall back to the guaranteed-local bundled asset and try again
       player.replace(audioSources[track.audio]);
-      player.loop = track.category === 'soundscape';
+      player.loop = loops;
       player.volume = 1;
       player.play();
     } catch {
@@ -444,20 +446,41 @@ export function Player() {
   }, [player, router, fireComplete, mode]);
 
   // Guided sessions, sleep tales and breathing must play once and END - not freeze
-  // on a silent 100% ring. Soundscapes (which loop) are excluded.
+  // on a silent 100% ring. Anything that loops is excluded (didJustFinish should
+  // never fire for a looping player, but a dropped loop flag mid-swap must not
+  // shove a check-in screen at someone drifting off).
   useEffect(() => {
-    if (status.didJustFinish && track.category !== 'soundscape') endSession();
-  }, [status.didJustFinish, track.category, endSession]);
+    if (status.didJustFinish && !loops) endSession();
+  }, [status.didJustFinish, loops, endSession]);
 
   // Sleep / auto-stop timer
   const [sleepMin, setSleepMin] = useState(0);
   useEffect(() => {
     getJSON<number>('cc.sleepTimerMin', 0).then((v) => setSleepMin((SLEEP_OPTIONS as readonly number[]).includes(v) ? v : 0));
   }, []);
+  const sleepEndAtRef = useRef<number | null>(null); // absolute end time (for bg recompute)
   useEffect(() => {
-    if (sleepMin <= 0) return;
-    const id = setTimeout(() => endSession(), sleepMin * 60_000);
-    return () => clearTimeout(id);
+    if (sleepMin <= 0) {
+      sleepEndAtRef.current = null;
+      return;
+    }
+    // The setTimeout is the foreground path only - it is suspended while the app
+    // is backgrounded (audio keeps playing). On return to foreground, recompute
+    // against the absolute end time: fade NOW if it already passed, else re-arm
+    // the remainder (same pattern as wind-down's endAtRef).
+    sleepEndAtRef.current = Date.now() + sleepMin * 60_000;
+    let id = setTimeout(() => endSession(), sleepMin * 60_000);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active' || endingRef.current || sleepEndAtRef.current == null) return;
+      clearTimeout(id);
+      const remaining = sleepEndAtRef.current - Date.now();
+      if (remaining <= 0) endSession();
+      else id = setTimeout(() => endSession(), remaining);
+    });
+    return () => {
+      clearTimeout(id);
+      sub.remove();
+    };
   }, [sleepMin, endSession]);
   useEffect(() => () => { if (fadeRef.current) clearTimeout(fadeRef.current); }, []);
   // Count completion on any other exit (manual close / back / swipe-dismiss / nav away).

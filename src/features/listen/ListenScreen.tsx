@@ -264,7 +264,9 @@ export function ListenScreen() {
   const [timer, setTimer] = useState<number>(0);
   const [mixes, setMixes] = useState<SavedMix[]>([]);
   const [shareNote, setShareNote] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // wall-clock end of the sleep timer. The background poll below fires it - a raw
+  // setTimeout is suspended while the phone is locked and would never fire at 3am.
+  const endAtRef = useRef<number | null>(null);
   const fadeRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // latest levels in a ref so the fade closure reads current values without re-arming
   const levelsRef = useRef(levels);
@@ -293,17 +295,14 @@ export function ListenScreen() {
     // restore a still-running sleep timer (survives a tab freeze / remount)
     getJSON<TimerState | null>('cc.sleepTimer', null).then((saved) => {
       if (!saved || typeof saved.endAt !== 'number') return;
-      const remaining = saved.endAt - Date.now();
-      if (remaining > 0) {
+      if (saved.endAt > Date.now()) {
         setTimer(saved.mins);
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(fadeAndStop, remaining);
+        endAtRef.current = saved.endAt;
       } else {
         remove('cc.sleepTimer');
       }
     });
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
       if (fadeRef.current) clearInterval(fadeRef.current);
       (Object.values(players) as ReturnType<typeof useAudioPlayer>[]).forEach((p) => {
         try {
@@ -379,11 +378,20 @@ export function ListenScreen() {
     [],
   );
 
-  // A lock-screen pause only reaches the anchor player - notice it and let the
-  // whole mix follow with the usual gentle fade, so the UI and the ear agree.
+  // This ~2s poll is what actually ends the night: background audio keeps the JS
+  // runtime alive with the phone locked (where a raw setTimeout is suspended), so
+  // it fires the sleep timer at its wall-clock deadline AND notices a lock-screen
+  // pause (which only reaches the anchor player) so the whole mix follows with
+  // the usual gentle fade - the UI and the ear agree.
   useEffect(() => {
-    if (!anyOn) return;
+    if (!anyOn && timer <= 0) return;
     const id = setInterval(() => {
+      const end = endAtRef.current;
+      if (end != null && Date.now() >= end) {
+        endAtRef.current = null; // fire once - the fade itself takes ~3.5s
+        fadeAndStop();
+        return;
+      }
       const a = anchorRef.current;
       if (!a) return;
       try {
@@ -394,7 +402,7 @@ export function ListenScreen() {
     }, 2000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anyOn]);
+  }, [anyOn, timer]);
 
   const toggle = (k: SoundKey) => {
     lightTap();
@@ -414,7 +422,7 @@ export function ListenScreen() {
     if (fadeRef.current) clearInterval(fadeRef.current);
     setLevels(ZERO);
     setTimer(0);
-    if (timerRef.current) clearTimeout(timerRef.current);
+    endAtRef.current = null;
     remove('cc.sleepTimer');
   };
 
@@ -440,30 +448,26 @@ export function ListenScreen() {
   const setTimerTo = (mins: number) => {
     lightTap();
     setTimer(mins);
-    if (timerRef.current) clearTimeout(timerRef.current);
     if (mins > 0) {
-      const ms = mins * 60 * 1000;
-      setJSON('cc.sleepTimer', timerStateFor(mins));
-      timerRef.current = setTimeout(fadeAndStop, ms);
+      const state = timerStateFor(mins);
+      endAtRef.current = state.endAt;
+      setJSON('cc.sleepTimer', state);
     } else {
+      endAtRef.current = null;
       remove('cc.sleepTimer');
     }
   };
 
-  // The setTimeout above is SUSPENDED while the app is backgrounded (but audio keeps
-  // playing). On return to foreground, re-check the saved end time: fade now if it
-  // already elapsed, else re-arm the remainder. (A true stop-while-asleep needs a
-  // native/background timer - tracked for Glowco.)
+  // With no audio playing the JS runtime (poll included) IS suspended in the
+  // background - recheck the deadline the moment the app is foregrounded so an
+  // elapsed timer fades right away instead of waiting on the next poll tick.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return;
-      getJSON<TimerState | null>('cc.sleepTimer', null).then((saved) => {
-        if (!saved || typeof saved.endAt !== 'number') return;
-        if (timerRef.current) clearTimeout(timerRef.current);
-        const remaining = saved.endAt - Date.now();
-        if (remaining <= 0) fadeAndStop();
-        else timerRef.current = setTimeout(fadeAndStop, remaining);
-      });
+      const end = endAtRef.current;
+      if (end == null || Date.now() < end) return;
+      endAtRef.current = null;
+      fadeAndStop();
     });
     return () => sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps

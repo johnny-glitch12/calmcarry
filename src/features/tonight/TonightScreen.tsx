@@ -38,6 +38,7 @@ import { covers } from '@/content/covers';
 import { TRACKS } from '@/content/library';
 import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
+import { getReceipt, getRecentNights, recordNight, type NightOutcome } from '@/lib/nightsLog';
 import { lightTap } from '@/lib/haptics';
 import { getJSON, KEYS, remove, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
@@ -65,6 +66,47 @@ function monthlyPicks(count = 5): string[] {
     .slice(0, count);
 }
 
+
+// LOCAL YYYY-MM-DD (matches lib/calmNights + lib/nightsLog - local-midnight boundary).
+// Used only to tell whether a logged reflection / credited session is recent enough
+// for the morning "how was last night?" prompt.
+function ymd(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function isTodayOrYesterday(date: string): boolean {
+  const now = new Date();
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
+  return date === ymd(now) || date === ymd(y);
+}
+
+/** A soft one-tap outcome chip for the morning "how was last night?" prompt - the
+ *  same feather-light affordance as the post-session check-in. No scale, no history. */
+function OutcomeChip({ label, onPress }: { label: string; onPress: () => void }) {
+  const { c } = useTheme();
+  return (
+    <PressableScale
+      onPress={onPress}
+      onPressIn={lightTap}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      scaleTo={0.97}
+      dimTo={0.9}
+      style={{
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 999,
+        backgroundColor: c.surface,
+        borderWidth: 1,
+        borderColor: c.line,
+      }}>
+      <AppText variant="bodyMedium" tone="title">
+        {label}
+      </AppText>
+    </PressableScale>
+  );
+}
 
 // A short, warm "how you're arriving" label for the hero - reflects ONLY this
 // session's check-in answer (never persisted, never a stored mood log; §3/§14).
@@ -287,17 +329,51 @@ export function TonightScreen() {
   // an explicit "Start my free trial" tap from the funnel.
 
   // gentle, non-failable "calm nights" progress - earned by real sessions, shown
-  // to adults too (kids get the playful stars on KidsHome). Refreshed on focus.
+  // to adults too (kids get the playful stars on KidsHome). Alongside it: the honest
+  // opt-in receipt (getReceipt) and the morning "how was last night?" prompt. All
+  // refreshed together on focus.
   const [nights, setNights] = useState(0);
+  const [receipt, setReceipt] = useState<{ calmer: number; total: number }>({ calmer: 0, total: 0 });
+  const [showMorningPrompt, setShowMorningPrompt] = useState(false);
   useFocusEffect(
     useCallback(() => {
       let alive = true;
-      getCalmNights().then((n) => alive && setNights(n));
+      (async () => {
+        const [n, r] = await Promise.all([getCalmNights(), getReceipt()]);
+        if (!alive) return;
+        setNights(n);
+        setReceipt(r);
+        // Morning-only, gentle second chance to note last night. Shown ONLY when a
+        // wind-down actually happened recently (cc.calmNightsDate, written by
+        // lib/calmNights when a session is credited, is today/yesterday) AND it hasn't
+        // been answered yet. Never a cold nag, never in the deep-night window.
+        const morning = hour >= 5 && hour < 12;
+        if (!morning || kids) {
+          setShowMorningPrompt(false);
+          return;
+        }
+        const [recent, lastSession] = await Promise.all([
+          getRecentNights(1),
+          getJSON<string | null>('cc.calmNightsDate', null),
+        ]);
+        if (!alive) return;
+        const answered = recent.length > 0 && isTodayOrYesterday(recent[recent.length - 1].date);
+        const hadSession = !!lastSession && isTodayOrYesterday(lastSession);
+        setShowMorningPrompt(hadSession && !answered);
+      })();
       return () => {
         alive = false;
       };
-    }, [])
+    }, [hour, kids])
   );
+  // one-tap answer from the morning card: record, hide the card, refresh the receipt.
+  const answerLastNight = (outcome: NightOutcome) => {
+    setShowMorningPrompt(false);
+    recordNight(outcome)
+      .then(getReceipt)
+      .then((r) => setReceipt(r))
+      .catch(() => {});
+  };
 
   // The monthly rail - the CMS catalog flag wins when the backend supplies real
   // releases; offline (or CMS-silent) it falls back to the month-keyed rotation
@@ -569,6 +645,26 @@ export function TonightScreen() {
         </Appear>
       ) : null}
 
+      {/* morning-only, optional "how was last night?" - a gentle second chance to
+          note last night when it went un-noted. Only when a session actually happened
+          recently and it's unanswered (see the focus effect); never a nag. */}
+      {showMorningPrompt ? (
+        <Appear enter={dur.sheet}>
+          <Card variant="panel" radius={18} style={{ marginTop: 28 }}>
+            <AppText variant="caption" tone="accent">
+              Good morning
+            </AppText>
+            <AppText variant="bodyMedium" tone="title" style={{ marginTop: 6 }}>
+              How did last night land?
+            </AppText>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+              <OutcomeChip label="Calmer" onPress={() => answerLastNight('calmer')} />
+              <OutcomeChip label="About the same" onPress={() => answerLastNight('same')} />
+            </View>
+          </Card>
+        </Appear>
+      ) : null}
+
       {/* gentle calm-nights progress - only once at least one night is earned, so
           it's an encouragement, never an empty "0/7" guilt-meter */}
       {nights > 0 ? (
@@ -593,6 +689,17 @@ export function TonightScreen() {
               </View>
             </View>
           </Card>
+        </Appear>
+      ) : null}
+
+      {/* honest opt-in receipt - only when the user has actually noted a night (total
+          > 0), so a first-timer never meets a "0 of 0" zero-state. One quiet line, no
+          graph, no streak pressure. */}
+      {receipt.total > 0 ? (
+        <Appear enter={dur.sheet}>
+          <AppText variant="meta" tone="muted" style={{ marginTop: 14 }}>
+            Calmer on {receipt.calmer} of your last {receipt.total} {receipt.total === 1 ? 'night' : 'nights'}
+          </AppText>
         </Appear>
       ) : null}
 

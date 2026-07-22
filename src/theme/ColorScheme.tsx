@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 
 import type { ThemeMode } from './colors';
 
@@ -11,7 +12,7 @@ type Ctx = {
   /** the user's choice */
   pref: SchemePref;
   setPref: (p: SchemePref) => void;
-  /** resolved theme for ADAPTIVE screens ('system' follows the OS) */
+  /** resolved theme for ADAPTIVE screens (no explicit choice = night after dark) */
   effective: ThemeMode;
   /** true once the saved preference has loaded (or failed) from storage */
   hydrated: boolean;
@@ -24,17 +25,26 @@ const ColorSchemeContext = createContext<Ctx>({
   hydrated: false,
 });
 
+/** wind-down window: 20:00-05:00 local. getHours is web-safe (no crash on web). */
+function inNightWindow(): boolean {
+  const h = new Date().getHours();
+  return h >= 20 || h < 5;
+}
+
 /**
- * NIGHT-FIRST identity: CalmCarry is a sleep product, and the adult app is the
- * deep-eucalyptus night theme everywhere, always - one cohesive world, like the
- * best sleep apps, not a utility that happens to have a dark mode. `effective`
- * therefore always resolves 'night'. The light palette still exists for the
- * KIDS daytime surface (<Screen mode="day">), which stays soft on purpose.
- * The pref plumbing is kept so the choice is one line to revisit.
+ * Appearance for ADAPTIVE screens. An explicit Light/Dark choice is honored
+ * exactly and is never overridden. With no choice ('system') the app follows the
+ * clock: night during the wind-down window (20:00-05:00) so the whole surface
+ * feels like night after dark, light by day. The window is re-checked on return
+ * to foreground, not on a ticking timer. Sleep screens still force night via
+ * <Screen mode="night"> regardless of this.
  */
 export function ColorSchemeProvider({ children }: { children: ReactNode }) {
   const [pref, setPrefState] = useState<SchemePref>('system');
   const [hydrated, setHydrated] = useState(false);
+  // 'system' users only: night after dark. Re-evaluated on foreground so an
+  // evening reopen crosses into night, without a background clock running.
+  const [nightWindow, setNightWindow] = useState(inNightWindow);
 
   // load the saved preference once on mount
   useEffect(() => {
@@ -46,14 +56,25 @@ export function ColorSchemeProvider({ children }: { children: ReactNode }) {
       .finally(() => setHydrated(true));
   }, []);
 
+  // re-check the clock when the app returns to the foreground (AppState 'active')
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') setNightWindow(inNightWindow());
+    });
+    return () => sub.remove();
+  }, []);
+
   const setPref = useCallback((p: SchemePref) => {
     setPrefState(p);
     AsyncStorage.setItem(STORAGE_KEY, p).catch(() => {});
   }, []);
 
-  // night-first: the adaptive surface is always the night theme (see doc above).
-  // `pref`/`os` intentionally no longer influence it.
-  const effective = useMemo<ThemeMode>(() => 'night', []);
+  // explicit choice wins; 'system' follows the clock (night after dark).
+  const effective = useMemo<ThemeMode>(() => {
+    if (pref === 'light') return 'light';
+    if (pref === 'dark') return 'night';
+    return nightWindow ? 'night' : 'light';
+  }, [pref, nightWindow]);
 
   const value = useMemo(
     () => ({ pref, setPref, effective, hydrated }),

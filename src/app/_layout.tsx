@@ -23,7 +23,7 @@ import { startAnalytics, track } from '@/lib/analytics';
 import { captureError, initMonitoring } from '@/lib/monitoring';
 import { getOnboarded, markOnboarded } from '@/lib/onboarding';
 import { hasInitialQuickAction } from '@/lib/quickActions';
-import { getJSON } from '@/lib/store';
+import { getJSON, setJSON } from '@/lib/store';
 import { ColorSchemeProvider, dur, fontMap, ThemeProvider, useColorSchemePref } from '@/theme';
 
 initMonitoring(); // native: Sentry (gated on a real DSN); web: no-op
@@ -167,7 +167,7 @@ function RootNav() {
   const router = useRouter();
   const launchPath = usePathname();
   const didRedirect = useRef(false);
-  const { status: authStatus } = useAuth();
+  const { status: authStatus, isPremium } = useAuth();
 
   useEffect(() => {
     getOnboarded().then(setOnboarded);
@@ -219,6 +219,9 @@ function RootNav() {
   //    fresh install (a desperate 2:47am first open gets the one-tap rescue, not a
   //    question funnel). onboarded stays false, so the full funnel still greets the
   //    next daytime open.
+  //  - otherwise (a normal daytime Home open) -> the once-only post-first-session
+  //    paywall offer: the lowest-priority nudge, below onboarding and the Night
+  //    Door, shown a single time after the user has actually finished a session.
   // GATED ON `ready`, not navState?.key: in expo-router 56 the root navigation state
   // exists from the very first render (the internal '__root' stack), so navState?.key
   // gives NO mount protection - dispatching before our <Stack> mounts (rendered only
@@ -257,8 +260,29 @@ function RootNav() {
           if (!pending) router.push('/night-door');
         });
       }
+      return;
     }
-  }, [ready, onboarded, profileHydrated, authStatus, mode, launchPath, router]);
+
+    // Lowest-priority launch nudge: the post-first-session paywall. Onboarding and
+    // the Night Door already returned above, so this only runs on a normal (daytime)
+    // Home open. Same guards as the Night Door decision: never in kids mode, never
+    // over a deep link or a home-screen quick-action launch, only when the launch
+    // route is Home. Rides the single didRedirect decision, so it can never
+    // double-navigate. Shown exactly once (cc.postSessionOfferShown) to an onboarded,
+    // non-premium user who has actually completed a session (cc.firstSessionDone,
+    // written by the player/wind-down).
+    if (mode !== 'kids' && launchPath === '/' && !hasInitialQuickAction() && onboarded === true && !isPremium) {
+      Promise.all([
+        getJSON<boolean>('cc.firstSessionDone', false),
+        getJSON<boolean>('cc.postSessionOfferShown', false),
+      ]).then(([firstDone, offerShown]) => {
+        if (firstDone && !offerShown) {
+          setJSON('cc.postSessionOfferShown', true); // once only, and across launches
+          router.push('/unlock');
+        }
+      });
+    }
+  }, [ready, onboarded, profileHydrated, authStatus, mode, launchPath, isPremium, router]);
 
   if (!ready) {
     return null;

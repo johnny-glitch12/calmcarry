@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
   withRepeat,
   withSequence,
   withTiming,
@@ -21,6 +22,10 @@ type Props = {
    *  instead of the ambient symmetric loop - for surfaces that guide the breath
    *  (the wind-down centerpiece), so the orb never contradicts the instruction */
   paced?: boolean;
+  /** drive the paced breath at an EXACT rhythm (seconds) instead of the ambient
+   *  4-in/6-out - e.g. box 4-4-4-4, or a hold on either end. Implies paced; holds
+   *  park the orb at its peak/floor for the count. Reduced motion holds steady. */
+  pattern?: { inhale: number; holdIn?: number; exhale: number; holdOut?: number };
   /** one-shot bloom (scale 1→1.08→1 + glow bloom) - the authenticity "burst" peak */
   burst?: boolean;
   /** reserve the full glow footprint (1.6× size) in layout so the halo never
@@ -43,6 +48,7 @@ export function GlowOrb({
   size = 160,
   breathing = true,
   paced = false,
+  pattern,
   burst = false,
   reserveGlow = false,
   aura = false,
@@ -62,24 +68,43 @@ export function GlowOrb({
       glow.value = 1;
       return;
     }
-    if (breathing && paced) {
-      // the TAUGHT rhythm: 4s expand (in-breath) / 6s settle (out-breath) - matches
-      // the Player's pacer so the orb never breathes against its own instruction.
-      // With burst also set (the wind-down arrival), the bloom plays first and hands
-      // off into the loop - burst alone used to win and the pacer never ran.
+    if (breathing && (paced || pattern)) {
+      // The TAUGHT rhythm. Default is 4s expand (in-breath) / 6s settle (out-breath);
+      // a `pattern` overrides it with an exact count (e.g. box 4-4-4-4) so the orb
+      // never breathes against its own instruction. A holdIn parks the orb expanded
+      // (folded into the exhale's delay); a holdOut parks it at the floor before the
+      // next in-breath. With burst also set (the wind-down arrival), the bloom plays
+      // first and hands off into the loop - burst alone used to win and the pacer
+      // never ran.
+      const inMs = (pattern?.inhale ?? 4) * 1000;
+      const holdInMs = (pattern?.holdIn ?? 0) * 1000;
+      const outMs = (pattern?.exhale ?? 6) * 1000;
+      const holdOutMs = (pattern?.holdOut ?? 0) * 1000;
       const scaleLoop = withRepeat(
-        withSequence(
-          withTiming(1.06, { duration: 4000, easing: ease.sine }),
-          withTiming(1, { duration: 6000, easing: ease.sine })
-        ),
+        holdOutMs > 0
+          ? withSequence(
+              withTiming(1.06, { duration: inMs, easing: ease.sine }),
+              withDelay(holdInMs, withTiming(1, { duration: outMs, easing: ease.sine })),
+              withDelay(holdOutMs, withTiming(1, { duration: 1 }))
+            )
+          : withSequence(
+              withTiming(1.06, { duration: inMs, easing: ease.sine }),
+              withDelay(holdInMs, withTiming(1, { duration: outMs, easing: ease.sine }))
+            ),
         -1,
         false
       );
       const glowLoop = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 4000, easing: ease.sine }),
-          withTiming(0.85, { duration: 6000, easing: ease.sine })
-        ),
+        holdOutMs > 0
+          ? withSequence(
+              withTiming(1, { duration: inMs, easing: ease.sine }),
+              withDelay(holdInMs, withTiming(0.85, { duration: outMs, easing: ease.sine })),
+              withDelay(holdOutMs, withTiming(0.85, { duration: 1 }))
+            )
+          : withSequence(
+              withTiming(1, { duration: inMs, easing: ease.sine }),
+              withDelay(holdInMs, withTiming(0.85, { duration: outMs, easing: ease.sine }))
+            ),
         -1,
         false
       );
@@ -129,7 +154,7 @@ export function GlowOrb({
       cancelAnimation(scale);
       cancelAnimation(glow);
     };
-  }, [breathing, paced, burst, reduced, scale, glow]);
+  }, [breathing, paced, pattern, burst, reduced, scale, glow]);
 
   // emanating aura ripples (two staggered rings expanding + fading out)
   useEffect(() => {

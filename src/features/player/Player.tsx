@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Image as RNImage, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Image as RNImage, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -12,6 +13,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
   withRepeat,
   withSequence,
   withTiming,
@@ -266,14 +268,29 @@ export function Player() {
     toggleFavorite(track.id).then(setSaved).catch(() => {});
   };
 
-  // breathing pacer (4s in / 6s out) + rotating honest cues - the guided-session feel
+  // breathing pacer + rotating honest cues - the guided-session feel. A track's
+  // breathPattern drives the EXACT rhythm (e.g. Box Breathing 4-4-4-4, 4-7-8, the
+  // cyclic sigh); every other track rides the ambient 4s-in / 6s-out default so the
+  // guide never contradicts a track's own count.
   const reduced = useReducedMotion();
+  const bp = track.breathPattern;
+  const inMs = (bp?.inhale ?? 4) * 1000;
+  const holdInMs = (bp?.holdIn ?? 0) * 1000;
+  const outMs = (bp?.exhale ?? 6) * 1000;
+  const holdOutMs = (bp?.holdOut ?? 0) * 1000;
+  const isBreathTrack = track.category === 'breathing';
+  // an optional, soft haptic at the top of each in- and out-breath, breathing tracks
+  // only. Web-guarded (no vibration API); never throws. Under reduced motion the
+  // pacer is paused, so this never fires.
+  const breathTick = useCallback(() => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+  }, []);
   const breath = useSharedValue(0);
   // the exhale ripple - released once per breath at the top of the out-breath,
-  // expanding + dissolving over the full 6s exhale ("letting the day go").
+  // expanding + dissolving over the full out-breath ("letting the day go").
   // Rests at 1 (fully dissolved = invisible); each exhale rewinds it to 0.
   const ripple = useSharedValue(1);
-  const [phase, setPhase] = useState<'in' | 'out'>('in');
+  const [phase, setPhase] = useState<'in' | 'holdIn' | 'out' | 'holdOut'>('in');
   const [cueIdx, setCueIdx] = useState(0);
   // orb-hold cues only for accounts with a registered device (cc.devices cache);
   // default to the honest breath set so a non-owner is never told to feel hardware.
@@ -301,45 +318,64 @@ export function Player() {
       breath.value = 0.45;
       return;
     }
+    // in-breath (0→1) · hold expanded · out-breath (1→0) · hold contracted, then
+    // repeat. Holds are folded into the following segment's delay so the halo parks
+    // at its peak/floor for the count. Default (no pattern) is a plain 4s/6s in/out.
     breath.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 4000, easing: ease.sine }),
-        withTiming(0, { duration: 6000, easing: ease.sine })
-      ),
+      holdOutMs > 0
+        ? withSequence(
+            withTiming(1, { duration: inMs, easing: ease.sine }),
+            withDelay(holdInMs, withTiming(0, { duration: outMs, easing: ease.sine })),
+            withDelay(holdOutMs, withTiming(0, { duration: 1 }))
+          )
+        : withSequence(
+            withTiming(1, { duration: inMs, easing: ease.sine }),
+            withDelay(holdInMs, withTiming(0, { duration: outMs, easing: ease.sine }))
+          ),
       -1,
       false
     );
     return () => cancelAnimation(breath);
-  }, [reduced, breath]);
+  }, [reduced, breath, inMs, holdInMs, outMs, holdOutMs]);
 
   useEffect(() => {
     if (reduced) return;
-    let alive = true;
-    let t1: ReturnType<typeof setTimeout>;
-    let t2: ReturnType<typeof setTimeout>;
-    const cycle = () => {
-      setPhase('in');
-      t1 = setTimeout(() => {
-        if (!alive) return;
-        setPhase('out');
+    // Walk the breath's phases on the SAME clock as the halo: in → (hold) → out →
+    // (hold) → repeat. Holds only appear when the pattern has them; the ambient
+    // default is a plain in/out. One timer at a time, so cleanup can't leave a
+    // stale phase pending.
+    const steps: { phase: 'in' | 'holdIn' | 'out' | 'holdOut'; ms: number }[] = [
+      { phase: 'in', ms: inMs },
+    ];
+    if (holdInMs > 0) steps.push({ phase: 'holdIn', ms: holdInMs });
+    steps.push({ phase: 'out', ms: outMs });
+    if (holdOutMs > 0) steps.push({ phase: 'holdOut', ms: holdOutMs });
+
+    let i = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const advance = () => {
+      const step = steps[i];
+      setPhase(step.phase);
+      if (step.phase === 'out') {
         // release one ripple at the top of the exhale - it expands and dissolves
         // over the full out-breath, reaching the night ring as it disappears
         ripple.value = 0;
-        ripple.value = withTiming(1, { duration: 6000, easing: ease.out });
-        t2 = setTimeout(() => {
-          if (alive) cycle();
-        }, 6000);
-      }, 4000);
+        ripple.value = withTiming(1, { duration: outMs, easing: ease.out });
+      }
+      // soft haptic at the top of each in- and out-breath (breathing tracks only)
+      if ((step.phase === 'in' || step.phase === 'out') && isBreathTrack) breathTick();
+      timer = setTimeout(() => {
+        i = (i + 1) % steps.length;
+        advance();
+      }, step.ms);
     };
-    cycle();
+    advance();
     return () => {
-      alive = false;
-      clearTimeout(t1);
-      clearTimeout(t2);
+      clearTimeout(timer);
       cancelAnimation(ripple);
       ripple.value = 1; // rest dissolved (invisible)
     };
-  }, [reduced, ripple]);
+  }, [reduced, ripple, inMs, holdInMs, outMs, holdOutMs, isBreathTrack, breathTick]);
 
   useEffect(() => {
     if (reduced) return; // honor reduced motion - no auto-rotating cue text
@@ -676,7 +712,7 @@ export function Player() {
               // caption breathes with the halo instead of hard-cutting each cycle.
               <SwapText trigger={phase}>
                 <AppText variant="label" tone="accent">
-                  {phase === 'in' ? 'Breathe in' : 'Breathe out'}
+                  {phase === 'in' ? 'Breathe in' : phase === 'out' ? 'Breathe out' : 'Hold'}
                 </AppText>
               </SwapText>
             ) : null}

@@ -20,6 +20,10 @@ export type Track = {
   locked?: boolean;
   /** one honest sentence: what this is and when to reach for it (shown in the Player) */
   about?: string;
+  /** paced breathing rhythm, seconds. When set, the Player's orb pacer and the
+   *  in/hold/out cue follow THIS exact count instead of the ambient 4-in/6-out
+   *  default (e.g. Box Breathing is 4-4-4-4, not 4-6). */
+  breathPattern?: { inhale: number; holdIn?: number; exhale: number; holdOut?: number };
 };
 
 /**
@@ -36,8 +40,18 @@ export const TRACKS: Record<string, Track> = {
     about: 'Steady, unhurried rain with far-off thunder. A favourite for masking street noise while you fall asleep.' },
   forest: { id: 'forest', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', cover: 'forestStream', duration: 'loops', category: 'soundscape', audio: 'forest', locked: true,
     about: 'Birdsong over a soft stream. Gentler and brighter than rain, suited to daytime resets as much as bedtime.' },
-  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'guidedBox',
+  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'guidedBox', breathPattern: { inhale: 4, holdIn: 4, exhale: 4, holdOut: 4 },
     about: 'A short guided rhythm: in for 4, hold 4, out 4, hold 4, with your Glow Orb in hand. Three minutes to settle a racing moment, day or night.' },
+  // Three FREE, narration-free pacers. The breath IS the content; each rides the
+  // soft `drone` tone (no voice) so nothing competes with the count. Finite, not
+  // loops: trackLoops() stays false for category 'breathing', so they play once and
+  // end gently. Cover reuses the box-breathing art (the breathing family).
+  'cyclic-sigh': { id: 'cyclic-sigh', title: 'Cyclic Sigh', subtitle: 'Two in, a brief hold, a long out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 2, holdIn: 1, exhale: 6 },
+    about: 'A double breath in, then a long, slow breath out. The quickest way we know to settle a wound-up moment. No voice, just the circle to follow.' },
+  'extended-exhale': { id: 'extended-exhale', title: 'Extended Exhale', subtitle: 'Four in, six out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, exhale: 6 },
+    about: 'A longer breath out than in. The out-breath is where the body lets down, so this leans into it. No voice, just the circle to follow.' },
+  'four-seven-eight': { id: 'four-seven-eight', title: '4-7-8 Breath', subtitle: 'Four in, seven hold, eight out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, holdIn: 7, exhale: 8 },
+    about: 'In for four, hold for seven, out for eight. A slower count for a night when the mind will not slow down. No voice, just the circle to follow.' },
   'deep-rest': { id: 'deep-rest', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', cover: 'deepRest', duration: '4 min', category: 'meditation', audio: 'guidedRest', locked: true,
     about: 'A guided sweep of attention from head to toe that lets the body get heavy. Best lying down, lights low.' },
   'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '4 min', category: 'meditation', audio: 'guidedLetGo', locked: true,

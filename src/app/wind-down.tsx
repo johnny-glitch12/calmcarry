@@ -119,6 +119,15 @@ export default function WindDownScreen() {
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [paused, setPaused] = useState(false);
+  // After dark the depleting ring + "20:00" label are hidden: a ticking countdown
+  // is the exact clock-watching this ritual is meant to quiet. Outside the wind-down
+  // window (a daytime reset) the ring stays as a gentle frame. Fixed at open; the
+  // wall-clock session timer + crediting are untouched - this only governs the
+  // VISUAL countdown. 20:00-05:00 local; getHours is web-safe.
+  const [isNightHours] = useState(() => {
+    const h = new Date().getHours();
+    return h >= 20 || h < 5;
+  });
   // device-aware ritual line: invite the orb into the ritual ONLY when one is
   // registered on this account (cc.devices cache) - never instruct a non-owner
   // to hold hardware they don't have
@@ -454,14 +463,17 @@ export default function WindDownScreen() {
               </AppText>
             </Animated.View>
 
-            {/* breathing glow orb framed by the depleting timer ring */}
+            {/* breathing glow orb; after dark it stands alone - the depleting timer
+                ring is a countdown to watch, so it's shown only for a daytime reset */}
             <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <ProgressRing
-                progress={progress}
-                size={284}
-                strokeWidth={3}
-                style={{ position: 'absolute' }}
-              />
+              {!isNightHours && (
+                <ProgressRing
+                  progress={progress}
+                  size={284}
+                  strokeWidth={3}
+                  style={{ position: 'absolute' }}
+                />
+              )}
               {/* burst: one soft arrival bloom as the wind-down begins - the room exhales.
                   paced: the orb breathes the TAUGHT 4s-in/6s-out rhythm, not the ambient
                   symmetric loop, so following it with your own breath actually works */}
@@ -474,11 +486,13 @@ export default function WindDownScreen() {
             <AppText variant="body" tone="muted">
               {track.subtitle}
             </AppText>
-            <Animated.View style={controlsStyle}>
-              <AppText variant="label" tone="dim" style={{ marginTop: 6, textAlign: 'center' }}>
-                20:00 · fades to silence
-              </AppText>
-            </Animated.View>
+            {!isNightHours && (
+              <Animated.View style={controlsStyle}>
+                <AppText variant="label" tone="dim" style={{ marginTop: 6, textAlign: 'center' }}>
+                  20:00 · fades to silence
+                </AppText>
+              </Animated.View>
+            )}
           </Animated.View>
 
           {/* controls - pause persists; it's the one control that survives the idle fade.

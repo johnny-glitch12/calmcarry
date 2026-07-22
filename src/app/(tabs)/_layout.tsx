@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { TabBar } from '@/components';
+import { PlaybackProvider } from '@/features/sounds/PlaybackProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { HandsOnTour } from '@/features/tour/HandsOnTour';
 import { QuickActionsBridge } from '@/lib/quickActions';
@@ -49,6 +50,10 @@ function TourGate() {
 
 export default function TabsLayout() {
   return (
+    // PlaybackProvider wraps the Tabs (not a single screen) so the sound mixer keeps
+    // playing across tab switches and stays alive underneath pushed modal routes
+    // (player / wind-down / sos), which live in the parent stack above this group.
+    <PlaybackProvider>
     <View style={{ flex: 1 }}>
     {/* Tab switches are INSTANT (Mason: "make it simple") - the native-tab feel:
     // tap, and you're there. No fade, no dissolve; the screens themselves are
@@ -75,5 +80,6 @@ export default function TabsLayout() {
         its launches. Lives here (a sub-layout) because the routing hook navigates. */}
     <QuickActionsBridge />
     </View>
+    </PlaybackProvider>
   );
 }

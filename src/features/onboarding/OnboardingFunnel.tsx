@@ -36,10 +36,9 @@ import {
 import { audioSources, type AudioKey } from '@/content/audio';
 import { covers, type CoverKey } from '@/content/covers';
 import { GOAL_ICONS } from '@/content/onboardingArt';
-import { PRICING, PRIVACY_URL, TERMS_URL, TRIAL_DAYS } from '@/content/store';
+import { PRIVACY_URL, TERMS_URL } from '@/content/store';
 import { useProfile, type Intent } from '@/features/profile/ProfileProvider';
 import { lightTap } from '@/lib/haptics';
-import { fetchLocalizedPrices, iapSupported } from '@/lib/iap';
 import { markOnboarded } from '@/lib/onboarding';
 import { REMINDER_TIMES, remindersSupported, setBedtimeReminder } from '@/lib/reminders';
 import { setSleepGoalHours } from '@/lib/sleepGoal';
@@ -67,7 +66,6 @@ type Answers = {
   goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
   moments?: string[]; // when they want help - day AND night use-cases, not just sleep
   reminderIdx?: number; // REMINDER_TIMES index chosen on the reminder step
-  wantsTrial?: boolean; // tapped "Start my free trial" on the pricing step
 };
 
 type StepProps = {
@@ -82,7 +80,9 @@ type StepProps = {
 // ---- the funnel's ordered steps ----
 // Deliberately short. The interrogation round (satisfaction, gender, age, source,
 // wearable, trial-reminder) is gone: every remaining question feeds something the
-// app actually uses, and the flow still ends explainer -> pricing -> auth.
+// app actually uses. First-run ends on the sounds value step, then routes to auth -
+// NO price/subscription pitch here. The paywall now waits until after the first
+// completed session (the post-session offer in app/_layout).
 const STEPS = [
   'welcome',
   'transform',
@@ -92,8 +92,6 @@ const STEPS = [
   'goal',
   'reminder',
   'sounds',
-  'trialFree',
-  'pricing',
 ] as const;
 type StepId = (typeof STEPS)[number];
 
@@ -852,78 +850,6 @@ function SoundsStep({ onNext, onBack }: StepProps) {
   );
 }
 
-/** 9 - TRIAL FREE (informational) */
-function TrialFreeStep({ onNext, onBack }: StepProps) {
-  const { c } = useTheme();
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
-      <BackChevron onBack={onBack} />
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-        <Reveal>
-          <Image source={require('../../../assets/images/onboarding/trial-sleep.png')} style={{ width: 200, height: 200 }} contentFit="contain" accessibilityIgnoresInvertColors />
-        </Reveal>
-        <Reveal index={1}>
-          <AppText style={[P.title, { color: c.text, textAlign: 'center' }]}>Try it free for {TRIAL_DAYS} days</AppText>
-        </Reveal>
-        <Reveal index={2}>
-          <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>
-            New members get {TRIAL_DAYS} days of CalmCarry Premium. The full library, programs, and sound machine. No commitment.
-          </AppText>
-        </Reveal>
-      </View>
-      <Reveal index={3}>
-        <PrimaryButton label="Continue" onPress={onNext} />
-      </Reveal>
-    </View>
-  );
-}
-
-/** 10 - PRICING (real store price, honest trial framing) */
-function PricingStep({ onNext, onBack, setAnswer }: StepProps) {
-  const { c } = useTheme();
-  const [annual, setAnnual] = useState<string>(PRICING.annual.price);
-  useEffect(() => {
-    if (iapSupported) fetchLocalizedPrices().then((p) => p.annual && setAnnual(p.annual)).catch(() => {});
-  }, []);
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
-      <BackChevron onBack={onBack} />
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-        <Reveal>
-          <Image source={require('../../../assets/images/onboarding/pricing-orb.png')} style={{ width: 172, height: 172 }} contentFit="contain" accessibilityIgnoresInvertColors />
-        </Reveal>
-        <Reveal index={1}>
-          <AppText style={[P.hero, { color: c.text, textAlign: 'center' }]}>$0.00 today</AppText>
-        </Reveal>
-        <Reveal index={2}>
-          <AppText style={[P.body, { color: c.muted, textAlign: 'center', maxWidth: 320 }]}>
-            Free for {TRIAL_DAYS} days, then {annual}
-            {PRICING.annual.per}. Cancel anytime in your Apple or Google account settings.
-          </AppText>
-        </Reveal>
-      </View>
-      <Reveal index={3}>
-        {/* the tap is a real promise - remember it so Home can actually OFFER the
-            trial after sign-in (before this, both buttons were silently identical) */}
-        <PrimaryButton
-          label="Start my free trial"
-          onPress={() => {
-            setAnswer('wantsTrial', true);
-            onNext();
-          }}
-        />
-      </Reveal>
-      <Reveal index={4} style={{ alignItems: 'center', marginTop: 12 }}>
-        <PressableScale onPress={onNext} accessibilityRole="button" dimTo={0.6} hitSlop={10}>
-          <AppText style={[P.body, { color: c.muted, fontSize: 15 }]}>Maybe later</AppText>
-        </PressableScale>
-      </Reveal>
-    </View>
-  );
-}
-
 const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   welcome: WelcomeStep,
   transform: TransformStep,
@@ -933,8 +859,6 @@ const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   goal: GoalStep,
   reminder: ReminderStep,
   sounds: SoundsStep,
-  trialFree: TrialFreeStep,
-  pricing: PricingStep,
 };
 
 export function OnboardingFunnel() {
@@ -1002,9 +926,6 @@ export function OnboardingFunnel() {
       // the sleep target lands where Settings + the evening rhythm actually read
       // it (cc.sleepGoalHours), not only inside the survey blob
       if (typeof final.goalHours === 'number') setSleepGoalHours(final.goalHours);
-      // "Start my free trial" must lead to the trial: Home consumes this flag once
-      // (after sign-in) and opens the Calm Plan sheet where the store trial starts.
-      if (final.wantsTrial) setJSON('cc.pendingTrial', true);
       // majority intent across EVERY chosen goal (earlier picks break ties) - one
       // goal out of several must not decide the whole personalization
       const tally = new Map<Intent, number>();

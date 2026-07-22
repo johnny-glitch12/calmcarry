@@ -1,6 +1,7 @@
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -13,10 +14,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TRACKS } from '@/content/library';
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { usePlayback } from '@/features/sounds/PlaybackProvider';
 import { setTourTarget } from '@/lib/tourTargets';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
-import { brand, dur, ease, fonts, night, themes, useColorSchemePref, useResponsive } from '@/theme';
+import { brand, dur, ease, fonts, night, themes, useColorSchemePref, useResponsive, type ThemeColors } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // Tab selection POPS (Mason). The slot widths still snap in one frame - no
@@ -194,6 +197,83 @@ function TabItem({
 }
 
 /**
+ * Mini-player - a slim strip ABOVE the tab bar, shown only while a mix is playing
+ * and only away from the Listen tab (which carries the full mixer). It names the
+ * active sounds, echoes the sleep-timer, and gives one-tap pause/resume, so a
+ * running mix can be seen and stopped from anywhere. Tapping the strip opens the
+ * mixer. Reserved-height note: it floats within the same bottom cluster as the
+ * pill bar; screens already reserve tab-bar clearance via <Screen tabBarSpacing>.
+ */
+function MiniPlayer({ t, barBg, width, onOpen }: {
+  t: ThemeColors;
+  barBg: string;
+  /** width style shared with the pill bar (caps + centres on tablet) */
+  width: { width: '100%'; maxWidth?: number };
+  onOpen: () => void;
+}) {
+  const { activeLayers, paused, togglePause, sleepMinutes } = usePlayback();
+  if (activeLayers.length === 0) return null;
+
+  const names = activeLayers.map((id) => TRACKS[id]?.title ?? 'Sound').join(' · ');
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(dur.nav).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(dur.exit).reduceMotion(ReduceMotion.System)}
+      style={[
+        {
+          ...width,
+          marginBottom: 8,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: t.lineSage,
+          backgroundColor: barBg,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingRight: 6,
+          overflow: 'hidden',
+          ...t.shadow,
+        },
+      ]}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`Open the sound mixer. Playing ${names}`}
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingLeft: 14, paddingVertical: 6 }}>
+        <Feather name="volume-2" size={16} color={t.textAccent} />
+        <Text
+          numberOfLines={1}
+          maxFontSizeMultiplier={1.35}
+          style={{ flex: 1, fontFamily: fonts.medium, fontSize: 13, letterSpacing: 0.2, color: t.title }}>
+          {names}
+        </Text>
+      </Pressable>
+
+      {sleepMinutes > 0 ? (
+        <View
+          accessibilityRole="text"
+          accessibilityLabel={`Sleep timer ${sleepMinutes} minutes`}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 11, backgroundColor: t.panelStrong, marginRight: 4 }}>
+          <Feather name="moon" size={12} color={t.textAccent} />
+          <Text maxFontSizeMultiplier={1.35} style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textAccent }}>
+            {sleepMinutes}
+          </Text>
+        </View>
+      ) : null}
+
+      <Pressable
+        onPress={togglePause}
+        accessibilityRole="button"
+        accessibilityLabel={paused ? 'Resume sounds' : 'Pause sounds'}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name={paused ? 'play' : 'pause'} size={20} color={t.textAccent} />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+/**
  * TabBar - SOLID floating bar (was frosted glass; the translucent blur read as
  * mush over busy content and all but vanished under the tour scrim - Mason: "we
  * can't see it and neither would the consumer"). The active tab is a solid sage
@@ -224,6 +304,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
   // centre it (matches the centred content column). Phones stay edge-to-edge with
   // 16pt margins. alignSelf centres within the absolute-positioned full-width slot.
   const { isTablet } = useResponsive();
+  const barWidth: { width: '100%'; maxWidth?: number } = { width: '100%', ...(isTablet ? { maxWidth: 460 } : {}) };
+  // the mini-player rides above the pills on every tab EXCEPT Listen (which already
+  // carries the full mixer, so the strip would be redundant there)
+  const focusedRoute = state.routes[state.index]?.name ?? '';
 
   return (
     // full-width positioner that CENTRES the bar - a pinned left/right box can't
@@ -239,10 +323,12 @@ export function TabBar({ state, navigation }: TabBarProps) {
         paddingHorizontal: 16,
         alignItems: 'center',
       }}>
+      {focusedRoute !== 'listen' ? (
+        <MiniPlayer t={t} barBg={barBg} width={barWidth} onOpen={() => navigation.navigate('listen')} />
+      ) : null}
       <View
         style={{
-          width: '100%',
-          ...(isTablet ? { maxWidth: 460 } : null),
+          ...barWidth,
           borderRadius: 24,
           overflow: 'hidden',
           borderWidth: 1,

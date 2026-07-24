@@ -411,7 +411,7 @@ export function Family() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Feather name="shield" size={14} color={c.textAccent} />
             <AppText variant="meta" tone="muted">
-              Parent-gated · minimal data · no ads (COPPA-ready)
+              Parent-gated · kept on this device · no ads, ever
             </AppText>
           </View>
         </Card>

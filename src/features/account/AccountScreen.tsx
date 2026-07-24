@@ -9,7 +9,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
 import { SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
-import { track } from '@/lib/analytics';
+import { getAnalyticsOptOut, setAnalyticsOptOut, track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasCoppaConsent } from '@/lib/consent';
 import { lightTap } from '@/lib/haptics';
@@ -282,6 +282,7 @@ export function AccountScreen() {
   // true when an enable attempt failed because OS notification permission is off
   const [notifDenied, setNotifDenied] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
+  const [analyticsOn, setAnalyticsOn] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [renewAt, setRenewAt] = useState<string | null>(null);
@@ -294,6 +295,7 @@ export function AccountScreen() {
       setRecap(await getJSON('cc.weeklyRecap', false));
       setPushOn(await hasPushOptIn());
       setAutoplay(await getJSON('cc.autoplay', true));
+      setAnalyticsOn(!(await getAnalyticsOptOut())); // toggle reads as "sharing on"
     })();
   }, []);
 
@@ -346,6 +348,12 @@ export function AccountScreen() {
   const toggleAutoplay = (v: boolean) => {
     setAutoplay(v);
     setJSON('cc.autoplay', v);
+  };
+  // GDPR/PDPL: v = "share analytics on"; opt-out is the inverse. setAnalyticsOptOut
+  // also drops anything already buffered, so switching off stops sends immediately.
+  const toggleAnalytics = async (v: boolean) => {
+    setAnalyticsOn(v);
+    await setAnalyticsOptOut(!v);
   };
 
   const onSignOut = async () => {
@@ -625,6 +633,9 @@ export function AccountScreen() {
           <SettingRow icon="users" label="Family & devices" onPress={() => router.push('/family')} />
           <SettingRow icon="sliders" label="Notifications" value="System settings" onPress={() => Linking.openSettings().catch(() => {})} />
           <SettingRow icon="shield" label="Your data & privacy" onPress={() => router.push('/privacy' as Href)} />
+          {/* GDPR/PDPL opt-out of first-party anonymous usage analytics (kids are never
+              tracked regardless). Default on; turning it off drops any queued events. */}
+          <SettingRow icon="bar-chart-2" label="Share anonymous usage data" toggle={analyticsOn} onToggle={toggleAnalytics} />
           {token && token !== 'local' ? (
             <SettingRow
               icon="key"

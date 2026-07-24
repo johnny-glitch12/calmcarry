@@ -158,7 +158,13 @@ export function prodSecretGaps(): string[] {
     missing.push('CDN_BASE_URL + CDN_SIGNING_KEY');
   if (!config.corsOrigins.length) missing.push('CORS_ORIGINS');
   if (!config.apple.signInClientId && !config.google.signInClientId) missing.push('APPLE_SIGNIN_CLIENT_ID or GOOGLE_SIGNIN_CLIENT_ID');
-  if (!integrations.appleIap && !integrations.googleIap) missing.push('APPLE_IAP_SHARED_SECRET or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
+  if (!integrations.appleIap && !integrations.googleIap) missing.push('APPLE_ROOT_CERTS_DIR or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
+  // If Apple IAP is active (root certs present), the App Store Server Library's
+  // Production verifier THROWS 'appAppleId is required' unless a numeric app id is
+  // set - and that throw surfaces only on the first real purchase (returned as a
+  // generic 401), while the server otherwise boots green. Require it here so the
+  // gap fails LOUDLY at deploy instead of silently charging a user with no unlock.
+  if (integrations.appleIap && !(config.apple.appAppleId > 0)) missing.push('APPLE_APP_APPLE_ID');
   return missing;
 }
 

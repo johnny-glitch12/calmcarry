@@ -198,12 +198,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       .profiles(token)
       .then((list) => {
         if (!alive || !Array.isArray(list)) return;
-        const mapped = sanitizeProfiles(list.map((p) => ({ id: p.id, name: p.name, type: p.type })));
-        if (!mapped.length) return;
-        setProfiles(mapped);
-        setJSON(KEYS.profiles, mapped);
+        const serverProfiles = sanitizeProfiles(list.map((p) => ({ id: p.id, name: p.name, type: p.type })));
+        if (!serverProfiles.length) return;
+        // Kid profiles are device-local (their names are never uploaded), so the server
+        // reconcile must PRESERVE any local kid the server doesn't know about rather than
+        // replace it away. Server is the source of truth for adult profiles; local-only
+        // kids are kept and appended.
+        const localKids = profilesRef.current.filter(
+          (p) => p.type === 'kids' && !serverProfiles.some((s) => s.id === p.id),
+        );
+        const merged = [...serverProfiles, ...localKids];
+        setProfiles(merged);
+        setJSON(KEYS.profiles, merged);
         setActiveId((cur) =>
-          mapped.some((p) => p.id === cur) ? cur : (mapped.find((p) => p.type === 'adult') ?? mapped[0]).id,
+          merged.some((p) => p.id === cur) ? cur : (merged.find((p) => p.type === 'adult') ?? merged[0]).id,
         );
       })
       .catch(() => {
@@ -323,9 +331,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setJSON(KEYS.profiles, next);
       return next;
     });
-    // persist to the household on the backend (best-effort; next sync reconciles ids)
+    // Persist to the household on the backend (best-effort; next sync reconciles ids).
+    // Kid profiles stay DEVICE-LOCAL: a child's name is never sent to the server -
+    // it minimizes child PII on the backend and keeps the "kids are never tracked"
+    // promise literal. Only adult profiles sync across the household.
     const t = tokenRef.current;
-    if (t && t !== 'local') api.createProfile(t, { name: profile.name, type }).catch(() => {});
+    if (t && t !== 'local' && type === 'adult') api.createProfile(t, { name: profile.name, type }).catch(() => {});
     return profile;
   }, []);
 
@@ -358,8 +369,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setJSON(KEYS.profiles, next);
       return next;
     });
+    // A kid rename also stays device-local (its name was never uploaded).
     const t = tokenRef.current;
-    if (t && t !== 'local') api.updateProfile(t, id, { name: clean }).catch(() => {});
+    const isKid = profilesRef.current.find((p) => p.id === id)?.type === 'kids';
+    if (t && t !== 'local' && !isKid) api.updateProfile(t, id, { name: clean }).catch(() => {});
   }, []);
 
   // Remove a profile + its data (COPPA: a parent can delete a child's profile any

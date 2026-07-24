@@ -20,12 +20,14 @@ export const SUBSCRIPTION_URL =
     ? 'https://play.google.com/store/account/subscriptions'
     : 'https://apps.apple.com/account/subscriptions';
 
-/** Support / legal pages. LAUNCH BLOCKER: these are best-guess Shopify-style paths -
- *  confirm the real published Glow Company URLs and verify each returns 200 before
- *  shipping (App/Play review reject dead privacy/terms links). */
+/** Support / legal pages. Privacy + Terms verified live (HTTP 200) 2026-07-24:
+ *  Terms lives at Shopify's canonical /policies/ path (the old /pages/terms-of-service
+ *  was a 404 and shipped as a dead legal link - an App/Play review reject). SUPPORT_URL
+ *  is unverified (the contact page returned a transient 5xx) - confirm it returns 200
+ *  before submission. */
 export const SUPPORT_URL = `${STORE_URL}/pages/contact`;
 export const PRIVACY_URL = `${STORE_URL}/pages/privacy-policy`;
-export const TERMS_URL = `${STORE_URL}/pages/terms-of-service`;
+export const TERMS_URL = `${STORE_URL}/policies/terms-of-service`;
 
 export const DEVICE_NAME = 'CalmCarry Glow Orb';
 

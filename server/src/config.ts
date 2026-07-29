@@ -149,7 +149,9 @@ export function prodSecretGaps(): string[] {
   if (!isProd) return [];
   const missing: string[] = [];
   if (!process.env.JWT_SECRET || config.jwtSecret.includes('change-me')) missing.push('JWT_SECRET');
-  if (config.cmsAdminKey === 'dev-cms-key') missing.push('CMS_ADMIN_KEY');
+  // Also catch a SET-BUT-EMPTY value: `?? 'dev-cms-key'` does not coalesce '', so a
+  // blank Railway variable yields '' and would sail past a literal-only comparison.
+  if (!config.cmsAdminKey || config.cmsAdminKey === 'dev-cms-key') missing.push('CMS_ADMIN_KEY');
   if (!config.databaseUrl) missing.push('DATABASE_URL');
   // CDN keys are only required once STREAMING is turned on - v1 ships bundled-only
   // audio, and CdnService fail-closes (503) cleanly if hit without keys, which the

@@ -382,20 +382,32 @@ export function AccountScreen() {
     // live on (a false erasure confirmation, and the Apple revoke never ran).
     // 401/404 mean the server no longer recognizes this session/account, so
     // there is nothing left to delete remotely.
-    let serverGone = !token || token === 'local';
-    if (!serverGone && token) {
+    // ONLY a confirmed server deletion (or a 404 = the account is already gone) may
+    // license the local wipe + the "permanently deleted" claim.
+    // A 401 must NOT count: JwtAuthGuard returns it for an expired/invalid token,
+    // which says nothing about whether the account still exists - a warm app whose
+    // 7-day access token lapsed would have wiped the phone, told the user their data
+    // was erased, and left the real account (and the Apple revoke) untouched.
+    // A device-only ('local') session likewise has nothing to delete remotely, but it
+    // also has no server account to erase, so we must not claim server erasure.
+    let serverGone = false;
+    const deviceOnly = !token || token === 'local';
+    if (!deviceOnly && token) {
       try {
         await api.deleteAccount(token);
         serverGone = true;
       } catch (e) {
         const status = (e as { status?: number })?.status;
-        if (status === 401 || status === 404) serverGone = true;
+        if (status === 404) serverGone = true; // already erased server-side
       }
     }
-    if (!serverGone) {
+    if (!deviceOnly && !serverGone) {
       setDeleting(false);
       setConfirmDelete(false);
-      Alert.alert('Couldn’t reach the server', 'Your account still exists. Check your connection and try again.');
+      Alert.alert(
+        'Couldn’t delete your account',
+        'Your account still exists and nothing was removed. Please sign in again and retry, so we can confirm the deletion with our server.',
+      );
       return;
     }
     await clearAll(); // permanent deletion must leave nothing personal on the device

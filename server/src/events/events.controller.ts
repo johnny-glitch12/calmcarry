@@ -64,10 +64,16 @@ function sanitizeProps(props?: Record<string, unknown> | null): Record<string, u
   return Object.keys(out).length ? out : null;
 }
 
-/** Constant-time compare so the admin key can't be recovered via timing. */
+/**
+ * Constant-time compare so the admin key can't be recovered via timing.
+ * FAILS CLOSED on an empty value on either side - see the twin in
+ * content.controller.ts: an unset CMS_ADMIN_KEY ('') plus a missing header would
+ * otherwise compare equal and expose the funnel dashboard to anyone.
+ */
 function safeKeyEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a ?? '');
-  const bb = Buffer.from(b ?? '');
+  if (!a || !b) return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
   if (ab.length !== bb.length) return false;
   return crypto.timingSafeEqual(ab, bb);
 }

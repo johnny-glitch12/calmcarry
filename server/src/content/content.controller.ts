@@ -31,10 +31,18 @@ class UpsertContentDto {
   @IsOptional() @IsBoolean() newThisMonth?: boolean;
 }
 
-/** Constant-time compare so the CMS key can't be recovered via timing. */
+/**
+ * Constant-time compare so the CMS key can't be recovered via timing.
+ * FAILS CLOSED on an empty value on EITHER side: a blank CMS_ADMIN_KEY (an unset
+ * Railway variable yields '', which `??` does not coalesce) plus a missing header
+ * are both zero-length, and timingSafeEqual(empty, empty) is TRUE - which would
+ * hand anonymous callers the CMS write endpoints (including `locked`, i.e. the
+ * paywall). Never let "both sides absent" count as a match.
+ */
 function safeKeyEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a ?? '');
-  const bb = Buffer.from(b ?? '');
+  if (!a || !b) return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
   if (ab.length !== bb.length) return false;
   return crypto.timingSafeEqual(ab, bb);
 }

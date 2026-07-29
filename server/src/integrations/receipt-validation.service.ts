@@ -18,7 +18,12 @@ export interface ValidatedSubscription {
   valid: boolean;
   plan: EntitlementPlan;
   productId: string;
+  /** The STABLE renewal key the store's notifications arrive with (Apple
+   *  originalTransactionId / Google purchaseToken) - never a per-charge order id,
+   *  or webhooks can't find the entitlement they're meant to update. */
   transactionRef: string;
+  /** Per-charge store order id, kept for support/audit only. Never a lookup key. */
+  sourceOrderId?: string | null;
   expiresAt: Date;
 }
 
@@ -213,7 +218,14 @@ export class ReceiptValidationService {
       valid: true,
       plan: this.planFor(sku),
       productId: sku,
-      transactionRef: String(data.orderId ?? purchaseToken),
+      // transactionRef MUST be the purchaseToken: it is the stable key that every
+      // Real-Time Developer Notification (renew/expire/revoke) is delivered with,
+      // and it survives renewals. orderId changes per charge ("GPA.3312-...") and is
+      // always present, so keying on it meant EVERY Play notification missed its
+      // entitlement: renewals never extended the expiry (a paying subscriber lost
+      // premium at the first renewal boundary) and refunds never revoked access.
+      transactionRef: purchaseToken,
+      sourceOrderId: data.orderId ?? null,
       expiresAt: new Date(expiryMs),
     };
   }

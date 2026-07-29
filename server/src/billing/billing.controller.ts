@@ -34,6 +34,7 @@ export class BillingController {
       plan: v.plan,
       productId: v.productId,
       transactionRef: v.transactionRef,
+      sourceOrderId: v.sourceOrderId ?? null,
       expiresAt: v.expiresAt,
     });
     return this.status(user);

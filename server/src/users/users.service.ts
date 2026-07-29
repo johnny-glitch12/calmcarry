@@ -187,6 +187,14 @@ export class UsersService {
     if (existing && existing.ownerId !== householdId) {
       throw new ConflictException('This purchase is already linked to another account.');
     }
+    // A REVOKED/REFUNDED entitlement must never be resurrected by re-validating the
+    // same receipt. A signed JWS transaction stays cryptographically valid forever,
+    // and the client can re-POST the exact body it already sent, so without this a
+    // user could refund via Apple and then restore premium at will (and repeat).
+    // Only the store (webhook) may lift a revocation.
+    if (existing && existing.status === 'revoked') {
+      throw new ConflictException('This purchase was refunded or revoked and cannot be restored.');
+    }
     const entitlement = existing ?? this.entitlementRepo.create({ ownerId: householdId });
     entitlement.tier = 'calm_plan';
     entitlement.status = 'active';

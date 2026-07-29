@@ -101,6 +101,19 @@ export class ReceiptValidationService {
     if (!certs.length) {
       throw new ServiceUnavailableException('Apple IAP verification not configured (root certs missing)');
     }
+    // The App Store Server Library REQUIRES a numeric app id for the PRODUCTION
+    // environment and throws without one. That throw used to be swallowed into a
+    // generic 401, so a real buyer was charged by StoreKit and silently never
+    // unlocked. Fail CLOSED, loudly and specifically, so the transaction is left
+    // unfinished (StoreKit retries, and Apple refunds rather than keeping the money)
+    // and the cause is obvious in the logs.
+    if (env === 'prod' && !(config.apple.appAppleId > 0)) {
+      this.logger.error(
+        'APPLE_APP_APPLE_ID is not set - refusing to validate PRODUCTION Apple purchases. ' +
+          'Set it to the numeric App Store app id (App Store Connect > App Information) and redeploy.',
+      );
+      throw new ServiceUnavailableException('Apple purchase validation is not configured on the server');
+    }
     const verifier = new SignedDataVerifier(
       certs,
       true, // online (OCSP) checks

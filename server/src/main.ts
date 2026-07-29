@@ -7,7 +7,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
-import { config, integrations, isProd, nodeEnvIsInvalid, prodSecretGaps } from './config';
+import { config, integrations, isProd, nodeEnvIsInvalid, prodConfigWarnings, prodSecretGaps } from './config';
 
 // Error aggregation - a strict no-op until SENTRY_DSN is provisioned. Init before
 // anything else so even bootstrap failures after this line are captured.
@@ -37,6 +37,11 @@ async function bootstrap() {
     logger.error(`Refusing to start in production - set: ${missing.join(', ')}`);
     process.exit(1);
   }
+
+  // Non-fatal gaps that would otherwise only surface as a failed customer purchase.
+  // These do NOT abort startup (see prodConfigWarnings) but must be impossible to
+  // miss in a deploy log.
+  for (const w of prodConfigWarnings()) logger.warn(`CONFIG: ${w}`);
 
   // rawBody enables HMAC verification of the Shopify order webhook
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });

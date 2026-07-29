@@ -41,21 +41,33 @@ describe('prodSecretGaps', () => {
     expect(gapsFor({ NODE_ENV: 'development' })).toEqual([]);
   });
 
-  it('flags APPLE_APP_APPLE_ID when Apple IAP is active but the numeric app id is unset', () => {
+  // APPLE_APP_APPLE_ID must NEVER abort startup. The numeric app id does not exist
+  // until the App Store Connect record is created, and the live Railway service runs
+  // with APPLE_ROOT_CERTS_DIR set and no app id - making this fatal would take
+  // production down on the next deploy. It is a loud warning instead, and the money
+  // path fail-closes (see receipt-validation.service).
+  it('does NOT abort startup when APPLE_APP_APPLE_ID is unset (would brick a live deploy)', () => {
     const { APPLE_APP_APPLE_ID, ...noAppleId } = validProdEnv;
-    expect(gapsFor(noAppleId)).toContain('APPLE_APP_APPLE_ID');
+    expect(gapsFor(noAppleId)).toEqual([]);
   });
 
-  it('flags APPLE_APP_APPLE_ID when it is set to a non-numeric / zero value', () => {
-    expect(gapsFor({ ...validProdEnv, APPLE_APP_APPLE_ID: '0' })).toContain('APPLE_APP_APPLE_ID');
-    expect(gapsFor({ ...validProdEnv, APPLE_APP_APPLE_ID: 'not-a-number' })).toContain('APPLE_APP_APPLE_ID');
+  it('reproduces the LIVE production env exactly and still boots', () => {
+    // Mirrors the real Railway variable set: Apple certs + sign-in configured,
+    // no Apple app id, no Google service account.
+    const live = {
+      NODE_ENV: 'production',
+      JWT_SECRET: 'rotated-production-secret',
+      CMS_ADMIN_KEY: 'rotated-cms-key',
+      DATABASE_URL: 'postgresql://user:pw@host/db?sslmode=require',
+      CORS_ORIGINS: 'https://app.theglowcompany.co',
+      APPLE_SIGNIN_CLIENT_ID: 'co.theglowcompany.calmcarry',
+      APPLE_ROOT_CERTS_DIR: '/app/certs/apple',
+    };
+    expect(gapsFor(live)).toEqual([]);
   });
 
-  it('does NOT require APPLE_APP_APPLE_ID when Apple IAP is inactive (Google-only)', () => {
-    const { APPLE_ROOT_CERTS_DIR, APPLE_APP_APPLE_ID, ...googleOnly } = validProdEnv;
-    const gaps = gapsFor({ ...googleOnly, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: '{"type":"service_account"}' });
-    expect(gaps).not.toContain('APPLE_APP_APPLE_ID');
-    expect(gaps).toEqual([]);
+  it('empty CMS_ADMIN_KEY is a gap (an unset Railway var yields "", not the default)', () => {
+    expect(gapsFor({ ...validProdEnv, CMS_ADMIN_KEY: '' })).toContain('CMS_ADMIN_KEY');
   });
 
   it('still flags the classic gaps (JWT, DB, CORS, sign-in, IAP provider)', () => {
@@ -69,5 +81,54 @@ describe('prodSecretGaps', () => {
         'APPLE_ROOT_CERTS_DIR or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON',
       ]),
     );
+  });
+});
+
+/**
+ * Non-fatal warnings: conditions that must be impossible to miss in a deploy log,
+ * but where refusing to boot would be the bigger outage.
+ */
+describe('prodConfigWarnings', () => {
+  const OLD_ENV = process.env;
+  const warnFor = (env: Record<string, string>): string[] => {
+    let result: string[] = [];
+    jest.isolateModules(() => {
+      process.env = { ...env } as NodeJS.ProcessEnv;
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      result = require('./config').prodConfigWarnings();
+    });
+    return result;
+  };
+  afterEach(() => {
+    process.env = OLD_ENV;
+  });
+
+  const liveProd = {
+    NODE_ENV: 'production',
+    JWT_SECRET: 'rotated-production-secret',
+    CMS_ADMIN_KEY: 'rotated-cms-key',
+    DATABASE_URL: 'postgresql://user:pw@host/db',
+    CORS_ORIGINS: 'https://app.theglowcompany.co',
+    APPLE_SIGNIN_CLIENT_ID: 'co.theglowcompany.calmcarry',
+    APPLE_ROOT_CERTS_DIR: '/app/certs/apple',
+  };
+
+  it('warns loudly when Apple IAP is active without a numeric app id', () => {
+    const w = warnFor(liveProd);
+    expect(w.join(' ')).toContain('APPLE_APP_APPLE_ID');
+  });
+
+  it('is silent once the app id is set', () => {
+    expect(warnFor({ ...liveProd, APPLE_APP_APPLE_ID: '1234567890' })).toEqual([]);
+  });
+
+  it('warns when Play IAP is configured without a Pub/Sub service-account email', () => {
+    const { APPLE_ROOT_CERTS_DIR, ...noApple } = liveProd;
+    const w = warnFor({ ...noApple, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: '{"type":"service_account"}' });
+    expect(w.join(' ')).toContain('GOOGLE_PUBSUB_SA_EMAIL');
+  });
+
+  it('says nothing outside production', () => {
+    expect(warnFor({ NODE_ENV: 'development' })).toEqual([]);
   });
 });

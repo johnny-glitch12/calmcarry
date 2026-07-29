@@ -161,13 +161,36 @@ export function prodSecretGaps(): string[] {
   if (!config.corsOrigins.length) missing.push('CORS_ORIGINS');
   if (!config.apple.signInClientId && !config.google.signInClientId) missing.push('APPLE_SIGNIN_CLIENT_ID or GOOGLE_SIGNIN_CLIENT_ID');
   if (!integrations.appleIap && !integrations.googleIap) missing.push('APPLE_ROOT_CERTS_DIR or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
-  // If Apple IAP is active (root certs present), the App Store Server Library's
-  // Production verifier THROWS 'appAppleId is required' unless a numeric app id is
-  // set - and that throw surfaces only on the first real purchase (returned as a
-  // generic 401), while the server otherwise boots green. Require it here so the
-  // gap fails LOUDLY at deploy instead of silently charging a user with no unlock.
-  if (integrations.appleIap && !(config.apple.appAppleId > 0)) missing.push('APPLE_APP_APPLE_ID');
   return missing;
+}
+
+/**
+ * Non-fatal production misconfigurations, logged LOUDLY at boot.
+ *
+ * Deliberately NOT part of prodSecretGaps: that list aborts startup, and these are
+ * conditions where refusing to boot would be the bigger outage. APPLE_APP_APPLE_ID
+ * is the motivating case - the numeric app id does not exist until the app record
+ * is created in App Store Connect, so hard-failing on it would take a live API down
+ * for a pre-launch app that simply is not selling on iOS yet. The money path stays
+ * safe regardless: ReceiptValidationService fail-closes on PRODUCTION Apple
+ * receipts while this is unset, so a buyer can never be charged without unlocking.
+ */
+export function prodConfigWarnings(): string[] {
+  if (!isProd) return [];
+  const warnings: string[] = [];
+  if (integrations.appleIap && !(config.apple.appAppleId > 0)) {
+    warnings.push(
+      'APPLE_APP_APPLE_ID is unset - PRODUCTION Apple purchases will be REFUSED (fail-closed). ' +
+        'Set it to the numeric App Store app id before selling on iOS.',
+    );
+  }
+  if (integrations.googleIap && !config.google.pubsubServiceAccountEmail) {
+    warnings.push(
+      'GOOGLE_PUBSUB_SA_EMAIL is unset - Play RTDN webhooks accept any Google-signed token. ' +
+        'Set it to the Pub/Sub push service-account email.',
+    );
+  }
+  return warnings;
 }
 
 /** True if NODE_ENV is set to an unrecognized value (a typo like "prod"/"staging"

@@ -59,8 +59,15 @@ npx eas submit -p android        # needs Play service-account JSON
   (e.g. `api.theglowcompany.co`) is an OPTIONAL later layer (Railway custom domain + a
   DNS CNAME) - not required to ship.
 - Before the first real iOS purchase works, set `APPLE_APP_APPLE_ID` (the numeric App
-  Store app id) on Railway - the server now refuses to boot without it once Apple IAP
-  certs are present, so this can't silently fail anymore.
+  Store app id) on Railway. Without it the Apple Production verifier throws on the
+  FIRST real purchase (the user is charged and gets nothing) while the service still
+  looks healthy.
+  > ⚠️ **Not yet true of the running API.** The boot guard that refuses to start
+  > without this value, the rate-limit fix and the Play/entitlement fixes all live on
+  > branch `launch-readiness-fixes-2026-07-24`, which has **not been merged or
+  > deployed**. Until that branch is merged and Railway redeployed, the live API is
+  > running the pre-fix code. Verify with `/health` after deploying, and only then
+  > treat the items above as properties of production.
 - Audio ships bundled in the binary for v1; the signed-URL CDN is post-v1 (`STREAMING_ENABLED`).
 
 ## 8. App Review notes (paste into ASC "App Review Information" / Play "Review notes")

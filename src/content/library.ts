@@ -12,10 +12,19 @@ export type Track = {
   title: string;
   subtitle: string;
   cover: CoverKey;
+  /** DISPLAY COPY ONLY - never drives playback. If it promises a finite length,
+   *  `lengthSec` must enforce it (see below), otherwise the session runs as long as
+   *  the underlying audio file and the label is a lie. */
   duration: string;
   category: TrackCategory;
   /** which bundled audio file plays for this track */
   audio: AudioKey;
+  /** ENFORCED session length in seconds, for finite tracks whose audio bed is longer
+   *  than the advertised `duration`. The Player ends the session gently at this
+   *  deadline (wall-clock, survives backgrounding). Required whenever a shared bed
+   *  like `drone` (7m02s) backs a track sold as a shorter session - without it the
+   *  breathing pacers advertised "3 min" played the whole 7-minute file. */
+  lengthSec?: number;
   /** paid - unlocked by the Calm Plan bundle (no in-app purchase) */
   locked?: boolean;
   /** one honest sentence: what this is and when to reach for it (shown in the Player) */
@@ -44,17 +53,17 @@ export const TRACKS: Record<string, Track> = {
   // count is driven by the orb pacer + on-screen cue, so it needs no narration - and
   // this keeps the free tier (and the free "first 7 nights" onboarding, day 2) clear
   // of the AI voice Glowco asked us not to feature until real human VO lands.
-  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, holdIn: 4, exhale: 4, holdOut: 4 },
+  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 4, holdIn: 4, exhale: 4, holdOut: 4 },
     about: 'In for 4, hold 4, out 4, hold 4, with your Glow Orb in hand. Three minutes to settle a racing moment, day or night. No voice, just the circle to follow.' },
   // Three FREE, narration-free pacers. The breath IS the content; each rides the
   // soft `drone` tone (no voice) so nothing competes with the count. Finite, not
   // loops: trackLoops() stays false for category 'breathing', so they play once and
   // end gently. Cover reuses the box-breathing art (the breathing family).
-  'cyclic-sigh': { id: 'cyclic-sigh', title: 'Cyclic Sigh', subtitle: 'Two in, a brief hold, a long out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 2, holdIn: 1, exhale: 6 },
+  'cyclic-sigh': { id: 'cyclic-sigh', title: 'Cyclic Sigh', subtitle: 'Two in, a brief hold, a long out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 2, holdIn: 1, exhale: 6 },
     about: 'A double breath in, then a long, slow breath out. The quickest way we know to settle a wound-up moment. No voice, just the circle to follow.' },
-  'extended-exhale': { id: 'extended-exhale', title: 'Extended Exhale', subtitle: 'Four in, six out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, exhale: 6 },
+  'extended-exhale': { id: 'extended-exhale', title: 'Extended Exhale', subtitle: 'Four in, six out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 4, exhale: 6 },
     about: 'A longer breath out than in. The out-breath is where the body lets down, so this leans into it. No voice, just the circle to follow.' },
-  'four-seven-eight': { id: 'four-seven-eight', title: '4-7-8 Breath', subtitle: 'Four in, seven hold, eight out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, holdIn: 7, exhale: 8 },
+  'four-seven-eight': { id: 'four-seven-eight', title: '4-7-8 Breath', subtitle: 'Four in, seven hold, eight out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 4, holdIn: 7, exhale: 8 },
     about: 'In for four, hold for seven, out for eight. A slower count for a night when the mind will not slow down. No voice, just the circle to follow.' },
   // The only two fully-narrated sessions. Narration is AI-generated for now (disclosed
   // in the `about` so it's honest at the play surface, not just buried in Account) -

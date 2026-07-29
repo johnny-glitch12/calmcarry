@@ -44,7 +44,7 @@ async function bootstrap() {
   // Trust exactly ONE proxy hop (Railway/Fly/most PaaS put a single edge proxy in
   // front of the container). With this, Express's `req.ip` resolves to the real
   // client IP from the rightmost X-Forwarded-For entry, which the edge appends and
-  // a client cannot forge past. Rate-limit buckets (FlyThrottlerGuard) depend on
+  // a client cannot forge past. Rate-limit buckets (ClientIpThrottlerGuard) depend on
   // this being correct - without it every request shares the proxy's IP and the
   // per-IP credential throttle never engages. Trusting exactly 1 (not `true`)
   // keeps a client-sent X-Forwarded-For header un-spoofable.

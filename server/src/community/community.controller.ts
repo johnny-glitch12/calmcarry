@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { IsObject, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard, JwtPayload } from '../auth/jwt-auth.guard';
@@ -45,9 +46,13 @@ export class CommunityController {
   }
 
   // App Store UGC 1.2: members can report objectionable content. Always 200.
+  // Identity-bound (one report per member per post) and throttled: reporting is a
+  // destructive action - thresholds pull posts out of the feed - so it must not be
+  // something a single account can spray across the whole wall.
   @Post('report')
   @HttpCode(200)
-  report(@Body() dto: ReportPostDto) {
-    return this.community.report(dto.postId);
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  report(@CurrentUser() user: JwtPayload, @Body() dto: ReportPostDto) {
+    return this.community.report(dto.postId, user.sub);
   }
 }

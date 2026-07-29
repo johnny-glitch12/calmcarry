@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CommunityPost } from '../entities';
+import { CommunityPost, CommunityReport } from '../entities';
 
 export interface SharedMix {
   name: string;
@@ -33,6 +33,7 @@ const HOLD_PATTERNS = [
 export class CommunityService {
   constructor(
     @InjectRepository(CommunityPost) private readonly repo: Repository<CommunityPost>,
+    @InjectRepository(CommunityReport) private readonly reports: Repository<CommunityReport>,
   ) {}
 
   private toPublic(p: CommunityPost): PublicPost {
@@ -77,15 +78,32 @@ export class CommunityService {
   }
 
   /** Member report (App Store UGC 1.2): any member can flag a post. Thresholds
-   *  act immediately and quietly: 2 reports re-hold the post for review (it
-   *  leaves the feed), 4 reject it outright. Idempotence is not tracked per
-   *  reporter (anonymous wall, no user graph) - the thresholds absorb noise. */
-  async report(postId: string): Promise<{ ok: true }> {
+   *  act immediately and quietly: 2 DISTINCT reporters re-hold the post for review
+   *  (it leaves the feed), 4 reject it outright.
+   *
+   *  Reports are recorded PER REPORTER and are idempotent. Previously this took only
+   *  a postId - no identity, no dedupe - so one account could report every visible
+   *  post four times and permanently empty the wall. reportsCount is now derived
+   *  from distinct reporter rows, so a threshold means "N different members
+   *  objected", which is the only reading that makes it a moderation signal. */
+  async report(postId: string, ownerId: string): Promise<{ ok: true }> {
     const post = await this.repo.findOne({ where: { id: postId } });
     if (!post) return { ok: true }; // nothing to reveal about what exists
-    post.reportsCount += 1;
-    if (post.reportsCount >= 4) post.status = 'rejected';
-    else if (post.reportsCount >= 2) post.status = 'pending';
+    if (post.ownerId && post.ownerId === ownerId) return { ok: true }; // no self-reporting
+
+    try {
+      await this.reports.insert({ postId, ownerId });
+    } catch {
+      // unique (postId, ownerId) violation = this member already reported it.
+      // Idempotent by design: return the same quiet 200 without re-counting.
+      return { ok: true };
+    }
+
+    // Count distinct reporters rather than trusting an incrementing counter.
+    const distinct = await this.reports.count({ where: { postId } });
+    post.reportsCount = distinct;
+    if (distinct >= 4) post.status = 'rejected';
+    else if (distinct >= 2) post.status = 'pending';
     await this.repo.save(post);
     return { ok: true };
   }

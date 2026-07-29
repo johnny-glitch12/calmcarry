@@ -39,6 +39,10 @@ const KEYS = {
   profiles: 'cc.profiles',
   activeId: 'cc.activeProfile',
   legacyMode: 'cc.mode',
+  /** Last account signed in ON THIS DEVICE. Persisted so "did the account actually
+   *  change?" survives a relaunch and a sign-out, instead of every token→null→token
+   *  cycle looking like a new account and wiping the household. */
+  lastAccount: 'cc.lastAccount',
 } as const;
 const CHECKIN_GAP_MS = 12 * 60 * 60 * 1000; // re-offer the check-in only after 12h away
 
@@ -198,12 +202,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       .profiles(token)
       .then((list) => {
         if (!alive || !Array.isArray(list)) return;
-        const mapped = sanitizeProfiles(list.map((p) => ({ id: p.id, name: p.name, type: p.type })));
-        if (!mapped.length) return;
-        setProfiles(mapped);
-        setJSON(KEYS.profiles, mapped);
+        const serverProfiles = sanitizeProfiles(list.map((p) => ({ id: p.id, name: p.name, type: p.type })));
+        if (!serverProfiles.length) return;
+        // Kid profiles are device-local (their names are never uploaded), so the server
+        // reconcile must PRESERVE any local kid the server doesn't know about rather than
+        // replace it away. Server is the source of truth for adult profiles; local-only
+        // kids are kept and appended.
+        const localKids = profilesRef.current.filter(
+          (p) => p.type === 'kids' && !serverProfiles.some((s) => s.id === p.id),
+        );
+        const merged = [...serverProfiles, ...localKids];
+        setProfiles(merged);
+        setJSON(KEYS.profiles, merged);
         setActiveId((cur) =>
-          mapped.some((p) => p.id === cur) ? cur : (mapped.find((p) => p.type === 'adult') ?? mapped[0]).id,
+          merged.some((p) => p.id === cur) ? cur : (merged.find((p) => p.type === 'adult') ?? merged[0]).id,
         );
       })
       .catch(() => {
@@ -272,13 +284,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // token refresh for the same account does NOT reset. The first observation after
   // hydration is the boot state and is adopted without wiping the local data.
   const accountRef = useRef<string | null | undefined>(undefined);
-  useEffect(() => {
-    if (!hydrated) return;
-    const account = !token || token === 'local' ? null : (user?.email ?? token);
-    const prev = accountRef.current;
-    accountRef.current = account;
-    if (prev === undefined || prev === account) return; // boot, or same account
-    // account changed → drop the previous household; backend sync re-populates if signed in
+
+  /** Drop the previous account's household. Only ever called for a real A→B switch:
+   *  account B must not inherit A's profiles, consent, recents or device cache. */
+  const wipeHouseholdForAccountSwitch = useCallback(() => {
     setProfiles(DEFAULT_PROFILES);
     setActiveId(DEFAULT_PROFILES[0].id);
     setIntentState(null);
@@ -296,7 +305,34 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     clearCoppaConsent();
     clearRecents();
     remove('cc.devices'); // KEYS.devices in lib/store (this file's KEYS is profile-local)
-  }, [hydrated, token, user?.email]);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const account = !token || token === 'local' ? null : (user?.email ?? token);
+    accountRef.current = account;
+    // A SIGN-OUT (or any transient token loss) is NOT an account change. This used to
+    // wipe on token→null, and because kid profiles are now device-local - the on-disk
+    // copy is the ONLY copy - that permanently destroyed a child's profile and the
+    // COPPA consent record, dropping the child into the adult app. Only a genuine
+    // switch to a DIFFERENT signed-in account may drop the previous household.
+    if (account == null) return;
+    let cancelled = false;
+    void (async () => {
+      // Persisted, so the comparison survives a relaunch: held only in memory, a
+      // sign-out followed by signing back into the SAME account looked like
+      // "null → account" and wiped the household anyway.
+      const last = await getJSON<string | null>(KEYS.lastAccount, null);
+      if (cancelled) return;
+      await setJSON(KEYS.lastAccount, account);
+      if (last == null || last === account) return; // first sign-in here, or same account
+      wipeHouseholdForAccountSwitch();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, token, user?.email, wipeHouseholdForAccountSwitch]);
+
 
   const setActiveProfile = useCallback((id: string) => {
     if (!profilesRef.current.some((p) => p.id === id)) return;
@@ -323,9 +359,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setJSON(KEYS.profiles, next);
       return next;
     });
-    // persist to the household on the backend (best-effort; next sync reconciles ids)
+    // Persist to the household on the backend (best-effort; next sync reconciles ids).
+    // Kid profiles stay DEVICE-LOCAL: a child's name is never sent to the server -
+    // it minimizes child PII on the backend and keeps the "kids are never tracked"
+    // promise literal. Only adult profiles sync across the household.
     const t = tokenRef.current;
-    if (t && t !== 'local') api.createProfile(t, { name: profile.name, type }).catch(() => {});
+    if (t && t !== 'local' && type === 'adult') api.createProfile(t, { name: profile.name, type }).catch(() => {});
     return profile;
   }, []);
 
@@ -358,8 +397,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setJSON(KEYS.profiles, next);
       return next;
     });
+    // A kid rename also stays device-local (its name was never uploaded).
     const t = tokenRef.current;
-    if (t && t !== 'local') api.updateProfile(t, id, { name: clean }).catch(() => {});
+    const isKid = profilesRef.current.find((p) => p.id === id)?.type === 'kids';
+    if (t && t !== 'local' && !isKid) api.updateProfile(t, id, { name: clean }).catch(() => {});
   }, []);
 
   // Remove a profile + its data (COPPA: a parent can delete a child's profile any

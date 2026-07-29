@@ -18,7 +18,12 @@ export interface ValidatedSubscription {
   valid: boolean;
   plan: EntitlementPlan;
   productId: string;
+  /** The STABLE renewal key the store's notifications arrive with (Apple
+   *  originalTransactionId / Google purchaseToken) - never a per-charge order id,
+   *  or webhooks can't find the entitlement they're meant to update. */
   transactionRef: string;
+  /** Per-charge store order id, kept for support/audit only. Never a lookup key. */
+  sourceOrderId?: string | null;
   expiresAt: Date;
 }
 
@@ -95,6 +100,19 @@ export class ReceiptValidationService {
     const certs = this.appleRootCerts();
     if (!certs.length) {
       throw new ServiceUnavailableException('Apple IAP verification not configured (root certs missing)');
+    }
+    // The App Store Server Library REQUIRES a numeric app id for the PRODUCTION
+    // environment and throws without one. That throw used to be swallowed into a
+    // generic 401, so a real buyer was charged by StoreKit and silently never
+    // unlocked. Fail CLOSED, loudly and specifically, so the transaction is left
+    // unfinished (StoreKit retries, and Apple refunds rather than keeping the money)
+    // and the cause is obvious in the logs.
+    if (env === 'prod' && !(config.apple.appAppleId > 0)) {
+      this.logger.error(
+        'APPLE_APP_APPLE_ID is not set - refusing to validate PRODUCTION Apple purchases. ' +
+          'Set it to the numeric App Store app id (App Store Connect > App Information) and redeploy.',
+      );
+      throw new ServiceUnavailableException('Apple purchase validation is not configured on the server');
     }
     const verifier = new SignedDataVerifier(
       certs,
@@ -213,7 +231,14 @@ export class ReceiptValidationService {
       valid: true,
       plan: this.planFor(sku),
       productId: sku,
-      transactionRef: String(data.orderId ?? purchaseToken),
+      // transactionRef MUST be the purchaseToken: it is the stable key that every
+      // Real-Time Developer Notification (renew/expire/revoke) is delivered with,
+      // and it survives renewals. orderId changes per charge ("GPA.3312-...") and is
+      // always present, so keying on it meant EVERY Play notification missed its
+      // entitlement: renewals never extended the expiry (a paying subscriber lost
+      // premium at the first renewal boundary) and refunds never revoked access.
+      transactionRef: purchaseToken,
+      sourceOrderId: data.orderId ?? null,
       expiresAt: new Date(expiryMs),
     };
   }

@@ -11,7 +11,7 @@ the rest needs the Glow Company's developer accounts + a few real URLs.
 ## 2. Already configured in this repo
 - [x] App name **CalmCarry**, slug `calmcarry`, version `1.0.0`
 - [x] iOS `bundleIdentifier` + Android `package` = `co.theglowcompany.calmcarry` (`app.json`) - change if the Glow Company prefers another reverse-domain
-- [x] App icon, adaptive icon, splash (mint `#D3EDEA`) in `assets/images/`
+- [x] App icon, adaptive icon, splash (night eucalyptus `#0E1817`) in `assets/images/`
 - [x] `eas.json` with development / preview / production profiles
 - [x] Wellness disclaimer in-app (About screen + Learn articles) - App Review wants this for wellness apps
 - [x] IAP: the **premium subscription is in-app** (StoreKit / Play Billing) - SKUs `calmcarry.premium.monthly` / `calmcarry.premium.annual` with a 3-day intro trial, server-validated (App Store Server API + Play Developer API, fail-closed, SKU-allowlisted). The **physical Glow Orb** is bought on the web store (Apple 3.1.5a physical goods) - that stays external.
@@ -51,11 +51,23 @@ npx eas submit -p android        # needs Play service-account JSON
 
 ## 7. Backend before production
 - The NestJS server is real (IAP validation, store webhooks, push, auth, retention
-  purge - all implemented, fail-closed). Production runs it on **Fly.io** with
-  **Postgres** (`DATABASE_URL`); local dev uses SQLite. See `server/DEPLOY.md`.
-- Provision: Fly app + secrets, a Postgres (Neon/Fly), and DNS+TLS for the API host.
-- The app points at `https://api.theglowcompany.co` via the EAS `production` build env
-  (`eas.json`), not a hardcoded `API_BASE` - set that host live before the store build.
+  purge - all implemented, fail-closed) and is **already LIVE**: it runs on **Railway**
+  (project `calmcarry-api`) with **Neon Postgres** (`DATABASE_URL`); local dev uses SQLite.
+  `/health` returns `{ok:true,db:up}`. (Fly.io was the earlier target and is no longer used.)
+- The app points at `https://calmcarry-api-production.up.railway.app` via the EAS
+  `production` build env (`eas.json`), not a hardcoded `API_BASE`. A custom domain
+  (e.g. `api.theglowcompany.co`) is an OPTIONAL later layer (Railway custom domain + a
+  DNS CNAME) - not required to ship.
+- Before the first real iOS purchase works, set `APPLE_APP_APPLE_ID` (the numeric App
+  Store app id) on Railway. Without it the Apple Production verifier throws on the
+  FIRST real purchase (the user is charged and gets nothing) while the service still
+  looks healthy.
+  > ⚠️ **Not yet true of the running API.** The boot guard that refuses to start
+  > without this value, the rate-limit fix and the Play/entitlement fixes all live on
+  > branch `launch-readiness-fixes-2026-07-24`, which has **not been merged or
+  > deployed**. Until that branch is merged and Railway redeployed, the live API is
+  > running the pre-fix code. Verify with `/health` after deploying, and only then
+  > treat the items above as properties of production.
 - Audio ships bundled in the binary for v1; the signed-URL CDN is post-v1 (`STREAMING_ENABLED`).
 
 ## 8. App Review notes (paste into ASC "App Review Information" / Play "Review notes")
@@ -63,7 +75,7 @@ The dev/web comp login does NOT work in a store build - you MUST create a real d
 account on the production backend first (sign up in the shipped build once the API is
 live), then fill the credentials below.
 
-> **Demo account:** `<email>` / `<password>` (created on api.theglowcompany.co)
+> **Demo account:** `<email>` / `<password>` (created against the live Railway API)
 >
 > **The physical "Glow Orb" device is NOT required to review the app.** On the
 > device-registration screen you can tap "Continue" / "Not now" to skip it and reach

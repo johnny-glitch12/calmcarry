@@ -2,9 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { type AudioKey } from '@/content/audio';
 
-/** The narration voice for guided sessions. The picker previews each (real TTS
- *  samples); the chosen voice is what guided sessions use as their voiced sets
- *  are produced per voice. */
+/** A bedtime-voice preference. The picker previews each voice (real TTS samples)
+ *  and remembers the pick. NOTE: guided sessions today play a single fixed
+ *  narration - this choice does NOT change what currently plays. It is stored so
+ *  that once per-voice guided sets are produced, the saved choice selects which
+ *  one plays. Until then it is a preview + preference, not a live control. */
 export type VoiceKey = 'maya' | 'orion' | 'luna';
 
 export type Voice = { key: VoiceKey; name: string; tag: string; sample: AudioKey };

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { FlyThrottlerGuard } from './common/fly-throttler.guard';
+import { ClientIpThrottlerGuard } from './common/client-ip-throttler.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config, isProd } from './config';
 import { ENTITIES } from './data-source';
@@ -70,8 +70,9 @@ import { UsersModule } from './users/users.module';
     RetentionModule,
   ],
   controllers: [HealthController],
-  // FlyThrottlerGuard: rate-limit buckets keyed on Fly-Client-IP behind Fly's
-  // proxy (default socket-address tracking would bucket ALL clients together)
-  providers: [{ provide: APP_GUARD, useClass: FlyThrottlerGuard }],
+  // ClientIpThrottlerGuard: rate-limit buckets keyed on the Express-resolved
+  // req.ip (correct behind one edge hop via `trust proxy` in main.ts). Never on a
+  // raw request header - see the guard's history note.
+  providers: [{ provide: APP_GUARD, useClass: ClientIpThrottlerGuard }],
 })
 export class AppModule {}

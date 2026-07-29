@@ -129,8 +129,23 @@ export class UsersService {
     };
   }
 
+  /**
+   * Email is stored and looked up CASE-INSENSITIVELY (normalized to lowercase here,
+   * at the single choke point every caller passes through, rather than in each DTO).
+   *
+   * Without this, `email` was a case-SENSITIVE unique varchar: someone who signed up
+   * as "Mason@Glowco.com" and later typed the lowercase form got "Invalid
+   * credentials" with the correct password, "Forgot password" silently sent nothing
+   * (anti-enumeration hides the miss), and a second account could be created on the
+   * same address in different case. Only the social-login path lowercased, so the
+   * two routes disagreed about who you were.
+   */
+  static normalizeEmail(email: string): string {
+    return (email ?? '').trim().toLowerCase();
+  }
+
   findByEmail(email: string): Promise<Owner | null> {
-    return this.ownerRepo.findOne({ where: { email } });
+    return this.ownerRepo.findOne({ where: { email: UsersService.normalizeEmail(email) } });
   }
 
   findById(id: string): Promise<Owner | null> {
@@ -142,7 +157,8 @@ export class UsersService {
     passwordHash: string,
     name: string,
   ): Promise<Owner> {
-    const owner = this.ownerRepo.create({ email, passwordHash, name });
+    // Normalized on write too, so the unique index and every later lookup agree.
+    const owner = this.ownerRepo.create({ email: UsersService.normalizeEmail(email), passwordHash, name });
     return this.ownerRepo.save(owner);
   }
 
@@ -186,6 +202,14 @@ export class UsersService {
       : null;
     if (existing && existing.ownerId !== householdId) {
       throw new ConflictException('This purchase is already linked to another account.');
+    }
+    // A REVOKED/REFUNDED entitlement must never be resurrected by re-validating the
+    // same receipt. A signed JWS transaction stays cryptographically valid forever,
+    // and the client can re-POST the exact body it already sent, so without this a
+    // user could refund via Apple and then restore premium at will (and repeat).
+    // Only the store (webhook) may lift a revocation.
+    if (existing && existing.status === 'revoked') {
+      throw new ConflictException('This purchase was refunded or revoked and cannot be restored.');
     }
     const entitlement = existing ?? this.entitlementRepo.create({ ownerId: householdId });
     entitlement.tier = 'calm_plan';

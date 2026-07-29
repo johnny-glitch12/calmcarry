@@ -12,10 +12,19 @@ export type Track = {
   title: string;
   subtitle: string;
   cover: CoverKey;
+  /** DISPLAY COPY ONLY - never drives playback. If it promises a finite length,
+   *  `lengthSec` must enforce it (see below), otherwise the session runs as long as
+   *  the underlying audio file and the label is a lie. */
   duration: string;
   category: TrackCategory;
   /** which bundled audio file plays for this track */
   audio: AudioKey;
+  /** ENFORCED session length in seconds, for finite tracks whose audio bed is longer
+   *  than the advertised `duration`. The Player ends the session gently at this
+   *  deadline (wall-clock, survives backgrounding). Required whenever a shared bed
+   *  like `drone` (7m02s) backs a track sold as a shorter session - without it the
+   *  breathing pacers advertised "3 min" played the whole 7-minute file. */
+  lengthSec?: number;
   /** paid - unlocked by the Calm Plan bundle (no in-app purchase) */
   locked?: boolean;
   /** one honest sentence: what this is and when to reach for it (shown in the Player) */
@@ -34,28 +43,36 @@ export type Track = {
 export const trackLoops = (t: Track): boolean => t.duration === 'loops' || t.category === 'soundscape';
 
 export const TRACKS: Record<string, Track> = {
-  'slow-tide': { id: 'slow-tide', title: 'Slow Tide', subtitle: 'Ocean swell · low drone', cover: 'slowTide', duration: '20 min', category: 'soundscape', audio: 'ocean',
+  'slow-tide': { id: 'slow-tide', title: 'Slow Tide', subtitle: 'Ocean swell · low drone', cover: 'slowTide', duration: 'loops', category: 'soundscape', audio: 'ocean',
     about: 'A real ocean recording with a slow, even swell. Good for drifting off, or any moment you want the room to feel bigger and quieter.' },
   rainfall: { id: 'rainfall', title: 'Rainfall on Canvas', subtitle: 'Steady rain · distant thunder', cover: 'rainfall', duration: 'loops', category: 'soundscape', audio: 'rain', locked: true,
     about: 'Steady, unhurried rain with far-off thunder. A favourite for masking street noise while you fall asleep.' },
   forest: { id: 'forest', title: 'Eucalyptus Forest', subtitle: 'Birdsong · soft stream', cover: 'forestStream', duration: 'loops', category: 'soundscape', audio: 'forest', locked: true,
     about: 'Birdsong over a soft stream. Gentler and brighter than rain, suited to daytime resets as much as bedtime.' },
-  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'guidedBox', breathPattern: { inhale: 4, holdIn: 4, exhale: 4, holdOut: 4 },
-    about: 'A short guided rhythm: in for 4, hold 4, out 4, hold 4, with your Glow Orb in hand. Three minutes to settle a racing moment, day or night.' },
+  // Voiceless pacer (rides the soft `drone` tone like the three below). The 4-4-4-4
+  // count is driven by the orb pacer + on-screen cue, so it needs no narration - and
+  // this keeps the free tier (and the free "first 7 nights" onboarding, day 2) clear
+  // of the AI voice Glowco asked us not to feature until real human VO lands.
+  'box-breathing': { id: 'box-breathing', title: 'Box Breathing', subtitle: 'Breathe with the pulse · 4-4-4-4', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 4, holdIn: 4, exhale: 4, holdOut: 4 },
+    about: 'In for 4, hold 4, out 4, hold 4, with your Glow Orb in hand. Three minutes to settle a racing moment, day or night. No voice, just the circle to follow.' },
   // Three FREE, narration-free pacers. The breath IS the content; each rides the
   // soft `drone` tone (no voice) so nothing competes with the count. Finite, not
   // loops: trackLoops() stays false for category 'breathing', so they play once and
   // end gently. Cover reuses the box-breathing art (the breathing family).
-  'cyclic-sigh': { id: 'cyclic-sigh', title: 'Cyclic Sigh', subtitle: 'Two in, a brief hold, a long out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 2, holdIn: 1, exhale: 6 },
+  'cyclic-sigh': { id: 'cyclic-sigh', title: 'Cyclic Sigh', subtitle: 'Two in, a brief hold, a long out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 2, holdIn: 1, exhale: 6 },
     about: 'A double breath in, then a long, slow breath out. The quickest way we know to settle a wound-up moment. No voice, just the circle to follow.' },
-  'extended-exhale': { id: 'extended-exhale', title: 'Extended Exhale', subtitle: 'Four in, six out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, exhale: 6 },
+  'extended-exhale': { id: 'extended-exhale', title: 'Extended Exhale', subtitle: 'Four in, six out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 4, exhale: 6 },
     about: 'A longer breath out than in. The out-breath is where the body lets down, so this leans into it. No voice, just the circle to follow.' },
-  'four-seven-eight': { id: 'four-seven-eight', title: '4-7-8 Breath', subtitle: 'Four in, seven hold, eight out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', breathPattern: { inhale: 4, holdIn: 7, exhale: 8 },
+  'four-seven-eight': { id: 'four-seven-eight', title: '4-7-8 Breath', subtitle: 'Four in, seven hold, eight out', cover: 'boxBreathing', duration: '3 min', category: 'breathing', audio: 'drone', lengthSec: 180, breathPattern: { inhale: 4, holdIn: 7, exhale: 8 },
     about: 'In for four, hold for seven, out for eight. A slower count for a night when the mind will not slow down. No voice, just the circle to follow.' },
+  // The only two fully-narrated sessions. Narration is AI-generated for now (disclosed
+  // in the `about` so it's honest at the play surface, not just buried in Account) -
+  // Glowco supplies human VO to replace guidedRest / guidedLetGo before these lead the
+  // paid programs. Kept (not retired) so the paid meditation category isn't emptied.
   'deep-rest': { id: 'deep-rest', title: 'Deep Body Relaxation', subtitle: 'Guided · settle the body', cover: 'deepRest', duration: '4 min', category: 'meditation', audio: 'guidedRest', locked: true,
-    about: 'A guided sweep of attention from head to toe that lets the body get heavy. Best lying down, lights low.' },
+    about: 'A guided sweep of attention from head to toe that lets the body get heavy. Best lying down, lights low. The narration is an AI voice for now, pending a human recording.' },
   'letting-go': { id: 'letting-go', title: 'Letting Go of Your Day', subtitle: 'Guided · for busy minds', cover: 'lettingGo', duration: '4 min', category: 'meditation', audio: 'guidedLetGo', locked: true,
-    about: 'A short guided wind-down for evenings when the day will not stop replaying. Set the day down before sleep.' },
+    about: 'A short guided wind-down for evenings when the day will not stop replaying. Set the day down before sleep. The narration is an AI voice for now, pending a human recording.' },
   // Honest until Glowco supplies real narration: this is a calm OCEAN soundscape for
   // little ones (it plays the ocean bed), NOT a 27-min narrated tale. Loops gently.
   penguin: { id: 'penguin', title: 'Ocean for Little Ones', subtitle: 'Calm ocean waves · ages 4+', cover: 'penguinVoyage', duration: 'loops', category: 'soundscape', audio: 'ocean',

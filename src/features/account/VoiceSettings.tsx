@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import { AppText, PressableScale, Reveal, Screen, VoicePicker } from '@/components';
 import { useTheme } from '@/theme';
 
-/** Settings → Guided voice. Change the narration voice any time; tap to preview. */
+/** Settings → Guided voice. Preview the bedtime voices and save a preference; tap to
+ *  hear each. (Guided sessions play a fixed narration today - the pick applies once
+ *  per-voice sets are produced. See lib/voice.ts.) */
 export function VoiceSettings() {
   const { c } = useTheme();
   const router = useRouter();
@@ -29,7 +31,7 @@ export function VoiceSettings() {
           Guided voice
         </AppText>
         <AppText variant="body" tone="muted" style={{ marginTop: 10, marginBottom: 24 }}>
-          The voice that guides your wind-downs. Tap any to hear it.
+          A preview of the bedtime voices we’re producing for guided sessions. Tap any to hear one, and we’ll remember your pick.
         </AppText>
       </Reveal>
       <Reveal index={1}>

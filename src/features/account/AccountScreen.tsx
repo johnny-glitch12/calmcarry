@@ -9,7 +9,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
 import { SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
-import { track } from '@/lib/analytics';
+import { getAnalyticsOptOut, setAnalyticsOptOut, track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasCoppaConsent } from '@/lib/consent';
 import { lightTap } from '@/lib/haptics';
@@ -282,6 +282,7 @@ export function AccountScreen() {
   // true when an enable attempt failed because OS notification permission is off
   const [notifDenied, setNotifDenied] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
+  const [analyticsOn, setAnalyticsOn] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [renewAt, setRenewAt] = useState<string | null>(null);
@@ -294,6 +295,7 @@ export function AccountScreen() {
       setRecap(await getJSON('cc.weeklyRecap', false));
       setPushOn(await hasPushOptIn());
       setAutoplay(await getJSON('cc.autoplay', true));
+      setAnalyticsOn(!(await getAnalyticsOptOut())); // toggle reads as "sharing on"
     })();
   }, []);
 
@@ -347,6 +349,12 @@ export function AccountScreen() {
     setAutoplay(v);
     setJSON('cc.autoplay', v);
   };
+  // GDPR/PDPL: v = "share analytics on"; opt-out is the inverse. setAnalyticsOptOut
+  // also drops anything already buffered, so switching off stops sends immediately.
+  const toggleAnalytics = async (v: boolean) => {
+    setAnalyticsOn(v);
+    await setAnalyticsOptOut(!v);
+  };
 
   const onSignOut = async () => {
     await signOut();
@@ -374,20 +382,32 @@ export function AccountScreen() {
     // live on (a false erasure confirmation, and the Apple revoke never ran).
     // 401/404 mean the server no longer recognizes this session/account, so
     // there is nothing left to delete remotely.
-    let serverGone = !token || token === 'local';
-    if (!serverGone && token) {
+    // ONLY a confirmed server deletion (or a 404 = the account is already gone) may
+    // license the local wipe + the "permanently deleted" claim.
+    // A 401 must NOT count: JwtAuthGuard returns it for an expired/invalid token,
+    // which says nothing about whether the account still exists - a warm app whose
+    // 7-day access token lapsed would have wiped the phone, told the user their data
+    // was erased, and left the real account (and the Apple revoke) untouched.
+    // A device-only ('local') session likewise has nothing to delete remotely, but it
+    // also has no server account to erase, so we must not claim server erasure.
+    let serverGone = false;
+    const deviceOnly = !token || token === 'local';
+    if (!deviceOnly && token) {
       try {
         await api.deleteAccount(token);
         serverGone = true;
       } catch (e) {
         const status = (e as { status?: number })?.status;
-        if (status === 401 || status === 404) serverGone = true;
+        if (status === 404) serverGone = true; // already erased server-side
       }
     }
-    if (!serverGone) {
+    if (!deviceOnly && !serverGone) {
       setDeleting(false);
       setConfirmDelete(false);
-      Alert.alert('Couldn’t reach the server', 'Your account still exists. Check your connection and try again.');
+      Alert.alert(
+        'Couldn’t delete your account',
+        'Your account still exists and nothing was removed. Please sign in again and retry, so we can confirm the deletion with our server.',
+      );
       return;
     }
     await clearAll(); // permanent deletion must leave nothing personal on the device
@@ -625,6 +645,9 @@ export function AccountScreen() {
           <SettingRow icon="users" label="Family & devices" onPress={() => router.push('/family')} />
           <SettingRow icon="sliders" label="Notifications" value="System settings" onPress={() => Linking.openSettings().catch(() => {})} />
           <SettingRow icon="shield" label="Your data & privacy" onPress={() => router.push('/privacy' as Href)} />
+          {/* GDPR/PDPL opt-out of first-party anonymous usage analytics (kids are never
+              tracked regardless). Default on; turning it off drops any queued events. */}
+          <SettingRow icon="bar-chart-2" label="Share anonymous usage data" toggle={analyticsOn} onToggle={toggleAnalytics} />
           {token && token !== 'local' ? (
             <SettingRow
               icon="key"

@@ -49,3 +49,26 @@ describe('UsersService.isPremiumEntitlement', () => {
     expect(svc.isPremiumEntitlement(undefined)).toBe(false);
   });
 });
+
+/**
+ * Email identity must be case-insensitive. It used to be a case-SENSITIVE unique
+ * column with only the social path lowercasing, so "Mason@Glowco.com" and
+ * "mason@glowco.com" were different accounts: a correct password was rejected and
+ * password reset silently did nothing.
+ */
+describe('UsersService.normalizeEmail', () => {
+  it('lowercases and trims so one address is one identity', () => {
+    expect(UsersService.normalizeEmail('Mason@Glowco.com')).toBe('mason@glowco.com');
+    expect(UsersService.normalizeEmail('  MASON@GLOWCO.COM  ')).toBe('mason@glowco.com');
+  });
+
+  it('maps every casing of the same address to one key', () => {
+    const forms = ['mason@glowco.com', 'Mason@Glowco.com', 'MASON@GLOWCO.COM', ' mason@Glowco.com '];
+    expect(new Set(forms.map((f) => UsersService.normalizeEmail(f))).size).toBe(1);
+  });
+
+  it('is safe on empty/absent input', () => {
+    expect(UsersService.normalizeEmail('')).toBe('');
+    expect(UsersService.normalizeEmail(undefined as unknown as string)).toBe('');
+  });
+});

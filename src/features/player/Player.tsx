@@ -489,6 +489,33 @@ export function Player() {
     if (status.didJustFinish && !loops) endSession();
   }, [status.didJustFinish, loops, endSession]);
 
+  // ENFORCED SESSION LENGTH. `duration` is display copy; a finite track whose bed is
+  // longer than advertised (the breathing pacers ride the 7m02s `drone`) would
+  // otherwise run until the FILE ends - a "3 min" session playing seven. Ends the
+  // session gently at the advertised deadline. Wall-clock + AppState recheck, same
+  // pattern as the sleep timer below, so backgrounding can't overrun it.
+  const lengthSec = track.lengthSec;
+  const lengthEndAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!lengthSec || lengthSec <= 0 || loops) {
+      lengthEndAtRef.current = null;
+      return;
+    }
+    lengthEndAtRef.current = Date.now() + lengthSec * 1000;
+    let id = setTimeout(() => endSession(), lengthSec * 1000);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active' || endingRef.current || lengthEndAtRef.current == null) return;
+      clearTimeout(id);
+      const remaining = lengthEndAtRef.current - Date.now();
+      if (remaining <= 0) endSession();
+      else id = setTimeout(() => endSession(), remaining);
+    });
+    return () => {
+      clearTimeout(id);
+      sub.remove();
+    };
+  }, [lengthSec, loops, endSession]);
+
   // Sleep / auto-stop timer
   const [sleepMin, setSleepMin] = useState(0);
   useEffect(() => {

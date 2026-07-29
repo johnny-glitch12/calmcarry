@@ -104,6 +104,23 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let started = false;
 let flushing = false; // single-flight guard so concurrent flush() calls never double-send a batch
 
+// ---- opt-out (GDPR / UK-GDPR / PDPL): an adult can switch off first-party usage
+// analytics. When off, track() no-ops AND anything already buffered/persisted is
+// dropped, so nothing queued is ever sent. Persisted so the choice survives restarts. ----
+const OPTOUT_KEY = 'cc.analyticsOptOut';
+let optedOut = false;
+export async function getAnalyticsOptOut(): Promise<boolean> {
+  return getJSON<boolean>(OPTOUT_KEY, false);
+}
+export async function setAnalyticsOptOut(v: boolean): Promise<void> {
+  optedOut = v;
+  await setJSON(OPTOUT_KEY, v);
+  if (v) {
+    buf = []; // drop in-memory events immediately
+    await remove(BUF_KEY); // and anything persisted from a failed flush
+  }
+}
+
 function schedule(): void {
   if (timer) return;
   timer = setTimeout(() => {
@@ -113,6 +130,7 @@ function schedule(): void {
 }
 
 export async function flush(): Promise<void> {
+  if (optedOut) { buf = []; return; } // opted out - never send, and hold nothing
   if (flushing) return; // a flush is already in-flight - never send the same batch twice
   if (timer) {
     clearTimeout(timer);
@@ -142,10 +160,16 @@ export async function flush(): Promise<void> {
 export function startAnalytics(): void {
   if (started) return;
   started = true;
-  getJSON<Queued[]>(BUF_KEY, [])
-    .then((saved) => {
-      if (Array.isArray(saved) && saved.length) buf = saved.concat(buf);
-      if (buf.length) flush();
+  // Load the opt-out choice FIRST; only if the user is opted IN do we recover and
+  // flush any events left over from a previous session.
+  getJSON<boolean>(OPTOUT_KEY, false)
+    .then((v) => {
+      optedOut = !!v;
+      if (optedOut) return remove(BUF_KEY); // opted out: drop anything persisted before
+      return getJSON<Queued[]>(BUF_KEY, []).then((saved) => {
+        if (Array.isArray(saved) && saved.length) buf = saved.concat(buf);
+        if (buf.length) flush();
+      });
     })
     .catch(() => {});
   AppState.addEventListener('change', (s) => {
@@ -160,6 +184,7 @@ export function startAnalytics(): void {
 export async function track(name: Ev | string, props?: Record<string, unknown>): Promise<void> {
   try {
     if (kidsActive) return; // COPPA: never track a child profile
+    if (optedOut) return; // GDPR/PDPL: the user turned usage analytics off
     buf.push({ name: String(name).slice(0, 60), props: scrub(props), at: new Date().toISOString() });
     if (buf.length > MAX_BUFFER) buf = buf.slice(-MAX_BUFFER);
     if (buf.length >= FLUSH_AT) flush();

@@ -62,9 +62,10 @@ function VoiceRow({
 }
 
 /**
- * VoicePicker - choose the guided-session voice. Each row plays a real bedtime
- * sample on tap (so you hear it before choosing) and the pick is persisted.
- * Used both in onboarding and in Settings. Press feedback + haptics.
+ * VoicePicker - preview the bedtime voices and save a preference. Each row plays a
+ * real (AI-generated) sample on tap and the pick is persisted. It does NOT change
+ * what guided sessions play today (fixed narration) - see lib/voice.ts. Press
+ * feedback + haptics; an AI-generated disclosure sits below the rows.
  */
 export function VoicePicker({ onChange }: { onChange?: (v: VoiceKey) => void }) {
   const { c } = useTheme();

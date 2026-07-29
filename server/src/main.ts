@@ -7,7 +7,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
-import { config, integrations, isProd, nodeEnvIsInvalid, prodSecretGaps } from './config';
+import { config, integrations, isProd, nodeEnvIsInvalid, prodConfigWarnings, prodSecretGaps } from './config';
 
 // Error aggregation - a strict no-op until SENTRY_DSN is provisioned. Init before
 // anything else so even bootstrap failures after this line are captured.
@@ -38,8 +38,22 @@ async function bootstrap() {
     process.exit(1);
   }
 
+  // Non-fatal gaps that would otherwise only surface as a failed customer purchase.
+  // These do NOT abort startup (see prodConfigWarnings) but must be impossible to
+  // miss in a deploy log.
+  for (const w of prodConfigWarnings()) logger.warn(`CONFIG: ${w}`);
+
   // rawBody enables HMAC verification of the Shopify order webhook
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+
+  // Trust exactly ONE proxy hop (Railway/Fly/most PaaS put a single edge proxy in
+  // front of the container). With this, Express's `req.ip` resolves to the real
+  // client IP from the rightmost X-Forwarded-For entry, which the edge appends and
+  // a client cannot forge past. Rate-limit buckets (ClientIpThrottlerGuard) depend on
+  // this being correct - without it every request shares the proxy's IP and the
+  // per-IP credential throttle never engages. Trusting exactly 1 (not `true`)
+  // keeps a client-sent X-Forwarded-For header un-spoofable.
+  app.set('trust proxy', 1);
 
   // Security headers (clickjacking, MIME-sniffing, etc.)
   app.use(helmet());

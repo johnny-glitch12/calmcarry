@@ -16,7 +16,7 @@ import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { brand, useTheme } from '@/theme';
 
 const INCLUDED = [
-  'The full guided session & sleep-tale library',
+  'The full guided session library',
   'Multi-week gentle programs',
   'The full sound machine, so you can mix and save your own',
   'Shared access for the whole household',

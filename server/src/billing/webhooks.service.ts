@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { config, isProd } from '../config';
 import { AnalyticsService } from '../events/analytics.service';
+import { ReceiptValidationService } from '../integrations/receipt-validation.service';
 import { UsersService } from '../users/users.service';
 
 /**
@@ -29,6 +30,7 @@ export class WebhooksService {
   constructor(
     private readonly users: UsersService,
     private readonly analytics: AnalyticsService,
+    private readonly receipts: ReceiptValidationService,
   ) {}
 
   // Server-authoritative churn signal (§15: subscription churn + cancellation reasons).
@@ -140,7 +142,9 @@ export class WebhooksService {
     await this.verifyPubSubToken(authHeader); // 503 if not configured, 400 if invalid
     const data = body?.message?.data;
     if (!data) return { ok: true, applied: false };
-    let notif: { subscriptionNotification?: { notificationType?: number; purchaseToken?: string } } | null = null;
+    let notif: {
+      subscriptionNotification?: { notificationType?: number; purchaseToken?: string; subscriptionId?: string };
+    } | null = null;
     try {
       notif = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
     } catch {
@@ -150,14 +154,38 @@ export class WebhooksService {
     const ref = sub?.purchaseToken;
     if (!sub?.notificationType || !ref) return { ok: true, applied: false };
 
+    /**
+     * Marking a renewal "active" is not enough: isPremiumEntitlement gates on
+     * expiresAt, so without a FRESH expiry the subscriber still lapses at the old
+     * date while Google keeps charging them. Re-verify the token with Google to get
+     * the new expiryTimeMillis. If the lookup fails we fall back to status-only so a
+     * transient Google error can't drop a paying customer (the next notification, or
+     * a client re-validate, corrects it).
+     */
+    const freshExpiry = async (): Promise<Date | undefined> => {
+      if (!sub.subscriptionId) return undefined;
+      try {
+        const v = await this.receipts.validate('google', ref, sub.subscriptionId);
+        return v.expiresAt;
+      } catch (e) {
+        this.logger.warn(`google renewal expiry re-fetch failed ref=${ref}: ${String(e)}`);
+        return undefined;
+      }
+    };
+
     // Play type: 2 RENEWED, 4 PURCHASED, 7 RESTARTED, 12 REVOKED, 13 EXPIRED
     let applied = false;
     switch (sub.notificationType) {
       case 2:
       case 4:
-      case 7:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'active' });
+      case 7: {
+        const expiresAt = await freshExpiry();
+        applied = await this.users.applySubscriptionEvent(ref, {
+          status: 'active',
+          ...(expiresAt ? { expiresAt } : {}),
+        });
         break;
+      }
       case 13:
         applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' });
         this.recordChurn('expired');

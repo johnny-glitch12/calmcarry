@@ -22,7 +22,44 @@ export class ApiError extends Error {
   }
 }
 
-async function req<T>(path: string, opts: RequestInit = {}, token?: string | null, timeoutMs: number = TIMEOUT_MS): Promise<T> {
+/**
+ * Access-token refresh hook, registered by AuthProvider (which owns the refresh
+ * token and secure storage). Returns a FRESH access token, or null if the session is
+ * genuinely dead.
+ *
+ * Why this exists: the access token lives 7 days and the only refresh used to sit in
+ * AuthProvider's mount effect. A nightly-use sleep app is RESUMED, not cold-started,
+ * and iOS keeps suspended apps alive for weeks - so on day 8 a warm session started
+ * 401ing on everything with no recovery: entitlement checks fell back to "offline,
+ * keep cached", prefs stopped syncing, and a purchase could be charged then fail
+ * validation. Nothing told the user.
+ */
+type TokenRefresher = () => Promise<string | null>;
+let tokenRefresher: TokenRefresher | null = null;
+let refreshInflight: Promise<string | null> | null = null;
+
+export function setTokenRefresher(fn: TokenRefresher | null): void {
+  tokenRefresher = fn;
+}
+
+/** Single-flight: parallel 401s must NOT each spend the refresh token. Rotation
+ *  invalidates the previous one, so a second concurrent refresh would kill the
+ *  session it was trying to save. */
+function refreshOnce(): Promise<string | null> {
+  if (!tokenRefresher) return Promise.resolve(null);
+  refreshInflight ??= tokenRefresher().finally(() => {
+    refreshInflight = null;
+  });
+  return refreshInflight;
+}
+
+async function req<T>(
+  path: string,
+  opts: RequestInit = {},
+  token?: string | null,
+  timeoutMs: number = TIMEOUT_MS,
+  retried = false,
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -35,6 +72,16 @@ async function req<T>(path: string, opts: RequestInit = {}, token?: string | nul
         ...(opts.headers ?? {}),
       },
     });
+    // Expired access token on an authenticated call: refresh once and replay. Only
+    // for a real bearer session ('local' is a device-only session with nothing to
+    // refresh), and only one retry so a genuinely dead session still surfaces a 401.
+    if (res.status === 401 && token && token !== 'local' && !retried) {
+      const fresh = await refreshOnce();
+      if (fresh) {
+        clearTimeout(timer);
+        return req<T>(path, opts, fresh, timeoutMs, true);
+      }
+    }
     if (!res.ok) throw new ApiError(res.status);
     return (await res.json()) as T;
   } finally {

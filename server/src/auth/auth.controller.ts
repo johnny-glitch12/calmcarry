@@ -90,6 +90,9 @@ export class AuthController {
     return this.authService.sendEmailVerification(user.sub);
   }
 
+  // Throttled like every other code-guessing route: this checks a 6-digit secret and
+  // had no route limit at all, leaving only the 300/10s global DoS backstop.
+  @Throttle(CREDENTIAL_THROTTLE)
   @UseGuards(JwtAuthGuard)
   @Post('auth/email/verify')
   @HttpCode(200)

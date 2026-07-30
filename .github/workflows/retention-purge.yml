@@ -1,7 +1,18 @@
 # Belt-and-braces trigger for the daily COPPA/data-retention purge.
-# The API's in-process timer (always-on Fly machine) is the primary; this external
-# cron guarantees the purge still runs if the machine was down/crash-looping at
-# 04:00. Requires the CRON_SECRET repo secret (same value as the Fly secret).
+# The API's in-process daily timer is the primary; this external cron guarantees the
+# purge still runs if the service was down or crash-looping at 04:00.
+#
+# This job had NEVER once succeeded. It pointed at https://api.theglowcompany.co,
+# which does not resolve (production runs on Railway), so every scheduled run failed
+# - and a red job every morning trained everyone to ignore the Actions tab. The purge
+# enforcing the ~13-month retention limit was therefore running only on the API's own
+# in-process timer, with no external backstop and no working alarm if that stopped.
+#
+# Requires TWO repo settings, both currently ABSENT:
+#   - secret   CRON_SECRET   : must equal the CRON_SECRET on the Railway service
+#   - variable API_BASE_URL  : optional; defaults to the Railway host below
+# Until CRON_SECRET is set the endpoint correctly 401s (it fails closed by design),
+# so this job keeps failing LOUDLY rather than silently skipping the purge.
 name: retention-purge
 on:
   schedule:
@@ -13,13 +24,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger retention purge
+        env:
+          API_BASE: ${{ vars.API_BASE_URL || 'https://calmcarry-api-production.up.railway.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          code=$(curl -s -o /tmp/purge-body -w "%{http_code}" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://api.theglowcompany.co/retention/purge")
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET repo secret is not set - the purge endpoint will 401."
+            echo "Set it to the same value as CRON_SECRET on the Railway service."
+            exit 1
+          fi
+          code=$(curl -s -o /tmp/purge-body -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$API_BASE/retention/purge")
           echo "status: $code"
           cat /tmp/purge-body
+          echo
           if [ "$code" != "200" ]; then
-            echo "::error::retention purge failed with HTTP $code"
+            echo "::error::retention purge failed with HTTP $code against $API_BASE"
             exit 1
           fi

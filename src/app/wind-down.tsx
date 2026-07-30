@@ -30,7 +30,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { audioSources } from '@/content/audio';
 import { covers } from '@/content/covers';
-import { TRACKS } from '@/content/library';
+import { TRACKS, trackLoops } from '@/content/library';
 import { dur, ease, night, useTheme } from '@/theme';
 
 /** Default wind-down session: 20 minutes (DESIGN_SYSTEM hero copy). */
@@ -188,7 +188,12 @@ export default function WindDownScreen() {
   }, [lockedForUser, track.id, router]);
   useEffect(() => {
     if (lockedForUser) return; // gated - redirecting to the paywall, never play paid audio
-    audio.loop = true;
+    // Honour the library's looping contract instead of forcing loop on everything.
+    // The recommender can hand this screen a FINITE track (a guided meditation, a
+    // breathing pacer), and looping those replayed a 4-minute narration five times
+    // through a 20-minute ritual - the exact "plays once and ends gently" promise
+    // trackLoops() exists to keep, which Player and PlaybackProvider both honour.
+    audio.loop = trackLoops(track);
     audio.play();
     markFirstAudio(); // time-to-first-audio: fires once per cold start
     return () => {

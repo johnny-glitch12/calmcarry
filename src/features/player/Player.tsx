@@ -585,12 +585,34 @@ export function Player() {
   // buffering must not burn the clock, so a user who heard little/nothing is never
   // paywalled. The countdown only runs while status.playing, and banks the remainder.
   const previewLeftRef = useRef(PREVIEW_MS);
+  const previewEndAtRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!isPreview || !status.playing) return;
+    if (!isPreview || !status.playing) {
+      previewEndAtRef.current = null;
+      return;
+    }
     const startedAt = Date.now();
-    const id = setTimeout(runPreviewFade, previewLeftRef.current);
+    // Absolute deadline + AppState recheck, exactly like the sleep timer above.
+    // Premium audio ships bundled in the free binary and the signed-URL 403 falls
+    // back to that bundled asset, so this fade is the ONLY thing gating a locked
+    // track. A bare setTimeout is suspended while the phone is locked (background
+    // playback keeps the audio going), which handed a free user the paid catalogue
+    // all night - the one hole the sleep timer 40 lines up already defends against.
+    previewEndAtRef.current = startedAt + previewLeftRef.current;
+    let id = setTimeout(runPreviewFade, previewLeftRef.current);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active' || previewEndAtRef.current == null) return;
+      clearTimeout(id);
+      const remaining = previewEndAtRef.current - Date.now();
+      if (remaining <= 0) runPreviewFade();
+      else id = setTimeout(runPreviewFade, remaining);
+    });
     return () => {
       clearTimeout(id);
+      sub.remove();
+      previewEndAtRef.current = null;
+      // Bank the unused remainder: a preview that was paused or buffering must not
+      // burn the clock, so someone who heard little is never paywalled early.
       previewLeftRef.current = Math.max(0, previewLeftRef.current - (Date.now() - startedAt));
     };
   }, [isPreview, status.playing, runPreviewFade]);

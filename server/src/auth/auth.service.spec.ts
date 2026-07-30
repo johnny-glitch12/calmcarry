@@ -160,6 +160,32 @@ describe('AuthService account security', () => {
     );
   });
 
+  it('requesting a NEW code does not refill the attempt budget (unlimited-guessing hole)', async () => {
+    // /auth/password/forgot is unauthenticated and always returns ok, and issuing a
+    // code used to reset attempts to 0 - so burn 5 guesses, ask for a new code, and
+    // you had 5 more, forever, until a 6-digit code fell. The budget belongs to the
+    // window, not to the individual code.
+    const { svc, lastCode, waitForMail } = makeFixture();
+    await svc.register('mum@example.com', 'sleepy-nights-8', 'Ada');
+    await waitForMail(1);
+    await svc.requestPasswordReset('mum@example.com');
+    await waitForMail(2);
+
+    for (let i = 0; i < 5; i++) {
+      await expect(svc.resetPassword('mum@example.com', '999999', 'brute-force-1')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    }
+
+    // Re-issue: a fresh secret, but NOT a fresh allowance.
+    await svc.requestPasswordReset('mum@example.com');
+    await waitForMail(3);
+    const freshCode = lastCode();
+    await expect(svc.resetPassword('mum@example.com', freshCode, 'brute-force-1')).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
   it('email verification: the emailed code flips emailVerified', async () => {
     const { svc, owners, lastCode, waitForMail } = makeFixture();
     const r = await svc.register('mum@example.com', 'sleepy-nights-8', 'Ada');

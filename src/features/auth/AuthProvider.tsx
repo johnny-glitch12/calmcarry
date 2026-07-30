@@ -11,7 +11,7 @@ import {
 import { AppState, Platform } from 'react-native';
 
 import { track } from '@/lib/analytics';
-import { api, type ApiEntitlement, type ApiUser } from '@/lib/api';
+import { api, setTokenRefresher, type ApiEntitlement, type ApiUser } from '@/lib/api';
 import { clearAudioSourceCache } from '@/lib/audioSource';
 import { initIapListener } from '@/lib/iap';
 import { secureDelete, secureGet, secureSet } from '@/lib/secureStore';
@@ -94,6 +94,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [entitlement, setEntitlement] = useState<ApiEntitlement>(FREE);
   const [backendUp, setBackendUp] = useState(false);
 
+  /**
+   * Give the API layer a way to refresh an expired access token mid-session, so a
+   * warm app (the normal case for a nightly sleep app - resumed, not cold-started)
+   * recovers instead of silently 401ing on everything after 7 days. Single-flighted
+   * inside api.ts; returns null only when the session is genuinely dead.
+   */
+  useEffect(() => {
+    setTokenRefresher(async () => {
+      try {
+        const rt = await secureGet(KEYS.refresh);
+        if (!rt) return null;
+        const rotated = await api.refresh(rt);
+        setToken(rotated.token);
+        await secureSet(KEYS.token, rotated.token);
+        if (rotated.refreshToken) await secureSet(KEYS.refresh, rotated.refreshToken);
+        return rotated.token;
+      } catch (e) {
+        // Only a DEFINITIVE rejection means signed-out. A timeout/5xx/429 is
+        // transient: keep the session so a Railway blip or a rate-limited hotel IP
+        // can't log the user out and lose their local state.
+        const status = (e as { status?: number })?.status;
+        if (status === 401 || status === 403) {
+          setToken(null);
+          setUser(null);
+          setEntitlement(FREE);
+          setStatus('guest');
+          await Promise.all([
+            secureDelete(KEYS.token),
+            secureDelete(KEYS.refresh),
+            remove(KEYS.user, KEYS.entitlement, KEYS.devices),
+          ]);
+        }
+        return null;
+      }
+    });
+    return () => setTokenRefresher(null);
+  }, []);
+
   // restore a persisted session on launch; refresh from the backend if reachable
   useEffect(() => {
     let alive = true;
@@ -169,10 +207,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setBackendUp(true);
               setJSON(KEYS.user, me.user);
               setJSON(KEYS.entitlement, me.entitlement);
-            } catch {
-              // the refresh token is dead too - this is a real signed-out state,
-              // not offline; clear the session instead of faking "signed in"
+            } catch (re) {
               if (!alive) return;
+              // Only a DEFINITIVE rejection is a signed-out state. This used to clear
+              // the session on ANY failure, so a Railway 502, a request timeout, or a
+              // 429 from a shared office/hotel IP logged the user out - and could even
+              // discard the session the refresh had just issued, because the follow-up
+              // /me call shared this catch. Transient failures keep the cached session
+              // (the same rule the offline branch below already applies).
+              const rs = (re as { status?: number })?.status;
+              if (rs !== 401 && rs !== 403) return;
               setToken(null);
               setUser(null);
               setEntitlement(FREE);

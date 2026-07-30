@@ -1,3 +1,4 @@
+import { getAnalyticsOptOut } from './analytics';
 import { api } from './api';
 import { getJSON, KEYS, setJSON } from './store';
 
@@ -23,7 +24,13 @@ export async function logSession(
   } catch {
     /* ignore */
   }
-  if (token && token !== 'local') {
+  // The SERVER copy is account-linked (session_logs.ownerId, retained ~13 months), so
+  // it is usage analytics and must honour the same opt-out as track(). Without this
+  // the Settings toggle silenced track() while every play still uploaded an
+  // account-linked listening history - making the in-app "no profile is built about
+  // you" promise false. The LOCAL copy above always persists: it powers recents,
+  // program progress and calm nights, and never leaves the device.
+  if (token && token !== 'local' && !(await getAnalyticsOptOut())) {
     try {
       await api.log(token, entry);
     } catch {

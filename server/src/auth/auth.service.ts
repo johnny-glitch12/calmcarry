@@ -191,6 +191,16 @@ export class AuthService {
 
   private async issueCode(owner: Owner, purpose: AuthCodePurpose): Promise<void> {
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+    // CARRY the attempt budget across re-issues inside the current window. Issuing
+    // used to reset attempts to 0, and /auth/password/forgot is unauthenticated and
+    // always returns ok - so an attacker could burn the 5 guesses, request a new
+    // code, and get 5 more, indefinitely, until a 6-digit code fell. The budget now
+    // belongs to the WINDOW, not to the individual code, so re-issuing hands out a
+    // fresh secret without handing out a fresh allowance.
+    const existing = await this.codes.findOne({ where: { ownerId: owner.id, purpose } });
+    const stillLive = !!existing && new Date(existing.expiresAt).getTime() > Date.now();
+    const carriedAttempts = stillLive ? existing!.attempts : 0;
+
     await this.codes.delete({ ownerId: owner.id, purpose }); // one live code per purpose
     await this.codes.save(
       this.codes.create({
@@ -198,7 +208,7 @@ export class AuthService {
         purpose,
         codeHash: await bcrypt.hash(code, 8), // 10^6 space is guarded by attempts + TTL
         expiresAt: new Date(Date.now() + CODE_TTL_MS),
-        attempts: 0,
+        attempts: carriedAttempts,
       }),
     );
     const subject = purpose === 'reset' ? 'Your CalmCarry password reset code' : 'Verify your CalmCarry email';

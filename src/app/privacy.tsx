@@ -13,7 +13,7 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string
   {
     icon: 'eye-off',
     title: 'Anonymous by default',
-    body: 'We key the little we measure to a random per-install id, never your name, email, or account. No profile is built about you.',
+    body: 'App-usage measurements are keyed to a random per-install id, never your name or email. If you are signed in we also record which sessions you played, so your progress and recents follow your account. You can switch all of that off in Settings, and it is never used for ads or sold.',
   },
   {
     icon: 'slash',

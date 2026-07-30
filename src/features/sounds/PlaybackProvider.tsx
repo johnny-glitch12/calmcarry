@@ -151,6 +151,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const levelsRef = useRef(levels);
   const duckedRef = useRef(ducked);
   const userPausedRef = useRef(userPaused);
+  /** True when WE paused the mix for an OS interruption (call/Siri/alarm), so it can
+   *  be resumed on foreground. Never set by a deliberate user pause. */
+  const autoPausedRef = useRef(false);
   useEffect(() => {
     levelsRef.current = levels;
     duckedRef.current = ducked;
@@ -311,7 +314,17 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       if (!a) return;
       try {
         const p = playersRef.current.get(a);
-        if (p && (levelsRef.current[a] ?? 0) > 0 && !p.playing) fadeAndStop();
+        if (p && (levelsRef.current[a] ?? 0) > 0 && !p.playing) {
+          // The anchor stopped and it was NOT our doing. PAUSE, never destroy.
+          // With interruptionMode 'doNotMix' the OS pauses every player on ANY
+          // interruption - an incoming call, Siri, an alarm - which produces exactly
+          // this signal. Tearing the mix down here wiped the levels, the sleep
+          // timer and the persisted deadline, so a 30-second call silently ended
+          // the whole night. userPaused preserves all of it (and the deadline check
+          // above still fires), so the timer survives and the mix can resume.
+          autoPausedRef.current = true;
+          setUserPaused(true);
+        }
       } catch {
         /* released */
       }
@@ -326,9 +339,17 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return;
       const end = endAtRef.current;
-      if (end == null || Date.now() < end) return;
-      endAtRef.current = null;
-      fadeAndStop();
+      if (end != null && Date.now() >= end) {
+        endAtRef.current = null;
+        fadeAndStop();
+        return;
+      }
+      // Resume a mix that WE auto-paused for an OS interruption (call/Siri/alarm).
+      // Only ever clears our own auto-pause - a deliberate user pause is untouched.
+      if (autoPausedRef.current) {
+        autoPausedRef.current = false;
+        setUserPaused(false);
+      }
     });
     return () => sub.remove();
   }, [fadeAndStop]);

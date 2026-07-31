@@ -4,23 +4,36 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 /**
  * Rate-limit tracker keyed on the REAL client IP.
  *
- * main.ts sets `trust proxy` to 1, so Express resolves `req.ip` from the single
- * edge-proxy hop in front of the container (Railway today, and the same holds for
- * any one-hop PaaS). Express takes the rightmost X-Forwarded-For entry - the one
- * the edge itself appended - so a client-forged XFF cannot move the bucket.
+ * MEASURED against production (Railway) on 2026-07-31, because two previous
+ * "fixes" shipped on assumptions and left the limiter dead:
  *
- * HISTORY - do not "restore" the old behaviour. This guard used to PREFER a
- * `Fly-Client-IP` request header and only fall back to req.ip. A request header is
- * attacker-controlled on any host that does not overwrite it (Railway never sets
- * this one), so rotating it per request gave unlimited login attempts, unlimited
- * password-reset code guesses, and unlimited unauthenticated /events writes - the
- * per-IP throttle was effectively off, verified against production. If this app is
- * ever moved behind Fly, no change is needed: Fly sets X-Forwarded-For too, so
- * req.ip stays correct. Never key a rate-limit bucket on a raw request header.
+ *   GET /health  ->  xff: ["2.51.77.139", "152.233.13.165"]   (real client, then edge)
+ *                    x-real-ip: "2.51.77.139"                 (real client)
+ *                    req.ip:    "152.233.13.165"  with trust proxy = 1
+ *
+ * The socket peer is a further internal hop, so `trust proxy = 1` resolved req.ip to
+ * Railway's edge address - and that address ROTATES per request (5 distinct values
+ * across 8 calls). Every request therefore landed in its own bucket and NO limit
+ * could ever trigger: 25 consecutive failed logins returned zero 429s in production.
+ *
+ * Spoofing was tested, not assumed: a request carrying `X-Forwarded-For: 6.6.6.6`
+ * and `X-Real-IP: 6.6.6.6` arrived with BOTH rewritten by the edge (the forged value
+ * appeared in neither). So on this host these values are edge-controlled, unlike the
+ * old `Fly-Client-IP` branch - which Railway never set, leaving it fully
+ * client-controlled and the limiter trivially bypassable by rotating it.
+ *
+ * Order: x-real-ip (single, edge-set) -> req.ip (correct now that main.ts trusts the
+ * measured 2 hops) -> a shared bucket. If this ever moves to a host that does NOT
+ * overwrite x-real-ip, that assumption breaks - re-run the spoof test above.
  */
 @Injectable()
 export class ClientIpThrottlerGuard extends ThrottlerGuard {
   protected async getTracker(req: Record<string, unknown>): Promise<string> {
+    const headers = (req.headers ?? {}) as Record<string, string | string[] | undefined>;
+    const realIp = headers['x-real-ip'];
+    const fromHeader = Array.isArray(realIp) ? realIp[0] : realIp;
+    if (typeof fromHeader === 'string' && fromHeader.length > 0) return fromHeader.trim();
+
     const ip = req.ip;
     return typeof ip === 'string' && ip.length > 0 ? ip : 'unknown';
   }

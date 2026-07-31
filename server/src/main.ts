@@ -53,7 +53,14 @@ async function bootstrap() {
   // this being correct - without it every request shares the proxy's IP and the
   // per-IP credential throttle never engages. Trusting exactly 1 (not `true`)
   // keeps a client-sent X-Forwarded-For header un-spoofable.
-  app.set('trust proxy', 1);
+  // TWO hops, measured on Railway 2026-07-31: the socket peer is an internal hop and
+  // X-Forwarded-For arrives as [realClient, edge]. With 1 this resolved req.ip to the
+  // edge address, which ROTATES per request (5 distinct values in 8 calls) - so every
+  // request got its own rate-limit bucket and 25 failed logins produced zero 429s in
+  // production. Trusting both hops walks back to the real client. Verified
+  // un-forgeable: a client-supplied X-Forwarded-For is rewritten by the edge before
+  // it reaches us (see client-ip-throttler.guard.ts for the exact probe).
+  app.set('trust proxy', 2);
 
   // Security headers (clickjacking, MIME-sniffing, etc.)
   app.use(helmet());

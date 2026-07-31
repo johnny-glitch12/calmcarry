@@ -168,11 +168,27 @@ describe('COPPA invariant: no child data leaves the device', () => {
 
   it('kid profiles are never sent to the server (create + rename are adult-only)', () => {
     const provider = join(srcDir, 'features', 'profile', 'ProfileProvider.tsx');
-    const body = execSync(`cat "${provider}"`, { encoding: 'utf8' });
-    // createProfile must be gated on an adult type
-    expect(body).toMatch(/type === 'adult'.*api\.createProfile|api\.createProfile[\s\S]{0,200}?type === 'adult'/);
-    // updateProfile must be gated on the profile not being a kid
-    expect(body).toMatch(/isKid[\s\S]{0,120}?api\.updateProfile|!isKid/);
+    // Comments stripped first: a long explanatory comment between the guard and the
+    // call must not push them out of range and fail a correct implementation, and a
+    // guard MENTIONED in prose must not satisfy the check either.
+    const code = execSync(`cat "${provider}"`, { encoding: 'utf8' })
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/\/\/.*$/gm, '');
+
+    // Each server call must sit within a few lines of its kids guard.
+    const lines = code.split('\n');
+    const nearGuard = (needle: RegExp, guard: RegExp) => {
+      const i = lines.findIndex((l) => needle.test(l));
+      expect(i).toBeGreaterThanOrEqual(0); // the call must still exist to be guarded
+      return guard.test(lines.slice(Math.max(0, i - 10), i + 2).join('\n'));
+    };
+
+    // Match on the METHOD, not `api.method`: the call is chained across lines
+    // (`api` then `.createProfile(...)`), so requiring both on one line finds nothing
+    // and the check would silently pass on an empty search instead of failing.
+    expect(nearGuard(/\.createProfile\s*\(/, /type === 'adult'/)).toBe(true);
+    expect(nearGuard(/\.updateProfile\s*\(/, /!isKid\b/)).toBe(true);
   });
 
   it('no advertising / attribution / third-party analytics SDK is installed', () => {

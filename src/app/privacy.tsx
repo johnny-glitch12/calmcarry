@@ -28,7 +28,15 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string
   {
     icon: 'shield',
     title: 'Kids are never tracked',
-    body: 'In a child profile there is zero analytics, zero ads, and zero social. A parent gate guards every adult area, and consent comes first.',
+    body: 'A child profile records zero analytics, sends zero crash reports, shows zero ads, and has nothing social. The first name you type for your child stays on this phone: we never upload it, so we cannot see it. A parent gate guards every adult area.',
+  },
+  {
+    // 16 CFR 312.10 requires the retention policy to be PUBLISHED, stating the
+    // purpose, the business need and the deletion timeframe. The screen previously
+    // disclosed no retention period at all.
+    icon: 'clock',
+    title: 'How long we keep things',
+    body: 'Records of which sessions you played, and anonymous app-usage events, are deleted automatically after 400 days. We keep them that long so month-to-month and seasonal patterns stay meaningful, and no longer. Your account details are kept while your account exists and are erased when you delete it, apart from billing records that tax law requires us to retain.',
   },
   {
     icon: 'download',

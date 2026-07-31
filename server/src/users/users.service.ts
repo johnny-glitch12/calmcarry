@@ -63,6 +63,19 @@ export class UsersService {
     await this.ownerRepo.update({ id: ownerId }, { passwordHash });
   }
 
+  /**
+   * End every existing session for this account by advancing its token generation.
+   * JwtAuthGuard rejects any access token whose `tv` no longer matches, so this
+   * invalidates tokens that are already in circulation - deleting refresh tokens
+   * alone left a stolen access token working for the rest of its 7-day life.
+   * Returns the new value so the caller can mint a replacement pair that survives.
+   */
+  async bumpTokenVersion(ownerId: string): Promise<number> {
+    await this.ownerRepo.increment({ id: ownerId }, 'tokenVersion', 1);
+    const owner = await this.ownerRepo.findOne({ where: { id: ownerId } });
+    return owner?.tokenVersion ?? 0;
+  }
+
   /** Mark the account's email as verified (soft gate). */
   async setEmailVerified(ownerId: string): Promise<void> {
     await this.ownerRepo.update({ id: ownerId }, { emailVerified: true });

@@ -16,9 +16,13 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string
     body: 'App-usage measurements are keyed to a random per-install id, never your name or email. If you are signed in we also record which sessions you played, so your progress and recents follow your account. You can switch all of that off in Settings, and it is never used for ads or sold.',
   },
   {
+    // "We never sell or share your data" was unqualified while a third-party crash
+    // reporting SDK is compiled into the binary and hosting/database providers
+    // necessarily process the data. Selling and ad-sharing are genuinely absent;
+    // service providers are not, and a blanket "never share" reads as covering them.
     icon: 'slash',
     title: 'No trackers, no ads',
-    body: 'There are no third-party advertising or tracking SDKs in CalmCarry. We never sell or share your data. And there’s no “ask app not to track” prompt, because we don’t track you across other apps.',
+    body: 'There are no advertising or cross-app tracking SDKs in CalmCarry, and we never sell your data or share it for advertising. We do use a small number of service providers to run the app, such as hosting and error reporting, and they may only process data on our instructions. There’s no “ask app not to track” prompt because we don’t track you across other apps.',
   },
   {
     icon: 'moon',
@@ -36,12 +40,20 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; title: string; body: string
     // disclosed no retention period at all.
     icon: 'clock',
     title: 'How long we keep things',
-    body: 'Records of which sessions you played, and anonymous app-usage events, are deleted automatically after 400 days. We keep them that long so month-to-month and seasonal patterns stay meaningful, and no longer. Your account details are kept while your account exists and are erased when you delete it, apart from billing records that tax law requires us to retain.',
+    // The "apart from billing records tax law requires" carve-out was removed: there
+    // is no invoice, receipt or ledger table in this server at all, and entitlements
+    // are deleted outright on account deletion. Promising to keep something we do
+    // not keep is as inaccurate as promising to delete something we do not delete.
+    // Apple and Google hold the purchase records, under their own policies.
+    body: 'Records of which sessions you played, and anonymous app-usage events, are deleted automatically after 400 days. We keep them that long so month-to-month and seasonal patterns stay meaningful, and no longer. Your account details are kept while your account exists, and are erased when you delete it. Purchases are recorded by Apple or Google, not by us, and are kept under their own policies.',
   },
   {
     icon: 'download',
+    // Was "export everything ... as a file". The export hands the data to the share
+    // sheet as text; no file is written, and the app has no file-writing library.
+    // Describe what actually happens.
+    body: 'Ask for a copy of everything tied to your account and we’ll hand it straight to you, ready to save or send wherever you like. Or delete your account and its data permanently. Both live in Settings, in a tap, once you’re signed in.',
     title: 'Your data, on request',
-    body: 'Export everything tied to your account as a file, or delete your account and data permanently. Both live in Settings, anytime, in a tap.',
   },
 ];
 

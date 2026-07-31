@@ -53,6 +53,105 @@ describe('COPPA invariant: no child data leaves the device', () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * EVERY screen a child can REACH must gate its network calls on kids mode - not
+   * just the ones living in the kids/ folder.
+   *
+   * This scope hole shipped a false privacy claim. The original test scanned only
+   * features/kids/, but KID_ALLOWED lets a child reach /player, whose screen lives
+   * in features/player/ - and it called resolveAudioSource unguarded, sending the
+   * parent's token plus the exact track a child chose to the server on every play.
+   * The folder was clean; the promise was still false.
+   */
+  it('every kid-reachable screen gates its API calls on kids mode', () => {
+    const layout = execSync(`cat "${join(srcDir, 'app', '_layout.tsx')}"`, { encoding: 'utf8' });
+    const allowed = /const KID_ALLOWED = \[([^\]]+)\]/.exec(layout)?.[1] ?? '';
+    const routes = [...allowed.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    expect(routes.length).toBeGreaterThan(0); // the list must still be findable
+
+    // Map each reachable route to the screen file(s) that implement it.
+    const routeFiles: Record<string, string[]> = {
+      '/player': ['features/player/Player.tsx'],
+      '/listen': ['features/listen/ListenScreen.tsx'],
+      '/sounds': ['features/sounds/SoundsLibrary.tsx'],
+      '/parent-gate': ['features/parentgate/ParentGate.tsx'],
+      '/': ['features/tonight/TonightScreen.tsx', 'features/kids/KidsHome.tsx'],
+    };
+
+    /**
+     * DOCUMENTED EXCEPTION, not a silent exclusion.
+     *
+     * ParentGate calls api.login in the "Forgot PIN?" recovery flow: a PARENT
+     * deliberately proves who they are with their own account password before the
+     * PIN is reset. It transmits the parent's own credentials and nothing whatsoever
+     * about the child, and it only happens on an explicit adult action.
+     *
+     * It is listed here rather than excluded by loosening the rule, so that adding a
+     * SECOND call to this screen still fails the test. If the published wording ever
+     * hardens to "no network request of any kind occurs while a child profile is
+     * active", this exception makes that sentence false and must be revisited.
+     */
+    const DOCUMENTED_EXCEPTIONS: Record<string, string> = {
+      'features/parentgate/ParentGate.tsx':
+        'api.login - parent-initiated identity check for Forgot PIN; sends no child data',
+    };
+
+    for (const route of routes) {
+      for (const rel of routeFiles[route] ?? []) {
+        const file = join(srcDir, rel);
+        let body: string;
+        try {
+          body = execSync(`cat "${file}"`, { encoding: 'utf8' });
+        } catch {
+          continue; // screen moved or renamed; the route map below will flag it
+        }
+        const stripped = body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        // Any outbound call in a kid-reachable screen must be accompanied by a
+        // kids-mode check somewhere in that file.
+        const lines = stripped.split('\n');
+        const callLines = lines
+          .map((l, i) => [i, l] as [number, string])
+          .filter(([, l]) => /\bapi\.[a-zA-Z]+|\bresolveAudioSource\s*\(|\bfetch\s*\(/.test(l));
+        if (!callLines.length) continue;
+
+        if (DOCUMENTED_EXCEPTIONS[rel]) {
+          // Exactly ONE known call is tolerated here. A second one is a new decision
+          // and must fail until it is reviewed and documented above.
+          expect({ rel, calls: callLines.length }).toEqual({ rel, calls: 1 });
+          continue;
+        }
+
+        // EACH call must have a kids gate NEAR IT. Checking only that the file
+        // contains a gate somewhere is not enough, and that weakness is exactly what
+        // let the leak ship: Player.tsx already gated its session logging, so a
+        // file-wide search found a gate while the audio request 45 lines above stayed
+        // wide open. Proximity is the difference between a test and a decoration.
+        // The guard forms actually used in this codebase. `kids` is the local boolean
+        // `const kids = mode === 'kids'` (ListenScreen), which is a real gate even
+        // though it does not spell out the comparison at the call site.
+        const GATE = /mode\s*!==\s*'kids'|mode\s*===\s*'kids'|\bisKid\b|\bwasKid\b|\bkids\b/;
+        for (const [idx, line] of callLines) {
+          const near = lines.slice(Math.max(0, idx - 12), idx + 2).join('\n');
+          expect({ rel, call: line.trim().slice(0, 60), gatedNearby: GATE.test(near) }).toEqual({
+            rel,
+            call: line.trim().slice(0, 60),
+            gatedNearby: true,
+          });
+        }
+      }
+    }
+  });
+
+  it('deleting a kid profile does not call the server (create/rename/DELETE all gated)', () => {
+    const provider = execSync(`cat "${join(srcDir, 'features', 'profile', 'ProfileProvider.tsx')}"`, {
+      encoding: 'utf8',
+    });
+    // A kid id is minted locally as p-kids-<ts>, so an ungated DELETE told the
+    // server a child profile existed AND raised a 500 that logged that id.
+    const stripped = provider.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(stripped).toMatch(/!wasKid[\s\S]{0,80}?api\.deleteProfile|api\.deleteProfile[\s\S]{0,80}?!wasKid/);
+  });
+
   it('every logSession call site is gated on the profile NOT being a kid', () => {
     // A child playing a track must not POST an account-linked listening record.
     const sites = codeOnly(grep("logSession\\(", srcDir)).filter((l) => !l.includes('lib/sessions.ts'));

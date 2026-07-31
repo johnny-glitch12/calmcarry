@@ -7,6 +7,7 @@ import {
   CaregiverInvite,
   CaregiverLink,
   CommunityPost,
+  CommunityReport,
   Device,
   Entitlement,
   Owner,
@@ -41,6 +42,12 @@ export class UsersService {
       if (deviceIds.length) await m.delete(WarrantyClaim, { deviceId: In(deviceIds) });
       if (profileIds.length) await m.delete(SavedMix, { profileId: In(profileIds) });
       await m.delete(CommunityPost, { ownerId });
+      // Reports carry the REPORTER's account id. Without this they outlived the
+      // account that made them - a permanent record of one person's moderation
+      // activity, after they asked to be erased - which makes the app's own
+      // "your data is erased" promise false. (Added with the reports table itself;
+      // the table was new, this deletion was not written at the same time.)
+      await m.delete(CommunityReport, { ownerId });
       await m.delete(SessionLog, { ownerId });
       await m.delete(PushToken, { ownerId });
       await m.delete(AuthCode, { ownerId });
@@ -122,14 +129,21 @@ export class UsersService {
     const profileRepo = this.dataSource.getRepository(Profile);
     const profiles = await profileRepo.find({ where: { ownerId } });
     const profileIds = profiles.map((p) => p.id);
-    const [devices, entitlements, savedMixes, sessionLogs] = await Promise.all([
+    const [devices, entitlements, savedMixes, sessionLogs, communityPosts, pushTokens] = await Promise.all([
       this.dataSource.getRepository(Device).find({ where: { ownerId } }),
       this.entitlementRepo.find({ where: { ownerId } }),
       profileIds.length
         ? this.dataSource.getRepository(SavedMix).find({ where: { profileId: In(profileIds) } })
         : Promise.resolve([]),
       this.dataSource.getRepository(SessionLog).find({ where: { ownerId } }),
+      this.dataSource.getRepository(CommunityPost).find({ where: { ownerId } }),
+      this.dataSource.getRepository(PushToken).find({ where: { ownerId } }),
     ]);
+    // Warranty claims hang off the DEVICE, not the owner, so they need the device ids.
+    const deviceIds = devices.map((d) => d.id);
+    const warrantyClaims = deviceIds.length
+      ? await this.dataSource.getRepository(WarrantyClaim).find({ where: { deviceId: In(deviceIds) } })
+      : [];
     return {
       exportedAt: new Date().toISOString(),
       account: { id: owner.id, email: owner.email, name: owner.name, createdAt: owner.createdAt },
@@ -139,6 +153,14 @@ export class UsersService {
       entitlements,
       savedMixes,
       sessionLogs,
+      // These three are account-linked and were MISSING, while the in-app screen
+      // promises "export everything tied to your account" - an incomplete access
+      // response and an inaccurate published claim at the same time. Community posts
+      // in particular carry ownerId, so they are the user's data even though they
+      // appear publicly under a generic handle.
+      communityPosts,
+      pushTokens,
+      warrantyClaims,
     };
   }
 

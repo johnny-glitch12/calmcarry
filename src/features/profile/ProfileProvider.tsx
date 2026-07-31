@@ -407,6 +407,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // time). Refuses to remove the last adult / the only profile; switches away if
   // the removed one was active.
   const removeProfile = useCallback((id: string) => {
+    // Captured from the ref BEFORE the state update below removes it from the list.
+    const wasKid = profilesRef.current.find((p) => p.id === id)?.type === 'kids';
     setProfiles((prev) => {
       const target = prev.find((p) => p.id === id);
       if (!target || prev.length <= 1) return prev;
@@ -416,8 +418,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setActiveId((cur) => (cur === id ? (next.find((p) => p.type === 'adult') ?? next[0]).id : cur));
       return next;
     });
+    // Kid deletes stay device-local too, like create and rename. This was the one
+    // ungated path: a kid id is minted locally as `p-kids-<timestamp>`, so
+    // DELETE /profiles/p-kids-1785... told the server that a child profile existed
+    // and the millisecond it was created. Worse, profiles.id is a uuid column, so
+    // that id shape raised a database error, producing a 500 that the exception
+    // filter writes to host logs (and Sentry) WITH the path - landing a
+    // child-flagged identifier in durable logs. And this is the exact action the
+    // children's notice tells a parent to perform. A kid profile has no server
+    // record anyway, so skipping the call costs nothing.
+    // Read the type BEFORE the state update above removes it from the list.
     const t = tokenRef.current;
-    if (t && t !== 'local') api.deleteProfile(t, id).catch(() => {});
+    if (t && t !== 'local' && !wasKid) api.deleteProfile(t, id).catch(() => {});
   }, []);
 
   const setIntent = useCallback((i: Intent) => {

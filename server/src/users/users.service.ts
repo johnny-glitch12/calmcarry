@@ -7,6 +7,7 @@ import {
   CaregiverInvite,
   CaregiverLink,
   CommunityPost,
+  CommunityReport,
   Device,
   Entitlement,
   Owner,
@@ -41,6 +42,12 @@ export class UsersService {
       if (deviceIds.length) await m.delete(WarrantyClaim, { deviceId: In(deviceIds) });
       if (profileIds.length) await m.delete(SavedMix, { profileId: In(profileIds) });
       await m.delete(CommunityPost, { ownerId });
+      // Reports carry the REPORTER's account id. Without this they outlived the
+      // account that made them - a permanent record of one person's moderation
+      // activity, after they asked to be erased - which makes the app's own
+      // "your data is erased" promise false. (Added with the reports table itself;
+      // the table was new, this deletion was not written at the same time.)
+      await m.delete(CommunityReport, { ownerId });
       await m.delete(SessionLog, { ownerId });
       await m.delete(PushToken, { ownerId });
       await m.delete(AuthCode, { ownerId });

@@ -138,7 +138,11 @@ We keep personal information only as long as we need it.
   automatically by a daily job. We keep them that long so month-to-month and seasonal
   patterns remain meaningful, and no longer than that.
 - **Account information:** kept while your account exists, and erased when you delete
-  it, apart from billing and tax records we are legally required to retain.
+  it.
+- **Purchases:** recorded by Apple or Google, not by us, and kept under their own
+  policies. This server holds no invoice, receipt or payment ledger of its own.
+  [COUNSEL: if a billing-record retention duty applies to the operator, say where
+  those records actually live, because they are not in this system.]
 - **A child's first name:** never sent to us, so never retained by us. It is removed
   from the device when the profile or the app is deleted.
 
@@ -151,8 +155,10 @@ We keep personal information only as long as we need it.
 ## Your rights
 
 Wherever you live, you can:
-- **Export your data.** Settings, then "Export my data" produces a file of what is
-  tied to your account.
+- **Get a copy of your data.** Settings, then "Export my data" hands you everything
+  tied to your account, ready to save or send on. (It is delivered through the share
+  sheet as text today, not written as a file. A file download is a planned
+  improvement; the wording here describes what the app actually does.)
 - **Delete your account and data.** Settings, then "Delete account". This is permanent
   and immediate. Note it does not cancel a subscription: cancel that in your Apple or
   Google account settings.

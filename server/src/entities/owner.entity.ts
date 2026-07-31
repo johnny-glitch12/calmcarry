@@ -33,6 +33,19 @@ export class Owner {
   @Column({ type: 'text', nullable: true })
   appleRefreshToken: string | null;
 
+  /**
+   * Bumped whenever every existing session must stop working: a password change or a
+   * password reset. The value is baked into each access token as `tv`, and
+   * JwtAuthGuard rejects any token whose `tv` no longer matches.
+   *
+   * Without this, changing a password revoked only REFRESH tokens, so an
+   * already-issued access token kept full access for the remainder of its 7-day life
+   * - including data export and account deletion. That is precisely backwards for
+   * the case the feature exists to serve: "someone else is in my account".
+   */
+  @Column({ type: 'int', default: 0 })
+  tokenVersion: number;
+
   // Cross-device preference sync (allow-listed keys only, enforced in UsersService).
   // NEVER holds mood/feeling - the nightly check-in must not become a stored mood
   // log anywhere, server included (build plan §3/§14).

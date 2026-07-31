@@ -136,6 +136,9 @@ export class AuthService {
     await this.consumeCode(owner.id, 'reset', code);
     await this.usersService.setPassword(owner.id, await bcrypt.hash(newPassword, 10));
     await this.refreshTokens.delete({ ownerId: owner.id });
+    // Kill already-issued ACCESS tokens too: deleting refresh tokens alone left a
+    // stolen access token usable for the rest of its 7-day life.
+    owner.tokenVersion = await this.usersService.bumpTokenVersion(owner.id);
     return this.buildAuthResult(owner);
   }
 
@@ -148,6 +151,9 @@ export class AuthService {
     if (!owner || !ok) throw new UnauthorizedException('Invalid credentials');
     await this.usersService.setPassword(owner.id, await bcrypt.hash(newPassword, 10));
     await this.refreshTokens.delete({ ownerId: owner.id });
+    // Same as reset: end EVERY existing session, access tokens included. This is the
+    // whole point of the feature when someone else has your password.
+    owner.tokenVersion = await this.usersService.bumpTokenVersion(owner.id);
     return this.buildAuthResult(owner);
   }
 
@@ -240,6 +246,8 @@ export class AuthService {
       sub: owner.id,
       email: owner.email,
       name: owner.name,
+      // session generation - JwtAuthGuard rejects the token once this moves
+      tv: owner.tokenVersion ?? 0,
     };
 
     const token = await this.jwtService.signAsync(payload, {

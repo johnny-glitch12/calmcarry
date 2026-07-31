@@ -53,6 +53,7 @@ function makeFixture() {
         name,
         passwordHash,
         emailVerified: false,
+        tokenVersion: 0,
       } as Owner;
       owners.set(owner.id, owner);
       return owner;
@@ -65,6 +66,14 @@ function makeFixture() {
     setEmailVerified: async (id: string) => {
       const o = owners.get(id);
       if (o) o.emailVerified = true;
+    },
+    // Session-generation counter: a password change/reset must invalidate access
+    // tokens that are already in circulation, not just refresh tokens.
+    bumpTokenVersion: async (id: string) => {
+      const o = owners.get(id);
+      if (!o) return 0;
+      o.tokenVersion = (o.tokenVersion ?? 0) + 1;
+      return o.tokenVersion;
     },
   };
   const sent: { to: string; subject: string; text: string }[] = [];
@@ -230,5 +239,45 @@ describe('AuthService account security', () => {
     await expect(svc.logout(r.refreshToken)).resolves.toEqual({ ok: true });
     await expect(svc.refresh(r.refreshToken)).rejects.toThrow(UnauthorizedException);
     await expect(svc.logout(r.refreshToken)).resolves.toEqual({ ok: true });
+  });
+});
+
+/**
+ * A password change/reset must end sessions that ALREADY EXIST, not just prevent new
+ * ones. Deleting refresh tokens alone left an access token in an attacker's hands
+ * working for the rest of its 7-day life - including data export and account
+ * deletion - which is exactly backwards for the case the feature serves.
+ * owners.tokenVersion is the kill switch; JwtAuthGuard rejects a stale `tv`.
+ */
+describe('AuthService session invalidation', () => {
+  it('changing the password advances the token generation', async () => {
+    const { svc, owners } = makeFixture();
+    await svc.register('mum@example.com', 'old-password-1', 'Ada');
+    const owner = [...owners.values()][0];
+    expect(owner.tokenVersion).toBe(0);
+
+    await svc.changePassword(owner.id, 'old-password-1', 'new-password-1');
+    expect(owner.tokenVersion).toBe(1); // every previously-issued access token is now stale
+  });
+
+  it('resetting the password advances the token generation', async () => {
+    const { svc, owners, lastCode, waitForMail } = makeFixture();
+    await svc.register('mum@example.com', 'old-password-1', 'Ada');
+    await waitForMail(1);
+    const owner = [...owners.values()][0];
+
+    await svc.requestPasswordReset('mum@example.com');
+    await waitForMail(2);
+    await svc.resetPassword('mum@example.com', lastCode(), 'new-password-1');
+    expect(owner.tokenVersion).toBe(1);
+  });
+
+  it('an ordinary login does NOT advance it (signing in elsewhere must not sign you out)', async () => {
+    const { svc, owners } = makeFixture();
+    await svc.register('mum@example.com', 'sleepy-nights-8', 'Ada');
+    const owner = [...owners.values()][0];
+    await svc.login('mum@example.com', 'sleepy-nights-8');
+    await svc.login('mum@example.com', 'sleepy-nights-8');
+    expect(owner.tokenVersion).toBe(0);
   });
 });

@@ -364,7 +364,29 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     // it minimizes child PII on the backend and keeps the "kids are never tracked"
     // promise literal. Only adult profiles sync across the household.
     const t = tokenRef.current;
-    if (t && t !== 'local' && type === 'adult') api.createProfile(t, { name: profile.name, type }).catch(() => {});
+    if (t && t !== 'local' && type === 'adult') {
+      // ADOPT THE SERVER'S ID. profiles.id is a uuid column, but the id above is
+      // minted locally as `p-adult-<timestamp>`. Without swapping it in, every later
+      // PATCH/DELETE sent that shape to a uuid column, which Postgres rejects with a
+      // type error - so renaming or removing a profile returned a 500 (logged, and
+      // reported to Sentry) and silently did nothing, while dev SQLite hid it by
+      // accepting any string. Falls back to the local id if the response is not the
+      // shape we expect, so an offline or odd reply cannot corrupt the household.
+      api
+        .createProfile(t, { name: profile.name, type })
+        .then((created) => {
+          const serverId = (created as { id?: unknown } | null)?.id;
+          if (typeof serverId !== 'string' || !serverId || serverId === profile.id) return;
+          setProfiles((prev) => {
+            const next = prev.map((p) => (p.id === profile.id ? { ...p, id: serverId } : p));
+            setJSON(KEYS.profiles, next);
+            return next;
+          });
+          // keep the active selection pointing at the same person after the swap
+          setActiveId((cur) => (cur === profile.id ? serverId : cur));
+        })
+        .catch(() => {});
+    }
     return profile;
   }, []);
 

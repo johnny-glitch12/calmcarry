@@ -171,15 +171,24 @@ export function Player() {
       // bundled fallback (§11). The effect runs once per player (i.e. once per track),
       // and resolveAudioSource caches per track id - so a track resolves exactly once
       // and the swap always happens before playback begins, never mid-night (§12).
-      try {
-        const src = await resolveAudioSource(track, token);
-        if (!cancelled && src && src !== audioSources[track.audio]) {
-          player.replace(src);
-          player.loop = loops;
-          player.volume = 1;
+      // COPPA: a child profile must never cause a request. resolveAudioSource asks
+      // the server for a signed URL, carrying the parent's token plus the exact
+      // track id - so the server would learn, in real time, which title a child
+      // chose and when, tied to the account. Nothing is stored, but the promise we
+      // publish is about not RECEIVING it. Kids play the bundled asset that already
+      // ships in the binary (the same fallback used offline), so playback is
+      // unchanged and the claim becomes true.
+      if (mode !== 'kids') {
+        try {
+          const src = await resolveAudioSource(track, token);
+          if (!cancelled && src && src !== audioSources[track.audio]) {
+            player.replace(src);
+            player.loop = loops;
+            player.volume = 1;
+          }
+        } catch {
+          /* stay on the bundled asset */
         }
-      } catch {
-        /* stay on the bundled asset */
       }
       const auto = await getJSON('cc.autoplay', true);
       if (!cancelled && auto) player.play();

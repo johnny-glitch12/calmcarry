@@ -44,8 +44,8 @@
         "ascApiKeyPath": "./secrets/asc-api-key.p8",
         "ascApiKeyId": "REPLACE_ASC_API_KEY_ID",
         "ascApiKeyIssuerId": "REPLACE_ASC_API_KEY_ISSUER_ID",
-        "ascAppId": "REPLACE_NUMERIC_APP_STORE_APP_ID",
-        "appleTeamId": "REPLACE_APPLE_TEAM_ID"
+        "ascAppId": "6796861173",
+        "appleTeamId": "NTTDKF8D29"
       },
       "android": {
         "serviceAccountKeyPath": "./secrets/play-service-account.json",

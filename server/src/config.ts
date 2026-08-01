@@ -25,9 +25,12 @@ export const config = {
   apple: {
     bundleId: process.env.APPLE_BUNDLE_ID ?? 'co.theglowcompany.calmcarry',
     signInClientId: process.env.APPLE_SIGNIN_CLIENT_ID ?? '', // PLACEHOLDER
-    iapSharedSecret: process.env.APPLE_IAP_SHARED_SECRET ?? '', // PLACEHOLDER
-    verifyUrl: 'https://buy.itunes.apple.com/verifyReceipt',
-    verifyUrlSandbox: 'https://sandbox.itunes.apple.com/verifyReceipt',
+    // NO SHARED SECRET, and no /verifyReceipt. Purchases are validated with the
+    // App Store Server API: the StoreKit 2 JWS is verified cryptographically against
+    // the Apple Root CA certs in APPLE_ROOT_CERTS_DIR (see receipt-validation.service).
+    // The shared secret and the legacy /verifyReceipt endpoint it belongs to were
+    // declared here but read by nothing - removed so nobody generates and stores a
+    // credential this app has no use for.
     // App Store Server Notifications V2 verification (webhooks):
     appAppleId: parseInt(process.env.APPLE_APP_APPLE_ID ?? '0', 10), // numeric app id (prod online checks)
     rootCertsDir: process.env.APPLE_ROOT_CERTS_DIR ?? '', // dir of Apple Root CA .cer/.pem files

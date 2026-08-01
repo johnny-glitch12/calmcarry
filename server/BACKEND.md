@@ -34,7 +34,7 @@ Each runs in **DEV-FALLBACK** until its keys are set; the startup log prints whi
 
 | Integration | Keys to set | Dev-fallback behaviour |
 |---|---|---|
-| Apple IAP receipt | `APPLE_IAP_SHARED_SECRET` | grants a dev subscription so the purchase flow works |
+| Apple IAP receipt | `APPLE_ROOT_CERTS_DIR` | StoreKit 2 JWS verified against the Apple Root CA certs (no shared secret; /verifyReceipt is not used) |
 | Google Play billing | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | guarded - wire the Play Developer API client |
 | Apple/Google Sign-in | `APPLE_SIGNIN_CLIENT_ID` / `GOOGLE_SIGNIN_CLIENT_ID` | verifies the identity token against the provider JWKS (RS256 sig + issuer + audience); fails closed if unset |
 | Shopify ownership | `SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_BUNDLE_PRODUCT_IDS`, `SHOPIFY_WEBHOOK_SECRET` | recognizes theglowcompany.co emails as owners |

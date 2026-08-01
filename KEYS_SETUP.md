@@ -35,7 +35,7 @@ owner" badge) - premium works fine without Shopify.
 | `DATABASE_URL` | Real Postgres for prod |
 | `CORS_ORIGINS` | Lock API to your web origins |
 | IAP products in App Store Connect + Play Console | The subscriptions + their prices (`calmcarry.premium.monthly` / `.annual`) |
-| `APPLE_IAP_SHARED_SECRET` / `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Server-side **receipt validation** (anti-fraud) |
+| `APPLE_ROOT_CERTS_DIR` / `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Server-side **receipt validation** (anti-fraud) |
 | App Store Server Notifications + Play RTDN webhooks | Remove premium on **cancel / refund / lapse** - verification (Apple JWS + Google Pub/Sub OIDC) is implemented; just configure the endpoints + env vars (§4–5) |
 
 ### 🟡 Nice-to-have / can cut for v1
@@ -75,8 +75,11 @@ Any third-party payment processor / Stripe / merchant-bank key.
 - **`APPLE_BUNDLE_ID`** (`co.theglowcompany.calmcarry`): Identifiers → **+** → App ID → enable
   **Sign in with Apple** + **Push Notifications**.
 - **`APPLE_SIGNIN_CLIENT_ID`**: for a native iOS app this is just the **bundle ID** (the token's `aud`).
-- **`APPLE_IAP_SHARED_SECRET`**: App Store Connect → your app → **App Information →
-  App-Specific Shared Secret** → Manage/Generate → copy. *(Verifies receipts.)*
+- **No shared secret is needed.** Do NOT generate one. Receipts are validated with the
+  **App Store Server API**: the StoreKit 2 JWS is verified cryptographically against the
+  Apple Root CA certs in `APPLE_ROOT_CERTS_DIR` (already shipped at `/app/certs/apple`).
+  The App-Specific Shared Secret belongs to the deprecated `/verifyReceipt` endpoint,
+  which this server does not call. Generating one just creates a credential to guard.
 - **IAP products**: App Store Connect → **Monetization → Subscriptions** → create a group →
   add auto-renewing subs `calmcarry.premium.monthly` + `calmcarry.premium.annual`
   (must match `PREMIUM_PRODUCT_IDS` + `iap.native.ts`).

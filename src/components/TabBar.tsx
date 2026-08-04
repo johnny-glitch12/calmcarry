@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TRACKS } from '@/content/library';
 import { useProfile } from '@/features/profile/ProfileProvider';
+import { COMMUNITY_ENABLED } from '@/lib/flags';
 import { usePlayback } from '@/features/sounds/PlaybackProvider';
 import { setTourTarget } from '@/lib/tourTargets';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
@@ -53,7 +54,9 @@ const TABS: Record<string, { label: string; night?: boolean }> = {
   // the Listen screen forces night mode (<Screen mode="night">); the bar must
   // match so the strip never sits bright against a dark sleep screen at 3am.
   listen: { label: 'Listen', night: true },
-  community: { label: 'Community' },
+  // Community is gated for v1 - see lib/flags.ts (App Store 1.2 needs user blocking,
+  // which does not exist yet). Spread so the tab simply is not in the bar at all.
+  ...(COMMUNITY_ENABLED ? { community: { label: 'Community' } } : {}),
   you: { label: 'Profile' },
 };
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { TabBar } from '@/components';
+import { COMMUNITY_ENABLED } from '@/lib/flags';
 import { PlaybackProvider } from '@/features/sounds/PlaybackProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { HandsOnTour } from '@/features/tour/HandsOnTour';
@@ -72,7 +73,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="sounds" options={{ title: 'Library' }} />
       <Tabs.Screen name="listen" options={{ title: 'Listen' }} />
-      <Tabs.Screen name="community" options={{ title: 'Community' }} />
+      {/* v1: hidden. The screen stays registered but unreachable, so a deep link
+          cannot open a UGC surface we cannot moderate to App Store 1.2. */}
+      <Tabs.Screen name="community" options={{ title: 'Community', href: COMMUNITY_ENABLED ? undefined : null }} />
       <Tabs.Screen name="you" options={{ title: 'Profile' }} />
     </Tabs>
     <TourGate />

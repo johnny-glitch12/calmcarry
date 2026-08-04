@@ -41,9 +41,6 @@
   "submit": {
     "production": {
       "ios": {
-        "ascApiKeyPath": "./secrets/asc-api-key.p8",
-        "ascApiKeyId": "REPLACE_ASC_API_KEY_ID",
-        "ascApiKeyIssuerId": "REPLACE_ASC_API_KEY_ISSUER_ID",
         "ascAppId": "6796861173",
         "appleTeamId": "NTTDKF8D29"
       },

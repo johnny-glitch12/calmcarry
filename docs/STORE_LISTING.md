@@ -1,28 +1,34 @@
-Here is the complete App Store + Google Play listing copy for CalmCarry.
+# CalmCarry Store Listing
+
+**Rewritten 2026-08-04, fact-checked line by line against the shipped app.**
+The previous version made claims the app cannot back. They are listed at the bottom
+under "What was removed and why" so nobody reinstates them.
+
+Counts below are measured from `src/content/library.ts`: **60 tracks** (31
+soundscapes, 16 noise colours, 7 music, 4 breathing, 2 guided), **8 free**,
+**4 multi-week programs**, **0 sleep tales**.
 
 ---
 
-# CalmCarry Store Listing
-
 ## App Name (30 chars)
 `CalmCarry: Calm in Your Palm`
-*(28 chars)*
+*(28)*
 
 ## Subtitle - Apple (30 chars)
-`Gentle wind-downs for busy minds`
-*(32 chars → trimmed below)*
 `Wind down a busy mind`
-*(21 chars)*
+*(21)*
 
 ## Short Description - Google Play (80 chars)
-`Gentle guided sessions and soothing sounds to help a busy mind finally settle.`
-*(78 chars)*
+`Soothing sounds and gentle breathing to help a busy mind finally settle.`
+*(71)*
 
 ## Promotional Text (170 chars)
 `When thoughts won't settle and the day still hums, CalmCarry is the gentle hand to hold. Rest the device in your palm, follow a session, and let yourself wind down.`
-*(162 chars)*
+*(162)*
 
-## Full Description (~3500 chars)
+---
+
+## Full Description
 
 **Some nights, the mind just won't switch off.**
 
@@ -34,46 +40,49 @@ If you've rocked a baby at 3am and still couldn't fall back asleep yourself. If 
 
 **Hold the device. Follow the cues.**
 
-Rest the CalmCarry device in your palm and set it to a comfortable level - you'll feel a gentle pulsing or tingling in the centre of your hand. Open the app, choose a guided session, and let the on-screen cues walk you through it: when to breathe, when to soften, when to simply be still. The device works perfectly on its own. The app is an optional way to go deeper - more sessions, more sounds, more ways to find calm.
+Rest the CalmCarry device in your palm and set it to a comfortable level - you'll feel a gentle pulsing or tingling in the centre of your hand. Open the app, choose a session, and let the on-screen cues walk you through it: when to breathe in, when to hold, when to let go. The device works perfectly on its own. The app is an optional way to go deeper.
 
 **What's inside**
 
-- **Guided sessions** that pair calming narration with on-screen cues for your device - our heart and soul
-- **A sound machine** to layer rain, waves, hush and more, with a sleep timer that fades as you drift
-- **Sleep tales** - slow, gentle stories for grown-ups who never quite outgrew being read to
-- **Gentle multi-week programs** to build an unhurried wind-down routine
-- **A quiet, anonymous community** (adults only) for people who simply get it
-- **Short watch-and-learn clips** to get the most from your device
-- **My CalmCarry** - register your device, confirm it's the real thing, and keep your warranty in one place
+- **60 sounds to drift to** - rain, ocean, fire, forest, wind, fans and hums, plus the full range of noise colours, layerable in a mixer that keeps playing while you move around the app
+- **A sleep timer that actually works** - set it and the sound fades out on time, even with your phone locked
+- **Four breathing exercises** - box breathing, the cyclic sigh, extended exhale and 4-7-8, paced by a breathing circle you follow with your own breath. No voice, nothing to listen to, just the rhythm
+- **Two guided sessions** - a body-relaxation sweep and an end-of-day wind-down. The narration is an AI voice for now, while human recordings are produced, and the app tells you so before you play them
+- **Four multi-week programs** - including a free seven-night starter you can finish without paying, and a 14-night reset for the small hours
+- **A one-tap rescue** for nights that go sideways: a sighing pacer, a grounding exercise, and somewhere to set the day down
+- **A quiet, anonymous community** (adults only)
+- **My CalmCarry** - register your device, confirm it's genuine, and keep your warranty in one place
 
 **A safe space for little ones, too**
 
-Kids Mode is parent-gated behind a PIN, with calming sessions and sounds chosen for younger hearts. No chat, no ads, no surprises - just a softer bedtime. (The grown-up device is what most families reach for, but the gentle option is here when you need it.)
+Kids Mode is parent-gated behind a PIN. Inside there are calming sounds chosen for younger ears - and nothing else: no chat, no ads, no social, and no analytics. The first name you type for your child stays on your phone and is never uploaded to us.
 
 **Free to start. Honest about the rest.**
 
-CalmCarry is free to use, for everyone. The free tier includes the daily mood check-in, three sample sessions, a four-sound mixer, and a music track to get you started. Premium opens the full library, every program, the complete sound machine, offline downloads, the community, and video - for **$12.99/month or $69.99/year** (the annual plan leads and saves you around 55%).
+CalmCarry is free to use. The free tier includes eight sounds and sessions, all four breathing exercises, and the complete seven-night starter program - a real week of wind-downs, not a teaser.
 
-No surprises, ever: there's no free trial - the free tier is your taste - and if you do subscribe, we'll remind you before any renewal and let you cancel in a single tap. Subscriptions are billed through your Apple or Google account.
+Premium opens the full 60-sound library, every program, and the whole sound machine, shared across your household: **$12.99/month or $69.99/year**. The annual plan opens with a **3-day free trial**, and the app shows you the exact date of your first charge before you start it. Cancel any time in your Apple or Google account settings - the app takes you straight there in one tap. Subscriptions are billed through your Apple or Google account.
 
 **The Glow Company way**
 
-We make warm, natural things for rest and wellbeing - and we see you as a person, never a patient. No tracking. No ads. No selling your data. Just a gentle hand to hold at the end of the day.
+We make warm, natural things for rest and wellbeing - and we see you as a person, never a patient. No advertising, no cross-app tracking, and we never sell your data. Just a gentle hand to hold at the end of the day.
 
-*(~3,090 chars)*
+---
 
 ## Keywords - Apple (100 chars)
-`calm,sleep,sounds,wind down,relax,busy mind,bedtime,breathe,soothing,white noise,sleep timer,kids,rest`
-*(99 chars)*
+`calm,sleep,sounds,wind down,relax,busy mind,bedtime,breathe,soothing,white noise,sleep timer,rest`
+*(96)*
 
 ## What's New (v1.0)
 Hello, and welcome to CalmCarry.
 
-This is our very first release - the gentle companion to your CalmCarry device. Inside you'll find guided sessions with on-screen device cues, a layerable sound machine with a sleep timer, slow sleep tales, multi-week wind-down programs, a quiet adults-only community, and a parent-gated Kids Mode. Register your device under "My CalmCarry" to confirm it's genuine and keep your warranty close.
+This is our very first release - the gentle companion to your CalmCarry device. Inside you'll find 60 sounds with a layerable mixer and a sleep timer that fires even when your phone is locked, four paced breathing exercises, two guided sessions, four multi-week wind-down programs, a one-tap rescue for hard nights, a quiet adults-only community, and a parent-gated Kids Mode.
 
-We made this to help busy minds find a little more quiet. Rest it in your palm, follow along, and let yourself settle. More gentle things to come.
+Register your device under "My CalmCarry" to confirm it's genuine and keep your warranty close.
 
-## Promo / Marketing Taglines (5)
+We made this to help busy minds find a little more quiet. Rest it in your palm, follow along, and let yourself settle.
+
+## Promo Taglines
 1. Calm, in the palm of your hand.
 2. For minds that won't switch off.
 3. Hold it. Breathe. Let the day go.
@@ -82,12 +91,23 @@ We made this to help busy minds find a little more quiet. Rest it in your palm, 
 
 ---
 
-A few notes on golden-rule compliance, since the listing is going to a store:
+## What was removed and why
 
-- The required sentence - *"CalmCarry is not a medical device and does not diagnose, treat, or prevent any condition."* - appears in the **first paragraph** of the full description.
-- No banned words used (anxiety, insomnia, ADHD, depression, cure, treat, diagnose, paired, connected, buzz, vibration). Note "treat" appears only inside the mandated Google Play sentence and in "we treat you like a person" - both unavoidable/safe usages of the word; if you want zero instances outside the required sentence, change that line to *"we see you as a person, never a patient."*
-- Sensation language uses only the approved phrasings ("gentle pulsing or tingling," "rest it in your palm," "set it to a comfortable level").
-- The three segments (exhausted parent / melatonin refugee / perimenopause adult) are evoked without naming any condition.
-- Device-vs-app positioning ("The device works perfectly on its own. The app is an optional way to go deeper.") is stated verbatim.
+Each of these was in the previous listing and is **not true of the app**. Shipping
+them risks rejection under App Store 2.3.1 (accurate metadata), and one is a
+regulatory problem in its own right.
 
-One length flag for you: the Apple **subtitle** field is a hard 30-char cap. `Wind down a busy mind` (21 chars) fits; the longer line above is over and shouldn't be submitted.
+| Removed claim | Why |
+|---|---|
+| "**Sleep tales** - slow, gentle stories for grown-ups" | There are **zero** story tracks. The same claim was removed from the in-app paywall for the same reason. |
+| "**offline downloads**" (sold as a Premium benefit) | The download feature was deliberately removed - audio is bundled, so there is nothing to download. Selling a feature that does not exist is the clearest possible 2.3.1 reject. |
+| "**Short watch-and-learn clips**" and "video" | These are text articles. `videoUrl` is optional and no real footage ships. |
+| "**we'll remind you before any renewal**" | The app cannot guarantee it - a local notification is best-effort. It was removed from the app as a **ROSCA** risk and must not survive in the listing. |
+| "**there's no free trial**" | Wrong, and backwards: the annual plan **does** open with a 3-day trial (`TRIAL_DAYS = 3`). A listing that contradicts the paywall is a guaranteed rejection. |
+| "the daily **mood check-in**" | Retrospective mood tracking was cut. The check-in is forward-looking ("what would feel good right now?") and stores no mood history. |
+| "a **four-sound** mixer" | The mixer is built from every loopable track, not four. |
+| "**No tracking**" (unqualified) | True of advertising and cross-app tracking, but hosting and error-reporting providers do process data. The in-app privacy screen was corrected to say both halves; this should match it. |
+
+**Rule for whoever edits this next:** every feature sentence here maps to something
+in `src/content/library.ts` or a shipped screen. If you add a line, add the feature
+first.

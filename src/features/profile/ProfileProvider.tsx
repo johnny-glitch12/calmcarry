@@ -15,7 +15,7 @@ import { setAnalyticsMode } from '@/lib/analytics';
 import { setMonitoringMode } from '@/lib/monitoring';
 import { api } from '@/lib/api';
 import { clearCoppaConsent, hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
-import { getFavorites, replaceFavorites } from '@/lib/favorites';
+import { getFavorites, getFavoritesUpdatedAt, reconcileFavorites, replaceFavorites } from '@/lib/favorites';
 import { getStoredSleepGoalHours, setSleepGoalHours } from '@/lib/sleepGoal';
 import { getTrackWins } from '@/lib/trackWins';
 import { getStoredVoice, setVoice, VOICES, type VoiceKey } from '@/lib/voice';
@@ -227,10 +227,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [hydrated, token]);
 
   // Cross-device prefs sync - ONE best-effort reconcile per sign-in/app open.
-  // Local answers win; the server fills gaps; favourites merge as a union (losing
-  // a save is worse than gaining one). The merged set is pushed back so the next
-  // device sees it. Feeling is NEVER synced (build plan §3/§14) and the server
-  // allow-list would drop it anyway.
+  // Local answers win and the server fills gaps. Feeling is NEVER synced (build plan
+  // §3/§14) and the server allow-list would drop it anyway.
+  //
+  // Favourites used to merge as a union, on the reasoning that losing a save is worse
+  // than gaining one. That was wrong in a way that was easy to miss: a union cannot
+  // express a removal, so unsaving a track appeared to work and then silently undid
+  // itself on the next app open, because the stale server copy still held the id and
+  // the union handed it back. The list is now last-write-wins on an explicit
+  // timestamp, which makes a delete propagate exactly like an add.
   useEffect(() => {
     if (!hydrated || !token || token === 'local') return;
     let alive = true;
@@ -243,12 +248,23 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const sFavs = Array.isArray(server.favorites) ? (server.favorites as string[]) : [];
         const goals = surveyGoals.length ? surveyGoals : sGoals;
         const moments = surveyMoments.length ? surveyMoments : sMoments;
-        const favs = Array.from(new Set([...favorites, ...sFavs]));
         if (!surveyGoals.length && sGoals.length) setSurveyGoals(sGoals);
         if (!surveyMoments.length && sMoments.length) setSurveyMoments(sMoments);
-        if (favs.length !== favorites.length) {
+
+        // Read the list from DISK, not from React state. The Player toggles saves
+        // through the favourites module directly, so `favorites` here can be a
+        // hydrate-time snapshot that is already stale - and syncing a stale list is
+        // exactly how a removal gets lost.
+        const [localFavs, localAt] = await Promise.all([getFavorites(), getFavoritesUpdatedAt()]);
+        const serverAt = typeof server.favoritesUpdatedAt === 'number' ? server.favoritesUpdatedAt : 0;
+        const { favorites: favs, updatedAt: favsAt } = reconcileFavorites(localFavs, localAt, sFavs, serverAt);
+        const changed = favs.length !== localFavs.length || favs.some((id, i) => id !== localFavs[i]);
+        if (changed || favsAt !== localAt) {
           setFavorites(favs);
-          await replaceFavorites(favs);
+          await replaceFavorites(favs, favsAt);
+        } else if (favs.length !== favorites.length) {
+          // disk and server agree; just refresh the in-memory copy
+          setFavorites(favs);
         }
         // persist adopted survey answers so the next open doesn't need the server
         if ((!surveyGoals.length && sGoals.length) || (!surveyMoments.length && sMoments.length)) {
@@ -263,6 +279,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         if (!storedVoice && sVoice) await setVoice(sVoice);
         if (storedGoal == null && sGoal != null) await setSleepGoalHours(sGoal);
         const push: Record<string, unknown> = { goals, moments, favorites: favs };
+        // Push the timestamp too, or the other device can never tell which copy is
+        // newer and removals stop propagating again.
+        if (favsAt > 0) push.favoritesUpdatedAt = favsAt;
         if (storedVoice) push.voice = storedVoice;
         if (storedGoal != null) push.sleepGoalHours = storedGoal;
         await api.putPrefs(token, push);

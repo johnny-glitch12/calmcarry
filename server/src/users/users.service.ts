@@ -96,7 +96,18 @@ export class UsersService {
   // Cross-device preference sync. STRICT allow-list - anything not listed here is
   // silently dropped, so the client can never turn this into a general data store.
   // Deliberately absent: mood/feeling (build plan §3/§14 - never a stored mood log).
-  private static readonly PREF_KEYS = ['goals', 'moments', 'favorites', 'sleepGoalHours', 'voice'] as const;
+  // `favoritesUpdatedAt` is a client clock (ms epoch) and is stored verbatim, never
+  // trusted for anything but comparing two copies of one account's own favourites.
+  // It decides which device's list wins a reconcile; a wrong value costs that user
+  // their own save order and nothing else, so it needs no server-side authority.
+  private static readonly PREF_KEYS = [
+    'goals',
+    'moments',
+    'favorites',
+    'favoritesUpdatedAt',
+    'sleepGoalHours',
+    'voice',
+  ] as const;
 
   async getPrefs(ownerId: string): Promise<Record<string, unknown>> {
     const owner = await this.ownerRepo.findOne({ where: { id: ownerId } });

@@ -240,10 +240,14 @@ export function CalmPlan() {
     if (!mounted.current) return;
     setBusy(false);
     if (ok) close();
-    else if (failReason === 'validation_failed')
+    else if (failReason === 'validation_failed' || failReason === 'timeout')
       // They may already have been CHARGED - the unfinished transaction is
       // redelivered and re-validated on the next launch, so never tell them to
       // buy again; point at the path that re-checks instead.
+      //
+      // 'timeout' belongs here for the same reason: we stopped waiting on the store,
+      // which tells us nothing about whether the payment went through. Dropping it
+      // into the generic "please try again" below would invite a second charge.
       setNote('Your payment may have gone through but we couldn’t confirm it. It finishes automatically next time you open the app, or tap "Restore purchases".');
     else setNote('We couldn’t complete the purchase. Please try again.');
   };

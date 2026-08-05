@@ -33,10 +33,25 @@ const PRODUCT_IDS: Record<'monthly' | 'annual', string> = {
 const STORE = Platform.OS === 'ios' ? 'apple' : 'google';
 
 let connected = false;
+// The in-flight connect, so N concurrent callers share ONE initConnection() instead
+// of each firing their own. The paywall opening does this routinely: it fetches
+// localized prices and checks intro-offer eligibility at the same moment.
+let connecting: Promise<void> | null = null;
 async function ensureConnection(): Promise<void> {
   if (connected) return;
-  await initConnection();
-  connected = true;
+  if (!connecting) {
+    connecting = initConnection()
+      .then(() => {
+        connected = true;
+      })
+      // clear on BOTH paths: a failed connect must not leave a rejected promise
+      // cached here, or every later attempt replays the same old failure and the
+      // store can never recover (no sandbox account at launch, signed in later).
+      .finally(() => {
+        connecting = null;
+      });
+  }
+  await connecting;
 }
 
 function receiptOf(p: Purchase): string {
@@ -74,9 +89,22 @@ async function validateAndFinish(p: Purchase, token: string, productId: string):
   return ok;
 }
 
-// True while purchaseSubscription()'s own listener is wired up - the launch
-// listener stands down so one store event isn't validated twice.
+// True while purchaseSubscription()'s own listener is wired up - the launch listener
+// stands down so one store event isn't validated twice.
+//
+// This MUST always get back to false. It used to be cleared only from inside the
+// purchase promise's done(), so a flow that never settled - the store sheet dismissed
+// without emitting an event, the app backgrounded mid-checkout - latched it true for
+// the rest of the process. From then on the launch listener ignored every transaction
+// the store delivered, which is precisely the case it exists to catch: the user pays,
+// nothing validates it, and they stay locked out of what they just bought.
 let purchaseFlowActive = false;
+
+/** Longest a foreground purchase may stay pending before we stop waiting on it.
+ *  Not a normal path - it is the backstop for a flow the store never resolves.
+ *  Giving up here is safe: the transaction stays in the store queue and the launch
+ *  listener picks it up on the next open, which is why releasing the flag matters. */
+const PURCHASE_FLOW_TIMEOUT_MS = 3 * 60_000;
 let launchListener: { remove(): void } | null = null;
 
 /**
@@ -110,36 +138,43 @@ export async function purchaseSubscription(plan: 'monthly' | 'annual', token: st
     await ensureConnection();
     await fetchProducts({ skus: Object.values(PRODUCT_IDS), type: 'subs' } as never);
 
-    return await new Promise<IapResult>((resolve) => {
-      let settled = false;
-      purchaseFlowActive = true;
-      const done = (r: IapResult) => {
-        if (settled) return;
-        settled = true;
-        purchaseFlowActive = false;
-        up.remove();
-        err.remove();
-        resolve(r);
-      };
-      const up = purchaseUpdatedListener(async (p: Purchase) => {
-        const ok = await validateAndFinish(p, token, (p as { productId?: string }).productId || productId);
-        done({ ok, reason: ok ? undefined : 'validation_failed' });
+    purchaseFlowActive = true;
+    try {
+      return await new Promise<IapResult>((resolve) => {
+        let settled = false;
+        const done = (r: IapResult) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          up.remove();
+          err.remove();
+          resolve(r);
+        };
+        const timer = setTimeout(() => done({ ok: false, reason: 'timeout' }), PURCHASE_FLOW_TIMEOUT_MS);
+        const up = purchaseUpdatedListener(async (p: Purchase) => {
+          const ok = await validateAndFinish(p, token, (p as { productId?: string }).productId || productId);
+          done({ ok, reason: ok ? undefined : 'validation_failed' });
+        });
+        // v15 delivers user cancellation as ErrorCode.UserCancelled ('user-cancelled');
+        // older androids used E_USER_CANCELLED. Normalize to 'cancelled' - and never
+        // let an UNKNOWN error masquerade as a quiet cancel, or real failures show
+        // the user nothing.
+        const err = purchaseErrorListener((e: { code?: string }) => {
+          const cancelled = e?.code === 'user-cancelled' || e?.code === 'E_USER_CANCELLED';
+          done({ ok: false, reason: cancelled ? 'cancelled' : e?.code || 'purchase_failed' });
+        });
+        Promise.resolve(
+          requestPurchase({
+            request: { apple: { sku: productId }, google: { skus: [productId] } },
+            type: 'subs',
+          } as never),
+        ).catch(() => done({ ok: false, reason: 'request_failed' }));
       });
-      // v15 delivers user cancellation as ErrorCode.UserCancelled ('user-cancelled');
-      // older androids used E_USER_CANCELLED. Normalize to 'cancelled' - and never
-      // let an UNKNOWN error masquerade as a quiet cancel, or real failures show
-      // the user nothing.
-      const err = purchaseErrorListener((e: { code?: string }) => {
-        const cancelled = e?.code === 'user-cancelled' || e?.code === 'E_USER_CANCELLED';
-        done({ ok: false, reason: cancelled ? 'cancelled' : e?.code || 'purchase_failed' });
-      });
-      Promise.resolve(
-        requestPurchase({
-          request: { apple: { sku: productId }, google: { skus: [productId] } },
-          type: 'subs',
-        } as never),
-      ).catch(() => done({ ok: false, reason: 'request_failed' }));
-    });
+    } finally {
+      // the one guarantee that matters: however this flow ends - resolved, thrown,
+      // or timed out - the launch listener goes back on duty.
+      purchaseFlowActive = false;
+    }
   } catch {
     return { ok: false, reason: 'iap_unavailable' };
   }

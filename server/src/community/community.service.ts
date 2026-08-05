@@ -16,9 +16,31 @@ export interface PublicPost {
   createdAt: Date;
 }
 
-// The only sound keys a shared mix may contain - anything else is dropped on write
-// so a client can never smuggle arbitrary JSON into the wall.
-const SOUND_KEYS = ['rain', 'ocean', 'brown', 'drone', 'pink', 'white', 'fire', 'birdsong'];
+/**
+ * What a shared mix's sound keys are allowed to look like.
+ *
+ * This used to be a hardcoded allow-list of the LEGACY palette (rain, ocean,
+ * brown...) which was never updated when the app moved to canonical track ids
+ * (rainfall, slow-tide, brown-noise...). Every key the app sent was dropped,
+ * sanitizeMix() saw an empty level set and returned null, and the mix was stored as
+ * null - while the user was told "Shared anonymously to the community." Sharing a
+ * mix had not worked at all, and nothing failed loudly enough to notice.
+ *
+ * It is a shape check rather than a fixed list on purpose. The server has no access
+ * to the client's content library, so any enumerated copy of it silently rots the
+ * moment a track is added - which is precisely the failure above. What this actually
+ * needs to prevent is a client smuggling arbitrary JSON onto the wall, and a strict
+ * key format plus a count cap does that without needing to know the catalogue. An id
+ * that does not correspond to a real track is harmless: the client ignores keys it
+ * cannot resolve when it loads a mix.
+ */
+const SOUND_KEY_RE = /^[a-z][a-z0-9-]{1,31}$/;
+/** Names that are legal track-id shapes but would shadow an Object.prototype member
+ *  once this is parsed back out of the JSON column. No real track is called these,
+ *  and keeping them out means the stored object behaves like plain data. */
+const RESERVED_KEYS = new Set(['constructor', 'prototype', '__proto__']);
+/** A real mix is a handful of layers. This bounds stored size, not musical taste. */
+const MAX_MIX_SOUNDS = 12;
 
 // Gentle auto-moderation: hold posts with contact info / links / clinical terms
 // for review; everything else is approved. ownerId is NEVER returned (anonymous).
@@ -47,9 +69,15 @@ export class CommunityService {
     const r = raw as { name?: unknown; levels?: unknown };
     const src = r.levels && typeof r.levels === 'object' ? (r.levels as Record<string, unknown>) : {};
     const levels: Record<string, number> = {};
-    for (const k of SOUND_KEYS) {
+    // iterate the SUBMITTED keys, keeping the ones that look like a track id - rather
+    // than iterating a fixed catalogue the server cannot actually know
+    for (const k of Object.keys(src)) {
+      if (Object.keys(levels).length >= MAX_MIX_SOUNDS) break;
+      if (!SOUND_KEY_RE.test(k) || RESERVED_KEYS.has(k)) continue;
       const v = src[k];
-      if (typeof v === 'number' && v > 0) levels[k] = Math.max(1, Math.min(3, Math.round(v)));
+      if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
+        levels[k] = Math.max(1, Math.min(3, Math.round(v)));
+      }
     }
     if (Object.keys(levels).length === 0) return null;
     const name = (typeof r.name === 'string' ? r.name : '').trim().slice(0, 60) || 'A shared mix';

@@ -21,6 +21,7 @@ import { MIX_CATALOG, usePlayback, type MixSound } from '@/features/sounds/Playb
 import { covers, type CoverKey } from '@/content/covers';
 import { TRACKS, trackLoops } from '@/content/library';
 import { api } from '@/lib/api';
+import { COMMUNITY_ENABLED } from '@/lib/flags';
 import { lightTap } from '@/lib/haptics';
 import { takePendingMix } from '@/lib/mixShare';
 import { dur, ease, spring, themes, useResponsive, useTheme } from '@/theme';
@@ -437,7 +438,12 @@ export function ListenScreen() {
           </Appear>
         ) : null}
 
-        {anyOn && !kids && !!token && token !== 'local' ? (
+        {/* Gated on COMMUNITY_ENABLED like every other route into the wall. This
+            button was missed when the community was switched off for v1: the tab was
+            hidden but this still POSTED to the wall, so the app was publishing user
+            content it gave the user no way to see - and contradicting the "no UGC in
+            v1" answer the store questionnaire is built on. See src/lib/flags.ts. */}
+        {COMMUNITY_ENABLED && anyOn && !kids && !!token && token !== 'local' ? (
           <Appear enter={dur.sheet}>
             <PressableScale
               onPress={shareMix}

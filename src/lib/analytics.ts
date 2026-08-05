@@ -129,6 +129,22 @@ function schedule(): void {
   }, FLUSH_MS);
 }
 
+/**
+ * Is this failure a verdict the server will repeat forever, or something worth
+ * retrying?
+ *
+ * Permanent: a 4xx other than the two that explicitly mean "try again" - 408 Request
+ * Timeout and 429 Too Many Requests. Everything else is transient by default: a
+ * network error carries no status at all, and treating an unknown failure as
+ * retryable risks losing events rather than looping on them, which is the safer way
+ * to be wrong for a queue that is best-effort anyway.
+ */
+function isPermanentReject(e: unknown): boolean {
+  const status = (e as { status?: number } | null)?.status;
+  if (typeof status !== 'number') return false; // no status = never reached the server
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
 export async function flush(): Promise<void> {
   if (optedOut) { buf = []; return; } // opted out - never send, and hold nothing
   if (flushing) return; // a flush is already in-flight - never send the same batch twice
@@ -147,10 +163,26 @@ export async function flush(): Promise<void> {
     buf = buf.slice(batch.length);
     if (buf.length) schedule();
     else await remove(BUF_KEY);
-  } catch {
-    // offline / rejected - keep the buffer for the next attempt
-    await setJSON(BUF_KEY, buf.slice(-MAX_BUFFER));
-    schedule();
+  } catch (e) {
+    if (isPermanentReject(e)) {
+      // The server has judged this batch and will judge it the same way forever -
+      // malformed, too large, wrong shape. Retrying used to be unconditional, so a
+      // batch like that was resent on every schedule() for the rest of the install:
+      // the queue never drained, and because a flush always takes events from the
+      // HEAD of the buffer, every later event was stuck behind it too. Analytics are
+      // best-effort by design, so drop the batch and let the queue move on.
+      buf = buf.slice(batch.length);
+      if (buf.length) {
+        await setJSON(BUF_KEY, buf.slice(-MAX_BUFFER));
+        schedule();
+      } else {
+        await remove(BUF_KEY);
+      }
+    } else {
+      // offline, timeout, 5xx, or asked to back off - genuinely worth retrying
+      await setJSON(BUF_KEY, buf.slice(-MAX_BUFFER));
+      schedule();
+    }
   } finally {
     flushing = false;
   }

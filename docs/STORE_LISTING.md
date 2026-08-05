@@ -50,7 +50,6 @@ Rest the CalmCarry device in your palm and set it to a comfortable level - you'l
 - **Two guided sessions** - a body-relaxation sweep and an end-of-day wind-down. The narration is an AI voice for now, while human recordings are produced, and the app tells you so before you play them
 - **Four multi-week programs** - including a free seven-night starter you can finish without paying, and a 14-night reset for the small hours
 - **A one-tap rescue** for nights that go sideways: a sighing pacer, a grounding exercise, and somewhere to set the day down
-- **A quiet, anonymous community** (adults only)
 - **My CalmCarry** - register your device, confirm it's genuine, and keep your warranty in one place
 
 **A safe space for little ones, too**
@@ -76,7 +75,7 @@ We make warm, natural things for rest and wellbeing - and we see you as a person
 ## What's New (v1.0)
 Hello, and welcome to CalmCarry.
 
-This is our very first release - the gentle companion to your CalmCarry device. Inside you'll find 60 sounds with a layerable mixer and a sleep timer that fires even when your phone is locked, four paced breathing exercises, two guided sessions, four multi-week wind-down programs, a one-tap rescue for hard nights, a quiet adults-only community, and a parent-gated Kids Mode.
+This is our very first release - the gentle companion to your CalmCarry device. Inside you'll find 60 sounds with a layerable mixer and a sleep timer that fires even when your phone is locked, four paced breathing exercises, two guided sessions, four multi-week wind-down programs, a one-tap rescue for hard nights, and a parent-gated Kids Mode.
 
 Register your device under "My CalmCarry" to confirm it's genuine and keep your warranty close.
 
@@ -107,6 +106,7 @@ regulatory problem in its own right.
 | "the daily **mood check-in**" | Retrospective mood tracking was cut. The check-in is forward-looking ("what would feel good right now?") and stores no mood history. |
 | "a **four-sound** mixer" | The mixer is built from every loopable track, not four. |
 | "**No tracking**" (unqualified) | True of advertising and cross-app tracking, but hosting and error-reporting providers do process data. The in-app privacy screen was corrected to say both halves; this should match it. |
+| "a quiet, anonymous **community** (adults only)" | The community wall is **off in v1** (`COMMUNITY_ENABLED` in `src/lib/flags.ts`), because Apple's guideline 1.2 requires the ability to block abusive users and CalmCarry has no block feature. Advertising a feature the binary does not ship is a 2.3.1 reject, and it would also contradict the User Generated Content answer of **NO** in `APP_STORE_QUESTIONNAIRES.md`. Restore this line only in the release that turns the wall back on. |
 
 **Rule for whoever edits this next:** every feature sentence here maps to something
 in `src/content/library.ts` or a shipped screen. If you add a line, add the feature

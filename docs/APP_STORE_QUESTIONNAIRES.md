@@ -115,29 +115,39 @@ Answer in App Store Connect → App Information → Age Rating → Edit.
 | Gambling | None |
 | Contests | None |
 | Unrestricted Web Access | **NO** - external links open in the system browser and go only to The Glow Company's own pages. |
-| **User Generated Content** | **YES** - the community wall. See the note below. |
+| **User Generated Content** | **NO** - the community is off in v1. See the note below. |
 
 ### The User Generated Content answer matters
-Answering YES obliges you to have all four of Apple's 1.2 safeguards. CalmCarry has
-them, which is why YES is safe to answer:
+The community wall is **disabled for v1** via `COMMUNITY_ENABLED` in `src/lib/flags.ts`,
+so there is no user-generated content in the shipped build and Apple's 1.2 obligations
+do not apply. That decision was taken because of safeguard 3 below.
+
+If the wall is ever switched on, answering YES obliges all four safeguards:
 
 1. **A method to filter objectionable material** - `HOLD_PATTERNS` in
-   `community.service.ts` holds a flagged post for review instead of publishing it.
-2. **A mechanism to report offensive content** - `POST /community/report`, now
-   identity-bound and rate-limited, with thresholds that pull a post from the feed.
-3. **The ability to block abusive users** - ⚠️ **NOT IMPLEMENTED.** There is no
+   `community.service.ts` holds a flagged post for review instead of publishing it. ✅
+2. **A mechanism to report offensive content** - `POST /community/report`,
+   identity-bound and rate-limited, with thresholds that pull a post from the feed. ✅
+3. **The ability to block abusive users** - ❌ **NOT IMPLEMENTED.** There is no
    user-block feature. Posts are anonymous and there is no profile to block, which is
-   the usual argument, but Apple has rejected on this before.
-4. **A published way to contact you** - the support URL.
+   the usual argument, but Apple has rejected on this before. **This is why v1 ships
+   with the wall off.**
+4. **A published way to contact you** - the support URL. ✅
 
-> **⚠️ DECISION NEEDED BEFORE SUBMISSION.** Point 3 is a genuine gap. Two options:
-> **(a)** Ship without the community wall in v1 (hide the tab), removing the UGC
-> question entirely and the whole 1.2 obligation with it. **(b)** Build blocking.
-> Given the wall is currently empty and not a launch-critical feature, **(a) is the
-> lower-risk choice** and costs one flag, not a feature build.
+> **⚠️ Turning the community on is not a one-line change.** Build user blocking first,
+> then flip the flag, then change this answer to YES and re-check the age rating - in
+> that order.
+
+> **Gating is per-entry-point, not per-tab.** The flag originally hid only the
+> Community tab, while a "Share this mix anonymously" button on the **Listen** screen
+> still posted to the wall. The build was publishing user content it gave the user no
+> way to see, which would have made a "NO" answer here inaccurate under 5.1.1(v).
+> Both are gated now. Before answering NO on any future release, grep for
+> `api.createPost` and confirm every caller sits behind `COMMUNITY_ENABLED`.
 
 ### Expected rating
-**4+** if the community is removed, **12+** or a UGC-flagged 4+ if it stays.
+**4+** as shipped (community off). **12+**, or a UGC-flagged 4+, if it is ever
+switched on.
 
 ### Do NOT opt in to
 - **Made for Kids** / **Designed for Families** - enrolling forces the full COPPA
@@ -172,7 +182,8 @@ them, which is why YES is safe to answer:
 ## Blocking before you can submit
 
 - [ ] **Demo account** created on the live API, credentials pasted above
-- [ ] **Decision on the community wall** (see the UGC note) - this changes the age rating
+- [x] **Decision on the community wall** - OFF for v1, both entry points gated. Answer
+      User Generated Content **NO** and expect a 4+ rating.
 - [ ] **Privacy Policy URL** published and reachable - currently a draft in `docs/legal/`
 - [ ] **Screenshots** - 6.7" iPhone required; none exist yet
 - [ ] **Paid Apps agreement** Active (Account Holder) - or the subscriptions cannot sell

@@ -317,13 +317,39 @@ export class UsersService {
    * us WITHOUT a client call - without it, a cancelled/refunded sub stays "premium"
    * until the client happens to re-validate. Returns false if we don't know the ref.
    */
+  /**
+   * Apply a store lifecycle event (webhook) to the entitlement it names.
+   *
+   * Returns false when nothing was applied - unknown ref, an exact redelivery, or an
+   * event older than one already applied. Callers must treat false as "do not record
+   * churn", or a single retried cancellation is counted every time Apple resends it.
+   *
+   * `meta` carries the store's own identity and timestamp for the event. Both stores
+   * deliver at-least-once and out of order, so without them a retried EXPIRED that
+   * lost a race with a later DID_RENEW silently revokes a paying subscriber.
+   */
   async applySubscriptionEvent(
     transactionRef: string,
     patch: { status?: Entitlement['status']; expiresAt?: Date | null },
+    meta?: { eventUid?: string; eventAt?: Date },
   ): Promise<boolean> {
     if (!transactionRef) return false;
     const e = await this.entitlementRepo.findOne({ where: { transactionRef } });
     if (!e) return false;
+
+    // Exact redelivery of an event we already applied: the state is already correct,
+    // and re-applying would double-count the churn the caller records on success.
+    if (meta?.eventUid && e.lastEventUid && e.lastEventUid === meta.eventUid) return false;
+
+    // Out-of-order delivery. Strictly older loses; equal timestamps are allowed
+    // through because two genuine events can share a second and dropping the second
+    // would lose a real state change.
+    if (meta?.eventAt && e.lastEventAt && meta.eventAt.getTime() < e.lastEventAt.getTime()) {
+      return false;
+    }
+
+    if (meta?.eventUid) e.lastEventUid = meta.eventUid;
+    if (meta?.eventAt) e.lastEventAt = meta.eventAt;
     if (patch.status) e.status = patch.status;
     if (patch.expiresAt !== undefined) {
       // Clamp a store-supplied expiry to a sane ceiling (longest plan + grace) so a

@@ -74,9 +74,16 @@ export class WebhooksService {
     let notificationType: string | undefined;
     let ref: string | undefined;
     let expiresAt: Date | undefined;
+    // Apple's own identity + clock for this notification. signedDate is what orders
+    // two notifications against each other; notificationUUID identifies a retry of
+    // the same one. Apple retries anything it does not get a 2xx for, so both matter.
+    let eventUid: string | undefined;
+    let eventAt: Date | undefined;
     try {
       const notification = await verifier.verifyAndDecodeNotification(body.signedPayload);
       notificationType = notification.notificationType;
+      eventUid = notification.notificationUUID;
+      eventAt = notification.signedDate ? new Date(notification.signedDate) : undefined;
       const signedTx = notification.data?.signedTransactionInfo;
       if (signedTx) {
         const tx = await verifier.verifyAndDecodeTransaction(signedTx);
@@ -88,25 +95,29 @@ export class WebhooksService {
     }
     if (!ref || !notificationType) return { ok: true, applied: false };
 
+    const meta = { eventUid, eventAt };
     let applied = false;
     switch (notificationType) {
       case NotificationTypeV2.SUBSCRIBED:
       case NotificationTypeV2.DID_RENEW:
       case NotificationTypeV2.OFFER_REDEEMED:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'active', expiresAt });
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'active', expiresAt }, meta);
         break;
+      // Churn is recorded only when the event actually changed something. It used to
+      // fire unconditionally, so an unknown transaction ref or a retried notification
+      // counted as a fresh cancellation every time Apple resent it.
       case NotificationTypeV2.EXPIRED:
       case NotificationTypeV2.GRACE_PERIOD_EXPIRED:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' });
-        this.recordChurn('expired');
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' }, meta);
+        if (applied) this.recordChurn('expired');
         break;
       case NotificationTypeV2.REFUND:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
-        this.recordChurn('refund');
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' }, meta);
+        if (applied) this.recordChurn('refund');
         break;
       case NotificationTypeV2.REVOKE:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
-        this.recordChurn('revoked');
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' }, meta);
+        if (applied) this.recordChurn('revoked');
         break;
       default:
         break; // DID_CHANGE_RENEWAL_STATUS etc. leave the current term intact
@@ -136,13 +147,14 @@ export class WebhooksService {
   }
 
   async handleGoogle(
-    body: { message?: { data?: string } },
+    body: { message?: { data?: string; messageId?: string; publishTime?: string } },
     authHeader?: string,
   ): Promise<{ ok: boolean; applied: boolean }> {
     await this.verifyPubSubToken(authHeader); // 503 if not configured, 400 if invalid
     const data = body?.message?.data;
     if (!data) return { ok: true, applied: false };
     let notif: {
+      eventTimeMillis?: string | number;
       subscriptionNotification?: { notificationType?: number; purchaseToken?: string; subscriptionId?: string };
     } | null = null;
     try {
@@ -153,6 +165,18 @@ export class WebhooksService {
     const sub = notif?.subscriptionNotification;
     const ref = sub?.purchaseToken;
     if (!sub?.notificationType || !ref) return { ok: true, applied: false };
+
+    // Pub/Sub delivery is explicitly at-least-once, so redelivery is routine rather
+    // than exceptional. messageId is stable across redeliveries of one message;
+    // eventTimeMillis is Play's own clock for the event and orders two of them.
+    // publishTime is the fallback - still Google's clock, never the client's.
+    const eventTime = Number(notif?.eventTimeMillis);
+    const publishTime = body?.message?.publishTime ? Date.parse(body.message.publishTime) : NaN;
+    const stamp = Number.isFinite(eventTime) && eventTime > 0 ? eventTime : publishTime;
+    const meta = {
+      eventUid: body?.message?.messageId,
+      eventAt: Number.isFinite(stamp) ? new Date(stamp) : undefined,
+    };
 
     /**
      * Marking a renewal "active" is not enough: isPremiumEntitlement gates on
@@ -180,24 +204,28 @@ export class WebhooksService {
       case 4:
       case 7: {
         const expiresAt = await freshExpiry();
-        applied = await this.users.applySubscriptionEvent(ref, {
-          status: 'active',
-          ...(expiresAt ? { expiresAt } : {}),
-        });
+        applied = await this.users.applySubscriptionEvent(
+          ref,
+          { status: 'active', ...(expiresAt ? { expiresAt } : {}) },
+          meta,
+        );
         break;
       }
       case 13:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' });
-        this.recordChurn('expired');
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'expired' }, meta);
+        if (applied) this.recordChurn('expired');
         break;
       case 12:
-        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' });
-        this.recordChurn('revoked');
+        applied = await this.users.applySubscriptionEvent(ref, { status: 'revoked' }, meta);
+        if (applied) this.recordChurn('revoked');
         break;
       case 3:
-        // CANCELED - auto-renew turned off; term stays active until it lapses, but
-        // record the cancellation intent so churn/cancellation reasons are visible.
-        this.recordChurn('user_cancelled');
+        // CANCELED - auto-renew turned off; the term stays active until it lapses, so
+        // there is no status change to make. Still stamp the event, both to record the
+        // cancellation intent once and so a redelivery of THIS message is recognised
+        // rather than counted as a second cancellation.
+        applied = await this.users.applySubscriptionEvent(ref, {}, meta);
+        if (applied) this.recordChurn('user_cancelled');
         break;
       default:
         break; // 5 ON_HOLD / 6 IN_GRACE leave the term active until it lapses

@@ -56,6 +56,23 @@ export class Entitlement {
   @Column({ type: TIMESTAMP_TYPE, nullable: true })
   expiresAt: Date | null;
 
+  /**
+   * The store's own timestamp for the last lifecycle notification applied here.
+   *
+   * Store webhooks are at-least-once and arrive out of order: Apple retries an
+   * unacknowledged notification, and Google Pub/Sub redelivers by design. Without
+   * this, a retried EXPIRED that lost a race with a later DID_RENEW would revoke a
+   * subscriber who is paying right now - the entitlement simply took whichever event
+   * arrived last.
+   */
+  @Column({ type: TIMESTAMP_TYPE, nullable: true })
+  lastEventAt: Date | null;
+
+  /** Apple notificationUUID / Google messageId of the last applied event, so an exact
+   *  redelivery is recognised and does not re-fire churn analytics. */
+  @Column({ type: 'text', nullable: true })
+  lastEventUid: string | null;
+
   @CreateDateColumn()
   grantedAt: Date;
 }

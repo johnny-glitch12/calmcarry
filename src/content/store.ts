@@ -10,8 +10,18 @@ import { Alert, Linking, Platform } from 'react-native';
  */
 export const STORE_URL = 'https://www.theglowcompany.co';
 
-/** Product page for the device. Point this at the real listing when it's live. */
-export const DEVICE_CHECKOUT_URL = `${STORE_URL}/products/calmcarry-glow-orb`;
+/**
+ * Product page for the device.
+ *
+ * Was `/products/calmcarry-glow-orb`, which returns 404 on the live storefront - so
+ * every "Get a Glow Orb" tap in the shipped app landed on a not-found page. The real
+ * listing is `/products/calmcarry` (verified 200 on 2026-08-05).
+ *
+ * [MASON] Confirm this handle is canonical and will not be renamed. The storefront
+ * calls the product "CalmCarry®" while the app copy says "Glow Orb"; if the product
+ * is renamed, this constant and the in-app naming both need updating together.
+ */
+export const DEVICE_CHECKOUT_URL = `${STORE_URL}/products/calmcarry`;
 
 /** OS subscription management (honest billing: one-tap cancel routes here). Must be
  *  store-correct per platform - an Apple URL on Android is a Play-review + ROSCA fail. */

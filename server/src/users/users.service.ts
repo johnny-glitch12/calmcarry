@@ -274,10 +274,19 @@ export class UsersService {
    * expiresAt has passed no longer counts as premium.
    */
   async getEffectiveEntitlement(ownerId: string): Promise<Entitlement | null> {
-    // a caregiver inherits the household's entitlement (one subscription, whole family)
+    // A caregiver inherits the household's entitlement (one subscription, whole
+    // family) - but their OWN entitlement still counts.
+    //
+    // This used to read the household's rows only. Someone who subscribed and later
+    // joined a household stopped being able to see the subscription they were still
+    // paying Apple for: their row sat on their own id, the lookup resolved to the
+    // primary, and if the household's plan lapsed they lost access while their card
+    // kept getting charged. Reading both and taking the best means joining a
+    // household can never leave anyone worse off than before they joined.
     const householdId = await this.household.resolveOwnerId(ownerId);
+    const ids = householdId === ownerId ? [householdId] : [householdId, ownerId];
     const entitlements = await this.entitlementRepo.find({
-      where: { ownerId: householdId },
+      where: ids.map((id) => ({ ownerId: id })),
       order: { grantedAt: 'DESC' },
     });
     if (entitlements.length === 0) return null;

@@ -13,7 +13,6 @@ import {
   authenticateBiometric,
   biometricAvailable,
   checkParentPin,
-  clearParentPin,
   hasParentPin,
   markParentVerified,
   parentPinLockSeconds,
@@ -123,7 +122,14 @@ export function ParentGate() {
       // fresh credential check against the backend; the returned session is
       // discarded - the current one stays valid, we only wanted the proof
       await api.login(user.email, recoverPassword);
-      await clearParentPin();
+      // NOTE: the old PIN is deliberately left in place until the replacement is
+      // confirmed. Clearing it here left the household with no PIN at all for as long
+      // as the create/confirm screens were open - and if the app was backgrounded or
+      // killed in that window, hasParentPin() returned false, so the next person to
+      // open the gate got "choose a PIN" instead of "enter your PIN". A child could
+      // walk straight through it, or set their own and lock the parent out.
+      // setParentPin() overwrites the record (and resets the lockout counters), so
+      // clearing first was never needed for the replacement to work.
       // a server-verified account password is at least as strong an adult
       // check as the PIN it replaces - honor the original intent
       markParentVerified(intent ?? '');

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { CaregiverInvite, CaregiverLink, Owner } from '../entities';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -29,11 +29,21 @@ export class CaregiversService {
     const isCaregiver = await this.links.findOne({ where: { caregiverOwnerId: householdOwnerId } });
     if (isCaregiver) throw new ForbiddenException('Only the household owner can invite caregivers.');
 
-    // Bound outstanding capacity (existing members + unredeemed codes) to the cap so
-    // a subscriber can't mint an unlimited pile of redeemable invites.
+    // Bound outstanding capacity (existing members + codes that could still be
+    // redeemed) to the cap, so a subscriber can't mint an unlimited pile of
+    // redeemable invites.
+    //
+    // "Could still be redeemed" is the important part. This used to count every
+    // unredeemed invite regardless of age, so a household that sent five codes nobody
+    // used was locked out of inviting FOREVER: the codes expired after 7 days, became
+    // permanently unredeemable, and still filled all five slots. The household had no
+    // caregivers, no usable codes, and no way to make one. An expired invite grants
+    // nothing, so it must not reserve capacity.
     const [linkCount, outstanding] = await Promise.all([
       this.links.count({ where: { householdOwnerId } }),
-      this.invites.count({ where: { householdOwnerId, redeemedByOwnerId: IsNull() } }),
+      this.invites.count({
+        where: { householdOwnerId, redeemedByOwnerId: IsNull(), expiresAt: MoreThan(new Date()) },
+      }),
     ]);
     if (linkCount + outstanding >= MAX_CAREGIVERS) {
       throw new BadRequestException('This household has reached its caregiver limit.');

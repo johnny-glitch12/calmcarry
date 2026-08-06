@@ -56,8 +56,13 @@ export class UsersService {
       // deleted owner's entitlement, and no dangling link points at a gone account.
       // If this owner was a household primary, its caregivers fall back to their own
       // (free) entitlement; if it was a caregiver, its link is simply removed.
-      await m.delete(CaregiverLink, [{ householdOwnerId: ownerId }, { caregiverOwnerId: ownerId }]);
-      await m.delete(CaregiverInvite, [{ householdOwnerId: ownerId }, { redeemedByOwnerId: ownerId }]);
+      // One criteria object per call: EntityManager.delete treats an ARRAY as a list
+      // of entity IDs, not OR'd conditions - the array form threw
+      // "this.subQuery is not a function" and 500'd EVERY account deletion.
+      await m.delete(CaregiverLink, { householdOwnerId: ownerId });
+      await m.delete(CaregiverLink, { caregiverOwnerId: ownerId });
+      await m.delete(CaregiverInvite, { householdOwnerId: ownerId });
+      await m.delete(CaregiverInvite, { redeemedByOwnerId: ownerId });
       await m.delete(Device, { ownerId });
       await m.delete(Profile, { ownerId });
       await m.delete(Entitlement, { ownerId });

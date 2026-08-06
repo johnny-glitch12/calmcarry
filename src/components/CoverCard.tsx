@@ -173,7 +173,15 @@ export function CoverCard({
         {/* text block */}
         <View style={{ flex: 1, minWidth: 0 }}>
           {featured ? (
-            <AppText variant="display" tone="title" numberOfLines={1}>
+            // `display` (30px) was too wide for this slot and was capped at one line,
+            // so featured titles truncated on a stock iPhone: "Box Breathing" rendered
+            // as "Box Breath…" and "Ocean for Little Ones" as "Ocean for L…". The card
+            // is a ROW - 88px of art and a play button share the width - which leaves
+            // roughly 240pt for text, not a hero's full bleed.
+            // h1Compact keeps the same display face and still reads larger than the
+            // rail cards (18px semibold), but fits, and two lines absorb the longer
+            // titles instead of clipping them.
+            <AppText variant="h1Compact" tone="title" numberOfLines={2}>
               {title}
             </AppText>
           ) : (

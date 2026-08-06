@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -50,7 +51,6 @@ describe('community wall is fully gated', () => {
   it('NO new entry point can publish without the flag', () => {
     // Catches a future third caller being added and missed the way the last one was.
     // CommunityScreen is exempt: it IS the wall, and its only route is gated above.
-    const { execSync } = require('child_process') as typeof import('child_process');
     const EXEMPT = ['lib/api.ts', '__tests__', 'features/community/CommunityScreen.tsx'];
     const hits = execSync(`grep -rl "createPost" ${ROOT} || true`)
       .toString()

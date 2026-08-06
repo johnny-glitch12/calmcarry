@@ -9,7 +9,7 @@
     "scheme": "calmcarry",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "co.theglowcompany.calmcarry",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,

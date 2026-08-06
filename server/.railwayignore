@@ -1,0 +1,9 @@
+# railway up uploads this directory; the Dockerfile runs `npm ci` and `npm run build`
+# itself, so shipping node_modules and dist wastes hundreds of MB on every deploy and
+# was enough to reset the connection mid-upload. Mirrors .dockerignore.
+node_modules
+dist
+data
+.env
+*.log
+test

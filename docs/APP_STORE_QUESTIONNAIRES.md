@@ -191,11 +191,39 @@ switched on.
 
 ## Blocking before you can submit
 
-- [ ] **Demo account** created on the live API, credentials pasted above
+- [x] **Demo account** - not needed. Sign-in is optional and self-service signup works;
+      see the App Review note above. Do not paste placeholder credentials.
 - [x] **Decision on the community wall** - OFF for v1, both entry points gated. Answer
       User Generated Content **NO** and expect a 4+ rating.
-- [ ] **Privacy Policy URL** published and reachable - currently a draft in `docs/legal/`
-- [ ] **Screenshots** - 6.7" iPhone required; none exist yet
+- [ ] **Privacy Policy URL** published and reachable. `docs/legal/PRIVACY_POLICY.md` is
+      ready except for 3 counsel items + the email provider. Once Mason publishes it,
+      repoint `PRIVACY_URL` in `src/content/store.ts` - it currently points at the shop
+      policy, which advertises targeted advertising and contradicts our "no tracking"
+      filing.
+- [x] **Screenshots** - 5 captured at 1320x2868 (6.9"), from a Release build, all
+      showing the 4-tab bar. iPad set no longer required (`supportsTablet: false`).
 - [ ] **Paid Apps agreement** Active (Account Holder) - or the subscriptions cannot sell
 - [ ] **Subscription products** created with the exact ids `calmcarry.premium.monthly`
       and `calmcarry.premium.annual`, and the 3-day intro offer on the annual
+
+---
+
+## ⚠️ AFTER APPROVAL: turn the sandbox flag back off
+
+`ALLOW_SANDBOX_IAP=1` was set on the Railway service `calmcarry-api` on 2026-08-06.
+
+**Why it is on:** App Review tests in-app purchases through Apple's SANDBOX even
+against the production build. `receipt-validation.service.ts` refuses sandbox receipts
+in production, so without this the reviewer taps Subscribe, Apple charges the sandbox
+account, and the API answers 401 - an automatic Guideline 2.1 rejection.
+
+**Why it must come off:** while it is on, anyone with an Apple sandbox account can mint
+premium against production for free. It is a review-window flag, not a setting.
+
+**The day the app is approved:**
+
+```bash
+railway variables --service calmcarry-api --set "ALLOW_SANDBOX_IAP=0"
+```
+
+Then redeploy. Confirm with `railway variables --service calmcarry-api --kv | grep SANDBOX`.

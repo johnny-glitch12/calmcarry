@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { importPKCS8, SignJWT } from 'jose';
+import { loadJose } from './jose-loader';
 import { config, integrations } from '../config';
 import type { PushPlatform } from '../entities';
 
@@ -29,6 +29,7 @@ export class PushService {
   private async apnsToken(): Promise<string> {
     const now = Date.now();
     if (this.apnsJwt && now - this.apnsJwt.issuedAt < 45 * 60_000) return this.apnsJwt.token;
+    const { importPKCS8, SignJWT } = await loadJose();
     const key = await importPKCS8(config.push.apnsKeyP8.replace(/\\n/g, '\n'), 'ES256');
     const token = await new SignJWT({})
       .setProtectedHeader({ alg: 'ES256', kid: config.push.apnsKeyId })

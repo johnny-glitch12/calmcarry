@@ -4,8 +4,11 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT, type JWTPayload } from 'jose';
+import type { createRemoteJWKSet, JWTPayload } from 'jose';
 import { config } from '../config';
+import { loadJose } from './jose-loader';
+
+type RemoteJWKSet = ReturnType<typeof createRemoteJWKSet>;
 
 export type SocialProvider = 'apple' | 'google';
 export interface SocialIdentity {
@@ -28,19 +31,23 @@ export interface SocialIdentity {
  */
 const PROVIDERS: Record<
   SocialProvider,
-  { jwks: ReturnType<typeof createRemoteJWKSet>; issuer: string | string[]; audience: () => string }
+  { jwksUrl: string; issuer: string | string[]; audience: () => string }
 > = {
   apple: {
-    jwks: createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys')),
+    jwksUrl: 'https://appleid.apple.com/auth/keys',
     issuer: 'https://appleid.apple.com',
     audience: () => config.apple.signInClientId, // native: the app's bundle id
   },
   google: {
-    jwks: createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs')),
+    jwksUrl: 'https://www.googleapis.com/oauth2/v3/certs',
     issuer: ['https://accounts.google.com', 'accounts.google.com'],
     audience: () => config.google.signInClientId, // the OAuth web client id
   },
 };
+
+// One remote JWKS resolver per provider, built lazily on first verify (jose loads
+// async now) - createRemoteJWKSet caches fetched keys internally, so keep these.
+const jwksCache: Partial<Record<SocialProvider, RemoteJWKSet>> = {};
 
 @Injectable()
 export class SocialAuthService {
@@ -55,9 +62,11 @@ export class SocialAuthService {
       );
     }
 
+    const { createRemoteJWKSet, jwtVerify } = await loadJose();
+    const jwks = (jwksCache[provider] ??= createRemoteJWKSet(new URL(p.jwksUrl)));
     let payload: JWTPayload;
     try {
-      ({ payload } = await jwtVerify(idToken, p.jwks, { issuer: p.issuer, audience }));
+      ({ payload } = await jwtVerify(idToken, jwks, { issuer: p.issuer, audience }));
     } catch {
       // bad signature / wrong aud or iss / expired → never trust it
       throw new UnauthorizedException('Identity token failed verification.');
@@ -87,6 +96,7 @@ export class SocialAuthService {
 
   /** The short-lived ES256 client_secret JWT Apple requires for token/revoke calls. */
   private async appleClientSecret(): Promise<string> {
+    const { importPKCS8, SignJWT } = await loadJose();
     const key = await importPKCS8(config.apple.signInKeyP8, 'ES256');
     return new SignJWT({})
       .setProtectedHeader({ alg: 'ES256', kid: config.apple.signInKeyId })

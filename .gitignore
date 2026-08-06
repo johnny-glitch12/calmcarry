@@ -74,3 +74,7 @@ narration-out/
 # agent tooling - not part of the product repo
 .claude/
 claude-memory/
+
+# EAS metadata: pulled from App Store Connect and pushed back. Contains the review
+# contact's name, email and phone, so it stays out of the repo.
+store.config.json

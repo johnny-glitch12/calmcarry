@@ -63,11 +63,15 @@ same. **Do not** enable App Tracking Transparency.
   **No payment details ever reach us** - Apple handles the transaction.
 
 #### 6. User Content → Other User Content
-- **Collected:** YES · **Linked:** YES · **Tracking:** NO
-- **Purpose:** App Functionality
-- *Source:* `community_posts.text` - the adults-only wins wall. Shown publicly under
-  a generic handle ("A CalmCarry parent"), never the user's name, but it is stored
-  against `ownerId`, so it is linked.
+- **Collected:** ~~YES~~ → **NO for this release.**
+- *Why it changed:* the community wall is OFF (`COMMUNITY_ENABLED` in
+  `src/lib/flags.ts`), and every entry point that could publish - the tab, the route
+  itself, and the Listen screen's mix-share button - is gated, enforced by
+  `src/lib/__tests__/communityGate.test.ts`. The shipped binary cannot create a
+  `community_posts` row, so declaring User Content would be inaccurate in the other
+  direction.
+- **Restore this to YES in the same release that turns the wall on**, along with the
+  User Generated Content answer in Part 2 and the collection row in the privacy policy.
 
 ---
 
@@ -158,9 +162,15 @@ switched on.
 
 ## PART 3 - App Review notes (paste into "App Review Information")
 
-> **Demo account:** `[EMAIL]` / `[PASSWORD]`
-> *(Create a real account against the live API and put the credentials here. The
-> web/dev comp login does NOT work in a store build.)*
+> **Sign-in is not required to review this app.** Tap "Create account" on the sign-in
+> screen to make one in seconds, or skip sign-in entirely - the library, breathing
+> exercises, sleep timer and Kids Mode all work without an account.
+>
+> ⚠️ **Do NOT paste placeholder credentials into App Store Connect.** If you decide a
+> demo account is worth providing anyway, create a real one against the live API first
+> and put those exact credentials here. A demo login that does not work is a
+> guaranteed Guideline 2.1 rejection, and it is a common way to fail review while
+> believing you were being helpful.
 >
 > **The physical "Glow Orb" device is NOT required to review this app.** On the
 > device-registration screen, tap "Continue" / "Not now" to skip it and reach the

@@ -94,6 +94,17 @@ export function ParentGate() {
   const { token, user } = useAuth();
   const { intent } = useLocalSearchParams<{ intent?: string }>();
 
+  /**
+   * How the caller got here. 'entered' means an EXISTING pin was verified (or the
+   * account password was, via recovery); 'created' means they just set a brand new one.
+   *
+   * These must not be treated alike. The old code released Kids Mode on either, on the
+   * reasoning that a parent must never be stuck - but a child who reaches a gate with
+   * no readable PIN is offered "choose a PIN", and choosing one let them straight out.
+   * Setting a fresh secret proves nothing about who you are.
+   */
+  const credentialRef = useRef<'entered' | 'created'>('entered');
+
   const [phase, setPhase] = useState<Phase>('loading');
   const [entry, setEntry] = useState('');
   const [first, setFirst] = useState('');
@@ -131,7 +142,10 @@ export function ParentGate() {
       // setParentPin() overwrites the record (and resets the lockout counters), so
       // clearing first was never needed for the replacement to work.
       // a server-verified account password is at least as strong an adult
-      // check as the PIN it replaces - honor the original intent
+      // check as the PIN it replaces - honor the original intent. It counts as an
+      // ENTERED credential, so the PIN the parent is about to set still releases
+      // Kids Mode; the password, not the new PIN, is what proved who they are.
+      credentialRef.current = 'entered';
       markParentVerified(intent ?? '');
       setRecoverPassword('');
       setEntry('');
@@ -165,6 +179,8 @@ export function ParentGate() {
   const bioTried = useRef(false);
   useEffect(() => {
     hasParentPin().then(async (has) => {
+      // opening straight onto 'create' means there is no PIN to prove anything with
+      credentialRef.current = has ? 'entered' : 'created';
       setPhase(has ? 'enter' : 'create');
       if (has) {
         setLockSeconds(await parentPinLockSeconds());
@@ -184,17 +200,27 @@ export function ParentGate() {
   // never fall back to /you (a settings/billing tab a child must not reach) - home is kid-safe
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  // Purchases & account deletion are high-consequence: they require a real PIN
-  // entry (never PIN creation, never biometrics - OS biometrics can't tell a parent
-  // from a child on a shared device).
-  const highConsequence = intent === 'purchase' || intent === 'deleteAccount';
+  // High-consequence actions require a real PIN entry - never PIN creation, never
+  // biometrics, because OS biometrics cannot tell a parent from a child on a shared
+  // device and a face prompt fires at whoever is holding the phone.
+  //
+  // exitKids belongs here, and its absence was the whole hole. Leaving Kids Mode is
+  // precisely the thing a child wants to do, so it is the LEAST safe action to accept
+  // a biometric for - the same reasoning already applied to purchases was simply not
+  // carried across to the one gate a child actually pushes against.
+  const highConsequence = intent === 'purchase' || intent === 'deleteAccount' || intent === 'exitKids';
 
   const succeed = async () => {
     if (intent === 'exitKids') {
-      // Reaching succeed() means either the existing PIN was entered (the gate showed
-      // 'enter' and required it) OR no PIN existed (gate showed 'create'). Either way
-      // release to adult - a parent must never get stuck in Kids mode. When a PIN
-      // exists the gate already enforced entering it, so this is not a bypass.
+      // Only a VERIFIED credential releases Kids Mode. A newly created PIN does not.
+      // The parent is not stranded: the gate offers account-password recovery, which
+      // is a real proof of adulthood, and that path marks the credential as entered.
+      if (credentialRef.current === 'created') {
+        setRecoverError('Enter your existing PIN, or use "Forgot PIN?" to confirm it is you.');
+        setPhase('enter');
+        setEntry('');
+        return;
+      }
       setMode('adult');
       close();
     } else if (intent === 'enterKids') {
@@ -224,14 +250,12 @@ export function ParentGate() {
     }
   };
 
-  // offer biometrics automatically once when entering an existing gate (not locked,
-  // not a high-consequence action)
-  useEffect(() => {
-    if (phase !== 'enter' || !bioAvailable || bioTried.current || lockSeconds > 0 || highConsequence) return;
-    bioTried.current = true;
-    tryBiometric();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, bioAvailable, lockSeconds, highConsequence]);
+  // Biometrics are offered as a BUTTON, never fired automatically.
+  //
+  // This used to prompt on mount. A face prompt that fires by itself points the camera
+  // at whoever is holding the phone - which, on the gate that a child is trying to get
+  // through, is the child. It also spent the one attempt before a parent had chosen
+  // anything. The row below is now the only way in, and it takes a deliberate tap.
 
   const fail = () => {
     setError(true);
@@ -264,6 +288,8 @@ export function ParentGate() {
     } else if (phase === 'confirm') {
       if (pin === first) {
         await setParentPin(pin);
+        // a freshly chosen secret is not a proof of identity - succeed() refuses to
+        // release Kids Mode on it (unless recovery already marked us 'entered')
         await succeed();
       } else {
         setFirst('');
@@ -275,6 +301,7 @@ export function ParentGate() {
       // window (scoped to THIS intent), so creating a PIN can't authorize a purchase/delete
       const r = await checkParentPin(pin);
       if (r.ok) {
+        credentialRef.current = 'entered';
         markParentVerified(intent ?? '');
         await succeed();
       } else {

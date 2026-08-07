@@ -142,7 +142,19 @@ export async function biometricAvailable(): Promise<boolean> {
 /** Prompt for Face ID / Touch ID. Resolves true only on a successful scan. */
 export async function authenticateBiometric(promptMessage: string): Promise<boolean> {
   try {
-    const r = await LocalAuthentication.authenticateAsync({ promptMessage, fallbackLabel: 'Use PIN' });
+    const r = await LocalAuthentication.authenticateAsync({
+      promptMessage,
+      // BIOMETRICS ONLY. Without disableDeviceFallback, iOS uses
+      // LAPolicyDeviceOwnerAuthentication, which offers the DEVICE PASSCODE when a
+      // face or fingerprint fails - so the parent gate was satisfied by the same code
+      // that unlocks the phone. On a family iPad, or any phone whose passcode a child
+      // has watched being typed, that is not a gate at all. It defeated the entire
+      // point on the one surface where the child is the adversary.
+      disableDeviceFallback: true,
+      // no OS fallback button either; our own PIN keypad is the fallback and it is
+      // already on screen behind this prompt.
+      fallbackLabel: '',
+    });
     return r.success === true;
   } catch {
     return false;

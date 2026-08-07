@@ -149,6 +149,11 @@ export class ReceiptValidationService {
       transactionId?: string;
       expiresDate?: number;
       environment?: string;
+      // Apple stamps these onto the transaction once it is refunded or revoked. They
+      // were never read, which is how a refunded receipt stayed spendable - see the
+      // revocation check below.
+      revocationDate?: number;
+      revocationReason?: number;
     } | null = null;
     let lastErr: unknown;
     for (const env of order) {
@@ -169,6 +174,33 @@ export class ReceiptValidationService {
       this.logger.warn('Rejected a SANDBOX Apple transaction in production.');
       throw new UnauthorizedException('Sandbox receipt rejected in production');
     }
+    /**
+     * A REFUNDED or REVOKED transaction is not a purchase any more.
+     *
+     * This check did not exist, and its absence was worth free premium indefinitely.
+     * A StoreKit 2 JWS is signed by Apple and stays cryptographically valid forever,
+     * so verifying the signature says only "Apple issued this once" - never "this is
+     * still a live entitlement". The buyer's own app posts the JWS in plaintext, so
+     * anyone can capture their own, request a refund from Apple, and re-post the
+     * identical body onto a fresh account: the signature still checks out, the SKU is
+     * still premium, and expiresDate is still a year away. Repeatable every cycle,
+     * for a full refund plus a full term of service.
+     *
+     * Apple stamps revocationDate onto the transaction the moment it is refunded, and
+     * it rides in the same signed payload we already decode. Reading it closes the
+     * replay at the only point that sees the receipt.
+     *
+     * NOTE: this catches a receipt refunded BEFORE it reaches us. A refund that lands
+     * AFTER a grant is handled by the REFUND webhook, which revokes the entitlement -
+     * and grantSubscription refuses to resurrect a revoked row.
+     */
+    if (tx.revocationDate || tx.revocationReason !== undefined) {
+      this.logger.warn(
+        `Rejected a REVOKED Apple transaction (ref=${String(tx.originalTransactionId ?? tx.transactionId)}, reason=${String(tx.revocationReason)}).`,
+      );
+      throw new UnauthorizedException('This purchase was refunded and is no longer valid.');
+    }
+
     const sku = tx.productId ?? productId;
     this.assertPremiumSku(sku);
     const plan = this.planFor(sku);

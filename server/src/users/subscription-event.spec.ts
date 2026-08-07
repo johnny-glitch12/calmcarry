@@ -38,8 +38,23 @@ function harness(row: Entitlement | null) {
       return e;
     }),
   };
-  const svc = new UsersService(null as never, repo as never, null as never, null as never);
-  return { svc, repo, saved };
+  // A revoke now also writes the transaction to the permanent denylist, so the
+  // service needs a DataSource. Capture what it would insert - that write is the
+  // thing that makes a refund survive account deletion, so it is worth asserting on.
+  const denied: { transactionRef: string; reason: string }[] = [];
+  const chain = {
+    insert: () => chain,
+    into: () => chain,
+    values: (v: { transactionRef: string; reason: string }) => {
+      denied.push(v);
+      return chain;
+    },
+    orIgnore: () => chain,
+    execute: async () => ({}),
+  };
+  const dataSource = { createQueryBuilder: () => chain };
+  const svc = new UsersService(null as never, repo as never, dataSource as never, null as never);
+  return { svc, repo, saved, denied };
 }
 
 describe('applySubscriptionEvent - replay and ordering', () => {
@@ -161,5 +176,40 @@ describe('applySubscriptionEvent - replay and ordering', () => {
 
     // the redelivery is now recognised
     expect(await svc.applySubscriptionEvent('txn-1', {}, { eventUid: 'cancel-1', eventAt: new Date() })).toBe(false);
+  });
+});
+
+describe('refund replay - the revocation must outlive the entitlement row', () => {
+  it('a REFUND for an UNKNOWN transaction is still recorded on the denylist', async () => {
+    // The case that made the replay work: refund arrives before the receipt was ever
+    // validated (or after the account was deleted), so there is no entitlement to
+    // mark. It used to be discarded silently, leaving the receipt spendable forever.
+    const { svc, denied } = harness(null);
+
+    const applied = await svc.applySubscriptionEvent('txn-ghost', { status: 'revoked' }, { eventUid: 'r1' });
+
+    expect(applied).toBe(false); // nothing to update...
+    expect(denied).toEqual([{ transactionRef: 'txn-ghost', reason: 'refund' }]); // ...but never forgotten
+  });
+
+  it('a REFUND for a known transaction is recorded too', async () => {
+    const row = make({ status: 'active' });
+    const { svc, denied } = harness(row);
+    await svc.applySubscriptionEvent('txn-1', { status: 'revoked' }, { eventUid: 'r1' });
+    expect(row.status).toBe('revoked');
+    expect(denied.map((d) => d.transactionRef)).toEqual(['txn-1']);
+  });
+
+  it('an ordinary expiry is NOT denylisted - it can legitimately renew later', async () => {
+    // POSITIVE CONTROL against over-blocking: only a revoke is permanent.
+    const { svc, denied } = harness(make({ status: 'active' }));
+    await svc.applySubscriptionEvent('txn-1', { status: 'expired' }, { eventUid: 'e1' });
+    expect(denied).toEqual([]);
+  });
+
+  it('a renewal is NOT denylisted', async () => {
+    const { svc, denied } = harness(make({ status: 'expired' }));
+    await svc.applySubscriptionEvent('txn-1', { status: 'active' }, { eventUid: 'a1' });
+    expect(denied).toEqual([]);
   });
 });

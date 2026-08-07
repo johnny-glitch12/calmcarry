@@ -17,6 +17,7 @@ import {
   SavedMix,
   SessionLog,
   WarrantyClaim,
+  RevokedTransaction,
 } from '../entities';
 
 @Injectable()
@@ -65,6 +66,22 @@ export class UsersService {
       await m.delete(CaregiverInvite, { redeemedByOwnerId: ownerId });
       await m.delete(Device, { ownerId });
       await m.delete(Profile, { ownerId });
+      // A revoked entitlement is the ONLY record that a transaction was refunded, and
+      // deleting it handed an attacker a clean slate: erase the account, register
+      // again, replay the captured receipt, granted. Carry the revocation over to the
+      // permanent denylist BEFORE the row goes. The transaction id alone is not
+      // personal data, so this survives an erasure request without weakening it.
+      const revoked = await m.find(Entitlement, { where: { ownerId, status: 'revoked' } });
+      for (const e of revoked) {
+        if (!e.transactionRef) continue;
+        await m
+          .createQueryBuilder()
+          .insert()
+          .into(RevokedTransaction)
+          .values({ transactionRef: e.transactionRef, reason: 'account_deleted' })
+          .orIgnore()
+          .execute();
+      }
       await m.delete(Entitlement, { ownerId });
       await m.delete(Owner, { id: ownerId });
     });
@@ -248,6 +265,18 @@ export class UsersService {
     // bound to a DIFFERENT account, reject - otherwise one paid receipt could be
     // replayed to upgrade unlimited accounts. Same owner = a renewal → update the
     // one row so a later expired/revoked status actually downgrades them.
+    // The permanent denylist, checked FIRST. The guards below depend on an
+    // entitlement row still existing, which is exactly what an attacker removes by
+    // deleting their account - and a refund that arrives before the receipt is ever
+    // validated leaves no row to find in the first place. This check survives both.
+    if (sub.transactionRef) {
+      const denied = await this.dataSource
+        .getRepository(RevokedTransaction)
+        .findOne({ where: { transactionRef: sub.transactionRef } });
+      if (denied) {
+        throw new ConflictException('This purchase was refunded or revoked and cannot be restored.');
+      }
+    }
     const existing = sub.transactionRef
       ? await this.entitlementRepo.findOne({ where: { transactionRef: sub.transactionRef } })
       : null;
@@ -348,6 +377,22 @@ export class UsersService {
     meta?: { eventUid?: string; eventAt?: Date },
   ): Promise<boolean> {
     if (!transactionRef) return false;
+
+    // Record a revocation on the permanent denylist BEFORE looking for an entitlement,
+    // because the two cases that need it most have no entitlement to find: a refund
+    // that arrives before the receipt was ever validated, and one that arrives after
+    // the account was deleted. Previously both were discarded, leaving the receipt
+    // spendable on a fresh account forever.
+    if (patch.status === 'revoked') {
+      await this.dataSource
+        .createQueryBuilder()
+        .insert()
+        .into(RevokedTransaction)
+        .values({ transactionRef, reason: 'refund' })
+        .orIgnore()
+        .execute();
+    }
+
     const e = await this.entitlementRepo.findOne({ where: { transactionRef } });
     if (!e) return false;
 

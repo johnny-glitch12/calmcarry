@@ -9,6 +9,7 @@ export * from './profile.entity';
 export * from './saved-mix.entity';
 export * from './community-post.entity';
 export * from './community-report.entity';
+export * from './revoked-transaction.entity';
 export * from './push-token.entity';
 export * from './analytics-event.entity';
 export * from './caregiver-link.entity';

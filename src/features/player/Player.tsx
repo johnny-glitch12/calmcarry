@@ -273,6 +273,10 @@ export function Player() {
     };
   }, [track.id]);
   const onToggleSave = () => {
+    // Defence in depth behind the render gate: favourites leave the device on the
+    // account's prefs sync, so a kid profile must never be able to write one - not via
+    // a stale render, a deep link, or a mode change while this screen is mounted.
+    if (mode === 'kids') return;
     lightTap();
     toggleFavorite(track.id).then(setSaved).catch(() => {});
   };
@@ -825,20 +829,29 @@ export function Player() {
             Screen reserves only left/right insets, so fold in the bottom inset here or
             the play button sits under the Android nav bar / iOS home indicator. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36, paddingBottom: Math.max(insets.bottom, 12) + 16 }}>
-          <PressableScale
-            onPress={onToggleSave}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
-            accessibilityState={{ selected: saved }}
-            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-            <Crossfade
-              style={{ width: 24, height: 24 }}
-              active={saved}
-              front={<Feather name="heart" size={24} color={c.accent} />}
-              back={<Feather name="heart" size={24} color={c.text} style={{ opacity: 0.9 }} />}
-            />
-          </PressableScale>
+          {/* Saving is an ADULT affordance. The heart used to render for every
+              profile, so a child could tap it in Kids Mode - and favourites are synced
+              to the server against the account (ProfileProvider's prefs reconcile),
+              which made "a child's data never leaves the device" untrue. A kid keeps
+              the balancing spacer so the play button stays centred. */}
+          {mode === 'kids' ? (
+            <View style={{ width: 44, height: 44 }} />
+          ) : (
+            <PressableScale
+              onPress={onToggleSave}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={saved ? 'Remove from saved' : 'Save this session'}
+              accessibilityState={{ selected: saved }}
+              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Crossfade
+                style={{ width: 24, height: 24 }}
+                active={saved}
+                front={<Feather name="heart" size={24} color={c.accent} />}
+                back={<Feather name="heart" size={24} color={c.text} style={{ opacity: 0.9 }} />}
+              />
+            </PressableScale>
+          )}
           <PlayPause paused={paused} onPress={toggle} />
           {/* Kids get a real game to play WHILE listening (Mason): a slide puzzle of the
               track art. Opens as an overlay - the audio player stays mounted, so sound

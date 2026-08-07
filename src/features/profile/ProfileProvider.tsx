@@ -226,6 +226,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     };
   }, [hydrated, token]);
 
+  // Whether a CHILD profile is active. `mode` is derived further down, so the prefs
+  // sync (which must never run for a kid) computes it here instead. Kept as its own
+  // memo so it can be a dependency: the reconcile then resumes the moment an adult
+  // takes the phone back, rather than being skipped until the next sign-in.
+  const activeIsKids = useMemo(
+    () => (profiles.find((p) => p.id === activeId) ?? profiles[0])?.type === 'kids',
+    [profiles, activeId],
+  );
+
   // Cross-device prefs sync - ONE best-effort reconcile per sign-in/app open.
   // Local answers win and the server fills gaps. Feeling is NEVER synced (build plan
   // §3/§14) and the server allow-list would drop it anyway.
@@ -238,6 +247,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // timestamp, which makes a delete propagate exactly like an add.
   useEffect(() => {
     if (!hydrated || !token || token === 'local') return;
+    // NEVER sync while a child profile is active. Favourites travel in this payload,
+    // and the Player's save control was reachable in Kids Mode, so a child's saved
+    // track was being uploaded and stored against the account - which made the
+    // published claim that a child's data never leaves the device untrue. The control
+    // is gated now; this is the second lock, because the leak was on the SYNC side and
+    // a device-local write only becomes a disclosure when something uploads it.
+    if (activeIsKids) return;
     let alive = true;
     (async () => {
       try {
@@ -295,7 +311,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     // one reconcile per session: keyed on sign-in only, reading the hydrate-time
     // local values (a mid-session favourite lands on the next open's reconcile)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, token]);
+  }, [hydrated, token, activeIsKids]);
 
   // When the signed-in ACCOUNT changes (sign-out, or switching users), wipe the
   // previous account's household + check-in state so account B never sees account

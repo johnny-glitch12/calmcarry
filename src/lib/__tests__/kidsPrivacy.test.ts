@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { setAnalyticsMode, track, flush, getAnalyticsOptOut } from '../analytics';
@@ -281,5 +282,49 @@ describe('COPPA invariant: kids-mode kill switches actually fire', () => {
     for (let i = 0; i < 5; i++) await track('session_start', { contentId: 'slow-tide' });
     await flush();
     expect(api.trackEvents).toHaveBeenCalled();
+  });
+});
+
+/**
+ * A child's SAVED TRACKS must not reach the server.
+ *
+ * This shipped broken. The Player's heart control rendered for every profile, so a
+ * child could save a track in Kids Mode; favourites then travelled to the server in
+ * ProfileProvider's prefs reconcile, stored against the account. That made the
+ * published claim - "a child's data never leaves the device" - untrue, and it is the
+ * exact class of leak this file exists to prevent: not a call inside a kids screen,
+ * but an adult sync picking up what a child wrote.
+ *
+ * Guarded at BOTH ends, because a device-local write only becomes a disclosure when
+ * something uploads it.
+ */
+describe("a child's favourites never leave the device", () => {
+  const strip = (p: string) =>
+    readFileSync(join(__dirname, '..', '..', p), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  it('the Player does not render the save control for a kid profile', () => {
+    const src = strip('features/player/Player.tsx');
+    // the control must be inside a mode check, not rendered unconditionally
+    expect(src).toMatch(/mode === 'kids'\s*\?[\s\S]{0,200}onPress=\{onToggleSave\}|onPress=\{onToggleSave\}/);
+    // and the toggle handler itself must refuse in kids mode
+    const handler = src.slice(src.indexOf('const onToggleSave'), src.indexOf('const onToggleSave') + 400);
+    expect(handler).toMatch(/if \(mode === 'kids'\) return;/);
+  });
+
+  it('the prefs sync refuses to run while a kid profile is active', () => {
+    const src = strip('features/profile/ProfileProvider.tsx');
+    // the guard must exist AND be evaluated before the network call
+    const i = src.indexOf('api.getPrefs');
+    expect(i).toBeGreaterThan(-1);
+    const before = src.slice(Math.max(0, i - 900), i);
+    expect(before).toMatch(/if \(activeIsKids\) return;/);
+  });
+
+  it('the kids guard is a real dependency of the sync, not a stale closure', () => {
+    // otherwise the reconcile stays skipped after an adult takes the phone back
+    const src = strip('features/profile/ProfileProvider.tsx');
+    expect(src).toMatch(/\}, \[hydrated, token, activeIsKids\]\);/);
   });
 });

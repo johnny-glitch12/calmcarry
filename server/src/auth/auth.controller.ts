@@ -23,6 +23,19 @@ import { JwtAuthGuard, JwtPayload } from './jwt-auth.guard';
 // stuffing (10 attempts/minute) on top of the global 120/min limit.
 const CREDENTIAL_THROTTLE = { default: { ttl: 60_000, limit: 10 } };
 
+/**
+ * Tighter still, for the routes whose cost is an outbound EMAIL rather than a database
+ * read. Ten a minute is fine for guessing a code; it is far too generous for something
+ * that spends money and burns sender reputation on every call. Three per five minutes
+ * covers a real person who did not get the first mail and taps resend twice.
+ */
+const EMAIL_SEND_THROTTLE = { default: { ttl: 300_000, limit: 3 } };
+
+/** The full-account export is the heaviest authenticated read in the API and a real
+ *  person runs it once. Six per five minutes leaves room for a retry after a failure
+ *  without letting anyone loop it. */
+const EXPORT_THROTTLE = { default: { ttl: 300_000, limit: 6 } };
+
 @Controller()
 export class AuthController {
   constructor(
@@ -83,6 +96,13 @@ export class AuthController {
   }
 
   // Email verification (soft gate) - send / confirm the 6-digit code.
+  //
+  // Sending had NO route limit, only the 300/10s global DoS backstop. Being behind
+  // JwtAuthGuard bounds who can call it but not how often: one signed-in account -
+  // including a throwaway one - could hold the button and emit an unbounded stream of
+  // mail to its own address, spending real money and burning the sending domain's
+  // reputation, which is what actually costs you (deliverability for everyone else).
+  @Throttle(EMAIL_SEND_THROTTLE)
   @UseGuards(JwtAuthGuard)
   @Post('auth/email/send-verification')
   @HttpCode(200)
@@ -146,6 +166,12 @@ export class AuthController {
   }
 
   // Data-access export (GDPR Art.15 / UK-GDPR / AU APP 12) - the caller's own data.
+  //
+  // The most expensive authenticated read in the API: it loads every row belonging to
+  // the account with no pagination, and the account itself controls how many rows
+  // exist. Unthrottled, one signed-in caller could loop it and make the database do
+  // unbounded work. A real person exports their data once, not six times a minute.
+  @Throttle(EXPORT_THROTTLE)
   @UseGuards(JwtAuthGuard)
   @Get('me/export')
   exportMe(@CurrentUser() user: JwtPayload) {

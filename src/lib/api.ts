@@ -6,6 +6,8 @@
  */
 import { Platform } from 'react-native';
 
+import { isKidsActive, KidsModeBlockedError } from './kidsMode';
+
 // Configurable via EXPO_PUBLIC_API_BASE (set to the deployed https URL for native
 // builds). Defaults to the local API for the web/dev target.
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:4000';
@@ -60,6 +62,18 @@ async function req<T>(
   timeoutMs: number = TIMEOUT_MS,
   retried = false,
 ): Promise<T> {
+  // Single chokepoint for the promise that a child's session makes NO authenticated
+  // network requests. An authenticated call carries the account's bearer token, so
+  // blocking every one of them during Kids Mode is what makes "a child's data never
+  // leaves the device" true for the whole account surface - entitlement refreshes,
+  // prefs sync, logs, everything - rather than depending on each call site to
+  // remember its own guard. Unauthenticated calls (sign-in, register, token refresh)
+  // carry no account context and no child data, so they are never blocked here.
+  // Callers already treat a rejected api.* call as "offline, keep local", so this
+  // fails safe. 'local' is a device-only session with no server account behind it.
+  if (token && token !== 'local' && isKidsActive()) {
+    throw new KidsModeBlockedError();
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

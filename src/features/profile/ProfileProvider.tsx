@@ -13,6 +13,7 @@ import { FEELING_MAP, type Feeling, type Intent } from '@/content/feelings';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { setAnalyticsMode } from '@/lib/analytics';
 import { setMonitoringMode } from '@/lib/monitoring';
+import { setKidsActive } from '@/lib/kidsMode';
 import { api } from '@/lib/api';
 import { clearCoppaConsent, hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
 import { getFavorites, getFavoritesUpdatedAt, reconcileFavorites, replaceFavorites } from '@/lib/favorites';
@@ -518,6 +519,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setAnalyticsMode(mode);
     setMonitoringMode(mode); // COPPA: pause crash/error reporting in kids mode too
+    // The API client reads this to refuse every authenticated request during a
+    // child's session, so entitlement refreshes, prefs sync and any future call
+    // honour "Kids Mode makes no network requests" without each site remembering to.
+    setKidsActive(mode === 'kids');
   }, [mode]);
 
   // RANKED recommendations matching the check-in answer (feeling × intent ×

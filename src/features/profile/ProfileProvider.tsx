@@ -16,6 +16,7 @@ import { setMonitoringMode } from '@/lib/monitoring';
 import { setKidsActive } from '@/lib/kidsMode';
 import { api } from '@/lib/api';
 import { clearCoppaConsent, hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
+import { clearParentPin } from '@/lib/parentGate';
 import { getFavorites, getFavoritesUpdatedAt, reconcileFavorites, replaceFavorites } from '@/lib/favorites';
 import { getStoredSleepGoalHours, setSleepGoalHours } from '@/lib/sleepGoal';
 import { getTrackWins } from '@/lib/trackWins';
@@ -341,6 +342,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     clearCoppaConsent();
     clearRecents();
     remove('cc.devices'); // KEYS.devices in lib/store (this file's KEYS is profile-local)
+    // The parent PIN lives in the Keychain under one device-global key, so without this
+    // account B inherited account A's PIN: a brand-new household was gated by a PIN it
+    // never set, and the new adult hit "enter a PIN you never chose" with only the
+    // account-password recovery to escape. Fire-and-forget like the removes above.
+    void clearParentPin();
   }, []);
 
   useEffect(() => {

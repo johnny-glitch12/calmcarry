@@ -24,8 +24,6 @@ export type MixSound = { id: string; label: string; cover: CoverKey; premium: bo
 export type MixGroup = { key: string; label: string; sounds: MixSound[] };
 export type SavedMix = { name: string; levels: Record<string, number> };
 
-type TimerState = { endAt: number; mins: number };
-
 // §6.1: the sound machine keeps a small free tier. Rain is the flagship free bed
 // here even though the "Rainfall" TRACK is a premium Player track - the sound
 // machine and the Player gate independently (ocean / brown / the kids ocean are
@@ -102,10 +100,17 @@ type PlaybackValue = {
   setSleepTimer: (mins: number) => void;
   mixes: SavedMix[];
   saveMix: () => void;
-  loadMix: (m: SavedMix) => void;
+  /** load a saved mix; result reports whether anything played and how many paid sounds
+   *  were blocked, so the caller can offer the paywall for a fully-locked mix */
+  loadMix: (m: SavedMix) => ApplyLevelsResult;
   /** apply a mix from a saved chip or a shared community card (re-gated + clamped) */
-  applyExternalLevels: (incoming: Record<string, number>) => void;
+  applyExternalLevels: (incoming: Record<string, number>) => ApplyLevelsResult;
 };
+
+/** Outcome of applying a mix: how many sounds started, and how many paid ones were
+ *  skipped because the user isn't premium. applied===0 && blockedPremium>0 = a mix that
+ *  is entirely locked for this user. */
+export type ApplyLevelsResult = { applied: number; blockedPremium: number };
 
 const PlaybackContext = createContext<PlaybackValue>({
   levels: {},
@@ -120,8 +125,8 @@ const PlaybackContext = createContext<PlaybackValue>({
   setSleepTimer: () => {},
   mixes: [],
   saveMix: () => {},
-  loadMix: () => {},
-  applyExternalLevels: () => {},
+  loadMix: () => ({ applied: 0, blockedPremium: 0 }),
+  applyExternalLevels: () => ({ applied: 0, blockedPremium: 0 }),
 });
 
 /**
@@ -258,15 +263,14 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     // lock-screen controls (expo-audio v56).
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => {});
     getJSON<SavedMix[]>('cc.mixes', []).then((m) => setMixes(Array.isArray(m) ? m : []));
-    getJSON<TimerState | null>('cc.sleepTimer', null).then((saved) => {
-      if (!saved || typeof saved.endAt !== 'number') return;
-      if (saved.endAt > Date.now()) {
-        setSleepMinutes(saved.mins);
-        endAtRef.current = saved.endAt;
-      } else {
-        remove('cc.sleepTimer');
-      }
-    });
+    // Do NOT restore the sleep timer as active on a cold start. The mixer's live sound
+    // levels are not persisted, and audio does not resume after the app is killed - so
+    // restoring the timer left it showing "active, 20 min left" with total silence and
+    // nothing to stop. A sleep timer only means something while sound is playing, so a
+    // fresh launch clears any stale one. (While the app is merely backgrounded the
+    // provider stays mounted and endAtRef keeps the timer running - this only affects a
+    // true cold start.)
+    remove('cc.sleepTimer');
     const players = playersRef.current;
     return () => {
       if (fadeRef.current) clearInterval(fadeRef.current);
@@ -386,19 +390,29 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   // honoured (legacy AudioKeys mapped), levels clamped, and any premium sound a
   // free user can't access is zeroed - a shared mix can never unlock paid sounds.
   const applyExternalLevels = useCallback(
-    (incoming: Record<string, number>) => {
+    (incoming: Record<string, number>): ApplyLevelsResult => {
       const next: Record<string, number> = {};
+      let blockedPremium = 0;
       for (const [rawK, v] of Object.entries(incoming)) {
         if (typeof v !== 'number' || v <= 0) continue;
         const id = normalizeMixKey(rawK);
         if (!id) continue;
         const t = TRACKS[id];
         const premium = !!t?.locked && !FREE_MIX_IDS.has(id);
-        if (premium && !isPremium) continue;
+        if (premium && !isPremium) {
+          blockedPremium += 1; // a paid sound this free user can't play
+          continue;
+        }
         next[id] = Math.max(1, Math.min(3, Math.round(v)));
       }
+      const applied = Object.keys(next).length;
+      // If EVERY sound in the mix was a paid one this user can't play, don't silently
+      // set an empty mix (a dead, no-op chip). Leave playback untouched and tell the
+      // caller so it can offer the paywall instead.
+      if (applied === 0) return { applied: 0, blockedPremium };
       setUserPaused(false);
       setLevels(next);
+      return { applied, blockedPremium };
     },
     [isPremium],
   );
@@ -418,6 +432,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadMix = useCallback((m: SavedMix) => applyExternalLevels(m.levels), [applyExternalLevels]);
+  // ^ returns ApplyLevelsResult so a caller can route a fully-locked mix to the paywall
 
   const value = useMemo<PlaybackValue>(
     () => ({

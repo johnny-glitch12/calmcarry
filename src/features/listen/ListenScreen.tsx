@@ -275,7 +275,11 @@ export function ListenScreen() {
   };
   const onLoadMix = (m: (typeof mixes)[number]) => {
     lightTap();
-    loadMix(m);
+    const { applied, blockedPremium } = loadMix(m);
+    // A mix built entirely from paid sounds used to load as silence - a dead chip. If
+    // nothing could play and it was because of locked sounds, send a free user to the
+    // paywall instead of doing nothing.
+    if (applied === 0 && blockedPremium > 0) router.push('/unlock' as Href);
   };
 
   // Share the CURRENT live mix to the community wall - anonymous, adults + signed-in

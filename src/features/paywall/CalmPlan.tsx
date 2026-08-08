@@ -193,6 +193,14 @@ export function CalmPlan() {
       router.push('/auth' as Href);
       return;
     }
+    // Non-native (web) production build: there is no in-app purchase mechanism here, so
+    // none of the branches below can run and the user would hit the generic "couldn't
+    // complete the purchase, try again" - a retry that can never succeed. Say the
+    // honest thing, mirroring the signed-out guard above.
+    if (!iapSupported && !__DEV__) {
+      setNote('Subscriptions are purchased in the CalmCarry app for iPhone or Android.');
+      return;
+    }
     // Child safety (COPPA): when a parent PIN exists, a grown-up must pass the gate
     // (PIN entry, intent-scoped) before any purchase. The gate returns here; the
     // 'purchase'-scoped verify window lets the retap through.

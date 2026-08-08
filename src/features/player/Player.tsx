@@ -508,14 +508,21 @@ export function Player() {
   // session gently at the advertised deadline. Wall-clock + AppState recheck, same
   // pattern as the sleep timer below, so backgrounding can't overrun it.
   const lengthSec = track.lengthSec;
+  // Count DOWN the enforced length against actual playback, banking the remainder on
+  // pause - exactly like the preview clock below. It used to arm a wall-clock timeout
+  // at mount that fired even while PAUSED: pause a "3 min" breathing exercise and, 3
+  // minutes later, it faded out and jumped to the check-in while you were still paused
+  // and mid-breath. The countdown now only runs while playing.
+  const lengthLeftRef = useRef(lengthSec ? lengthSec * 1000 : 0);
   const lengthEndAtRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!lengthSec || lengthSec <= 0 || loops) {
+    if (!lengthSec || lengthSec <= 0 || loops || !status.playing) {
       lengthEndAtRef.current = null;
       return;
     }
-    lengthEndAtRef.current = Date.now() + lengthSec * 1000;
-    let id = setTimeout(() => endSession(), lengthSec * 1000);
+    const startedAt = Date.now();
+    lengthEndAtRef.current = startedAt + lengthLeftRef.current;
+    let id = setTimeout(() => endSession(), lengthLeftRef.current);
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active' || endingRef.current || lengthEndAtRef.current == null) return;
       clearTimeout(id);
@@ -526,14 +533,18 @@ export function Player() {
     return () => {
       clearTimeout(id);
       sub.remove();
+      lengthEndAtRef.current = null;
+      // bank what's left so a pause/resume doesn't restart the full length
+      lengthLeftRef.current = Math.max(0, lengthLeftRef.current - (Date.now() - startedAt));
     };
-  }, [lengthSec, loops, endSession]);
+  }, [lengthSec, loops, status.playing, endSession]);
 
-  // Sleep / auto-stop timer
+  // Sleep / auto-stop timer. A timer is a PER-SESSION choice and always starts Off.
+  // It used to be restored from a persisted `cc.sleepTimerMin` on every session, so a
+  // 20-minute timer set once silently armed on every later, unrelated session - a quick
+  // daytime breathing session would cut out after 20 minutes with nothing on screen
+  // having asked for it. The user sets it fresh each time they want it.
   const [sleepMin, setSleepMin] = useState(0);
-  useEffect(() => {
-    getJSON<number>('cc.sleepTimerMin', 0).then((v) => setSleepMin((SLEEP_OPTIONS as readonly number[]).includes(v) ? v : 0));
-  }, []);
   const sleepEndAtRef = useRef<number | null>(null); // absolute end time (for bg recompute)
   useEffect(() => {
     if (sleepMin <= 0) {
@@ -637,7 +648,6 @@ export function Player() {
     // cycle (30 → 45 → 60 → Off → 30) is still reachable from there.
     const next = sleepMin === 0 ? 30 : SLEEP_OPTIONS[(i + 1) % SLEEP_OPTIONS.length];
     setSleepMin(next);
-    setJSON('cc.sleepTimerMin', next);
     lightTap();
   };
 

@@ -1,0 +1,47 @@
+# What the EAS iOS build does NOT need. When this file exists it REPLACES .gitignore
+# for deciding what to upload, so the standard excludes are repeated here too.
+#
+# The big win: server/ is the NestJS API (326 MB with its own node_modules) and has
+# nothing to do with the mobile app build. Shipping it made the upload archive ~189 MB
+# and the upload kept dropping (write EPIPE) near the end on a slow connection.
+
+# --- not part of the mobile app ---
+server/
+docs/
+.github/
+store.config.json
+
+# --- standard excludes (mirrored from .gitignore) ---
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+.git/
+
+# secrets / signing material must never be uploaded
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+/secrets/
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+
+# junk
+.DS_Store
+*.orig.*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+**/data/*.sqlite
+**/data/*.sqlite-journal
+**/data/*.sqlite-wal

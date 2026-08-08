@@ -117,7 +117,13 @@ export function ParentGate() {
   // lives in the Keychain, which survives even an app reinstall. Only offered
   // for server-backed sessions with an email; social-only accounts hold a random
   // password, so for them the row stays hidden rather than dead-ending.
-  const canRecover = !!token && token !== 'local' && !!user?.email;
+  // Only offer account-password recovery to an account that actually HAS a password.
+  // A social-only (Apple/Google) account holds a random password it can never enter, so
+  // the recovery would 401 on every attempt - a visible dead end that stranded a social
+  // parent who forgot the PIN. hasPassword is only false when the server has confirmed
+  // the account is social; an undefined value (older session cache) keeps the prior
+  // behaviour rather than hiding recovery from a real password user.
+  const canRecover = !!token && token !== 'local' && !!user?.email && user?.hasPassword !== false;
   const [recoverPassword, setRecoverPassword] = useState('');
   const [recoverError, setRecoverError] = useState<string | null>(null);
   const [recoverBusy, setRecoverBusy] = useState(false);

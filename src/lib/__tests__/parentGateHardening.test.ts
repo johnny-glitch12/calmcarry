@@ -77,3 +77,24 @@ describe('parent gate hardening', () => {
     expect(gate.slice(i, i + 400)).toMatch(/credentialRef\.current = 'entered'/);
   });
 });
+
+describe('parent gate recovery is hidden for password-less (social) accounts', () => {
+  // canRecover is computed inline in the component, so assert the guarding expression
+  // is present in source: a social account (hasPassword === false) must NOT be offered
+  // account-password recovery, because its random password can never be entered.
+  const gate = src('features/parentgate/ParentGate.tsx');
+
+  it('canRecover requires hasPassword to not be false', () => {
+    const line = gate.split('\n').find((l) => l.includes('const canRecover'));
+    expect(line).toBeDefined();
+    expect(line).toMatch(/hasPassword !== false/);
+  });
+
+  it('still requires a real (non-local) session with an email', () => {
+    // POSITIVE CONTROL: the guard must not have collapsed to always-false, or no
+    // parent could ever recover.
+    const line = gate.split('\n').find((l) => l.includes('const canRecover'))!;
+    expect(line).toMatch(/token !== 'local'/);
+    expect(line).toMatch(/user\?\.email/);
+  });
+});

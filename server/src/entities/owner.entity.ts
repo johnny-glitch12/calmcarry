@@ -20,6 +20,14 @@ export class Owner {
   @Column()
   passwordHash: string;
 
+  // Whether THIS user set their own password. A social-only account (Apple/Google)
+  // holds a random password it can never enter, so account-password checks always fail
+  // for it - which is why the parent-gate "Forgot PIN?" recovery must not be offered to
+  // one (it would dead-end). Defaults true; set false when a social account is created,
+  // and back to true if a social user later sets a real password.
+  @Column({ default: true })
+  hasPassword: boolean;
+
   @Column()
   name: string;
 

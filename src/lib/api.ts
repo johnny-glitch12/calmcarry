@@ -103,7 +103,7 @@ async function req<T>(
   }
 }
 
-export type ApiUser = { id?: string; email: string; name: string; emailVerified?: boolean };
+export type ApiUser = { id?: string; email: string; name: string; emailVerified?: boolean; hasPassword?: boolean };
 export type ApiEntitlement = {
   tier: 'free' | 'calm_plan';
   status: 'active' | 'revoked';

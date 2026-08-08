@@ -89,7 +89,9 @@ export class UsersService {
 
   /** Replace the password hash (password reset). */
   async setPassword(ownerId: string, passwordHash: string): Promise<void> {
-    await this.ownerRepo.update({ id: ownerId }, { passwordHash });
+    // Setting a real password (reset or change) gives even a formerly social-only
+    // account a credential it knows, so account-password recovery becomes valid for it.
+    await this.ownerRepo.update({ id: ownerId }, { passwordHash, hasPassword: true });
   }
 
   /**
@@ -224,9 +226,15 @@ export class UsersService {
     email: string,
     passwordHash: string,
     name: string,
+    hasPassword = true, // false for social-only accounts (random, unenterable password)
   ): Promise<Owner> {
     // Normalized on write too, so the unique index and every later lookup agree.
-    const owner = this.ownerRepo.create({ email: UsersService.normalizeEmail(email), passwordHash, name });
+    const owner = this.ownerRepo.create({
+      email: UsersService.normalizeEmail(email),
+      passwordHash,
+      name,
+      hasPassword,
+    });
     return this.ownerRepo.save(owner);
   }
 

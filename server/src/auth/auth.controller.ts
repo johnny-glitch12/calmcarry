@@ -143,7 +143,13 @@ export class AuthController {
     const isPremium = this.usersService.isPremiumEntitlement(entitlement);
 
     return {
-      user: { id: owner.id, email: owner.email, name: owner.name, emailVerified: owner.emailVerified },
+      user: {
+        id: owner.id,
+        email: owner.email,
+        name: owner.name,
+        emailVerified: owner.emailVerified,
+        hasPassword: owner.hasPassword,
+      },
       // Include expiresAt so the client can self-expire a cached premium OFFLINE -
       // otherwise "buy one month, then stay offline" keeps premium indefinitely.
       entitlement: isPremium

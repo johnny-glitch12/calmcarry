@@ -19,7 +19,7 @@ export interface AuthResult {
   token: string;
   /** opaque rotating token for /auth/refresh; stored securely client-side */
   refreshToken: string;
-  user: { id: string; email: string; name: string };
+  user: { id: string; email: string; name: string; hasPassword: boolean };
 }
 
 const CODE_TTL_MS = 15 * 60_000; // reset/verify codes live 15 minutes
@@ -51,7 +51,9 @@ export class AuthService {
     if (!owner) {
       const passwordHash = await bcrypt.hash(randomUUID(), 12); // no password - social only
       const name = displayName?.trim() || id.name;
-      owner = await this.usersService.createOwner(id.email, passwordHash, name);
+      // hasPassword:false - this account can never enter its own (random) password, so
+      // the parent gate must not offer account-password recovery to it.
+      owner = await this.usersService.createOwner(id.email, passwordHash, name, false);
       await this.usersService.grantEntitlement(owner.id, 'free');
       // the provider already verified this address before issuing the token
       if (id.emailVerified) await this.usersService.setEmailVerified(owner.id);
@@ -268,7 +270,7 @@ export class AuthService {
     return {
       token,
       refreshToken,
-      user: { id: owner.id, email: owner.email, name: owner.name },
+      user: { id: owner.id, email: owner.email, name: owner.name, hasPassword: owner.hasPassword },
     };
   }
 }

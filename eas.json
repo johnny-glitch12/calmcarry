@@ -34,9 +34,7 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_BASE": "https://calmcarry-api-production.up.railway.app",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "_COMMENT_SUBSCRIPTION_GROUP": "Set EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP to the App Store Connect subscription-group id once the subscriptions exist. Until it is set, the 3-day trial is NOT advertised (fail-safe against over-promising). Get the numeric id from App Store Connect > Monetization > Subscriptions > (your group).",
-        "EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP": ""
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },

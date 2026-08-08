@@ -17,7 +17,7 @@ CalmCarry has a kids mode. A parent creates it, a parent controls it, and it is 
 
 ## Who we are
 
-CalmCarry is operated by [FULL LEGAL ENTITY NAME], [REGISTERED ADDRESS].
+CalmCarry is operated by GLOWCO INTERNATIONAL LLC, [REGISTERED ADDRESS].
 [COUNSEL: if the app operator and The Glow Company are different legal entities, and either one collects or maintains children's personal information, BOTH must be named here. 16 CFR 312.4(d)(1).]
 
 Questions about this notice, or about your child's information:

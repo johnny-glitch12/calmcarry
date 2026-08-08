@@ -14,7 +14,7 @@
 
 ## Who we are
 
-CalmCarry is operated by [FULL LEGAL ENTITY NAME], [REGISTERED ADDRESS], [COUNTRY].
+CalmCarry is operated by GLOWCO INTERNATIONAL LLC, [REGISTERED ADDRESS], [COUNTRY].
 
 > **[COUNSEL - BLOCKING]** If the app operator and The Glow Company are separate legal
 > entities, and either one collects or maintains personal information, decide which is
@@ -117,7 +117,7 @@ instructions only:
 | Railway Corp. | Runs the CalmCarry API | United States |
 | Neon Inc. | The database storing everything described above | AWS US East (N. Virginia), United States |
 | Apple, Google | Sign-in and subscription payments, under their own privacy policies | Global |
-| [EMAIL PROVIDER] | Sends password reset and verification codes | [REGION] |
+| Resend (resend.com) | Sends password reset and verification codes | United States |
 
 We may also disclose information if the law requires it, or to protect the rights and
 safety of users.

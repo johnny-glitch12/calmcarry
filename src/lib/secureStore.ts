@@ -20,6 +20,19 @@ export async function secureGet(key: string): Promise<string | null> {
   }
 }
 
+/**
+ * Like secureGet, but distinguishes "the key is absent" (returns null) from "the read
+ * FAILED" (throws). secureGet collapses both to null, which is fine for a cache but
+ * dangerous for a security decision: a swallowed Keychain error made hasParentPin()
+ * report "no PIN set", and every gate that guards on it - exit Kids Mode, delete
+ * account, remove a profile, purchase - then treated the household as ungated. A
+ * caller that must fail CLOSED needs to see the error rather than a soft null.
+ */
+export async function secureGetStrict(key: string): Promise<string | null> {
+  if (useSecure) return SecureStore.getItemAsync(key);
+  return AsyncStorage.getItem(key);
+}
+
 export async function secureSet(key: string, value: string): Promise<void> {
   try {
     if (useSecure) {

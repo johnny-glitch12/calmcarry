@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import * as LocalAuthentication from 'expo-local-authentication';
 
-import { secureDelete, secureGet, secureSet } from './secureStore';
+import { secureDelete, secureGet, secureGetStrict, secureSet } from './secureStore';
 
 /**
  * Parent gate (build plan §13 + §9 - non-negotiable child safety). Required to
@@ -57,8 +57,33 @@ function hashPin(pin: string, salt: string): Promise<string> {
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `${salt}|${pin}`);
 }
 
+/**
+ * Does a parent PIN exist?
+ *
+ * Three states, not two - because the gate does opposite things with them. A clean
+ * "no" opens the create-a-PIN screen; a clean "yes" demands the PIN. The dangerous
+ * third state is "the read failed": secureGet used to swallow a Keychain error into
+ * null, which read as a clean "no", which offered "choose a PIN" - handing a child a
+ * brand new secret and an open gate.
+ *
+ * On a read error this returns true (fail CLOSED), so the gate demands a PIN or the
+ * account-password recovery rather than offering to create one. A parent who really
+ * has a PIN is unaffected; a parent who genuinely has none, on the rare transient
+ * error, falls back to recovery, which is the safe direction to be wrong.
+ */
 export async function hasParentPin(): Promise<boolean> {
-  return (await readRecord()) !== null;
+  try {
+    const raw = await secureGetStrict(KEY);
+    if (!raw) return false; // key genuinely absent
+    try {
+      return isRecord(JSON.parse(raw));
+    } catch {
+      // a corrupt record is not "no PIN" - treat as present so the gate stays shut
+      return true;
+    }
+  } catch {
+    return true; // read errored - fail closed
+  }
 }
 
 export async function setParentPin(pin: string): Promise<void> {

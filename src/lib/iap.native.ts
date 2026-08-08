@@ -206,22 +206,34 @@ export async function fetchLocalizedPrices(): Promise<Partial<Record<'monthly' |
 
 /**
  * Whether THIS Apple ID is still eligible for the introductory offer (the 3-day
- * trial). Intro offers apply once per subscription group, so a lapsed subscriber
- * who resubscribes is charged immediately - promising them a trial breaks
- * guideline 3.1.2 and our own honest-claims rule. Defaults to true when the
- * check can't run (Android, group id unset, store unreachable): the store
- * itself is the final gate; we only avoid over-promising when we KNOW better.
- * PLACEHOLDER: set EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP to the App Store Connect
- * subscription-group id once the products are configured.
+ * trial). Intro offers apply once per subscription group, so a lapsed subscriber who
+ * resubscribes is charged immediately - promising them a trial breaks guideline 3.1.2
+ * and our own honest-claims rule.
+ *
+ * The subscription-group id is REQUIRED to check this. It used to default to `true`
+ * when the group id was unset, so a production build shipped without it promised the
+ * trial to EVERYONE - including ineligible returning subscribers, who then got charged
+ * $69.99 with no trial (a real surprise charge and a 3.1.2 rejection risk). That is
+ * backwards: an unverifiable eligibility must NOT become a promise.
+ *
+ * So in a production build with no group id, we do NOT promise a trial. In dev we keep
+ * it visible for testing, and a transient store error still defaults to eligible
+ * (StoreKit is the final gate and most users are first-timers). Set
+ * EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP to the App Store Connect subscription-group id and
+ * the check becomes exact per Apple ID.
  */
 const SUBSCRIPTION_GROUP = process.env.EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP ?? '';
 export async function introOfferEligible(): Promise<boolean> {
-  if (Platform.OS !== 'ios' || !SUBSCRIPTION_GROUP) return true;
+  if (Platform.OS !== 'ios') return true; // Play handles Android intro offers itself
+  if (!SUBSCRIPTION_GROUP) {
+    // Cannot verify. Don't promise a trial we can't stand behind in a shipped build.
+    return __DEV__;
+  }
   try {
     await ensureConnection();
     return (await isEligibleForIntroOfferIOS(SUBSCRIPTION_GROUP)) !== false;
   } catch {
-    return true;
+    return true; // transient store error - most users are eligible; StoreKit is the gate
   }
 }
 

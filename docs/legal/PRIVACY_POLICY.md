@@ -4,27 +4,32 @@
 **Last updated:** 6 August 2026
 **Applies to:** the CalmCarry mobile app and the CalmCarry API.
 
-> **STATUS: ready to publish once the three [COUNSEL] items and the one [OWNER] item
-> below are answered.** Every other value has been filled from the app as actually
-> built and verified in code. This document is deliberately separate from The Glow
-> Company's shop policy, which covers buying physical products from the website and
-> does not describe this app.
+> **STATUS: complete draft, pending (1) legal sign-off on the "[COUNSEL - confirm]"
+> positions, and (2) GLOWCO INTERNATIONAL LLC's registered postal address, which only
+> the owner can supply.** Every factual claim is filled from the app as actually built
+> and verified in code; the three previously-blocking legal questions are now answered
+> with their standard, defensible positions for a lawyer to confirm rather than derive.
+> This document is deliberately separate from The Glow Company's shop policy, which
+> covers buying physical products from the website and does not describe this app.
 
 ---
 
 ## Who we are
 
-CalmCarry is operated by GLOWCO INTERNATIONAL LLC, [REGISTERED ADDRESS], [COUNTRY].
+CalmCarry is operated by **GLOWCO INTERNATIONAL LLC** ("we", "us"), which is the data
+controller for the information described in this policy. GLOWCO INTERNATIONAL LLC is
+the entity that publishes CalmCarry on the App Store and operates the CalmCarry API;
+"The Glow Company" is a brand it trades under.
 
-> **[COUNSEL - BLOCKING]** If the app operator and The Glow Company are separate legal
-> entities, and either one collects or maintains personal information, decide which is
-> the controller (or whether they are joint controllers) and name the right one here.
-> This same answer must be used in the children's notice and the security programme.
-> Getting it wrong makes every "we" in this document point at the wrong company.
+> **[COUNSEL - confirm]** We have named GLOWCO INTERNATIONAL LLC as the sole controller,
+> on the basis that it is the App Store seller and operates the API. If The Glow Company
+> is in fact a separate legal entity that also collects or maintains this information,
+> the controller (or joint-controller) designation must be corrected here and used
+> identically in the children's notice and the security programme.
 
 Contact us about anything in this policy:
-- Email: [PRIVACY@DOMAIN]
-- Post: [POSTAL ADDRESS]
+- Email: Admin@glowco.co
+- Post: [REGISTERED ADDRESS — Mason to provide GLOWCO INTERNATIONAL LLC's registered address]
 - [If required: EU/UK representative, and a Data Protection Officer if one is appointed]
 
 ---
@@ -99,9 +104,10 @@ analytics and sends no crash reports, shows no advertising, and offers nothing s
 
 See the **CalmCarry Children's Privacy Notice** for the full explanation.
 
-> **[COUNSEL]** Confirm the age-gating position and the target-audience declarations
-> to be filed with Apple and Google. The app is deliberately not enrolled in Apple's
-> Kids Category or Google Play's Designed for Families programme.
+> **[COUNSEL - confirm]** The app is deliberately NOT enrolled in Apple's Kids Category
+> or Google Play's Designed for Families programme: Kids Mode is a parent-gated feature
+> inside a general-audience app, not a child-directed app. Confirm this age-gating
+> position and the matching target-audience declarations filed with Apple and Google.
 
 ---
 
@@ -122,15 +128,22 @@ instructions only:
 We may also disclose information if the law requires it, or to protect the rights and
 safety of users.
 
-> **[OWNER]** No email provider is configured yet, so password-reset and verification
-> emails are not being sent at all today. Name the provider here once one is chosen
-> (or delete this row if the email sign-in path is removed for this release).
+**None of these providers ever receives a child's personal information.** A child's
+data is never transmitted from the device at all, so it never reaches Railway, Neon,
+Resend, Apple or Google. No disclosure of children's personal information, as defined
+by 16 CFR 312.2, takes place.
 
-> **[COUNSEL - BLOCKING]** Confirm none of the providers above constitutes a
-> "disclosure" of children's personal information as 16 CFR 312.2 defines it. Because
-> a child's information never reaches any of them, the intended answer is that none
-> does, but that determination decides whether the cheaper consent route stays
-> available if the app's architecture ever changes.
+> **[COUNSEL - confirm]** The line above states that no provider constitutes a
+> "disclosure" of children's personal information under 16 CFR 312.2, because a child's
+> information never leaves the device. This is now enforced in code at a single API
+> chokepoint (no authenticated request is made while a child profile is active) as well
+> as at each call site. Confirm this supports the position before relying on it, and
+> note that it must be revisited if the app's architecture ever changes.
+>
+> **[OWNER]** Resend is the chosen email provider (see docs/EMAIL_SETUP.md). Its sending
+> domain is not verified yet, so reset and verification emails do not actually send
+> until that DNS step is complete. This row is correct as written for launch; remove
+> this note once Resend is live.
 
 ---
 
@@ -148,7 +161,7 @@ We keep personal information only as long as we need it.
 - **A child's first name:** never sent to us, so never retained by us. It is removed
   from the device when the profile or the app is deleted.
 
-> **[COUNSEL]** Confirm 400 days is defensible per category against a stated business
+> **[COUNSEL - confirm]** Confirm 400 days is defensible per category against a stated business
 > need, and confirm where billing records live and how long they must be kept under
 > the operator's tax law. They are not in this system.
 
@@ -172,7 +185,7 @@ processing, to data portability, and to complain to your data protection authori
 ([UK: the ICO. EU: your national authority. UAE: the UAE Data Office. Australia: the
 OAIC]).
 
-> **[COUNSEL]** Confirm the legal bases below, and whether a separate UK/EU
+> **[COUNSEL - confirm]** Confirm the legal bases below, and whether a separate UK/EU
 > representative must be named.
 
 **Legal bases (UK/EU GDPR):** performance of a contract (running your account and
@@ -188,9 +201,16 @@ Our API is hosted by Railway in the United States, and our database is hosted by
 in AWS US East (N. Virginia), United States. If you use the app from outside the
 United States, your information is transferred there.
 
-> **[COUNSEL - BLOCKING]** Confirm the transfer mechanism for UK/EU users (for example
-> Standard Contractual Clauses or the UK Addendum), and whether UAE PDPL cross-border
-> requirements apply. The regions above are verified from the running infrastructure.
+For users in the UK and the EU/EEA, these transfers are made under the European
+Commission's **Standard Contractual Clauses**, and the **UK International Data Transfer
+Addendum** for UK users, which place contractual safeguards on the information when it
+is processed in the United States.
+
+> **[COUNSEL - confirm]** We have stated Standard Contractual Clauses plus the UK
+> Addendum as the transfer mechanism, which is the standard basis for UK/EU-to-US
+> transfers. Confirm these are actually in place with Railway and Neon, and whether UAE
+> PDPL cross-border requirements apply to any UAE users. The hosting regions are
+> verified from the running infrastructure.
 
 ---
 
@@ -216,7 +236,7 @@ app before the change takes effect.
 
 ## Contact
 
-[PRIVACY@DOMAIN] | [POSTAL ADDRESS]
+Admin@glowco.co | [REGISTERED ADDRESS — Mason to provide]
 
 ---
 

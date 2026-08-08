@@ -432,7 +432,7 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       <ChoiceRow
         index={GOALS.length}
         label="I’m setting up for my child"
-        hint="Kids Mode is built in: stories and gentle sounds behind a parent gate"
+        hint="Kids Mode is built in: gentle sounds behind a parent gate"
         selected={forChild}
         onPress={() => setAnswer('age', forChild ? undefined : CHILD_AGE)}
         leading={<IconChip icon="smile" />}
@@ -820,7 +820,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
         </Reveal>
         <Reveal index={1}>
           <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
-            A full sound machine, sleep stories, and lyric-free music. Layer them into the mix that settles you.
+            A full sound machine and lyric-free music. Layer them into the mix that settles you.
           </AppText>
         </Reveal>
       </View>

@@ -570,7 +570,7 @@ export function AccountScreen() {
       <Reveal index={2} style={{ marginTop: 28 }}>
         <SectionHeader kicker="Who’s it for" title="Mode" />
         <AppText variant="label" tone="muted" style={{ marginBottom: 10, textTransform: 'none', letterSpacing: 0 }}>
-          Kids mode shows bedtime stories and gentle sounds.
+          Kids mode shows gentle sounds chosen for younger ears.
         </AppText>
         <Segmented
           options={['Adult', 'Kids']}

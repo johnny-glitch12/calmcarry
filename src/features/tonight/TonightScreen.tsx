@@ -734,7 +734,7 @@ export function TonightScreen() {
         <View style={{ marginTop: 32 }}>
           <SectionHeader
             kicker={kids ? 'More for bedtime' : intent ? 'Picked for how you’re arriving' : 'More for tonight'}
-            title={kids ? 'Stories & calm sounds' : 'Sounds & sessions'}
+            title={kids ? 'Calm sounds for little ones' : 'Sounds & sessions'}
             actionLabel="See all"
             onAction={() => router.push('/sounds')}
           />

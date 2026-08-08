@@ -159,6 +159,14 @@ export function SignIn() {
       setError('Please fill in every field.');
       return;
     }
+    // Catch the server's own rule (password >= 6) HERE, with a message that names the
+    // real problem. Without it, a short password came back as a generic 400 that the
+    // catch below turned into "try a different email" - sending the user to change the
+    // one thing that was fine and looping them out of sign-up entirely.
+    if (isSignup && password.length < 6) {
+      setError('Please choose a password of at least 6 characters.');
+      return;
+    }
     if (isSignup && !adult) {
       setError('Please confirm you’re 18 or older to create an account.');
       return;
@@ -174,10 +182,16 @@ export function SignIn() {
         await signIn(email.trim(), password);
         router.replace('/');
       }
-    } catch {
+    } catch (e) {
+      // 409 = the email is genuinely taken (the only case where "try a different
+      // email" is the right advice). Everything else keeps the reason accurate rather
+      // than blaming the email for a password or validation problem.
+      const status = (e as { status?: number })?.status;
       setError(
         isSignup
-          ? 'We couldn’t create that account. Try a different email.'
+          ? status === 409
+            ? 'An account with that email already exists. Try signing in instead.'
+            : 'We couldn’t create that account. Please check your details and try again.'
           : 'That email or password doesn’t look right.',
       );
     } finally {

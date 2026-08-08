@@ -83,7 +83,7 @@ export function Search() {
             <FormField
               value={q}
               onChangeText={setQ}
-              placeholder="Search sounds, tales, programs"
+              placeholder="Search sounds, sessions, programs"
               icon="search"
               autoCapitalize="none"
             />
@@ -96,7 +96,7 @@ export function Search() {
           <Reveal index={1} style={{ alignItems: 'center', paddingTop: 48, gap: 16 }}>
             <Feather name="search" size={28} color={c.dim} />
             <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 260 }}>
-              Find a soundscape, sleep tale, breathing session, or program.
+              Find a soundscape, breathing session, or program.
             </AppText>
             {/* one-tap suggestions - typing in bed is the highest-effort thing we can ask */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>

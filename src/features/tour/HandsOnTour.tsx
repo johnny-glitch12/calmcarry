@@ -34,7 +34,7 @@ const STEPS: Step[] = [
     target: 'tab-sounds',
     kicker: 'Quick tour · 2 of 4',
     title: 'Your turn: open the Library',
-    body: 'Tap the glowing tab. Every sound, story and session lives there.',
+    body: 'Tap the glowing tab. Every sound and session lives there.',
     advance: '/sounds',
   },
   {

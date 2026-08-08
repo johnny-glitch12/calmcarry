@@ -57,7 +57,12 @@ export class AuthController {
 
   // Password reset: request an emailed 6-digit code (always 200 - no account
   // enumeration), then trade code + new password for a fresh session.
-  @Throttle(CREDENTIAL_THROTTLE)
+  //
+  // Uses the tight EMAIL_SEND_THROTTLE, not the looser credential one: this route
+  // SENDS mail to whatever address is submitted, so at 10/min a known email could be
+  // bombed with reset messages (and the sending domain's reputation burned). Matches
+  // the limit already on send-verification; a real user retrying twice still fits.
+  @Throttle(EMAIL_SEND_THROTTLE)
   @Post('auth/password/forgot')
   @HttpCode(200)
   forgotPassword(@Body() dto: ForgotPasswordDto) {

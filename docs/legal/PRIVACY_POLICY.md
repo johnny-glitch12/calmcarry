@@ -4,9 +4,9 @@
 **Last updated:** 6 August 2026
 **Applies to:** the CalmCarry mobile app and the CalmCarry API.
 
-> **STATUS: complete draft, pending (1) legal sign-off on the "[COUNSEL - confirm]"
-> positions, and (2) GLOWCO INTERNATIONAL LLC's registered postal address, which only
-> the owner can supply.** Every factual claim is filled from the app as actually built
+> **STATUS: complete draft, pending legal sign-off on the "[COUNSEL - confirm]"
+> positions.** Every factual value - including the operator's registered address - is
+> now filled. Every factual claim is filled from the app as actually built
 > and verified in code; the three previously-blocking legal questions are now answered
 > with their standard, defensible positions for a lawyer to confirm rather than derive.
 > This document is deliberately separate from The Glow Company's shop policy, which
@@ -29,7 +29,7 @@ the entity that publishes CalmCarry on the App Store and operates the CalmCarry 
 
 Contact us about anything in this policy:
 - Email: Admin@glowco.co
-- Post: [REGISTERED ADDRESS — Mason to provide GLOWCO INTERNATIONAL LLC's registered address]
+- Post: 607 Gazetta Way, West Palm Beach, Florida 33413, United States of America
 - [If required: EU/UK representative, and a Data Protection Officer if one is appointed]
 
 ---
@@ -236,7 +236,7 @@ app before the change takes effect.
 
 ## Contact
 
-Admin@glowco.co | [REGISTERED ADDRESS — Mason to provide]
+Admin@glowco.co | 607 Gazetta Way, West Palm Beach, Florida 33413, United States of America
 
 ---
 

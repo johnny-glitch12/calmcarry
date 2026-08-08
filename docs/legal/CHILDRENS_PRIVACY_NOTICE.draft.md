@@ -17,13 +17,13 @@ CalmCarry has a kids mode. A parent creates it, a parent controls it, and it is 
 
 ## Who we are
 
-CalmCarry is operated by GLOWCO INTERNATIONAL LLC, [REGISTERED ADDRESS].
+CalmCarry is operated by GLOWCO INTERNATIONAL LLC, 607 Gazetta Way, West Palm Beach, Florida 33413, United States of America.
 [COUNSEL: if the app operator and The Glow Company are different legal entities, and either one collects or maintains children's personal information, BOTH must be named here. 16 CFR 312.4(d)(1).]
 
 Questions about this notice, or about your child's information:
-Email: [PRIVACY@DOMAIN]
-Post: [POSTAL ADDRESS]
-Phone: [PHONE]
+Email: Admin@glowco.co
+Post: 607 Gazetta Way, West Palm Beach, Florida 33413, United States of America
+Phone: [PHONE — owner to confirm. COPPA 16 CFR 312.4(d) lists phone among operator contact details; the number given for Apple review was not authorised for public listing.]
 
 ---
 
@@ -107,7 +107,7 @@ Because we do not hold your child's information, most of these rights you can ex
 - **Refuse to let us collect any more.** There is nothing to switch off, because there is nothing being collected. If that ever changes, we will tell you before it changes and ask you again.
 - **Withdraw your acknowledgement.** You can remove the child profile at any time, for any reason, without affecting your adult account.
 
-If you want any of this in writing from us, or you believe we hold something we should not, email [PRIVACY@DOMAIN] and we will respond within [30] days.
+If you want any of this in writing from us, or you believe we hold something we should not, email Admin@glowco.co and we will respond within 30 days.
 
 ---
 
@@ -129,4 +129,4 @@ If we ever change what kids mode collects, in any way, we will not do it quietly
 
 ---
 
-*This notice describes CalmCarry as actually built and verified in the source code as of [DATE]. If you find anything in the app that does not match what is written here, please tell us at [PRIVACY@DOMAIN]. We would rather fix the app than soften the notice.*
+*This notice describes CalmCarry as actually built and verified in the source code as of [DATE]. If you find anything in the app that does not match what is written here, please tell us at Admin@glowco.co. We would rather fix the app than soften the notice.*

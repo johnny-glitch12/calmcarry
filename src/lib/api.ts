@@ -262,7 +262,10 @@ export const api = {
 
   // ---- shared caregivers (one household, whole family) ----
   caregivers: (token: string) =>
-    req<{ caregivers: { id: string; name: string; email: string }[]; memberOf: { householdOwnerId: string; name: string } | null }>(
+    req<{
+      caregivers: { id: string; name: string; email: string }[];
+      memberOf: { householdOwnerId: string; name: string; linkId: string } | null;
+    }>(
       '/caregivers',
       {},
       token,

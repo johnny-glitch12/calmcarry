@@ -43,6 +43,16 @@ export class Device {
   @Column({ type: 'int', default: 24 })
   warrantyMonths: number;
 
+  // What the registration form actually collects. These were sent by the app and
+  // silently dropped by the server, so the "purchase date" and "retailer" a user typed
+  // to activate their warranty were never stored. Both nullable - the form marks them
+  // optional. purchaseDate is an ISO date string as the client sends it.
+  @Column({ type: 'text', nullable: true })
+  purchaseDate: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  retailer: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

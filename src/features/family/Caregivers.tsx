@@ -10,7 +10,7 @@ import { lightTap } from '@/lib/haptics';
 import { brand, useTheme } from '@/theme';
 
 type Caregiver = { id: string; name: string; email: string };
-type MemberOf = { householdOwnerId: string; name: string } | null;
+type MemberOf = { householdOwnerId: string; name: string; linkId: string } | null;
 
 export function Caregivers() {
   const { c } = useTheme();
@@ -99,6 +99,24 @@ export function Caregivers() {
     }
   };
 
+  // A caregiver leaving their own household: deletes THEIR link (same endpoint,
+  // authorized because the link's caregiverOwnerId is the caller). On success the
+  // household resolves back to the caregiver's own (free) account on the next read.
+  const leaveHousehold = async () => {
+    if (!token || token === 'local' || !memberOf || busy) return;
+    setBusy(true);
+    setNote(undefined);
+    try {
+      await api.removeCaregiver(token, memberOf.linkId);
+      setMemberOf(null);
+      refresh();
+    } catch {
+      setNote('Couldn’t leave the household just now. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Screen mode="light" scroll>
       <Reveal index={0}>
@@ -160,6 +178,21 @@ export function Caregivers() {
               </AppText>
               <StatusChip label="Shared" icon="users" />
             </Card>
+          </Reveal>
+          {/* A caregiver must be able to leave: staying means sharing their whole
+              account with the household owner with no way out. The remove endpoint
+              already lets a caregiver delete their own link. */}
+          <Reveal index={2} style={{ marginTop: 14 }}>
+            <AppText variant="meta" tone="muted" style={{ marginBottom: 10 }}>
+              Leaving stops sharing this household’s subscription and data. You can rejoin
+              later with a new code.
+            </AppText>
+            <PrimaryButton
+              label="Leave this household"
+              variant="ghost"
+              loading={busy}
+              onPress={leaveHousehold}
+            />
           </Reveal>
         </Appear>
       ) : (

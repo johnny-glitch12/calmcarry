@@ -179,6 +179,15 @@ export class UsersService {
     const warrantyClaims = deviceIds.length
       ? await this.dataSource.getRepository(WarrantyClaim).find({ where: { deviceId: In(deviceIds) } })
       : [];
+    // Household relationships - both directions - are the account's own data too, and
+    // were missing while the app promises "export everything tied to your account".
+    // `caregivers` = people this account invited into ITS household; `memberOf` = the
+    // households THIS account is a caregiver in.
+    const linkRepo = this.dataSource.getRepository(CaregiverLink);
+    const [caregivers, memberOf] = await Promise.all([
+      linkRepo.find({ where: { householdOwnerId: ownerId } }),
+      linkRepo.find({ where: { caregiverOwnerId: ownerId } }),
+    ]);
     return {
       exportedAt: new Date().toISOString(),
       account: { id: owner.id, email: owner.email, name: owner.name, createdAt: owner.createdAt },
@@ -188,6 +197,8 @@ export class UsersService {
       entitlements,
       savedMixes,
       sessionLogs,
+      caregivers,
+      memberOf,
       // These three are account-linked and were MISSING, while the in-app screen
       // promises "export everything tied to your account" - an incomplete access
       // response and an inaccurate published claim at the same time. Community posts

@@ -27,7 +27,10 @@ export class DevicesController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: RegisterDeviceDto,
   ) {
-    return this.devicesService.registerDevice(user.sub, dto.serial);
+    return this.devicesService.registerDevice(user.sub, dto.serial, {
+      purchaseDate: dto.purchaseDate,
+      retailer: dto.retailer,
+    });
   }
 
   @Post(':id/claims')

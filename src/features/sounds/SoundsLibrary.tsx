@@ -184,6 +184,10 @@ export function SoundsLibrary() {
           // paywall dead-end contradicts the COPPA-safe kids contract (adults keep
           // the labelled locked cards as the honest upsell surface)
           .filter((t): t is Track => !!t && !seen.has(t.id) && !(kids && t.locked && !isPremium));
+        // Add this rail's tracks to `seen` so a track listed in TWO rails (e.g. penguin
+        // is in both "Wind down & sleep" and "For little ones") shows only in the first.
+        // Without this the dedup only covered the personal rails above, not rail-to-rail.
+        items.forEach((t) => seen.add(t.id));
         if (!items.length) return null; // everything here already lives in a personal rail above
         return (
           <Animated.View key={rail.title} exiting={railExit} layout={railFlow}>

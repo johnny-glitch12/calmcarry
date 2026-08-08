@@ -45,6 +45,20 @@ export class CaregiversService {
         where: { householdOwnerId, redeemedByOwnerId: IsNull(), expiresAt: MoreThan(new Date()) },
       }),
     ]);
+    // Reuse the household's newest still-valid code instead of minting a fresh one on
+    // every tap. The app only holds the code in screen state, so a user who dismisses
+    // the screen loses it - and each tap used to consume another capacity slot, so a
+    // few taps could fill the cap with codes nobody has and lock out inviting with
+    // zero caregivers. Handing back the existing code makes the button idempotent and
+    // lets a user re-open the screen to see the code they already generated.
+    if (outstanding > 0) {
+      const active = await this.invites.findOne({
+        where: { householdOwnerId, redeemedByOwnerId: IsNull(), expiresAt: MoreThan(new Date()) },
+        order: { expiresAt: 'DESC' },
+      });
+      if (active?.expiresAt) return { code: active.code, expiresAt: active.expiresAt };
+    }
+
     if (linkCount + outstanding >= MAX_CAREGIVERS) {
       throw new BadRequestException('This household has reached its caregiver limit.');
     }
@@ -103,7 +117,7 @@ export class CaregiversService {
   /** Who's in my household (people I've added) + the household I belong to, if any. */
   async list(ownerId: string): Promise<{
     caregivers: { id: string; name: string; email: string }[];
-    memberOf: { householdOwnerId: string; name: string } | null;
+    memberOf: { householdOwnerId: string; name: string; linkId: string } | null;
   }> {
     const mine = await this.links.find({ where: { householdOwnerId: ownerId } });
     const caregivers = await Promise.all(
@@ -113,10 +127,18 @@ export class CaregiversService {
       }),
     );
     const membership = await this.links.findOne({ where: { caregiverOwnerId: ownerId } });
-    let memberOf: { householdOwnerId: string; name: string } | null = null;
+    // Include the link id, so a caregiver can actually LEAVE the household from the
+    // app. The remove() endpoint already permits a caregiver to delete their own link;
+    // without the id in this payload the UI had no way to call it - a dead end that
+    // stranded a caregiver sharing all their data with the household owner.
+    let memberOf: { householdOwnerId: string; name: string; linkId: string } | null = null;
     if (membership) {
       const primary = await this.owners.findOne({ where: { id: membership.householdOwnerId } });
-      memberOf = { householdOwnerId: membership.householdOwnerId, name: primary?.name ?? 'your household' };
+      memberOf = {
+        householdOwnerId: membership.householdOwnerId,
+        name: primary?.name ?? 'your household',
+        linkId: membership.id,
+      };
     }
     return { caregivers, memberOf };
   }

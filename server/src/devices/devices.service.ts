@@ -33,6 +33,7 @@ export class DevicesService {
   async registerDevice(
     ownerId: string,
     serial: string,
+    details: { purchaseDate?: string; retailer?: string } = {},
   ): Promise<Device> {
     // Bind ownership to the HOUSEHOLD (matching listForOwner/createClaim), not the
     // raw caller - otherwise a caregiver's registration lands under their own id and
@@ -56,6 +57,9 @@ export class DevicesService {
       model: 'CalmCarry · Glow Orb',
       warrantyStatus: 'active',
       warrantyMonths: 24,
+      // Persist what the form collects, instead of dropping it on the floor.
+      purchaseDate: details.purchaseDate ?? null,
+      retailer: details.retailer?.trim() || null,
     });
     try {
       return await this.deviceRepo.save(device);

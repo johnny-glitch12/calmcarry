@@ -21,6 +21,13 @@ function harness(opts: { links?: number; outstanding?: number; isCaregiver?: boo
   };
   const invites = {
     count: inviteCount,
+    // When there are outstanding codes, createInvite hands back the newest existing one
+    // rather than minting another. Return a stub only when outstanding > 0.
+    findOne: jest.fn(async () =>
+      (opts.outstanding ?? 0) > 0
+        ? { code: 'EXIST-ING-CODE', expiresAt: new Date(Date.now() + 7 * 86_400_000) }
+        : null,
+    ),
     create: jest.fn((x: unknown) => x),
     save: jest.fn(async (x: unknown) => {
       saved.push(x);
@@ -61,8 +68,18 @@ describe('CaregiversService.createInvite - capacity', () => {
     expect(saved).toHaveLength(1);
   });
 
-  it('still refuses when live codes plus members reach the cap', async () => {
-    const { svc } = harness({ links: 2, outstanding: 3 });
+  it('at capacity WITH an outstanding code, hands back the existing code instead of erroring', async () => {
+    // returning a code the household already made mints no new capacity, so it is
+    // safe at the cap - and far better UX than "limit reached" when they just want to
+    // re-see their code. Only a cap reached with NO reusable code should refuse.
+    const { svc, saved } = harness({ links: 2, outstanding: 3 });
+    const out = await svc.createInvite('owner-1');
+    expect(out.code).toBe('EXIST-ING-CODE');
+    expect(saved).toHaveLength(0); // reused, nothing new saved
+  });
+
+  it('refuses a NEW code when the cap is full of real members and no code exists to reuse', async () => {
+    const { svc } = harness({ links: 5, outstanding: 0 });
     await expect(svc.createInvite('owner-1')).rejects.toBeInstanceOf(BadRequestException);
   });
 

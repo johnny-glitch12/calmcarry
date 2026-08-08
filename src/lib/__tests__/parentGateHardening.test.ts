@@ -33,11 +33,13 @@ describe('parent gate hardening', () => {
     // a face prompt cannot tell a parent from a child on a shared device, and exiting
     // Kids Mode is precisely what the child wants
     const gate = src('features/parentgate/ParentGate.tsx');
-    const line = gate.split('\n').find((l) => l.includes('const highConsequence'));
-    expect(line).toBeDefined();
-    expect(line).toContain("'exitKids'");
-    expect(line).toContain("'purchase'");
-    expect(line).toContain("'deleteAccount'");
+    // the declaration may wrap across lines, so read from the keyword to the semicolon
+    const start = gate.indexOf('const highConsequence');
+    expect(start).toBeGreaterThan(-1);
+    const decl = gate.slice(start, gate.indexOf(';', start));
+    expect(decl).toContain("'exitKids'");
+    expect(decl).toContain("'purchase'");
+    expect(decl).toContain("'deleteAccount'");
   });
 
   it('biometrics are never fired automatically on mount', () => {

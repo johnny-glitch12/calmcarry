@@ -419,6 +419,16 @@ export function AccountScreen() {
   // GDPR / UK-GDPR / AU APP 12 data-access export - hand the user their own data.
   const onExport = async () => {
     if (!token || token === 'local') return;
+    // Child safety (COPPA): the export hands over the WHOLE account as plain text -
+    // email, name, session history, purchases. It is exactly as sensitive as deleting
+    // the account, so it takes the same parent gate. Without this it was the one
+    // account control a child could operate; a child in Kids Mode is also blocked by
+    // the API chokepoint, but an unlocked adult session left on the phone is the real
+    // case, and the gate is what covers it.
+    if ((await hasParentPin()) && !parentRecentlyVerified('export')) {
+      router.push('/parent-gate?intent=export' as Href);
+      return;
+    }
     try {
       const data = await api.exportMe(token);
       await Share.share({ message: JSON.stringify(data, null, 2) });

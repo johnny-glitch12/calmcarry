@@ -208,7 +208,8 @@ export function ParentGate() {
   // precisely the thing a child wants to do, so it is the LEAST safe action to accept
   // a biometric for - the same reasoning already applied to purchases was simply not
   // carried across to the one gate a child actually pushes against.
-  const highConsequence = intent === 'purchase' || intent === 'deleteAccount' || intent === 'exitKids';
+  const highConsequence =
+    intent === 'purchase' || intent === 'deleteAccount' || intent === 'exitKids' || intent === 'export';
 
   const succeed = async () => {
     if (intent === 'exitKids') {

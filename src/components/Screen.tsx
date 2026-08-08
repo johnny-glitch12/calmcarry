@@ -4,6 +4,7 @@ import { type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { usePlayback } from '@/features/sounds/PlaybackProvider';
 import { brand, CONTENT_MAX, ThemeProvider, themes, useColorSchemePref, useResponsive, type ThemeMode } from '@/theme';
 
 type Props = {
@@ -78,7 +79,22 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   // ambient glow instead of the cold night blobs.
   const isDark = isNight || isKids;
   const { isTablet, gutter } = useResponsive();
-  const padBottom = tabBarSpacing ? 108 : 24;
+  const insets = useSafeAreaInsets();
+  const { anyOn } = usePlayback();
+  // Bottom clearance, derived from the REAL safe-area inset instead of a flat magic
+  // number. The old `tabBarSpacing ? 108 : 24` ignored insets.bottom entirely, so:
+  //  - non-tab scroll screens had 24pt, and the last row sat behind the Android
+  //    3-button nav bar (~48dp) or inside the iOS home-indicator reserve (34pt);
+  //  - tab screens reserved a fixed 108pt that was too small once the inset (Android)
+  //    or the floating mini-player (any device, whenever a mix is playing) was added,
+  //    clipping the last card/rail.
+  // The floating pill bar is ~70pt and sits at max(insets.bottom, 12); the mini-player
+  // (~62pt incl. its margin) stacks above it only while audio is active.
+  const TAB_BAR = 70;
+  const MINI_PLAYER = 62;
+  const padBottom = tabBarSpacing
+    ? Math.max(insets.bottom, 12) + TAB_BAR + (anyOn ? MINI_PLAYER : 0) + 12
+    : insets.bottom + 24;
   const padH = isTablet ? gutter : 24;
   // TABLET: cap the content column and centre it so text/cards never edge-stretch
   // on a wide screen (the Calm/Headspace pattern), instead of a phone layout
@@ -92,7 +108,6 @@ export function Screen({ mode = 'light', scroll, children, contentStyle, overlay
   // calm floor so no-notch devices and in-browser views still breathe. We own the
   // top padding here (not via a SafeAreaView 'top' edge) so a screen's own
   // contentStyle.paddingTop can't accidentally erase the camera clearance.
-  const insets = useSafeAreaInsets();
   // clear the notch / Dynamic Island AND leave a calm gap below it - +8 landed
   // headings hard against the island on Dynamic-Island devices (read as "cut off").
   const topInset = Math.max(insets.top, 12) + 16;

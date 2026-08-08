@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, GlowOrb, PressableScale, Reveal, Screen } from '@/components';
 import { useProfile } from '@/features/profile/ProfileProvider';
@@ -45,6 +46,7 @@ function OutcomeChip({ label, onPress }: { label: string; onPress: () => void })
  */
 export function CheckIn() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { c } = useTheme();
   const { mode } = useProfile();
   // same device-awareness as the rest of the nightly flow (cc.devices cache):
@@ -135,6 +137,10 @@ export function CheckIn() {
           backgroundColor: c.surface,
           borderWidth: 1,
           borderColor: c.line,
+          // lift clear of the home indicator / Android nav bar - <Screen>'s non-scroll
+          // branch reserves only left/right insets, so a bottom-pinned button was flush
+          // against the physical edge (its lower half behind the indicator).
+          marginBottom: Math.max(insets.bottom, 12) + 12,
         }}>
         <AppText variant="bodyMedium" tone="accent">
           Done

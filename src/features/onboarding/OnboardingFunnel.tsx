@@ -301,8 +301,10 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14, minHeight: 240 }}>
         <Reveal style={{ alignItems: 'center' }}>
           {/* the real brand lockup, not a plain-text kicker (Mason: logo above the headline) */}
           <Logo size="lg" style={{ marginBottom: 18 }} />
@@ -342,7 +344,7 @@ function WelcomeStep({ onNext, onSignIn }: StepProps) {
         <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: c.line }} />
         <LegalLink label="Terms of Service" onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -351,12 +353,14 @@ function TransformStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <PressableScale onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" dimTo={0.6} hitSlop={12} style={{ alignSelf: 'flex-start', paddingVertical: 6 }}>
         <Feather name="chevron-left" size={26} color={c.text} />
       </PressableScale>
 
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', minHeight: 360 }}>
         <Reveal>
           <AppText style={[P.title, { color: c.text, textAlign: 'center' }]}>The power of a nightly ritual</AppText>
         </Reveal>
@@ -376,7 +380,7 @@ function TransformStep({ onNext, onBack }: StepProps) {
       <Reveal index={4}>
         <PrimaryButton label="Continue" onPress={onNext} />
       </Reveal>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -812,7 +816,13 @@ function SoundsStep({ onNext, onBack }: StepProps) {
   // hearth illustration is visible in a rounded frame, nothing overlaps/crops it,
   // and the button gets real breathing room instead of being pinned to the edge.
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
+    // Scrolls when it can't fit: on the smallest phones (iPhone SE / small Android) and
+    // at large Dynamic Type, the image + demo + title + Continue exceeded the viewport
+    // and the pinned Continue was pushed off-screen with no way to reach it. flexGrow:1
+    // keeps it centered and full-height when it DOES fit.
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
       <BackChevron onBack={onBack} />
       <View style={{ marginTop: 6 }}>
         <Reveal>
@@ -824,13 +834,11 @@ function SoundsStep({ onNext, onBack }: StepProps) {
           </AppText>
         </Reveal>
       </View>
-      <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+      <View style={{ flex: 1, justifyContent: 'center', gap: 16, minHeight: 320 }}>
         <Reveal index={2}>
           <View style={{ borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image
               source={require('../../../assets/images/onboarding/fireplace.png')}
-              // 4:3, not a full square - a square + the sounds demo + title overflowed the
-              // smallest phones (iPhone SE) with no way to scroll. Shorter image fits.
               style={{ width: '100%', aspectRatio: 4 / 3 }}
               contentFit="cover"
               contentPosition="bottom"
@@ -846,7 +854,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
       <Reveal index={4}>
         <PrimaryButton label="Continue" onPress={onNext} />
       </Reveal>
-    </View>
+    </ScrollView>
   );
 }
 

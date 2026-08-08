@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, GlowOrb, PressableScale, PrimaryButton, Reveal, Screen } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -25,6 +26,7 @@ import { useTheme } from '@/theme';
 export default function NightDoorScreen() {
   const { c } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { isPremium } = useAuth();
   const [targetId, setTargetId] = useState<string>(FREE_RESCUE);
 
@@ -75,7 +77,7 @@ export default function NightDoorScreen() {
         </Reveal>
       </View>
 
-      <Reveal index={1} style={{ gap: 4, paddingBottom: 12 }}>
+      <Reveal index={1} style={{ gap: 4, paddingBottom: Math.max(insets.bottom, 12) + 12 }}>
         <PrimaryButton label="Begin wind-down" onPress={begin} />
         <PressableScale
           onPress={dismiss}

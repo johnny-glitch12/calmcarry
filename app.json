@@ -138,7 +138,13 @@
         }
       ],
       "expo-apple-authentication",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#74A5A2"
+        }
+      ],
       "react-native-iap",
       "expo-web-browser",
       "expo-video",

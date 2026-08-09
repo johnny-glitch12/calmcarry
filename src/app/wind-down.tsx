@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Image as RNImage, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Image as RNImage, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
@@ -118,6 +118,11 @@ export default function WindDownScreen() {
   const router = useRouter();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
+  // Scale the centerpiece (timer ring + orb) down on short screens so the caption,
+  // title, subtitle and label below it don't overflow on an iPhone SE/8 or small
+  // Android; unchanged at 812pt+ (iPhone 13 mini and taller).
+  const { height: winH } = useWindowDimensions();
+  const orbScale = Math.min(1, Math.max(0.8, winH / 812));
   const [paused, setPaused] = useState(false);
   // After dark the depleting ring + "20:00" label are hidden: a ticking countdown
   // is the exact clock-watching this ritual is meant to quiet. Outside the wind-down
@@ -474,7 +479,7 @@ export default function WindDownScreen() {
               {!isNightHours && (
                 <ProgressRing
                   progress={progress}
-                  size={284}
+                  size={Math.round(284 * orbScale)}
                   strokeWidth={3}
                   style={{ position: 'absolute' }}
                 />
@@ -482,7 +487,7 @@ export default function WindDownScreen() {
               {/* burst: one soft arrival bloom as the wind-down begins - the room exhales.
                   paced: the orb breathes the TAUGHT 4s-in/6s-out rhythm, not the ambient
                   symmetric loop, so following it with your own breath actually works */}
-              <GlowOrb size={216} reserveGlow breathing={!paused} paced burst />
+              <GlowOrb size={Math.round(216 * orbScale)} reserveGlow breathing={!paused} paced burst />
             </View>
 
             <AppText variant="display" tone="title" style={{ marginTop: 24 }}>

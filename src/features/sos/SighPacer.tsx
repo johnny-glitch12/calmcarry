@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -54,6 +54,11 @@ function exhaleCue(): void {
  */
 export function SighPacer({ onOfferReady }: { onOfferReady: () => void }) {
   const reduced = useReducedMotion();
+  // Short screens (iPhone SE/8 at 667pt, small Androids) can't fit a 200pt orb
+  // plus its guidance text AND the "Something else?" options without clipping.
+  // Scale the orb down on short viewports; full size on 812pt+ (13 mini and up).
+  const { height } = useWindowDimensions();
+  const orbSize = Math.round(200 * Math.min(1, Math.max(0.8, height / 812)));
   const [label, setLabel] = useState(SIGH[0].label);
   const scale = useSharedValue(1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,7 +101,7 @@ export function SighPacer({ onOfferReady }: { onOfferReady: () => void }) {
         Here with you
       </AppText>
       <Animated.View style={[{ marginTop: 4 }, sighStyle]}>
-        <GlowOrb size={200} breathing={false} reserveGlow />
+        <GlowOrb size={orbSize} breathing={false} reserveGlow />
       </Animated.View>
       <SwapText trigger={label} style={{ marginTop: 4, alignItems: 'center' }}>
         <AppText variant="h2" tone="title" style={{ textAlign: 'center', maxWidth: 300 }}>

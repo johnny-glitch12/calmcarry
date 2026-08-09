@@ -28,12 +28,27 @@ fly secrets set \
 fly deploy
 ```
 
-## 4. Remaining integration keys (optional - each degrades gracefully without them)
+## 4a. REQUIRED for iOS payments (do NOT skip - these do NOT degrade gracefully)
+- `APPLE_APP_APPLE_ID=6796861173` - the numeric App Store app id (same as eas.json
+  `ascAppId`). **Without it the production receipt verifier fails CLOSED**: a real
+  buyer is charged by Apple and unlocks nothing, and the App Store Server
+  Notification webhook 500s so refunds/renewals never apply. Public value, not a
+  secret. Set on Railway before the first real purchase.
+- `APPLE_SIGNIN_CLIENT_ID=co.theglowcompany.calmcarry` - boot gate; the server
+  refuses to start unless a sign-in provider id is set. Public (the bundle id).
+- `APPLE_ROOT_CERTS_DIR=/app/certs/apple` - StoreKit2 JWS verification; certs are
+  committed and baked into the image, so this just points at them.
+- `ALLOW_SANDBOX_IAP=1` - set ONLY during the Apple App Review window (reviewers buy
+  with a Sandbox account against the prod build), then REMOVE it. Leaving it on = free
+  premium for anyone with a sandbox Apple ID.
+
+## 4b. Remaining integration keys (optional - each degrades gracefully without them)
 Set when ready (see `.env.example` for the full list):
-`APPLE_ROOT_CERTS_DIR`, `APPLE_APP_APPLE_ID`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`,
-`APPLE_SIGNIN_CLIENT_ID`, `GOOGLE_SIGNIN_CLIENT_ID`, `SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`,
-`SHOPIFY_WEBHOOK_SECRET`, and push: APNs (`APNS_KEY_P8` / `APNS_KEY_ID` / `APNS_TEAM_ID`)
-+ FCM v1 (`FIREBASE_SERVICE_ACCOUNT_JSON`). (Legacy `FCM_SERVER_KEY` is gone - FCM v1 only.)
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_SIGNIN_CLIENT_ID`, `SHOPIFY_SHOP`,
+`SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_WEBHOOK_SECRET`, and push: APNs (`APNS_KEY_P8` /
+`APNS_KEY_ID` / `APNS_TEAM_ID`) + FCM v1 (`FIREBASE_SERVICE_ACCOUNT_JSON`).
+`SMTP_URL` is optional too but **password-reset and email-verification codes silently
+never send until it is set** (see §Notes). (Legacy `FCM_SERVER_KEY` is gone - FCM v1 only.)
 
 ## 5. Point the app at it
 The Expo build profiles already pin `EXPO_PUBLIC_API_BASE=https://api.theglowcompany.co`

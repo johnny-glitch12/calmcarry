@@ -34,7 +34,8 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_BASE": "https://calmcarry-api-production.up.railway.app",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP": "22297018"
       }
     }
   },

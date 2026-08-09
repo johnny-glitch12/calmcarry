@@ -1,8 +1,8 @@
 # Cover art: the working recipe
 
-68 tracks currently share **15 covers**. One forest painting carries 8 tracks; three
-rain tracks sit side by side in the Library with identical artwork, which is the most
-visible unfinished thing in the app.
+As of 2026-08 each distinct real-scene track has its own cover (37 generated in one
+pass). The only covers still shared are intentional: breathing exercises, guide
+entries, kids tracks, and colored-noise near-twins.
 
 This is the validated prompt formula for generating more in the existing style.
 Model: `nano_banana_pro`, `aspect_ratio: "1:1"`, ~2 credits each.

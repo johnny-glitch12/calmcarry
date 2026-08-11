@@ -30,13 +30,18 @@ export const SUBSCRIPTION_URL =
     ? 'https://play.google.com/store/account/subscriptions'
     : 'https://apps.apple.com/account/subscriptions';
 
-/** Support / legal pages. Privacy + Terms verified live (HTTP 200) 2026-07-24:
+/** Support / legal pages.
+ *  PRIVACY_URL is the app-specific policy, self-hosted on our own API domain (served
+ *  by the NestJS LegalController at GET /legal/privacy) so it is a URL we control and
+ *  does not depend on the Shopify storefront. It is intentionally the PROD URL in every
+ *  build profile - the privacy policy must always resolve to the real published doc,
+ *  never localhost. Canonical source: docs/legal/privacy-policy.public.html.
  *  Terms lives at Shopify's canonical /policies/ path (the old /pages/terms-of-service
  *  was a 404 and shipped as a dead legal link - an App/Play review reject). SUPPORT_URL
  *  is unverified (the contact page returned a transient 5xx) - confirm it returns 200
  *  before submission. */
 export const SUPPORT_URL = `${STORE_URL}/pages/contact`;
-export const PRIVACY_URL = `${STORE_URL}/pages/privacy-policy`;
+export const PRIVACY_URL = 'https://calmcarry-api-production.up.railway.app/legal/privacy';
 export const TERMS_URL = `${STORE_URL}/policies/terms-of-service`;
 
 export const DEVICE_NAME = 'CalmCarry Glow Orb';

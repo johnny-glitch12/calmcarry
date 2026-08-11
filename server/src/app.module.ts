@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { CommunityModule } from './community/community.module';
 import { HealthController } from './common/health.controller';
+import { LegalController } from './common/legal.controller';
 import { ContentModule } from './content/content.module';
 import { CaregiversModule } from './caregivers/caregivers.module';
 import { DevicesModule } from './devices/devices.module';
@@ -69,7 +70,7 @@ import { UsersModule } from './users/users.module';
     CaregiversModule,
     RetentionModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, LegalController],
   // ClientIpThrottlerGuard: rate-limit buckets keyed on the Express-resolved
   // req.ip (correct behind one edge hop via `trust proxy` in main.ts). Never on a
   // raw request header - see the guard's history note.

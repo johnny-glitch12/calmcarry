@@ -62,6 +62,7 @@ export function CoverCard({
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const press = (to: number) => {
+    if (reduced) return; // match PressableScale/LibraryCard: no press motion under reduced motion
     scale.value = withTiming(to, { duration: dur.press, easing: ease.press });
   };
 

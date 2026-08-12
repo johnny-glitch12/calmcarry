@@ -49,6 +49,13 @@ export function setTokenRefresher(fn: TokenRefresher | null): void {
  *  session it was trying to save. */
 function refreshOnce(): Promise<string | null> {
   if (!tokenRefresher) return Promise.resolve(null);
+  // Kids Mode makes NO network requests. A token refresh would send the account's IP
+  // (a persistent identifier) to our server. Authenticated calls are already blocked
+  // during a child's session (see req() above), so a freshly-rotated access token has
+  // nothing to spend it on until the session ends - skip the refresh entirely. This
+  // closes the one passive-collection gap: without it, a refresh fired mid-session
+  // would transmit the account IP even though no child data is involved.
+  if (isKidsActive()) return Promise.resolve(null);
   refreshInflight ??= tokenRefresher().finally(() => {
     refreshInflight = null;
   });

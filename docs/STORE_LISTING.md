@@ -11,8 +11,10 @@ soundscapes, 16 noise colours, 7 music, 4 breathing, 2 guided), **8 free**,
 ---
 
 ## App Name (30 chars)
-`CalmCarry: Calm in Your Palm`
-*(28)*
+`CalmCarry`
+*(9 — decided 2026-08-12: matches store.config.json `title`, which is the source of
+truth `eas metadata:push` sends. The earlier candidate "CalmCarry: Calm in Your Palm"
+was dropped so the config, this doc, and App Store Connect can never disagree.)*
 
 ## Subtitle - Apple (30 chars)
 `Wind down a busy mind`

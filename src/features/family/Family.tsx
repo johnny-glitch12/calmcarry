@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { lightTap } from '@/lib/haptics';
 import { hasCoppaConsent, recordCoppaConsent } from '@/lib/consent';
 import { KEYS, setJSON } from '@/lib/store';
+import { DEVICE_SHOP_ENABLED } from '@/lib/flags';
 import { hasParentPin, parentRecentlyVerified } from '@/lib/parentGate';
 import { dur, useTheme } from '@/theme';
 
@@ -366,20 +367,22 @@ export function Family() {
               </AppText>
             </View>
           </PressableScale>
-          <PressableScale
-            onPress={() => router.push('/shop')}
-            onPressIn={lightTap}
-            hitSlop={8}
-            accessibilityRole="button"
-            dimTo={0.85}
-            style={{ alignItems: 'center', paddingVertical: 12 }}>
-            <AppText variant="meta" tone="muted">
-              Need another?{' '}
-              <AppText variant="label" style={{ color: c.textAccent }}>
-                Buy a Glow Orb
+          {DEVICE_SHOP_ENABLED ? (
+            <PressableScale
+              onPress={() => router.push('/shop')}
+              onPressIn={lightTap}
+              hitSlop={8}
+              accessibilityRole="button"
+              dimTo={0.85}
+              style={{ alignItems: 'center', paddingVertical: 12 }}>
+              <AppText variant="meta" tone="muted">
+                Need another?{' '}
+                <AppText variant="label" style={{ color: c.textAccent }}>
+                  Buy a Glow Orb
+                </AppText>
               </AppText>
-            </AppText>
-          </PressableScale>
+            </PressableScale>
+          ) : null}
         </FlowTransition>
       </Reveal>
 

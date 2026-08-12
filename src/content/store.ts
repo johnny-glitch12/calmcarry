@@ -36,13 +36,17 @@ export const SUBSCRIPTION_URL =
  *  does not depend on the Shopify storefront. It is intentionally the PROD URL in every
  *  build profile - the privacy policy must always resolve to the real published doc,
  *  never localhost. Canonical source: docs/legal/privacy-policy.public.html.
- *  Terms lives at Shopify's canonical /policies/ path (the old /pages/terms-of-service
- *  was a 404 and shipped as a dead legal link - an App/Play review reject). SUPPORT_URL
+ *  TERMS_URL is Apple's STANDARD EULA (guideline 3.1.2): the app uses the standard
+ *  License Agreement in App Store Connect, and the standard EULA is what actually
+ *  covers an auto-renewable subscription (auto-renewal, cancellation, billing via the
+ *  Apple ID). The previous target - the Shopify storefront's terms - governs PHYSICAL
+ *  goods only and does not contain subscription terms, so a point-of-sale "Terms" link
+ *  to it reads as a non-conforming EULA to a strict reviewer. SUPPORT_URL
  *  is unverified (the contact page returned a transient 5xx) - confirm it returns 200
  *  before submission. */
 export const SUPPORT_URL = `${STORE_URL}/pages/contact`;
 export const PRIVACY_URL = 'https://calmcarry-api-production.up.railway.app/legal/privacy';
-export const TERMS_URL = `${STORE_URL}/policies/terms-of-service`;
+export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 export const DEVICE_NAME = 'CalmCarry Glow Orb';
 

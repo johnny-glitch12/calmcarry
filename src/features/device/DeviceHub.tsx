@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { Appear, AppText, Card, GlowOrb, PressableScale, Reveal, Screen, SectionHeader, StatusChip, SwapText } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { api } from '@/lib/api';
+import { DEVICE_SHOP_ENABLED } from '@/lib/flags';
 import { lightTap } from '@/lib/haptics';
 import { KEYS, setJSON } from '@/lib/store';
 import { useTheme } from '@/theme';
@@ -188,16 +189,20 @@ export function DeviceHub() {
         />
       </Reveal>
 
-      {/* buy / replace - hardware is sold on the web store (no IAP for physical goods) */}
-      <Reveal index={2} style={{ marginTop: 24 }}>
-        <SectionHeader kicker="Get more" title="Add a Glow Orb" />
-        <ActionRow
-          icon="shopping-bag"
-          title="Buy another Glow Orb"
-          subtitle="An extra for any room, or a replacement"
-          onPress={() => router.push('/shop')}
-        />
-      </Reveal>
+      {/* buy / replace - hardware is sold on the web store (no IAP for physical goods).
+          Gated for v1: the storefront page carries medical claims (guideline 1.4.1),
+          see DEVICE_SHOP_ENABLED in lib/flags.ts. */}
+      {DEVICE_SHOP_ENABLED ? (
+        <Reveal index={2} style={{ marginTop: 24 }}>
+          <SectionHeader kicker="Get more" title="Add a Glow Orb" />
+          <ActionRow
+            icon="shopping-bag"
+            title="Buy another Glow Orb"
+            subtitle="An extra for any room, or a replacement"
+            onPress={() => router.push('/shop')}
+          />
+        </Reveal>
+      ) : null}
 
       {/* manage */}
       <Reveal index={3} style={{ marginTop: 28 }}>

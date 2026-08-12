@@ -1,7 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import { AppText, PressableScale, Reveal, Screen } from '@/components';
@@ -26,10 +25,12 @@ export function WatchClip() {
 
   // No video on file → land on the ARTICLE that exists instead of a "coming soon"
   // panel (only reachable via deep link today; in-app entry points gate on videoUrl,
-  // and "coming soon" is exactly the promised-feature copy the app bans).
-  useEffect(() => {
-    if (!src) router.replace(`/learn-article?id=${article.id}` as Href);
-  }, [src, article.id, router]);
+  // and "coming soon" is exactly the promised-feature copy the app bans). This must
+  // be a render-time <Redirect>, not a useEffect: the effect version painted the
+  // banned "coming soon" panel for one frame before the replace fired, and a
+  // reviewer probing deep links could catch that frame. All hooks above have
+  // already run, so the early return is hook-safe.
+  if (!src) return <Redirect href={`/learn-article?id=${article.id}` as Href} />;
 
   return (
     <Screen mode="night" scroll>
@@ -46,20 +47,14 @@ export function WatchClip() {
       </Reveal>
 
       <Reveal index={1} style={{ marginTop: 18 }}>
-        {src ? (
-          <VideoView
-            player={player}
-            style={{ width: '100%', height: 220, borderRadius: 16, backgroundColor: c.bg }}
-            contentFit="contain"
-            nativeControls
-          />
-        ) : (
-          <View style={{ height: 220, borderRadius: 16, backgroundColor: c.panel, alignItems: 'center', justifyContent: 'center' }}>
-            <AppText variant="body" tone="muted">
-              This clip is coming soon.
-            </AppText>
-          </View>
-        )}
+        {/* src is guaranteed non-null here (render-time Redirect above), so the old
+            "coming soon" fallback is gone from the binary entirely. */}
+        <VideoView
+          player={player}
+          style={{ width: '100%', height: 220, borderRadius: 16, backgroundColor: c.bg }}
+          contentFit="contain"
+          nativeControls
+        />
       </Reveal>
 
       <Reveal index={2} style={{ marginTop: 18 }}>

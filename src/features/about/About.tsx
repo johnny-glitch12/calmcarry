@@ -5,6 +5,7 @@ import { Linking, View } from 'react-native';
 import { AppText, Logo, PressableScale, Reveal, Screen } from '@/components';
 import { WELLNESS_DISCLAIMER } from '@/content/library';
 import { PRIVACY_URL, STORE_URL, SUPPORT_URL, TERMS_URL } from '@/content/store';
+import { DEVICE_SHOP_ENABLED } from '@/lib/flags';
 import { lightTap } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 
@@ -14,7 +15,11 @@ const LINKS: { label: string; icon: keyof typeof Feather.glyphMap; url: string }
   { label: 'Privacy & data', icon: 'lock', url: PRIVACY_URL },
   { label: 'Terms of service', icon: 'file-text', url: TERMS_URL },
   { label: 'Help & support', icon: 'help-circle', url: SUPPORT_URL },
-  { label: 'Visit The Glow Company', icon: 'shopping-bag', url: STORE_URL },
+  // The storefront row rides the same 1.4.1 gate as the shop screen: the site
+  // currently carries medical claims the app must not route to (lib/flags.ts).
+  ...(DEVICE_SHOP_ENABLED
+    ? [{ label: 'Visit The Glow Company', icon: 'shopping-bag' as const, url: STORE_URL }]
+    : []),
 ];
 
 function LinkRow({

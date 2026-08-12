@@ -19,6 +19,8 @@ import { useProfile } from '@/features/profile/ProfileProvider';
 import { COMMUNITY_ENABLED } from '@/lib/flags';
 import { usePlayback } from '@/features/sounds/PlaybackProvider';
 import { setTourTarget } from '@/lib/tourTargets';
+import { Crossfade } from './anim';
+import { PressableScale } from './PressableScale';
 import { HomeIcon, TAB_ICONS } from './TabIcons';
 import { brand, dur, ease, fonts, night, themes, useColorSchemePref, useResponsive, type ThemeColors } from '@/theme';
 
@@ -238,8 +240,14 @@ function MiniPlayer({ t, barBg, width, onOpen }: {
           ...t.shadow,
         },
       ]}>
-      <Pressable
+      {/* press feedback matches the app's wide-row convention (Learn rows): a
+          gentle 0.98 dip + soft dim, so the strip answers the finger like every
+          other tappable row instead of feeling static (§4). */}
+      <PressableScale
         onPress={onOpen}
+        haptic
+        scaleTo={0.98}
+        dimTo={0.95}
         accessibilityRole="button"
         accessibilityLabel={`Open the sound mixer. Playing ${names}`}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingLeft: 14, paddingVertical: 6 }}>
@@ -250,7 +258,7 @@ function MiniPlayer({ t, barBg, width, onOpen }: {
           style={{ flex: 1, fontFamily: fonts.medium, fontSize: 13, letterSpacing: 0.2, color: t.title }}>
           {names}
         </Text>
-      </Pressable>
+      </PressableScale>
 
       {sleepMinutes > 0 ? (
         <View
@@ -264,14 +272,25 @@ function MiniPlayer({ t, barBg, width, onOpen }: {
         </View>
       ) : null}
 
-      <Pressable
+      {/* icon-button press convention (ParentGate keys): deeper dip + dim on a
+          lone glyph. The play↔pause glyph dissolves via Crossfade instead of
+          hard-swapping - "nothing a user triggers may change instantly". */}
+      <PressableScale
         onPress={togglePause}
+        haptic
+        scaleTo={0.9}
+        dimTo={0.8}
         accessibilityRole="button"
         accessibilityLabel={paused ? 'Resume sounds' : 'Pause sounds'}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-        <Feather name={paused ? 'play' : 'pause'} size={20} color={t.textAccent} />
-      </Pressable>
+        <Crossfade
+          style={{ width: 20, height: 20 }}
+          active={paused}
+          front={<Feather name="play" size={20} color={t.textAccent} style={{ marginLeft: 2 }} />}
+          back={<Feather name="pause" size={20} color={t.textAccent} />}
+        />
+      </PressableScale>
     </Animated.View>
   );
 }

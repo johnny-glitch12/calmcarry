@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -34,6 +35,7 @@ function VoiceRow({
   style: object;
   children: ReactNode;
 }) {
+  const reduced = useReducedMotion();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -41,6 +43,7 @@ function VoiceRow({
     opacity: opacity.value,
   }));
   const press = (pressed: boolean) => {
+    if (reduced) return; // match PressableScale/LibraryCard: no press motion under reduced motion
     scale.value = withTiming(pressed ? 0.98 : 1, { duration: dur.press, easing: ease.press });
     opacity.value = withTiming(pressed ? 0.92 : 1, { duration: dur.press, easing: ease.press });
   };

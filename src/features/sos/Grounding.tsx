@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { AppText, PrimaryButton, SwapText } from '@/components';
+import { AppText, PrimaryButton, Reveal, SwapText } from '@/components';
 import { lightTap } from '@/lib/haptics';
 
 type GroundStep = { count: number; sense: string; hint: string };
@@ -31,17 +31,22 @@ export function Grounding({ onDriftBack }: { onDriftBack: () => void }) {
   };
 
   if (done) {
+    // The payoff arrives with the standard gentle entrance (fade + soft rise,
+    // button a beat behind) instead of hard-mounting - the one moment in the
+    // flow that earns a little warmth.
     return (
       <View style={{ flex: 1 }}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+        <Reveal style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
           <AppText variant="h1" tone="title" style={{ textAlign: 'center' }}>
             You came back
           </AppText>
           <AppText variant="body" tone="muted" style={{ textAlign: 'center', maxWidth: 300 }}>
             You are here, in the room, in the dark. That is enough.
           </AppText>
-        </View>
-        <PrimaryButton label="Drift back" onPress={onDriftBack} style={{ marginBottom: 8 }} />
+        </Reveal>
+        <Reveal index={1}>
+          <PrimaryButton label="Drift back" onPress={onDriftBack} style={{ marginBottom: 8 }} />
+        </Reveal>
       </View>
     );
   }

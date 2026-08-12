@@ -9,6 +9,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/profile/ProfileProvider';
 import { AUDIO_CREDITS } from '@/content/audio';
 import { SUBSCRIPTION_URL, SUPPORT_URL } from '@/content/store';
+import { iapSupported, restoreSubscription } from '@/lib/iap';
 import { getAnalyticsOptOut, setAnalyticsOptOut, track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { hasCoppaConsent } from '@/lib/consent';
@@ -221,7 +222,42 @@ function VerifyEmailCard({ token, onDone }: { token: string; onDone: () => void 
 export function AccountScreen() {
   const router = useRouter();
   const { c } = useTheme();
-  const { user, isPremium, token, status, signOut, changePassword } = useAuth();
+  const { user, isPremium, token, status, signOut, changePassword, activatePremium } = useAuth();
+  const [restoring, setRestoring] = useState(false);
+
+  // Apple 3.1.1: a restore path must be reachable outside the paywall too. Re-applies
+  // an EXISTING entitlement only - never starts a purchase. Mirrors the paywall's
+  // restore: re-read the store's purchases and re-validate, then fall back to any
+  // entitlement the backend already holds on this account.
+  const restorePurchases = useCallback(async () => {
+    if (restoring) return;
+    if (!token || token === 'local') {
+      Alert.alert('Sign in to restore', 'Sign in to the account you purchased with, then tap Restore purchases again.');
+      return;
+    }
+    setRestoring(true);
+    try {
+      if (iapSupported) {
+        const r = await restoreSubscription(token);
+        if (r.ok) {
+          await activatePremium();
+          Alert.alert('Purchases restored', 'Your CalmCarry Premium is active on this account.');
+          return;
+        }
+      }
+      const s = await api.billingStatus(token);
+      if (s.isPremium) {
+        await activatePremium();
+        Alert.alert('Purchases restored', 'Your CalmCarry Premium is active on this account.');
+        return;
+      }
+      Alert.alert('Nothing to restore', 'We couldn’t find a previous purchase on this account. If you subscribed with a different Apple ID, sign in with that account.');
+    } catch {
+      Alert.alert('Couldn’t reach the store', 'Please check your connection and try again.');
+    } finally {
+      setRestoring(false);
+    }
+  }, [restoring, token, activatePremium]);
   const isGuest = status === 'guest' || !token;
   const { mode, enterKids: enterKidsMode } = useProfile();
   const [reminder, setReminder] = useState(false);
@@ -725,6 +761,15 @@ export function AccountScreen() {
           ) : null}
           {token && token !== 'local' ? (
             <SettingRow icon="download" label="Export my data" onPress={onExport} />
+          ) : null}
+          {/* Apple 3.1.1: restore reachable from Settings, not only the paywall. Shown to
+              non-premium accounts (a premium account has nothing to restore). */}
+          {!isPremium ? (
+            <SettingRow
+              icon="refresh-ccw"
+              label={restoring ? 'Restoring…' : 'Restore purchases'}
+              onPress={restoring ? undefined : restorePurchases}
+            />
           ) : null}
           <SettingRow icon="help-circle" label="Help & support" onPress={() => Linking.openURL(SUPPORT_URL).catch(() => {})} />
           <SettingRow icon="info" label="About CalmCarry" onPress={() => router.push('/about' as Href)} last />

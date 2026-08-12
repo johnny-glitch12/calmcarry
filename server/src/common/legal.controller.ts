@@ -2,6 +2,7 @@ import { Controller, Get, Header } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 
 import { PRIVACY_POLICY_HTML } from './privacy-policy.page';
+import { SUPPORT_PAGE_HTML } from './support.page';
 
 /**
  * Public, unauthenticated legal pages served on our own domain so the app and the
@@ -17,5 +18,12 @@ export class LegalController {
   @Header('Cache-Control', 'public, max-age=3600')
   privacy(): string {
     return PRIVACY_POLICY_HTML;
+  }
+
+  @Get('support')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=3600')
+  support(): string {
+    return SUPPORT_PAGE_HTML;
   }
 }

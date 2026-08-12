@@ -36,17 +36,24 @@ export const SUBSCRIPTION_URL =
  *  does not depend on the Shopify storefront. It is intentionally the PROD URL in every
  *  build profile - the privacy policy must always resolve to the real published doc,
  *  never localhost. Canonical source: docs/legal/privacy-policy.public.html.
- *  TERMS_URL is Apple's STANDARD EULA (guideline 3.1.2): the app uses the standard
- *  License Agreement in App Store Connect, and the standard EULA is what actually
- *  covers an auto-renewable subscription (auto-renewal, cancellation, billing via the
- *  Apple ID). The previous target - the Shopify storefront's terms - governs PHYSICAL
- *  goods only and does not contain subscription terms, so a point-of-sale "Terms" link
- *  to it reads as a non-conforming EULA to a strict reviewer. SUPPORT_URL
- *  is unverified (the contact page returned a transient 5xx) - confirm it returns 200
- *  before submission. */
-export const SUPPORT_URL = `${STORE_URL}/pages/contact`;
+ *  TERMS_URL is platform-gated like SUBSCRIPTION_URL above. On iOS it is Apple's
+ *  STANDARD EULA (guideline 3.1.2): the app uses the standard License Agreement in
+ *  App Store Connect, and the standard EULA is what actually covers an auto-renewable
+ *  subscription (auto-renewal, cancellation, billing via the Apple ID). The Shopify
+ *  storefront's terms govern PHYSICAL goods only and contain no subscription terms,
+ *  so a point-of-sale "Terms" link to them reads as a non-conforming EULA to a strict
+ *  reviewer. Android keeps the old target for now - an Apple-branded EULA on Android
+ *  would be a Play-review fail; [ANDROID LAUNCH] publish a real developer ToS first.
+ *  SUPPORT_URL is self-hosted on our API domain (like PRIVACY_URL): the storefront
+ *  contact page bounced through 3 redirects and once returned a 5xx, and after the
+ *  1.4.1 device-shop gate the app deliberately routes to NO storefront page at all
+ *  (see DEVICE_SHOP_ENABLED in lib/flags.ts). */
+export const SUPPORT_URL = 'https://calmcarry-api-production.up.railway.app/legal/support';
 export const PRIVACY_URL = 'https://calmcarry-api-production.up.railway.app/legal/privacy';
-export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+export const TERMS_URL =
+  Platform.OS === 'android'
+    ? `${STORE_URL}/policies/terms-of-service`
+    : 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 export const DEVICE_NAME = 'CalmCarry Glow Orb';
 

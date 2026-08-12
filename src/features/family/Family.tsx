@@ -204,9 +204,9 @@ export function Family() {
                 <AppText variant="meta" tone="muted" style={{ lineHeight: 18, textTransform: 'none', letterSpacing: 0 }}>
                   Consenting confirms you accept our{' '}
                   <AppText variant="meta" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}>Terms</AppText>
-                  {' and '}
+                  {' and our '}
                   <AppText variant="meta" style={{ color: c.textAccent }} onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>Privacy Policy</AppText>
-                  , including how we handle a child’s data.
+                  , which explains how we handle a child’s data.
                 </AppText>
                 <PrimaryButton label="I’m the parent or guardian, and I consent" onPress={grantConsentAndAdd} />
                 <PressableScale onPress={() => { setNeedConsent(false); if (pendingEnter) { setPendingEnter(false); setAdding(false); } }} accessibilityRole="button" dimTo={0.85} style={{ alignSelf: 'center', paddingVertical: 6 }}>

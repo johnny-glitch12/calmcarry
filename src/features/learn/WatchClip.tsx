@@ -23,11 +23,11 @@ export function WatchClip() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/learn'));
 
-  // No video on file → land on the ARTICLE that exists instead of a "coming soon"
-  // panel (only reachable via deep link today; in-app entry points gate on videoUrl,
-  // and "coming soon" is exactly the promised-feature copy the app bans). This must
+  // No video on file → land on the ARTICLE that exists instead of a placeholder
+  // "not yet available" panel (only reachable via deep link today; in-app entry points gate on videoUrl,
+  // and that unavailable-clip copy is exactly the promised-feature wording the app bans). This must
   // be a render-time <Redirect>, not a useEffect: the effect version painted the
-  // banned "coming soon" panel for one frame before the replace fired, and a
+  // banned unavailable-clip panel for one frame before the replace fired, and a
   // reviewer probing deep links could catch that frame. All hooks above have
   // already run, so the early return is hook-safe.
   if (!src) return <Redirect href={`/learn-article?id=${article.id}` as Href} />;
@@ -48,7 +48,7 @@ export function WatchClip() {
 
       <Reveal index={1} style={{ marginTop: 18 }}>
         {/* src is guaranteed non-null here (render-time Redirect above), so the old
-            "coming soon" fallback is gone from the binary entirely. */}
+            the unavailable-clip fallback is gone from the binary entirely. */}
         <VideoView
           player={player}
           style={{ width: '100%', height: 220, borderRadius: 16, backgroundColor: c.bg }}

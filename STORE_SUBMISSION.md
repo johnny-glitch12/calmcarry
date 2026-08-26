@@ -37,6 +37,10 @@ File these ACCURATELY (a stale/optimistic label is itself a 5.1.1(v) reject). Al
 - **Diagnostics / crash + performance** - ONLY if Sentry is enabled (`EXPO_PUBLIC_SENTRY_DSN`
   / `SENTRY_DSN` set). Sentry is a third-party SDK; if you ship with it on, declare this.
   Also excluded in Kids mode. If you leave the DSN blank, do not declare Diagnostics.
+- **Purchases (Purchase History)** - subscription tier/status/plan/renewal linked to the
+  account (App Functionality; matches the `NSPrivacyCollectedDataTypePurchaseHistory`
+  entry the binary's privacy manifest declares via `app.json`). ✅ Verified 2026-08-27:
+  the ASC App Privacy label already includes this.
 - No ads, no data sold, no tracking across apps/sites. Audio plays in silent mode.
 
 ## 6. Build & submit commands
@@ -74,11 +78,12 @@ npx eas submit -p android        # needs Play service-account JSON
 - Audio ships bundled in the binary for v1; the signed-URL CDN is post-v1 (`STREAMING_ENABLED`).
 
 ## 8. App Review notes (paste into ASC "App Review Information" / Play "Review notes")
-The dev/web comp login does NOT work in a store build - you MUST create a real demo
-account on the production backend first (sign up in the shipped build once the API is
-live), then fill the credentials below.
+Since the 5.1.1(v) fix, **no demo account is needed and "Sign-in required" must stay
+UNCHECKED** in ASC (registration is optional and purchase works signed out - telling
+Apple sign-in is required contradicts the fix and invites the same rejection).
+✅ Updated in ASC 2026-08-27: sign-in unchecked, review notes replaced with the
+5.1.1(v)-resolution text. The notes below are kept for Play / reference:
 
-> **Demo account:** `<email>` / `<password>` (created against the live Railway API)
 >
 > **The physical "Glow Orb" device is NOT required to review the app.** On the
 > device-registration screen you can tap "Continue" / "Not now" to skip it and reach

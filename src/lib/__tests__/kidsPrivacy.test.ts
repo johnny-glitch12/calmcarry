@@ -3,6 +3,15 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { setAnalyticsMode, track, flush, getAnalyticsOptOut } from '../analytics';
+import { setKidsActive } from '../kidsMode';
+
+/** Publish the active profile the way ProfileProvider does at runtime: BOTH the
+ *  analytics-module flag and the global kidsMode signal (flush() checks the latter
+ *  too, fail-closed, so the boot window can't leak a persisted-kid session). */
+function publishMode(mode: 'adult' | 'kids'): void {
+  setAnalyticsMode(mode);
+  setKidsActive(mode === 'kids');
+}
 
 /**
  * COPPA INVARIANTS: nothing about a child leaves this device.
@@ -159,8 +168,11 @@ describe('COPPA invariant: no child data leaves the device', () => {
     expect(sites.length).toBeGreaterThan(0); // guard against the grep silently matching nothing
 
     for (const site of sites) {
-      const [file, lineNo] = [site.split(':')[0], parseInt(site.split(':')[1], 10)];
-      const body = execSync(`cat "${file}"`, { encoding: 'utf8' }).split('\n');
+      // split on the LAST two colons: an absolute Windows path ("C:\...") carries a
+      // drive colon that a naive split(':')[0] truncates to "C"
+      const m = site.match(/^(.*):(\d+):/) ?? site.match(/^(.*):(\d+)$/);
+      const [file, lineNo] = [m?.[1] ?? site, parseInt(m?.[2] ?? '0', 10)];
+      const body = readFileSync(file, 'utf8').split('\n');
       // the kids guard must appear within the preceding few lines
       const window = body.slice(Math.max(0, lineNo - 8), lineNo).join('\n');
       expect(window).toMatch(/mode\s*!==\s*'kids'/);
@@ -252,10 +264,10 @@ const { api } = require('../api') as { api: { trackEvents: jest.Mock } };
 
 describe('COPPA invariant: kids-mode kill switches actually fire', () => {
   beforeEach(() => api.trackEvents.mockClear());
-  afterEach(() => setAnalyticsMode('adult'));
+  afterEach(() => publishMode('adult'));
 
   it('sends NOTHING to the server while a child profile is active', async () => {
-    setAnalyticsMode('kids');
+    publishMode('kids');
     // A burst well past the flush threshold (10) - if the guard regressed these
     // would batch and ship.
     for (let i = 0; i < 25; i++) await track('session_start', { contentId: 'slow-tide' });
@@ -267,14 +279,14 @@ describe('COPPA invariant: kids-mode kill switches actually fire', () => {
     // Kids are never tracked REGARDLESS of the adult opt-out: two separate
     // protections that must not be collapsed into one.
     await expect(getAnalyticsOptOut()).resolves.toBe(false); // adult is opted IN
-    setAnalyticsMode('kids');
+    publishMode('kids');
     for (let i = 0; i < 12; i++) await track('paywall_view');
     await flush();
     expect(api.trackEvents).not.toHaveBeenCalled();
   });
 
   it('control: an ADULT profile DOES send (proves the spy would catch a leak)', async () => {
-    setAnalyticsMode('adult');
+    publishMode('adult');
     // Deliberately BELOW the auto-flush threshold (10): at or above it, track()
     // fires its own un-awaited flush, and the awaited one below then returns
     // immediately on the single-flight guard - so the assertion would run before the

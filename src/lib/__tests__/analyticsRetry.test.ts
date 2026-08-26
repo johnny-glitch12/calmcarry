@@ -20,9 +20,16 @@ class HttpError extends Error {
 
 const BUF_KEY = 'cc.analyticsQueue';
 
-async function loadQueue() {
+let lastKidsMode: typeof import('../kidsMode');
+async function loadQueue(kidsActive = false) {
   let analytics: typeof import('../analytics');
   jest.isolateModules(() => {
+    // These tests model a session with a known profile. kidsMode defaults to "a
+    // child MIGHT be active" (fail-closed for the boot window), so publish the
+    // profile the way ProfileProvider does at runtime before analytics loads.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    lastKidsMode = require('../kidsMode') as typeof import('../kidsMode');
+    lastKidsMode.setKidsActive(kidsActive);
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     analytics = require('../analytics');
   });
@@ -102,5 +109,29 @@ describe('analytics flush - which failures are worth retrying', () => {
     expect(mockTrackEvents).toHaveBeenCalledTimes(1);
     const sent = mockTrackEvents.mock.calls[0][1] as { name: string }[];
     expect(sent.map((e) => e.name)).toEqual(['after']);
+  });
+
+  it('a kid session HOLDS the queue: nothing transmits, nothing is lost', async () => {
+    // The kids-mode promise is no network during a child's session - including
+    // ADULT events buffered before the profile switch (the batch request carries
+    // the install's anonId). This models the exact boot window: analytics' own
+    // kidsActive flag still says adult (ProfileProvider hasn't published), so
+    // track() buffers - but kidsMode says a kid may be active, so flush() must
+    // defer: not send, not drop.
+    await AsyncStorage.clear();
+    const a = await loadQueue(true);
+    await a.setAnalyticsOptOut(false);
+    await a.track('buffered-adult-event');
+    mockTrackEvents.mockReset();
+    mockTrackEvents.mockImplementation(async () => ({ ok: true }));
+    await a.flush();
+    expect(mockTrackEvents).not.toHaveBeenCalled();
+
+    // the adult takes the device back: the held queue drains intact
+    lastKidsMode.setKidsActive(false);
+    await a.flush();
+    expect(mockTrackEvents).toHaveBeenCalledTimes(1);
+    const sent = mockTrackEvents.mock.calls[0][1] as { name: string }[];
+    expect(sent.map((e) => e.name)).toEqual(['buffered-adult-event']);
   });
 });

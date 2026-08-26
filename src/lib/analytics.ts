@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { AppState } from 'react-native';
 
 import { api } from './api';
+import { isKidsActive } from './kidsMode';
 import { secureGet, secureSet } from './secureStore';
 import { getJSON, remove, setJSON } from './store';
 
@@ -147,6 +148,18 @@ function isPermanentReject(e: unknown): boolean {
 
 export async function flush(): Promise<void> {
   if (optedOut) { buf = []; return; } // opted out - never send, and hold nothing
+  // The kids-mode promise is NO network during a child's session - and that covers
+  // ADULT events buffered before the profile switch, because the batch request
+  // itself (with the install's anonId) is a transmission. Hold the queue and try
+  // again later; the next adult-session flush drains it. Without this, the 15s
+  // timer armed by an adult's last track() could fire mid-kids-session. Checks
+  // BOTH signals: this module's kidsActive (false until ProfileProvider publishes)
+  // would wave the boot-time recovery flush through while a persisted KID profile
+  // is still hydrating - kidsMode.isKidsActive() defaults true, closing that window.
+  if (kidsActive || isKidsActive()) {
+    schedule();
+    return;
+  }
   if (flushing) return; // a flush is already in-flight - never send the same batch twice
   if (timer) {
     clearTimeout(timer);

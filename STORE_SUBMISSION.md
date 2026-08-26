@@ -62,12 +62,15 @@ npx eas submit -p android        # needs Play service-account JSON
   Store app id) on Railway. Without it the Apple Production verifier throws on the
   FIRST real purchase (the user is charged and gets nothing) while the service still
   looks healthy.
-  > ⚠️ **Not yet true of the running API.** The boot guard that refuses to start
-  > without this value, the rate-limit fix and the Play/entitlement fixes all live on
-  > branch `launch-readiness-fixes-2026-07-24`, which has **not been merged or
-  > deployed**. Until that branch is merged and Railway redeployed, the live API is
-  > running the pre-fix code. Verify with `/health` after deploying, and only then
-  > treat the items above as properties of production.
+  > Status 2026-08-27: the launch-readiness fixes ARE on `main` (the old
+  > `launch-readiness-fixes-2026-07-24` branch no longer exists on the remote;
+  > `config.spec.ts` pins the final behavior - missing `APPLE_APP_APPLE_ID` WARNS
+  > at boot and fail-closes production Apple validation rather than refusing to
+  > start). Redeploy Railway from current `main` if it hasn't picked it up, and
+  > set `APPLE_APP_APPLE_ID=6796861173` before real (non-sandbox) purchases.
+  > Note: App Review's guest sandbox purchase never touches this API, so this
+  > env var does not block the 5.1.1(v) resubmission - only real post-launch
+  > authed purchases.
 - Audio ships bundled in the binary for v1; the signed-URL CDN is post-v1 (`STREAMING_ENABLED`).
 
 ## 8. App Review notes (paste into ASC "App Review Information" / Play "Review notes")

@@ -26,14 +26,14 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://calmcarry-api-production.up.railway.app",
+        "EXPO_PUBLIC_API_BASE": "https://calmcarry-api.vercel.app",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://calmcarry-api-production.up.railway.app",
+        "EXPO_PUBLIC_API_BASE": "https://calmcarry-api.vercel.app",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
         "EXPO_PUBLIC_IOS_SUBSCRIPTION_GROUP": "22297018"
       }

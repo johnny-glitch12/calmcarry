@@ -4,28 +4,19 @@ The rejection (2026-08-20, submission `ed2dcdc5-9e06-430c-b53d-a8bf489eb9e7`) is
 in commit `f8562ac`: guests can purchase and restore without an account (details in
 `STORE_SUBMISSION.md` §9). What remains: restore the backend, produce build 18, resubmit.
 
-## 0. FIRST - the backend is DOWN (found 2026-08-27, blocks resubmission)
+## 0. Backend - RESOLVED 2026-08-27: moved to Vercel
 
-`calmcarry-api-production.up.railway.app` returns Railway's edge "Application not
-found" on every path - the service is unbound/deleted, NOT sleeping. Blast radius:
-the ASC **Privacy Policy URL** and **Support URL** point there (dead-link metadata
-rejection), the same URLs are baked into the binary, and sign-in/registration/account
-deletion fail during review (2.1). Guest purchase itself is unaffected (never calls
-the server).
+The Railway service died (trial maxed out + unpaid subscription; deploys blocked
+until payment). The API now lives on **https://calmcarry-api.vercel.app** (project
+`calmcarry-api` in the TASK FORCE Vercel team, Hobby/free): current `main` deployed,
+Neon DB connected, `ALLOW_SANDBOX_IAP=1` + `APPLE_APP_APPLE_ID=6796861173` added to
+the 8 env vars already on the project. Verified `/health`, `/legal/privacy`,
+`/legal/support` all return 200. All repo references repointed (eas.json, store.ts,
+.env.example, retention-purge workflow). The Railway project can be deleted or paid
+later - nothing depends on it now.
 
-Fix EITHER way, then verify `/health`, `/legal/privacy`, `/legal/support` return 200:
-
-- **Railway** (preferred - env vars incl. `ALLOW_SANDBOX_IAP=1` lived there): open the
-  Railway dashboard, restore/redeploy the `calmcarry-api` service from current `main`,
-  re-bind the domain, and re-check the env vars survived.
-- **Vercel fallback**: `calmcarry-api.vercel.app` is ALIVE with the Neon DB up, but
-  runs OLD code (no `/legal/*` routes). `vercel login` + redeploy from `server/`, set
-  `ALLOW_SANDBOX_IAP=1`, then repoint `EXPO_PUBLIC_API_BASE` (eas.json), `PRIVACY_URL`
-  + `SUPPORT_URL` (src/content/store.ts), the ASC Privacy Policy URL + Support URL
-  fields, and the Privacy Policy line at the end of the ASC description.
-
-Also note: the old ASC demo account (applereview@ - see ASC history) died with the
-backend; none is needed anymore ("Sign-in required" is now unchecked in ASC).
+Note: the old ASC demo account (applereview@ - see ASC history) lived on the dead
+backend's DB era; none is needed anymore ("Sign-in required" is now unchecked in ASC).
 
 ## 1. Build + upload (laptop, ~5 min of typing + EAS wait)
 

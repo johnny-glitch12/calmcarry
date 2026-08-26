@@ -2,7 +2,7 @@
 
 **For:** GLOWCO INTERNATIONAL LLC counsel
 **Re:** CalmCarry Privacy Policy, Version 2.1, effective 11 August 2026
-**Live copy:** https://calmcarry-api-production.up.railway.app/legal/privacy (served by the app + the App Store listing)
+**Live copy:** https://calmcarry-api.vercel.app/legal/privacy (served by the app + the App Store listing)
 **Canonical source:** `docs/legal/privacy-policy.public.html` in the app repo
 
 The policy was drafted to be accurate to the app as actually built (verified against the source code) and was red-teamed across UK/EU GDPR, CCPA/CPRA, COPPA, and Apple 5.1.1. All issues that a **drafting change** could fix have been applied. The items below are the ones that a drafting change **cannot** close — they need a lawyer's decision, an appointment, or a fact confirmed by the owner. None of them block the App Store submission; they are the path to a clean legal sign-off.

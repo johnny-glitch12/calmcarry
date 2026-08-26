@@ -55,26 +55,22 @@ npx eas submit -p android        # needs Play service-account JSON
 
 ## 7. Backend before production
 - The NestJS server is real (IAP validation, store webhooks, push, auth, retention
-  purge - all implemented, fail-closed) and is **already LIVE**: it runs on **Railway**
-  (project `calmcarry-api`) with **Neon Postgres** (`DATABASE_URL`); local dev uses SQLite.
-  `/health` returns `{ok:true,db:up}`. (Fly.io was the earlier target and is no longer used.)
-- The app points at `https://calmcarry-api-production.up.railway.app` via the EAS
+  purge - all implemented, fail-closed) and is **LIVE on Vercel**: project
+  `calmcarry-api` (TASK FORCE team, Hobby) with **Neon Postgres** (`DATABASE_URL`);
+  local dev uses SQLite. `/health` returns `{ok:true,db:up}`. History: Fly.io →
+  Railway → the Railway trial maxed out unpaid and the service was suspended
+  (2026-08), so on 2026-08-27 current `main` was deployed to the Vercel project
+  (which had kept a working env + DB) and everything was repointed there.
+- The app points at `https://calmcarry-api.vercel.app` via the EAS
   `production` build env (`eas.json`), not a hardcoded `API_BASE`. A custom domain
-  (e.g. `api.theglowcompany.co`) is an OPTIONAL later layer (Railway custom domain + a
-  DNS CNAME) - not required to ship.
-- Before the first real iOS purchase works, set `APPLE_APP_APPLE_ID` (the numeric App
-  Store app id) on Railway. Without it the Apple Production verifier throws on the
-  FIRST real purchase (the user is charged and gets nothing) while the service still
-  looks healthy.
-  > Status 2026-08-27: the launch-readiness fixes ARE on `main` (the old
-  > `launch-readiness-fixes-2026-07-24` branch no longer exists on the remote;
-  > `config.spec.ts` pins the final behavior - missing `APPLE_APP_APPLE_ID` WARNS
-  > at boot and fail-closes production Apple validation rather than refusing to
-  > start). Redeploy Railway from current `main` if it hasn't picked it up, and
-  > set `APPLE_APP_APPLE_ID=6796861173` before real (non-sandbox) purchases.
-  > Note: App Review's guest sandbox purchase never touches this API, so this
-  > env var does not block the 5.1.1(v) resubmission - only real post-launch
-  > authed purchases.
+  (e.g. `api.theglowcompany.co`) is an OPTIONAL later layer - not required to ship.
+- Before the first real iOS purchase works, `APPLE_APP_APPLE_ID` (the numeric App
+  Store app id) must be set on the API host - without it the Apple Production
+  verifier throws on the FIRST real purchase (the user is charged and gets nothing)
+  while the service still looks healthy. ✅ Set on Vercel 2026-08-27
+  (`APPLE_APP_APPLE_ID=6796861173`, plus `ALLOW_SANDBOX_IAP=1` for App Review).
+  Note: the guest sandbox purchase never touches this API, so neither var blocks
+  the 5.1.1(v) resubmission - they matter for authed/real purchases.
 - Audio ships bundled in the binary for v1; the signed-URL CDN is post-v1 (`STREAMING_ENABLED`).
 
 ## 8. App Review notes (paste into ASC "App Review Information" / Play "Review notes")

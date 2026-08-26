@@ -222,10 +222,14 @@ account, and the API answers 401 - an automatic Guideline 2.1 rejection.
 **Why it must come off:** while it is on, anyone with an Apple sandbox account can mint
 premium against production for free. It is a review-window flag, not a setting.
 
-**The day the app is approved:**
+**The day the app is approved** (the API moved to Vercel on 2026-08-27):
 
 ```bash
-railway variables --service calmcarry-api --set "ALLOW_SANDBOX_IAP=0"
+cd server
+npx vercel env rm ALLOW_SANDBOX_IAP production --yes
+printf '0' | npx vercel env add ALLOW_SANDBOX_IAP production
+npx vercel deploy --prod --yes
 ```
 
-Then redeploy. Confirm with `railway variables --service calmcarry-api --kv | grep SANDBOX`.
+Confirm with `npx vercel env ls production | grep SANDBOX` (and a sandbox receipt
+should now 401 against /billing/validate).

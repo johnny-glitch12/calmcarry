@@ -48,8 +48,8 @@ export const SUBSCRIPTION_URL =
  *  contact page bounced through 3 redirects and once returned a 5xx, and after the
  *  1.4.1 device-shop gate the app deliberately routes to NO storefront page at all
  *  (see DEVICE_SHOP_ENABLED in lib/flags.ts). */
-export const SUPPORT_URL = 'https://calmcarry-api-production.up.railway.app/legal/support';
-export const PRIVACY_URL = 'https://calmcarry-api-production.up.railway.app/legal/privacy';
+export const SUPPORT_URL = 'https://calmcarry-api.vercel.app/legal/support';
+export const PRIVACY_URL = 'https://calmcarry-api.vercel.app/legal/privacy';
 export const TERMS_URL =
   Platform.OS === 'android'
     ? `${STORE_URL}/policies/terms-of-service`

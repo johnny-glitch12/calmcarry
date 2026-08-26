@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Trigger retention purge
         env:
-          API_BASE: ${{ vars.API_BASE_URL || 'https://calmcarry-api-production.up.railway.app' }}
+          API_BASE: ${{ vars.API_BASE_URL || 'https://calmcarry-api.vercel.app' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$CRON_SECRET" ]; then

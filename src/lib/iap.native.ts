@@ -15,12 +15,24 @@ import { api } from './api';
 
 /**
  * Native in-app purchase flow (StoreKit / Play Billing via react-native-iap v15).
- * The PRODUCT IDS are placeholders that must match the subscriptions you create in
- * App Store Connect / Play Console. Receipts are validated SERVER-SIDE
- * (api.billingValidate → the backend's ReceiptValidation), never trusted locally.
+ * The PRODUCT IDS must match the subscriptions in App Store Connect / Play Console.
+ *
+ * Two validation paths (Apple 5.1.1(v): registration must never be required to buy):
+ *  - WITH a server session: receipts are validated SERVER-SIDE (api.billingValidate →
+ *    the backend's ReceiptValidation) and never trusted locally.
+ *  - SIGNED OUT (token null): the store's own purchase event is the verdict; the
+ *    entitlement lives on-device bounded by the JWS expiry and reconciled against
+ *    currentStoreEntitlement(). Creating an account later re-validates the CURRENT
+ *    store transaction server-side and attaches it.
+ *
  * Requires a dev/production build (not Expo Go) + the products configured.
  */
-export type IapResult = { ok: boolean; reason?: string };
+export type IapResult = { ok: boolean; reason?: string; expiresAt?: string | null };
+
+/** What the store itself says this device's Apple/Google account owns right now.
+ *  'unknown' = the store was unreachable, which is NOT a verdict - callers must
+ *  keep their cached state rather than downgrade a paying user on a blip. */
+export type StoreEntitlement = { verdict: 'active' | 'none' | 'unknown'; expiresAt: string | null };
 
 export const iapSupported = true;
 
@@ -61,7 +73,66 @@ function receiptOf(p: Purchase): string {
   return any.purchaseToken || any.transactionReceipt || any.jwsRepresentationIOS || '';
 }
 
-async function validateAndFinish(p: Purchase, token: string, productId: string): Promise<boolean> {
+// Hand-rolled base64url → string (Hermes ships no atob; pulling in a polyfill for
+// one field is not worth it). ASCII-safe, which Apple's JWS JSON payload is.
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function b64urlDecode(s: string): string {
+  const src = s.replace(/-/g, '+').replace(/_/g, '/').replace(/=+$/, '');
+  let out = '';
+  let buffer = 0;
+  let bits = 0;
+  for (const ch of src) {
+    const v = B64.indexOf(ch);
+    if (v < 0) continue;
+    buffer = (buffer << 6) | v;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      out += String.fromCharCode((buffer >> bits) & 0xff);
+    }
+  }
+  return out;
+}
+
+/** Best-effort expiry from a StoreKit2 signed transaction (the JWS payload carries
+ *  expiresDate in ms). The signature is NOT re-verified here - on-device the trust
+ *  anchor is StoreKit having delivered the event at all; cryptographic verification
+ *  happens server-side once an account exists. Android purchase tokens are opaque,
+ *  so this returns null there and the store-reconcile path owns lapse detection. */
+function expiryFromPurchase(p: Purchase): string | null {
+  try {
+    const seg = receiptOf(p).split('.')[1];
+    if (!seg) return null;
+    const payload = JSON.parse(b64urlDecode(seg)) as { expiresDate?: number };
+    return typeof payload.expiresDate === 'number' ? new Date(payload.expiresDate).toISOString() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function validateAndFinish(
+  p: Purchase,
+  token: string | null,
+  productId: string,
+): Promise<{ ok: boolean; expiresAt: string | null }> {
+  // GUEST (no server session): the store's own purchase event is the verdict.
+  // Apple 5.1.1(v) forbids requiring registration to buy, so there is no backend
+  // to ask - the entitlement lives on-device, bounded by the JWS expiry and
+  // re-checked against the store (currentStoreEntitlement) on foreground. The
+  // receipt is deliberately NOT stashed for later: account linking re-reads the
+  // CURRENT transaction via getAvailablePurchases, because a purchase-time JWS
+  // goes stale at the first renewal and would grant an expired entitlement.
+  if (!token) {
+    const ok = Object.values(PRODUCT_IDS).includes(productId);
+    if (ok) {
+      try {
+        await finishTransaction({ purchase: p, isConsumable: false });
+      } catch {
+        /* already finished / not critical */
+      }
+    }
+    return { ok, expiresAt: ok ? expiryFromPurchase(p) : null };
+  }
   const receipt = receiptOf(p);
   let ok = false;
   let judged = false; // the server actually saw the receipt and answered
@@ -86,7 +157,7 @@ async function validateAndFinish(p: Purchase, token: string, productId: string):
       /* already finished / not critical */
     }
   }
-  return ok;
+  return { ok, expiresAt: ok ? expiryFromPurchase(p) : null };
 }
 
 // True while purchaseSubscription()'s own listener is wired up - the launch listener
@@ -111,10 +182,15 @@ let launchListener: { remove(): void } | null = null;
  * Persistent purchase listener for transactions delivered OUTSIDE an active
  * purchase flow: SCA/Ask to Buy approvals that arrive later, or a purchase that
  * completed after the app was killed mid-checkout. Without this, those users
- * paid and stay locked out until they find "Restore purchases". Call once at
- * app start when a server session exists; safe to call repeatedly.
+ * paid and stay locked out until they find "Restore purchases". Runs for GUESTS
+ * too (5.1.1(v): purchases don't require an account) - a signed-out redelivery
+ * validates locally and onValidated carries the store expiry so the caller can
+ * grant the on-device entitlement. Call once at app start; safe to call repeatedly.
  */
-export function initIapListener(getToken: () => string | null, onValidated: () => void): void {
+export function initIapListener(
+  getToken: () => string | null | undefined,
+  onValidated: (expiresAt?: string | null) => void,
+): void {
   if (launchListener) return;
   ensureConnection()
     .then(() => {
@@ -122,9 +198,16 @@ export function initIapListener(getToken: () => string | null, onValidated: () =
       launchListener = purchaseUpdatedListener(async (p: Purchase) => {
         if (purchaseFlowActive) return;
         const token = getToken();
-        if (!token || token === 'local') return;
-        const ok = await validateAndFinish(p, token, (p as { productId?: string }).productId || '');
-        if (ok) onValidated();
+        // undefined = the persisted session is still being restored. Leave the
+        // event queued (unfinished) for the next delivery: guest-finishing a
+        // transaction that turns out to belong to an account would orphan it
+        // (acknowledged but never server-validated).
+        if (token === undefined) return;
+        // 'local' is the offline-session sentinel - no server to validate against,
+        // so it takes the same on-device path as a signed-out guest.
+        const t = token && token !== 'local' ? token : null;
+        const r = await validateAndFinish(p, t, (p as { productId?: string }).productId || '');
+        if (r.ok) onValidated(r.expiresAt);
       });
     })
     .catch(() => {
@@ -132,7 +215,7 @@ export function initIapListener(getToken: () => string | null, onValidated: () =
     });
 }
 
-export async function purchaseSubscription(plan: 'monthly' | 'annual', token: string): Promise<IapResult> {
+export async function purchaseSubscription(plan: 'monthly' | 'annual', token: string | null): Promise<IapResult> {
   const productId = PRODUCT_IDS[plan];
   try {
     await ensureConnection();
@@ -152,8 +235,8 @@ export async function purchaseSubscription(plan: 'monthly' | 'annual', token: st
         };
         const timer = setTimeout(() => done({ ok: false, reason: 'timeout' }), PURCHASE_FLOW_TIMEOUT_MS);
         const up = purchaseUpdatedListener(async (p: Purchase) => {
-          const ok = await validateAndFinish(p, token, (p as { productId?: string }).productId || productId);
-          done({ ok, reason: ok ? undefined : 'validation_failed' });
+          const r = await validateAndFinish(p, token, (p as { productId?: string }).productId || productId);
+          done({ ok: r.ok, reason: r.ok ? undefined : 'validation_failed', expiresAt: r.expiresAt });
         });
         // v15 delivers user cancellation as ErrorCode.UserCancelled ('user-cancelled');
         // older androids used E_USER_CANCELLED. Normalize to 'cancelled' - and never
@@ -237,16 +320,36 @@ export async function introOfferEligible(): Promise<boolean> {
   }
 }
 
-export async function restoreSubscription(token: string): Promise<IapResult> {
+export async function restoreSubscription(token: string | null): Promise<IapResult> {
   try {
     await ensureConnection();
     const purchases = (await getAvailablePurchases()) as Purchase[];
     const ids = Object.values(PRODUCT_IDS);
     const match = purchases.find((p) => ids.includes((p as { productId?: string }).productId || ''));
     if (!match) return { ok: false, reason: 'none' };
-    const ok = await validateAndFinish(match, token, (match as { productId?: string }).productId || ids[0]);
-    return { ok, reason: ok ? undefined : 'validation_failed' };
+    const r = await validateAndFinish(match, token, (match as { productId?: string }).productId || ids[0]);
+    return { ok: r.ok, reason: r.ok ? undefined : 'validation_failed', expiresAt: r.expiresAt };
   } catch {
     return { ok: false, reason: 'iap_unavailable' };
+  }
+}
+
+/**
+ * Ask the store what this device's Apple/Google account owns RIGHT NOW. This is
+ * the guest entitlement's source of truth: getAvailablePurchases surfaces only
+ * live subscriptions (StoreKit2 current entitlements / Play active purchases),
+ * so 'none' means lapsed-or-never and the caller may downgrade. A store error is
+ * 'unknown' - not a verdict, never a downgrade.
+ */
+export async function currentStoreEntitlement(): Promise<StoreEntitlement> {
+  try {
+    await ensureConnection();
+    const purchases = (await getAvailablePurchases()) as Purchase[];
+    const ids = Object.values(PRODUCT_IDS);
+    const match = purchases.find((p) => ids.includes((p as { productId?: string }).productId || ''));
+    if (!match) return { verdict: 'none', expiresAt: null };
+    return { verdict: 'active', expiresAt: expiryFromPurchase(match) };
+  } catch {
+    return { verdict: 'unknown', expiresAt: null };
   }
 }

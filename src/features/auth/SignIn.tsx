@@ -488,6 +488,24 @@ export function SignIn() {
           </SwapText>
         </PressableScale>
       </Reveal>
+
+      {/* Registration is OPTIONAL (App Store 5.1.1(v)): this screen is where the
+          first-run funnel lands, so the way past it must be a labelled promise,
+          not just the close-X. Everything free works signed out, and so does
+          subscribing - an account only extends a plan to other devices. */}
+      <Reveal index={5} style={{ alignItems: 'center', marginTop: 20 }}>
+        <PressableScale
+          onPress={close}
+          hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Continue without an account"
+          dimTo={0.85}
+          style={{ paddingVertical: 8 }}>
+          <AppText variant="bodyMedium" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>
+            Continue without an account
+          </AppText>
+        </PressableScale>
+      </Reveal>
     </Screen>
   );
 }

@@ -82,11 +82,36 @@ live), then fill the credentials below.
 > the full app; every screen is reviewable without hardware.
 >
 > **Subscription:** premium is an auto-renewable in-app subscription (StoreKit / Play
-> Billing) with a 3-day free introductory trial on the annual plan. There is no
-> external/alternative purchase path for the digital subscription. The physical Glow
-> Orb device is sold separately on our web store (physical goods, per 3.1.5(a)).
+> Billing) with a 3-day free introductory trial on the annual plan. **No account or
+> sign-in is required to purchase or restore it** (Guideline 5.1.1(v)): the paywall
+> completes the purchase signed out, the entitlement is held on-device against the
+> App Store / Play account, and creating a CalmCarry account later — optional, offered
+> on the paywall and in Settings — extends the plan to the user's other devices.
+> There is no external/alternative purchase path for the digital subscription. The
+> physical Glow Orb device is sold separately on our web store (physical goods, per
+> 3.1.5(a)).
 >
 > **Kids mode** is used by a child under the adult account holder, gated by a
 > biometric parent gate. The account holder confirms they are 18+. We do not enroll
 > in "Made for Kids" / "Designed for Families"; analytics and crash reporting are
 > disabled entirely while a kid profile is active.
+
+## 9. App Review history
+
+- **2026-08-20 — REJECTED, 5.1.1(v)** (submission `ed2dcdc5-9e06-430c-b53d-a8bf489eb9e7`,
+  version 1.0.0 build 17, reviewed on iPhone 17 Pro Max): "app requires users to
+  register with personal information to purchase In-App Purchase products that are
+  not account based." Root cause: the paywall's Subscribe bounced signed-out users
+  to `/auth` and the whole IAP layer required a backend JWT for receipt validation.
+  **Fix (build 18):** guest purchase/restore — the store event validates on-device,
+  the entitlement lives locally with the store's own expiry and is reconciled
+  against `getAvailablePurchases()` on foreground; signing in later attaches the
+  purchase to the account by re-validating the CURRENT store transaction
+  server-side. Registration is optional everywhere ("Continue without an account"
+  on the sign-in screen; optional-account note on the paywall). The server needed
+  no changes (guest webhook events are harmless; refund-replay is denylisted;
+  cross-account receipt reuse 409s). Known edge (accepted): if the same store
+  transaction was already linked to a DIFFERENT CalmCarry account, the background
+  link 409s silently - this device keeps its local premium, but the new account
+  doesn't become premium on other devices until the user signs into the original
+  account or contacts support.

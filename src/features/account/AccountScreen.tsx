@@ -227,31 +227,41 @@ export function AccountScreen() {
 
   // Apple 3.1.1: a restore path must be reachable outside the paywall too. Re-applies
   // an EXISTING entitlement only - never starts a purchase. Mirrors the paywall's
-  // restore: re-read the store's purchases and re-validate, then fall back to any
-  // entitlement the backend already holds on this account.
+  // restore: re-read the store's purchases and re-validate (this needs no CalmCarry
+  // account - the purchase belongs to the Apple/Google account, 5.1.1(v)), then with
+  // a session also honour an entitlement the backend already holds on this account.
   const restorePurchases = useCallback(async () => {
     if (restoring) return;
-    if (!token || token === 'local') {
-      Alert.alert('Sign in to restore', 'Sign in to the account you purchased with, then tap Restore purchases again.');
-      return;
-    }
+    const live = !!token && token !== 'local';
     setRestoring(true);
     try {
+      let storeReason: string | undefined;
       if (iapSupported) {
-        const r = await restoreSubscription(token);
+        const r = await restoreSubscription(live ? token : null);
         if (r.ok) {
+          await activatePremium(live ? undefined : r.expiresAt ?? null);
+          Alert.alert('Purchases restored', 'Your CalmCarry Premium is active again.');
+          return;
+        }
+        storeReason = r.reason;
+      }
+      if (live) {
+        const s = await api.billingStatus(token);
+        if (s.isPremium) {
           await activatePremium();
           Alert.alert('Purchases restored', 'Your CalmCarry Premium is active on this account.');
           return;
         }
-      }
-      const s = await api.billingStatus(token);
-      if (s.isPremium) {
-        await activatePremium();
-        Alert.alert('Purchases restored', 'Your CalmCarry Premium is active on this account.');
+        Alert.alert('Nothing to restore', 'We couldn’t find a previous purchase on this account. If you subscribed with a different Apple ID, sign in with that account.');
         return;
       }
-      Alert.alert('Nothing to restore', 'We couldn’t find a previous purchase on this account. If you subscribed with a different Apple ID, sign in with that account.');
+      // an unreachable store ('iap_unavailable') is not "no purchase found" -
+      // never tell a possibly-paying user a definitive no on a flaky network
+      if (storeReason === 'iap_unavailable') {
+        Alert.alert('Couldn’t reach the store', 'Please check your connection and try again.');
+        return;
+      }
+      Alert.alert('Nothing to restore', 'We couldn’t find a previous purchase for this Apple or Google account. If you subscribed under a CalmCarry account, sign in and try again.');
     } catch {
       Alert.alert('Couldn’t reach the store', 'Please check your connection and try again.');
     } finally {

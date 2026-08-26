@@ -40,7 +40,7 @@ import { api } from '@/lib/api';
 import { CALM_NIGHTS_GOAL, getCalmNights } from '@/lib/calmNights';
 import { getReceipt, getRecentNights, recordNight, type NightOutcome } from '@/lib/nightsLog';
 import { lightTap } from '@/lib/haptics';
-import { getJSON, KEYS, remove, setJSON } from '@/lib/store';
+import { getJSON, KEYS, setJSON } from '@/lib/store';
 import { dur, ease, STAGGER, useTheme } from '@/theme';
 
 /** This month's rail picks: a deterministic month-keyed shuffle over the whole
@@ -250,7 +250,7 @@ function RitualHero({ trackId, kicker, onPress }: { trackId: string; kicker: str
 
 export function TonightScreen() {
   const router = useRouter();
-  const { user, isPremium, token, status } = useAuth();
+  const { user, isPremium, token } = useAuth();
   const { mode, intent, feeling, recommendedTrackId, recommendedTrackIds, recommendationReason, needsCheckIn, dismissCheckIn, profiles } = useProfile();
   const { c } = useTheme();
 
@@ -300,33 +300,11 @@ export function TonightScreen() {
     }
   }, [needsCheckIn, kids, windDownHours, router, dismissCheckIn]);
 
-  // "Start my free trial" in the funnel is a promise: once the user is signed in,
-  // open the Calm Plan sheet ONCE so the store trial is actually offered. Before
-  // this, that tap and "Maybe later" were silently identical. Never for kids.
-  // A PREMIUM sign-in consumes the flag WITHOUT opening the sheet: the promise is
-  // moot (they already subscribe), and a stale flag would otherwise suppress the
-  // Night Door on every night launch forever. Guests keep the flag so the promise
-  // still fires when they eventually sign in.
-  const trialOffered = useRef(false);
-  useEffect(() => {
-    if (status !== 'authed' || kids || trialOffered.current) return;
-    let alive = true;
-    getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
-      if (!alive || !pending || trialOffered.current) return;
-      trialOffered.current = true;
-      remove('cc.pendingTrial');
-      if (!isPremium) router.push('/unlock' as Href);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [status, isPremium, kids, router]);
-
   // NOTE deliberately NO timed/recurring upsell card here. Monetization is
   // contextual-only: the Calm Plan appears when the user taps locked content
   // (they are already asking) - never as unsolicited commercial pressure on a
-  // calm home screen. The one exception is cc.pendingTrial above, which fulfils
-  // an explicit "Start my free trial" tap from the funnel.
+  // calm home screen. (The old cc.pendingTrial funnel-promise reader lived here;
+  // it died with the funnel's pricing step, and guests can simply buy now.)
 
   // gentle, non-failable "calm nights" progress - earned by real sessions, shown
   // to adults too (kids get the playful stars on KidsHome). Alongside it: the honest

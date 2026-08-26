@@ -185,18 +185,10 @@ export function CalmPlan() {
   // On web / dev (no native store) we fall back to a dev grant for testing.
   const subscribe = async () => {
     if (busy || isPremium) return;
-    // Signed-out (or local-fallback) session in a production build: no purchase
-    // branch can run, so say the honest thing and route to sign-in instead of the
-    // "couldn't complete the purchase, try again" lie that can never succeed.
-    if (!live && !__DEV__) {
-      setNote('Sign in first so your plan follows your account.');
-      router.push('/auth' as Href);
-      return;
-    }
     // Non-native (web) production build: there is no in-app purchase mechanism here, so
     // none of the branches below can run and the user would hit the generic "couldn't
     // complete the purchase, try again" - a retry that can never succeed. Say the
-    // honest thing, mirroring the signed-out guard above.
+    // honest thing instead.
     if (!iapSupported && !__DEV__) {
       setNote('Subscriptions are purchased in the CalmCarry app for iPhone or Android.');
       return;
@@ -212,11 +204,16 @@ export function CalmPlan() {
     setNote(null);
     let ok = false;
     let failReason: string | undefined;
-    if (iapSupported && live) {
-      // real native purchase → server-validated receipt
-      const r = await purchaseSubscription(plan, token);
+    let guestExpiry: string | null = null;
+    if (iapSupported) {
+      // Real native purchase. With a session: server-validated receipt. Signed out
+      // (Apple 5.1.1(v): registration must never be required to buy): the store's
+      // own purchase event is the verdict and the entitlement lives on-device,
+      // carrying the store expiry; creating an account later attaches it.
+      const r = await purchaseSubscription(plan, live ? token : null);
       ok = r.ok;
       failReason = r.reason;
+      guestExpiry = r.expiresAt ?? null;
       if (!ok && r.reason === 'cancelled') {
         if (mounted.current) setBusy(false);
         return; // user backed out - no error nag
@@ -239,7 +236,8 @@ export function CalmPlan() {
       ok = true; // dev/offline demo only
     }
     if (ok) {
-      await activatePremium();
+      // guests carry the store's own expiry; sessions leave it to /billing/status
+      await activatePremium(live ? undefined : guestExpiry);
       track('subscribe_success', { plan });
       // Best-effort pre-charge reminder (a nice-to-have; the disclosure no longer
       // PROMISES it, since a local notification can be denied or fail silently).
@@ -261,32 +259,43 @@ export function CalmPlan() {
   };
 
   // Restore: re-applies an EXISTING entitlement only - never starts a new purchase.
+  // Works signed OUT too: the purchase belongs to the Apple/Google account, so the
+  // store answers without a CalmCarry account (5.1.1(v)).
   const restore = async () => {
     if (busy) return;
-    if (!live) {
-      setNote('Sign in to restore a previous purchase.');
-      return;
-    }
     setBusy(true);
     setNote(null);
     try {
-      // on device, re-read the store's purchases and re-validate; everywhere,
+      // on device, re-read the store's purchases and re-validate; with a session,
       // also honour an entitlement the backend already has on this account.
+      let storeReason: string | undefined;
       if (iapSupported) {
-        const r = await restoreSubscription(token);
+        const r = await restoreSubscription(live ? token : null);
         if (r.ok) {
+          await activatePremium(live ? undefined : r.expiresAt ?? null);
+          if (mounted.current) close();
+          return;
+        }
+        storeReason = r.reason;
+      }
+      if (live) {
+        const s = await api.billingStatus(token);
+        if (s.isPremium) {
           await activatePremium();
           if (mounted.current) close();
           return;
         }
-      }
-      const s = await api.billingStatus(token);
-      if (s.isPremium) {
-        await activatePremium();
-        if (mounted.current) close();
+        setNote('No previous purchase found on this account.');
         return;
       }
-      setNote('No previous purchase found on this account.');
+      // restoreSubscription never throws - an unreachable store surfaces as
+      // 'iap_unavailable', and telling that user "no purchase found" would be a
+      // definitive falsehood about a purchase they may well own.
+      setNote(
+        storeReason === 'iap_unavailable'
+          ? 'Couldn’t reach the store. Try again.'
+          : 'No previous purchase found for this Apple or Google account.',
+      );
     } catch {
       setNote('Couldn’t reach the store. Try again.');
     } finally {
@@ -378,6 +387,18 @@ export function CalmPlan() {
               : `Auto-renews at ${display('monthly').price}${PRICING.monthly.per} until cancelled. Cancel anytime in your Apple or Google account settings. Billed through your Apple or Google account.`}
           </AppText>
         </Appear>
+        {/* Registration is OPTIONAL (App Store 5.1.1(v)): a signed-out purchase works
+            and stays on this device via the store. The account's honest value - using
+            the plan on other devices - is offered, never required, and reachable any
+            time from Settings. */}
+        {!live ? (
+          <Appear>
+            <AppText variant="caption" tone="muted" style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0, lineHeight: 16 }}>
+              No account needed — your subscription is kept by your Apple or Google account. Create a free CalmCarry
+              account anytime in Settings to use Premium on your other devices.
+            </AppText>
+          </Appear>
+        ) : null}
         {/* the way out: a single, full-width quiet dismiss right under the button - not lost among the legal links */}
         <PressableScale onPress={close} accessibilityRole="button" hitSlop={12} dimTo={0.85} style={{ alignItems: 'center', paddingVertical: 14 }}>
           <AppText variant="bodyMedium" tone="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>

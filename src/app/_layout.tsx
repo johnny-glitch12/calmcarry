@@ -213,8 +213,8 @@ function RootNav() {
   //  - wind-down hours (20:00-05:00) -> the Night Door: a dimmed, one-tap "Begin
   //    wind-down" so unlock-to-audio takes seconds (pre-mortem: the app must never
   //    make the phone the obstacle at bedtime). Never for kids profiles, never over
-  //    a deep link (only when the launch route is Home), never over an ACTIVE
-  //    pending-trial promise, and dismissible to the full app.
+  //    a deep link (only when the launch route is Home), and dismissible to the
+  //    full app.
   //  - first run -> onboarding, but ONLY by day: the night window wins even on a
   //    fresh install (a desperate 2:47am first open gets the one-tap rescue, not a
   //    question funnel). onboarded stays false, so the full funnel still greets the
@@ -251,15 +251,7 @@ function RootNav() {
       return;
     }
     if (nightDoorLaunch) {
-      if (authStatus !== 'authed') {
-        // guests can never receive the unlock sheet, so a stale cc.pendingTrial (a
-        // funnel tap that never signed in) must not suppress the bedtime flow forever
-        router.push('/night-door');
-      } else {
-        getJSON<boolean>('cc.pendingTrial', false).then((pending) => {
-          if (!pending) router.push('/night-door');
-        });
-      }
+      router.push('/night-door');
       return;
     }
 

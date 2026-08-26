@@ -182,7 +182,9 @@ switched on.
 >
 > **Subscriptions:** the paywall appears after the first completed session, or via
 > Profile → Subscription. Prices are $12.99/month and $69.99/year, with a 3-day free
-> trial on the annual plan.
+> trial on the annual plan. **No sign-in is needed to subscribe or restore** — the
+> purchase completes signed out (5.1.1(v)); creating an account is optional and only
+> extends the plan to other devices.
 >
 > **Wellness, not medical.** The app makes no medical claims and shows a disclaimer
 > in the Learn and About sections. It is not enrolled in the Kids Category.

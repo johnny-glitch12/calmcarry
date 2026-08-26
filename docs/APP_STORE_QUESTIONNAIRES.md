@@ -53,7 +53,7 @@ same. **Do not** enable App Tracking Transparency.
   - `analytics_events` stores a random per-install `anonId` (never the account id),
     which on its own would be "Not Linked".
   - Declare **Linked**, because the stricter of the two is true.
-- *Note:* the user can switch both off in Settings → "Share anonymous usage data",
+- *Note:* the user can switch both off in Settings → "Usage & activity data",
   and kids-mode records neither.
 
 #### 5. Purchases → Purchase History

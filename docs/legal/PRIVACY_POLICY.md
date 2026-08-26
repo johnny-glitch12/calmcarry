@@ -80,7 +80,7 @@ make a warranty claim, we store the details of that claim.
 | A push token, if you turn on reminders | To deliver the reminders you asked for | Until you turn them off or delete your account |
 
 You can turn off the account-linked session records and the anonymous usage events at
-any time: **Settings, then "Share anonymous usage data".** Turning it off stops the
+any time: **Settings, then "Usage & activity data".** Turning it off stops the
 sending immediately and discards anything still queued on your device.
 
 ### What we do NOT collect
@@ -177,7 +177,7 @@ Wherever you live, you can:
 - **Delete your account and data.** Settings, then "Delete account". This is permanent
   and immediate. Note it does not cancel a subscription: cancel that in your Apple or
   Google account settings.
-- **Turn off usage measurement.** Settings, then "Share anonymous usage data".
+- **Turn off usage measurement.** Settings, then "Usage & activity data".
 - **Correct your details** by editing them in the app, or by emailing us.
 
 Depending on your country you may also have the right to object to or restrict

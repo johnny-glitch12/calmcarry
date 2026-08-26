@@ -1,8 +1,11 @@
 // Regenerate server/src/common/privacy-policy.page.ts from the canonical
 // docs/legal/privacy-policy.public.html so the served copy can never drift.
 const fs = require('fs');
-const root = '/Users/nidhalabbassi/calmcarry';
-let body = fs.readFileSync(root + '/docs/legal/privacy-policy.public.html', 'utf8');
+const path = require('path');
+// the repo root, wherever the repo lives - a hardcoded machine path here meant the
+// script ENOENT'd everywhere else and policy edits silently stopped propagating
+const root = path.resolve(__dirname, '..', '..');
+let body = fs.readFileSync(path.join(root, 'docs', 'legal', 'privacy-policy.public.html'), 'utf8');
 // strip the leading HTML comment (publish note)
 body = body.replace(/^<!--[\s\S]*?-->\s*/, '').trim();
 // escape for a JS template literal
@@ -66,8 +69,5 @@ export const PRIVACY_POLICY_HTML = \`<!doctype html>
 </html>\`;
 `;
 
-fs.writeFileSync(root + '/server/src/common/privacy-policy.page.ts', file);
-// keep a copy of the generator in the repo for future regeneration
-fs.mkdirSync(root + '/server/scripts', { recursive: true });
-fs.copyFileSync(__filename, root + '/server/scripts/gen-privacy-page.js');
+fs.writeFileSync(path.join(root, 'server', 'src', 'common', 'privacy-policy.page.ts'), file);
 console.log('regenerated privacy-policy.page.ts (' + esc.length + ' body chars)');

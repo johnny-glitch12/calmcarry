@@ -703,7 +703,11 @@ export function AccountScreen() {
           <SettingRow icon="shield" label="Your data & privacy" onPress={() => router.push('/privacy' as Href)} />
           {/* GDPR/PDPL opt-out of first-party anonymous usage analytics (kids are never
               tracked regardless). Default on; turning it off drops any queued events. */}
-          <SettingRow icon="bar-chart-2" label="Share anonymous usage data" toggle={analyticsOn} onToggle={toggleAnalytics} />
+          {/* Label must match the published privacy policy verbatim ("Settings, then
+              'Usage & activity data'") - a reviewer or regulator follows that
+              instruction. Also honest about scope: the toggle gates the
+              account-linked session records too, not only anonymous events. */}
+          <SettingRow icon="bar-chart-2" label="Usage & activity data" toggle={analyticsOn} onToggle={toggleAnalytics} />
           {token && token !== 'local' ? (
             <SettingRow
               icon="key"

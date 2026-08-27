@@ -1,0 +1,17 @@
+# Keeps the serverless API warm during the App Review window: a cold start adds
+# seconds to the reviewer's first sign-in/purchase-validation, and slow first
+# impressions read as broken (2.1). Cheap to run; safe to delete after launch.
+name: keep-warm
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API /health
+        run: |
+          curl -fsS --max-time 30 "${{ vars.API_BASE_URL || 'https://calmcarry-api.vercel.app' }}/health" > /dev/null
+          echo "api warm"

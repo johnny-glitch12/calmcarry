@@ -20,6 +20,11 @@ export interface AuthResult {
   /** opaque rotating token for /auth/refresh; stored securely client-side */
   refreshToken: string;
   user: { id: string; email: string; name: string; hasPassword: boolean };
+  /** social sign-in only: true when this call CREATED the account - the client
+   *  routes brand-new accounts through the first-run owner match (claim-device),
+   *  same as email registration. hasPassword can't stand in for this: returning
+   *  social users are also hasPassword:false. */
+  created?: boolean;
 }
 
 const CODE_TTL_MS = 15 * 60_000; // reset/verify codes live 15 minutes
@@ -48,6 +53,7 @@ export class AuthService {
   async socialLogin(provider: SocialProvider, idToken: string, authorizationCode?: string, displayName?: string): Promise<AuthResult> {
     const id = await this.social.verify(provider, idToken);
     let owner = await this.usersService.findByEmail(id.email);
+    const created = !owner;
     if (!owner) {
       const passwordHash = await bcrypt.hash(randomUUID(), 12); // no password - social only
       const name = displayName?.trim() || id.name;
@@ -69,7 +75,7 @@ export class AuthService {
       const refresh = await this.social.appleExchangeCode(authorizationCode);
       if (refresh) await this.usersService.setAppleRefreshToken(owner.id, refresh);
     }
-    return this.buildAuthResult(owner);
+    return { ...(await this.buildAuthResult(owner)), created };
   }
 
   /** Account deletion: revoke Sign in with Apple tokens FIRST (Apple requirement),

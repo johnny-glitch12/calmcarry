@@ -41,7 +41,9 @@ const STEPS: Step[] = [
     target: 'tab-listen',
     kicker: 'Quick tour · 3 of 4',
     title: 'Now the sound machine',
-    body: 'Tap Listen. Layer rain, fire and noise, and set a sleep timer for the night.',
+    // every layer named here must be FREE - a first-run free user follows this
+    // instruction literally, and a premium name would paywall them mid-tour
+    body: 'Tap Listen. Layer rain, ocean and noise, and set a sleep timer for the night.',
     advance: '/listen',
   },
   {

@@ -256,8 +256,10 @@ export function ListenScreen() {
   const onToggle = (s: MixSound) => {
     lightTap();
     // premium sounds open the Calm Plan for free adults (kids never see the paywall)
+    // - with the tapped track as context, so the paywall can speak to it (same
+    // pattern as the music rail below)
     if (s.premium && !isPremium) {
-      router.push('/unlock' as Href);
+      router.push(`/unlock?id=${s.id}` as Href);
       return;
     }
     toggle(s.id);

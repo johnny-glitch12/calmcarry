@@ -3,7 +3,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { BackHandler, Linking, ScrollView, View } from 'react-native';
+import { BackHandler, Linking, ScrollView, View, type ImageSourcePropType } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -27,7 +27,6 @@ import {
   Logo,
   PressableScale,
   PrimaryButton,
-  ProgressRing,
   Reveal,
   Screen,
   SelectionOverlay,
@@ -61,7 +60,6 @@ const P = {
 // ---- answers accumulated across the funnel ----
 type Answers = {
   goals?: string[]; // help-with keys
-  hours?: number; // 4..8 in 0.25 (15-min) steps
   age?: string; // only ever CHILD_AGE now - the "for my child" card keeps the flag the old age step wrote
   goalHours?: number; // desired nightly sleep, 4..12 in 0.25 steps
   moments?: string[]; // when they want help - day AND night use-cases, not just sleep
@@ -72,6 +70,8 @@ type StepProps = {
   onNext: () => void;
   onBack: () => void;
   onSignIn: () => void;
+  /** end the funnel: 'home' lands on Tonight as a guest, 'save' offers the optional account */
+  onFinish: (dest: 'home' | 'save') => void;
   answers: Answers;
   setAnswer: <K extends keyof Answers>(k: K, v: Answers[K]) => void;
   progress: number; // 0..1 position through the funnel
@@ -79,19 +79,23 @@ type StepProps = {
 
 // ---- the funnel's ordered steps ----
 // Deliberately short. The interrogation round (satisfaction, gender, age, source,
-// wearable, trial-reminder) is gone: every remaining question feeds something the
-// app actually uses. First-run ends on the sounds value step, then routes to auth -
-// NO price/subscription pitch here. The paywall now waits until after the first
+// wearable, trial-reminder) is gone, and so is the old "hours you usually sleep"
+// step (it fed nothing downstream - the goal step carries the one number we use).
+// Every remaining question feeds something the app actually uses, and every
+// question step can be skipped (Continue relabels to Skip when nothing is picked).
+// First-run ends on the plan step: the answers reflected back, then straight into
+// the app - the account ask is an optional offer there, never a wall (5.1.1(v)).
+// NO price/subscription pitch here. The paywall waits until after the first
 // completed session (the post-session offer in app/_layout).
 const STEPS = [
   'welcome',
   'transform',
   'help',
   'moments',
-  'hours',
   'goal',
   'reminder',
   'sounds',
+  'plan',
 ] as const;
 type StepId = (typeof STEPS)[number];
 
@@ -371,9 +375,9 @@ function TransformStep({ onNext, onBack }: StepProps) {
         </Reveal>
 
         <View style={{ flexDirection: 'row', gap: 14, marginTop: 28 }}>
-          <TransformCard label="You today" image={require('../../../assets/images/onboarding/you-today.png')} tone={c.muted} index={2} />
+          <TransformCard label="You today" image={require('../../../assets/images/onboarding/you-today.jpg')} tone={c.muted} index={2} />
           {/* "With a ritual", not "In a week": no visible-transformation-in-7-days promise */}
-          <TransformCard label="With a ritual" image={require('../../../assets/images/onboarding/you-week.png')} tone={c.textAccent} index={3} highlight />
+          <TransformCard label="With a ritual" image={require('../../../assets/images/onboarding/you-week.jpg')} tone={c.textAccent} index={3} highlight />
         </View>
       </View>
 
@@ -411,7 +415,10 @@ function HelpStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
       title="What can we help you with?"
       subtitle="Pick everything that fits. You can change this later."
       onContinue={onNext}
-      canContinue={goals.length > 0 || forChild}>
+      // never a hard gate (design system: onboarding always skippable) - with
+      // nothing picked the button honestly reads Skip and the funnel moves on
+      canContinue
+      continueLabel={goals.length > 0 || forChild ? 'Continue' : 'Skip'}>
       {GOALS.map((g, i) => (
         <ChoiceRow
           key={g.key}
@@ -465,7 +472,8 @@ function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps
       title="When do you want CalmCarry’s help?"
       subtitle="Your Glow Orb isn’t only for bedtime. Pick every moment that fits."
       onContinue={onNext}
-      canContinue={moments.length > 0}>
+      canContinue
+      continueLabel={moments.length > 0 ? 'Continue' : 'Skip'}>
       {MOMENTS.map((m, i) => (
         <ChoiceRow
           key={m.key}
@@ -477,56 +485,6 @@ function MomentsStep({ onNext, onBack, answers, setAnswer, progress }: StepProps
           leading={<IconChip icon={m.icon} />}
         />
       ))}
-    </FunnelShell>
-  );
-}
-
-/** 5 - HOURS (fill-circle stepper) */
-function HoursStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
-  const { c } = useTheme();
-  const reduced = useReducedMotion();
-  const value = answers.hours ?? 6;
-  // 40% under 5 → full at 8 (per the brief); the ring eases as the number changes
-  const fillFor = (v: number) => Math.max(0.12, Math.min(1, 0.4 + (v - 4) * 0.15));
-  const ring = useSharedValue(fillFor(value));
-  useEffect(() => {
-    ring.value = reduced ? fillFor(value) : withTiming(fillFor(value), { duration: dur.sheet, easing: ease.out });
-  }, [value, reduced, ring]);
-
-  return (
-    <FunnelShell
-      onBack={onBack}
-      progress={progress}
-      kicker="YOUR NIGHTS NOW"
-      title="How many hours do you usually sleep?"
-      subtitle="A rough average is perfect. Drag to set it."
-      onContinue={() => {
-        // the shown default IS a valid answer - never gate Continue on a drag
-        if (answers.hours === undefined) setAnswer('hours', value);
-        onNext();
-      }}
-      canContinue>
-      <View style={{ alignItems: 'center', marginTop: 8 }}>
-        <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
-          <ProgressRing progress={ring} size={200} strokeWidth={10} fill color={c.accent} trackColor={c.line} style={{ position: 'absolute' }} />
-          {/* live value (tracks the finger) - no dip-swap here, that would flicker while dragging */}
-          <AppText style={{ fontFamily: fonts.bold, fontSize: 40, lineHeight: 46, color: c.text, textAlign: 'center' }}>{value >= 8 ? '8h+' : formatHM(value)}</AppText>
-          <AppText style={[P.label, { color: c.muted, textTransform: 'none', marginTop: 2 }]}>a night</AppText>
-        </View>
-      </View>
-      <View style={{ marginTop: 32 }}>
-        <Slider
-          value={value}
-          min={4}
-          max={8}
-          step={0.25}
-          onChange={(v) => setAnswer('hours', v)}
-          onTouch={() => { if (answers.hours === undefined) setAnswer('hours', value); }}
-          minLabel="4h"
-          maxLabel="8h+"
-          valueText={value >= 8 ? '8 hours or more' : formatHM(value)}
-        />
-      </View>
     </FunnelShell>
   );
 }
@@ -740,7 +698,7 @@ function BackChevron({ onBack }: { onBack: () => void }) {
   );
 }
 
-/** 6 - GOAL (sleep-target slider) */
+/** 5 - GOAL (sleep-target slider) */
 function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   const { c } = useTheme();
   const goalHours = answers.goalHours ?? 8;
@@ -764,7 +722,7 @@ function GoalStep({ onNext, onBack, answers, setAnswer, progress }: StepProps) {
   );
 }
 
-/** 7 - REMINDER (opt-in wind-down nudge). The OS notification prompt fires only
+/** 6 - REMINDER (opt-in wind-down nudge). The OS notification prompt fires only
  *  when a time is actually chosen - Skip asks the system for nothing. Mirrors the
  *  Account toggle's keys, and only after a reminder truly scheduled (permission
  *  granted), so Settings never shows a phantom "on". Web: setBedtimeReminder is a
@@ -808,7 +766,7 @@ function ReminderStep({ onNext, onBack, answers, setAnswer, progress }: StepProp
   );
 }
 
-/** 8 - SOUNDS (framed watercolour fireside + live now-playing row) */
+/** 7 - SOUNDS (framed watercolour fireside + live now-playing row) */
 function SoundsStep({ onNext, onBack }: StepProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -838,7 +796,7 @@ function SoundsStep({ onNext, onBack }: StepProps) {
         <Reveal index={2}>
           <View style={{ borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: c.lineSage, ...c.shadow }}>
             <Image
-              source={require('../../../assets/images/onboarding/fireplace.png')}
+              source={require('../../../assets/images/onboarding/fireplace.jpg')}
               style={{ width: '100%', aspectRatio: 4 / 3 }}
               contentFit="cover"
               contentPosition="bottom"
@@ -858,20 +816,124 @@ function SoundsStep({ onNext, onBack }: StepProps) {
   );
 }
 
+/** 8 - PLAN: the payoff. The funnel's answers reflected back as a plan, then
+ *  straight into the app. The account ask is a quiet OFFER here, never a wall -
+ *  registration stays optional (App Store 5.1.1(v)), and a tired first-run user
+ *  gets value before any form. */
+function PlanStep({ onBack, onFinish, answers }: StepProps) {
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const chosenGoals = GOALS.filter((g) => (answers.goals ?? []).includes(g.key));
+  const forChild = answers.age === CHILD_AGE;
+  const reminderOn = answers.reminderIdx !== undefined && remindersSupported;
+  const rows: { key: string; label: string; hint?: string; icon: keyof typeof Feather.glyphMap; art?: ImageSourcePropType }[] = [
+    ...chosenGoals.map((g) => ({ key: g.key, label: g.label, hint: g.hint, icon: g.icon, art: GOAL_ICONS[g.key] })),
+    ...(forChild
+      ? [{ key: 'child', label: 'Kids Mode, ready when they are', hint: 'Gentle sounds behind the parent gate', icon: 'smile' as const }]
+      : []),
+    ...(reminderOn && answers.reminderIdx !== undefined
+      ? [{ key: 'reminder', label: `A quiet nudge at ${REMINDER_TIMES[answers.reminderIdx].label}`, hint: 'One soft note a night, never an alarm', icon: 'bell' as const }]
+      : []),
+  ];
+  return (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 24) + 30 }}>
+      <BackChevron onBack={onBack} />
+      <View style={{ marginTop: 6 }}>
+        <Reveal>
+          <AppText style={[P.label, { color: c.textAccent, marginBottom: 8 }]}>ALL SET</AppText>
+          <AppText style={[P.title, { color: c.text }]}>Your calm plan is ready</AppText>
+        </Reveal>
+        <Reveal index={1}>
+          <AppText style={[P.body, { color: c.muted, marginTop: 10 }]}>
+            Shaped around what you told us. You can change any of it later from your profile.
+          </AppText>
+        </Reveal>
+      </View>
+
+      <View style={{ flex: 1, justifyContent: 'center', gap: 12, minHeight: 260, marginTop: 20 }}>
+        {rows.length > 0 ? (
+          rows.map((r, i) => (
+            <Reveal key={r.key} index={2 + i}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: 14,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: c.lineSage,
+                  backgroundColor: c.surface,
+                }}>
+                {r.art ? (
+                  <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <Image source={r.art} style={{ width: 62, height: 62 }} contentFit="contain" />
+                  </View>
+                ) : (
+                  <IconChip icon={r.icon} />
+                )}
+                <View style={{ flex: 1 }}>
+                  <AppText style={[P.rowLabel, { color: c.text }]}>{r.label}</AppText>
+                  {r.hint ? <AppText style={[P.rowHint, { color: c.muted, marginTop: 2 }]}>{r.hint}</AppText> : null}
+                </View>
+                <Feather name="check" size={18} color={c.textAccent} />
+              </View>
+            </Reveal>
+          ))
+        ) : (
+          <Reveal index={2}>
+            <View style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor: c.lineSage, backgroundColor: c.surface }}>
+              <AppText style={[P.rowLabel, { color: c.text }]}>A gentle start</AppText>
+              <AppText style={[P.rowHint, { color: c.muted, marginTop: 4 }]}>
+                We’ll keep the first nights soft and simple, and let your evenings shape the rest.
+              </AppText>
+            </View>
+          </Reveal>
+        )}
+        <Reveal index={2 + Math.max(rows.length, 1)}>
+          <AppText style={[P.rowHint, { color: c.dim, textAlign: 'center', marginTop: 6 }]}>
+            First up: a gentle wind-down with your Glow Orb resting in your palm.
+          </AppText>
+        </Reveal>
+      </View>
+
+      <Reveal index={3 + Math.max(rows.length, 1)} style={{ gap: 16 }}>
+        <PrimaryButton label="Take me to CalmCarry" onPress={() => onFinish('home')} />
+        {/* the OPTIONAL account offer - a quiet line, not a second button, so the
+            one obvious way forward stays the app itself (5.1.1(v)) */}
+        <PressableScale
+          onPress={() => onFinish('save')}
+          accessibilityRole="button"
+          accessibilityLabel="Save my plan across devices. Sign in or create a free account."
+          dimTo={0.6}
+          hitSlop={10}
+          style={{ alignSelf: 'center', paddingVertical: 4 }}>
+          <AppText style={[P.body, { color: c.muted, fontSize: 15, textAlign: 'center' }]}>
+            Using more than one device?{' '}
+            <AppText style={{ fontFamily: fonts.semibold, color: c.textAccent }}>Save my plan</AppText>
+          </AppText>
+        </PressableScale>
+      </Reveal>
+    </ScrollView>
+  );
+}
+
 const STEP_COMPONENTS: Record<StepId, (p: StepProps) => React.ReactElement> = {
   welcome: WelcomeStep,
   transform: TransformStep,
   help: HelpStep,
   moments: MomentsStep,
-  hours: HoursStep,
   goal: GoalStep,
   reminder: ReminderStep,
   sounds: SoundsStep,
+  plan: PlanStep,
 };
 
 export function OnboardingFunnel() {
   const router = useRouter();
-  const { setIntent } = useProfile();
+  const { setIntent, dismissCheckIn } = useProfile();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
 
@@ -928,7 +990,7 @@ export function OnboardingFunnel() {
   }, []);
 
   const finish = useCallback(
-    (final: Answers) => {
+    (final: Answers, dest: 'home' | 'save') => {
       // persist the survey (on-device) + the personalization it feeds
       setJSON('cc.onboarding', final);
       // the sleep target lands where Settings + the evening rhythm actually read
@@ -950,10 +1012,16 @@ export function OnboardingFunnel() {
         }
       }
       if (intent) setIntent(intent);
+      // the funnel just seeded the recommender - a mood check-in pushed onto the
+      // very first landing would be a second interrogation, so consume it here
+      dismissCheckIn();
       markOnboarded();
-      router.replace('/auth');
+      // 'save' opens the OPTIONAL account offer in create mode (a first-run user
+      // has no account to sign in to); 'home' lands on Tonight as a guest. The
+      // funnel never dead-ends at a sign-in wall (App Store 5.1.1(v)).
+      router.replace(dest === 'save' ? '/auth?mode=signup' : '/');
     },
-    [router, setIntent],
+    [router, setIntent, dismissCheckIn],
   );
 
   const onNext = useCallback(() => {
@@ -962,12 +1030,15 @@ export function OnboardingFunnel() {
     // event handler, NOT inside a setState updater. The updater executes during
     // React's render phase, so calling another component's setState there triggers
     // the "Cannot update a component while rendering a different component" warning.
+    // The plan step owns its own exits (onFinish); this guard is only a fallback.
     if (index >= STEPS.length - 1) {
-      finish(answers);
+      finish(answers, 'home');
     } else {
       setIndex((i) => i + 1);
     }
   }, [index, finish, answers]);
+
+  const onFinish = useCallback((dest: 'home' | 'save') => finish(answers, dest), [finish, answers]);
 
   const onBack = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const onSignIn = useCallback(() => {
@@ -1008,7 +1079,7 @@ export function OnboardingFunnel() {
   return (
     <Screen mode="night" backdrop={stepId === 'welcome' ? <Starfield /> : undefined} contentStyle={{ flex: 1, paddingHorizontal: 0 }}>
       <Appear key={stepId} enter={560} exit={340} style={{ flex: 1 }}>
-        <StepComponent onNext={onNext} onBack={onBack} onSignIn={onSignIn} answers={answers} setAnswer={setAnswer} progress={progress} />
+        <StepComponent onNext={onNext} onBack={onBack} onSignIn={onSignIn} onFinish={onFinish} answers={answers} setAnswer={setAnswer} progress={progress} />
       </Appear>
     </Screen>
   );

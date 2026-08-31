@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Image } from 'expo-image';
 import * as Google from 'expo-auth-session/providers/google';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform, View, type GestureResponderEvent } from 'react-native';
@@ -71,7 +71,10 @@ export function SignIn() {
   const { c } = useTheme();
   const router = useRouter();
   const { signIn, register, socialSignIn } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  // ?mode=signup: the funnel's "Save my plan" offer opens in CREATE mode - a
+  // first-run user has no account to sign in to. Everyone else starts on sign-in.
+  const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
+  const [mode, setMode] = useState<'signin' | 'signup'>(modeParam === 'signup' ? 'signup' : 'signin');
   // forgot-password sub-flow (emailed 6-digit code -> new password -> signed in)
   const [forgot, setForgot] = useState<null | 'email' | 'code'>(null);
   const [fpCode, setFpCode] = useState('');
@@ -112,8 +115,10 @@ export function SignIn() {
     setBusy(true);
     setError(null);
     try {
-      await socialSignIn(provider, idToken, authorizationCode, name);
-      router.replace('/');
+      const { created } = await socialSignIn(provider, idToken, authorizationCode, name);
+      // a brand-new social account gets the same first-run owner match as email
+      // sign-up (claim-device); returning users go straight in
+      router.replace(created ? '/claim-device' : '/');
     } catch {
       setError('That sign-in didn’t go through. Email works too.');
     } finally {
@@ -240,9 +245,25 @@ export function SignIn() {
   // top padding or the close-X + orb sit cramped against the sheet's top edge.
   return (
     <Screen mode="light" scroll contentStyle={{ paddingTop: 28 }}>
-      <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85} style={{ alignSelf: 'flex-start' }}>
-        <Feather name="x" size={24} color={c.text} />
-      </PressableScale>
+      {/* the way past this screen must be visible WITHOUT scrolling (5.1.1(v)):
+          a labelled skip sits top-right, opposite the close-X - the bottom
+          "Continue without an account" stays for anyone who reads that far */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <PressableScale onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close" dimTo={0.85}>
+          <Feather name="x" size={24} color={c.text} />
+        </PressableScale>
+        <PressableScale
+          onPress={close}
+          hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Continue without an account"
+          dimTo={0.85}
+          style={{ paddingVertical: 6 }}>
+          <AppText variant="label" style={{ color: c.textAccent }}>
+            Skip for now
+          </AppText>
+        </PressableScale>
+      </View>
 
       <Reveal index={0} style={{ alignItems: 'center', marginTop: 24 }}>
         {/* the device itself (Mason: show the Glow Orb on login) - the watercolour

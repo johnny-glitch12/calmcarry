@@ -30,8 +30,10 @@ type AuthValue = {
   backendUp: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  /** Sign in with a verified Apple/Google identity token (backend creates/resumes the account) */
-  socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) => Promise<void>;
+  /** Sign in with a verified Apple/Google identity token (backend creates/resumes
+   *  the account). `created` is true when this call CREATED the account - the
+   *  caller routes brand-new accounts through the first-run owner match. */
+  socialSignIn: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) => Promise<{ created: boolean }>;
   signOut: () => Promise<void>;
   /** change password while signed in - adopts the fresh session pair the server
    *  returns (it revokes every other device's refresh token) */
@@ -75,7 +77,7 @@ const AuthContext = createContext<AuthValue>({
   backendUp: false,
   signIn: async () => {},
   register: async () => {},
-  socialSignIn: async () => {},
+  socialSignIn: async () => ({ created: false }),
   signOut: async () => {},
   changePassword: async () => {},
   activatePremium: async () => {},
@@ -514,7 +516,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const socialSignIn = useCallback(async (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) => {
     // backend verifies the token, creates/resumes the household, returns our JWT
-    const { token: t, refreshToken: rt, user: u } = await api.social(provider, idToken, authorizationCode, name);
+    const { token: t, refreshToken: rt, user: u, created } = await api.social(provider, idToken, authorizationCode, name);
     let ent: ApiEntitlement = FREE;
     try {
       ent = (await api.me(t)).entitlement;
@@ -534,6 +536,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     track('sign_in', { method: provider });
     await Promise.all([secureSet(KEYS.token, t), setJSON(KEYS.user, u), setJSON(KEYS.entitlement, ent)]);
     if (rt) await secureSet(KEYS.refresh, rt);
+    // brand-new accounts run the first-run owner match, same as email sign-up
+    return { created: created === true };
   }, [linkGuestPurchase]);
 
   const signOut = useCallback(async () => {

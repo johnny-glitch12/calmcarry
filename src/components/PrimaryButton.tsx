@@ -92,6 +92,7 @@ export function PrimaryButton({
       onPressOut={() => press(1)}
       disabled={inactive}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled: inactive, busy: loading }}
       style={[fullWidth && { alignSelf: 'stretch' }, style]}>
       <Animated.View

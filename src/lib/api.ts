@@ -137,7 +137,9 @@ export const api = {
   // Sign in with Apple / Google - backend verifies the identity token (§6/§8).
   // `name` carries Apple's first-authorization fullName (the id token never has it).
   social: (provider: 'apple' | 'google', idToken: string, authorizationCode?: string, name?: string) =>
-    req<{ token: string; refreshToken?: string; user: ApiUser }>('/auth/social', {
+    // `created` is true when this call created the account (drives the client's
+    // first-run owner match); older servers omit it, so treat absent as false
+    req<{ token: string; refreshToken?: string; user: ApiUser; created?: boolean }>('/auth/social', {
       method: 'POST',
       body: JSON.stringify({ provider, idToken, authorizationCode, name }),
     }),

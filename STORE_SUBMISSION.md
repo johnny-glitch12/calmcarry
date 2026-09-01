@@ -102,6 +102,13 @@ Apple sign-in is required contradicts the fix and invites the same rejection).
 
 ## 9. App Review history
 
+- **2026-08-30 — APPROVED & LIVE** 🎉 version 1.0.0 (build 18) auto-released
+  ~12:38 UTC: https://apps.apple.com/us/app/calmcarry/id6796861173
+  Post-launch hygiene done same-hour: `ALLOW_SANDBOX_IAP=0` set + redeployed
+  (sandbox receipts now refused in prod), Expo access token revoked. The
+  keep-warm cron (`.github/workflows/keep-warm.yml`) is still running - keep it
+  through launch week, then delete at will.
+
 - **2026-08-20 — REJECTED, 5.1.1(v)** (submission `ed2dcdc5-9e06-430c-b53d-a8bf489eb9e7`,
   version 1.0.0 build 17, reviewed on iPhone 17 Pro Max): "app requires users to
   register with personal information to purchase In-App Purchase products that are
